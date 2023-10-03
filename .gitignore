@@ -9,3 +9,5 @@ dist
 node_modules
 coverage
 .DS_Store
+airseeker.json
+secrets.env
