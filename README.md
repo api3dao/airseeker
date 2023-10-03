@@ -19,8 +19,8 @@ sensitive information inside secrets.
 
 ### `sponsorWalletMnemonic`
 
-The mnemonic of the wallet used to derive sponsor wallets. Sponsor wallets are derived from dAPI name. It is recommended
-to interpolate this value from secrets. For example:
+The mnemonic of the wallet used to derive sponsor wallets. Sponsor wallets are derived for each dAPI separately. It is
+recommended to interpolate this value from secrets. For example:
 
 ```jsonc
 // The mnemonic is interpolated from the "SPONSOR_WALLET_MNEMONIC" secret.
@@ -33,7 +33,7 @@ A record of chain configurations. The record key is the chain ID. For example:
 
 ```jsonc
 {
-  // Defines a chain with ID 1 (ETH mainnet).
+  // Defines a chain configuration with ID 1 (ETH mainnet).
   "1": {
     "providers": {
       "mainnet": {
