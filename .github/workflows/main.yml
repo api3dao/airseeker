@@ -1,0 +1,51 @@
+name: Continuous Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4
+      - name: Check hyperlinks
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+
+  lint-build-test:
+    runs-on: ubuntu-latest
+    name: Build, lint and test
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.8.0
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'pnpm'
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm run build
+      - name: Lint Typescript
+        run: pnpm run tsc
+      - name: Lint
+        run: pnpm run prettier:check && pnpm run eslint:check
+      - name: Test
+        run: pnpm run test
+
+  required-checks-passed:
+    name: All required checks passed
+    runs-on: ubuntu-latest
+    needs: [documentation, lint-build-test]
+    steps:
+      - run: exit 0

@@ -1,0 +1,11 @@
+.build
+.env
+.idea
+.log
+.tsbuildinfo
+.vscode
+build
+dist
+node_modules
+coverage
+.DS_Store
