@@ -5,6 +5,20 @@
       "contracts": {
         "Api3ServerV1": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
       },
+      "__Temporary__DapiDataRegistry": {
+        "airnodeToSignedApiUrl": {
+          "0xbF3137b0a7574563a23a8fC8badC6537F98197CC": "http://127.0.0.1:8090/"
+        },
+        "dataFeedIdToBeacons": {
+          "0xebba8507d616ed80766292d200a3598fdba656d9938cecc392765d4a284a69a4": [
+            {
+              "airnode": "0xbF3137b0a7574563a23a8fC8badC6537F98197CC",
+              "templateId": "0xcc35bd1800c06c12856a87311dd95bfcbb3add875844021d59a929d79f3c99bd"
+            }
+          ]
+        },
+        "activeDapiNames": ["ETH/USD"]
+      },
       "providers": {
         "hardhat": {
           "url": "${HARDHAT_PROVIDER_URL}"

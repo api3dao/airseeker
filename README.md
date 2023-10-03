@@ -59,10 +59,41 @@ repository.
 A record of providers. The record key is the provider name. Provider name is only used for internal purposes and to
 uniquely identify the provider for the given chain.
 
-##### `providers[<name>]`
+##### `providers[<NAME>]`
 
 A provider configuration.
 
 ###### `url`
 
 The URL of the provider.
+
+#### `__Temporary__DapiDataRegistry`
+
+The data needed to make the requests to signed API. This data will in the future be stored on-chain in a
+`DapiDataRegistry` contract. For the time being, they are statically defined in the configuration file.
+
+##### `airnodeToSignedApiUrl`
+
+A mapping from Airnode address to signed API URL. When data from particular beacon is needed a request is made to the
+signed API corresponding to the beacon address.
+
+##### `dataFeedIdToBeacons`
+
+A mapping from data feed ID to a list of beacon data.
+
+##### `dataFeedIdToBeacons<DATA_FEED_ID>`
+
+A single element array for a beacon data. If the data feed is a beacon set, the array contains the data for all the
+beacons in the beacon set (in correct order).
+
+###### `dataFeedIdToBeacons<DATA_FEED_ID>[n]`
+
+A beacon data.
+
+`airnode`
+
+The Airnode address of the beacon.
+
+`templateId`
+
+The template ID of the beacon.

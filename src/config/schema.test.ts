@@ -43,6 +43,11 @@ describe('chains schema', () => {
             url: 'http://localhost:8545',
           },
         },
+        __Temporary__DapiDataRegistry: {
+          airnodeToSignedApiUrl: {},
+          dataFeedIdToBeacons: {},
+          activeDapiNames: [],
+        },
       },
     };
 
@@ -61,6 +66,11 @@ describe('chains schema', () => {
             url: 'http://mainnet-url.com',
           },
         },
+        __Temporary__DapiDataRegistry: {
+          airnodeToSignedApiUrl: {},
+          dataFeedIdToBeacons: {},
+          activeDapiNames: [],
+        },
       },
     };
 
@@ -78,6 +88,11 @@ describe('chains schema', () => {
           hardhat: {
             url: 'http://localhost:8545',
           },
+        },
+        __Temporary__DapiDataRegistry: {
+          airnodeToSignedApiUrl: {},
+          dataFeedIdToBeacons: {},
+          activeDapiNames: [],
         },
       },
     };
@@ -103,6 +118,11 @@ describe('chains schema', () => {
           hardhat: {
             url: 'http://localhost:8545',
           },
+        },
+        __Temporary__DapiDataRegistry: {
+          airnodeToSignedApiUrl: {},
+          dataFeedIdToBeacons: {},
+          activeDapiNames: [],
         },
       },
     };
