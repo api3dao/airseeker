@@ -98,6 +98,7 @@ export const configSchema = z
   .object({
     sponsorWalletMnemonic: z.string().refine((mnemonic) => ethers.utils.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
     chains: chainsSchema,
+    deviationThresholdCoefficient: z.number(),
   })
   .strict();
 
