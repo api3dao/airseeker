@@ -1,6 +1,7 @@
 import { go } from '@api3/promise-utils';
 import axios from 'axios';
 import { z } from 'zod';
+import { groupBy } from 'lodash';
 import { Config, EvmAddress, EvmId } from '../config/schema';
 
 // Express handler/endpoint path: https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/server.ts#L33
@@ -61,7 +62,7 @@ export const setStoreDataPoint = ({ airnode, templateId, signature, timestamp, e
     signedApiStore[airnode] = {};
   }
 
-  signedApiStore[airnode][templateId] = { signature, timestamp, encodedValue };
+  signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
 };
 
 export const getStoreDataPoint = (airnode: AirnodeAddress, templateId: TemplateId) => {
@@ -69,10 +70,10 @@ export const getStoreDataPoint = (airnode: AirnodeAddress, templateId: TemplateI
     return undefined;
   }
 
-  return signedApiStore[airnode][templateId];
+  return signedApiStore[airnode]![templateId];
 };
 
-type AirnodesAndSignedDataUrls = Record<AirnodeAddress, string>;
+type AirnodesAndSignedDataUrls = { urls: string[]; airnodeAddress: string; templateId: string }[];
 
 /**
  * Builds API call functions for dispatch
@@ -80,8 +81,10 @@ type AirnodesAndSignedDataUrls = Record<AirnodeAddress, string>;
  * @param airnodesAndSignedDataUrls
  */
 export const buildApiCalls = (airnodesAndSignedDataUrls: AirnodesAndSignedDataUrls): PendingCall[] =>
-  Object.entries(airnodesAndSignedDataUrls).map(([airnodeAddress, url]) => ({
+  airnodesAndSignedDataUrls.map(({ urls, airnodeAddress }) => ({
     fn: async () => {
+      const url = urls[Math.round(Math.random() * urls.length - 1)];
+
       const result = await go(
         () =>
           axios({
@@ -123,6 +126,42 @@ export const buildApiCalls = (airnodesAndSignedDataUrls: AirnodesAndSignedDataUr
     nextRun: 0,
   }));
 
-export const dataFetcherCoordinator = async (_config: Config) => {
-  // const _callFunctions = buildApiCallFunctions(config);
+export const expandConfigForFetcher = (config: Config) => {
+  const allAirnodeUrlsByAirnode = groupBy(
+    Object.values(config.chains).flatMap((chainConfig) =>
+      Object.entries(chainConfig.__Temporary__DapiDataRegistry.airnodeToSignedApiUrl).map(([airnodeAddress, url]) => ({
+        airnodeAddress,
+        url,
+      }))
+    ),
+    (item) => item.airnodeAddress
+  );
+
+  const allAirnodesAndTemplates = groupBy(
+    Object.values(config.chains).flatMap((chainConfig) =>
+      Object.values(chainConfig.__Temporary__DapiDataRegistry.dataFeedIdToBeacons).flat()
+    ),
+    (item) => item.airnode
+  );
+
+  const airnodeUrlSets = Object.entries(allAirnodeUrlsByAirnode).flatMap(([airnodeAddress, urls]) => {
+    const airnodeAndTemplate = allAirnodesAndTemplates[airnodeAddress] ?? [];
+
+    return airnodeAndTemplate.flatMap(({ templateId }) => ({
+      airnodeAddress,
+      urls: urls.map((url) => url.url),
+      templateId, // probably initially unnecessary but I suspect useful later
+    }));
+  });
+
+  return airnodeUrlSets;
+};
+
+export const dataFetcherCoordinator = async (config: Config) => {
+  const airnodeUrlSets = expandConfigForFetcher(config);
+
+  const _callFunctions = buildApiCalls(airnodeUrlSets);
+
+  // we initialise the nextRuns in the calls
+  // and then head into the first loop
 };
