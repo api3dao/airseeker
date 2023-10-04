@@ -11,15 +11,18 @@
     "build": "tsc --project tsconfig.build.json",
     "clean": "rm -rf coverage dist",
     "dev": "nodemon --ext ts,js,json,env  --exec \"pnpm ts-node src/index.ts\"",
+    "lint": "yarn eslint:fix",
     "eslint:check": "eslint . --ext .js,.ts --max-warnings 0",
     "eslint:fix": "eslint . --ext .js,.ts --fix",
     "prepare": "husky install",
     "prettier:check": "prettier --check \"./**/*.{js,ts,md,json}\"",
     "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json}\"",
+    "prettier:write": "yarn prettier:fix",
     "test": "jest",
     "tsc": "tsc --project ."
   },
   "devDependencies": {
+    "@api3/ois": "^2.2.0",
     "@types/jest": "^29.5.5",
     "@types/lodash": "^4.14.199",
     "@types/node": "^20.8.0",
@@ -40,6 +43,7 @@
   "dependencies": {
     "@api3/airnode-protocol-v1": "^2.10.0",
     "@api3/promise-utils": "^0.4.0",
+    "axios": "^1.5.1",
     "dotenv": "^16.3.1",
     "ethers": "^5.7.2",
     "lodash": "^4.17.21",
