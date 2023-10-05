@@ -98,6 +98,14 @@ The Airnode address of the beacon.
 
 The template ID of the beacon.
 
+### `deviationThresholdCoefficient`
+
+The global coefficient applied to all deviation checks. Used to differentiate alternate deployments. For example:
+
+```jsonc
+"deviationThresholdCoefficient": 1,
+```
+
 ## Docker
 
 ### Build
@@ -114,4 +122,7 @@ The docker image can be ran locally with:
 
 ```sh
 yarn docker:run
+
+
+
 ```
