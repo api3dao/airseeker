@@ -97,3 +97,21 @@ The Airnode address of the beacon.
 `templateId`
 
 The template ID of the beacon.
+
+## Docker
+
+### Build
+
+The docker image can be built by running the following command from the root directory:
+
+```sh
+yarn docker:build
+```
+
+### Run
+
+The docker image can be ran locally with:
+
+```sh
+docker run -it --rm api3/airseekerv2:latest
+```
