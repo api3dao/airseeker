@@ -122,7 +122,4 @@ The docker image can be ran locally with:
 
 ```sh
 yarn docker:run
-
-
-
 ```
