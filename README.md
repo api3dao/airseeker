@@ -97,3 +97,11 @@ The Airnode address of the beacon.
 `templateId`
 
 The template ID of the beacon.
+
+### `deviationThresholdCoefficient`
+
+The global coefficient applied to all deviation checks. Used to differentiate alternate deployments. For example:
+
+```jsonc
+"deviationThresholdCoefficient": 1,
+```
