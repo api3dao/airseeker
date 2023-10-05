@@ -113,5 +113,5 @@ yarn docker:build
 The docker image can be ran locally with:
 
 ```sh
-docker run -it --rm api3/airseekerv2:latest
+yarn docker:run
 ```

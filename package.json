@@ -47,6 +47,7 @@
     "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json}\"",
     "test": "jest",
     "tsc": "tsc --project .",
-    "docker:build": "docker build -t api3/airseekerv2:latest -f docker/Dockerfile ."
+    "docker:build": "docker build -t api3/airseekerv2:latest -f docker/Dockerfile .",
+    "docker:run": "docker run -it --rm api3/airseekerv2:latest"
   }
 }
