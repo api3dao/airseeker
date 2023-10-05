@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { groupBy } from 'lodash';
 import { BigNumber } from 'ethers';
 import { Config, EvmAddress, EvmId } from '../config/schema';
+import { logger } from '../logger';
 
 // Express handler/endpoint path: https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/server.ts#L33
 // Actual handler fn: https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/handlers.ts#L81
@@ -67,8 +68,7 @@ export const setStoreDataPoint = ({ airnode, templateId, signature, timestamp, e
   }
 
   signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
-  // eslint-disable-next-line no-console
-  console.log(
+  logger.debug(
     `Storing sample for (Airnode ${airnode}) (Template ID ${templateId}) (Timestamp ${new Date(
       parseInt(timestamp) * 1_000
     ).toLocaleDateString()}), ${BigNumber.from(encodedValue).div(10e10).toNumber() / 10e8}`
@@ -83,107 +83,77 @@ export const getStoreDataPoint = (airnode: AirnodeAddress, templateId: TemplateI
   return signedApiStore[airnode]![templateId];
 };
 
-type AirnodesAndSignedDataUrls = { urls: string[]; airnodeAddress: string; templateId: string }[];
+type AirnodesAndSignedDataUrl = { urls: string[]; airnodeAddress: string; templateId: string };
+
+const makeApiCallFn =
+  ({
+    urls,
+    airnodeAddress,
+    whoAmI,
+  }: Pick<AirnodesAndSignedDataUrl, 'urls' | 'airnodeAddress'> & {
+    whoAmI: number;
+  }) =>
+  async (deferredFunction: () => void) => {
+    logger.debug(`Started API call ${whoAmI}`);
+
+    const url = urls[Math.ceil(Math.random() * urls.length) - 1];
+    logger.debug(`Calling (${whoAmI}): ${url}/${airnodeAddress}`);
+
+    const result = await go(
+      () =>
+        axios({
+          method: 'get',
+          timeout: HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT - HTTP_SIGNED_DATA_API_HEADROOM / 2,
+          url: `${url}/${airnodeAddress}`,
+          headers: {
+            Accept: 'application/json',
+            // TODO add API key?
+          },
+        }),
+      {
+        attemptTimeoutMs: HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT,
+        totalTimeoutMs: HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT + HTTP_SIGNED_DATA_API_HEADROOM / 2,
+        retries: 0,
+      }
+    );
+
+    if (!result.success) {
+      logger.debug(`Call failed for ${whoAmI}: ${result.error}`);
+      return;
+    }
+
+    if (result.data.status !== 200) {
+      logger.debug(`HTTP call failed for ${whoAmI} with code ${result.data.status}: ${result.data.statusText}`);
+      return;
+    }
+
+    const zodResult = signedApiResponseSchema.safeParse(result.data.data);
+    if (!zodResult.success) {
+      logger.debug(`Schema parse failed for ${whoAmI} with error(s) ${JSON.stringify(zodResult.error, null, 2)}`);
+      return;
+    }
+
+    const payload = Object.values(zodResult.data.data);
+
+    logger.debug(`Result passed all checks, sending to the store ${whoAmI}`);
+    payload.forEach(setStoreDataPoint);
+
+    deferredFunction();
+  };
 
 /**
  * Builds API call functions for dispatch
  *
  * @param airnodesAndSignedDataUrls
  */
-export const buildApiCalls = (airnodesAndSignedDataUrls: AirnodesAndSignedDataUrls): PendingCall[] =>
-  airnodesAndSignedDataUrls.map(({ urls, airnodeAddress }, whoAmI) => ({
-    fn: async (deferredFunction: () => void) => {
-      // eslint-disable-next-line no-console
-      console.log(`Started API call ${whoAmI}`);
-
-      const url = urls[Math.ceil(Math.random() * urls.length) - 1];
-      // eslint-disable-next-line no-console
-      console.log(`Calling (${whoAmI}): ${url}/${airnodeAddress}`);
-
-      const result = await go(
-        () =>
-          axios({
-            method: 'get',
-            timeout: HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT - HTTP_SIGNED_DATA_API_HEADROOM / 2,
-            url: `${url}/${airnodeAddress}`,
-            headers: {
-              Accept: 'application/json',
-              // TODO add API key?
-            },
-          }),
-        {
-          attemptTimeoutMs: HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT,
-          totalTimeoutMs: HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT + HTTP_SIGNED_DATA_API_HEADROOM / 2,
-          retries: 0,
-        }
-      );
-
-      if (!result.success) {
-        // TODO log a go parent failure
-        // eslint-disable-next-line no-console
-        console.log(`Call failed for ${whoAmI}: ${result.error}`);
-        return;
-      }
-
-      if (result.data.status !== 200) {
-        // TODO log an underlying http failure
-        // eslint-disable-next-line no-console
-        console.log(`HTTP call failed for ${whoAmI} with code ${result.data.status}: ${result.data.statusText}`);
-        return;
-      }
-
-      const zodResult = signedApiResponseSchema.safeParse(result.data.data);
-      if (!zodResult.success) {
-        // TODO log a Zod failure
-        // eslint-disable-next-line no-console
-        console.log(`Schema parse failed for ${whoAmI} with error(s) ${JSON.stringify(zodResult.error, null, 2)}`);
-        return;
-      }
-
-      const payload = Object.values(zodResult.data.data);
-
-      // eslint-disable-next-line no-console
-      console.log(`Result passed all checks, sending to the store ${whoAmI}`);
-      payload.forEach(setStoreDataPoint);
-
-      deferredFunction();
-    },
+export const buildApiCalls = (airnodesAndSignedDataUrls: Record<AirnodeAddress, { url: string }[]>): PendingCall[] =>
+  Object.entries(airnodesAndSignedDataUrls).map(([airnodeAddress, url], whoAmI) => ({
+    fn: makeApiCallFn({ urls: url.map((url) => url.url), airnodeAddress, whoAmI }),
     nextRun: 0,
     lastRun: 0,
     running: false,
     whoAmI,
   }));
-
-export const expandConfigForFetcher = (config: Config) => {
-  const allAirnodeUrlsByAirnode = groupBy(
-    Object.values(config.chains).flatMap((chainConfig) =>
-      Object.entries(chainConfig.__Temporary__DapiDataRegistry.airnodeToSignedApiUrl).map(([airnodeAddress, url]) => ({
-        airnodeAddress,
-        url,
-      }))
-    ),
-    (item) => item.airnodeAddress
-  );
-
-  const allAirnodesAndTemplates = groupBy(
-    Object.values(config.chains).flatMap((chainConfig) =>
-      Object.values(chainConfig.__Temporary__DapiDataRegistry.dataFeedIdToBeacons).flat()
-    ),
-    (item) => item.airnode
-  );
-
-  const airnodeUrlSets = Object.entries(allAirnodeUrlsByAirnode).flatMap(([airnodeAddress, urls]) => {
-    const airnodeAndTemplate = allAirnodesAndTemplates[airnodeAddress] ?? [];
-
-    return airnodeAndTemplate.flatMap(({ templateId }) => ({
-      airnodeAddress,
-      urls: urls.map((url) => url.url),
-      templateId, // probably initially unnecessary but I suspect useful later
-    }));
-  });
-
-  return airnodeUrlSets;
-};
 
 let mainInterval: NodeJS.Timeout | undefined;
 
@@ -206,83 +176,98 @@ which extends into the next loop).
  */
 
 export const dataFetcherCoordinator = (config: Config) => {
-  const airnodeUrlSets = expandConfigForFetcher(config);
+  const airnodeUrlSets = groupBy(
+    Object.values(config.chains).flatMap((chainConfig) =>
+      Object.entries(chainConfig.__Temporary__DapiDataRegistry.airnodeToSignedApiUrl).map(([airnodeAddress, url]) => ({
+        airnodeAddress,
+        url,
+      }))
+    ),
+    (item) => item.airnodeAddress
+  );
 
   const callFunctionSets = buildApiCalls(airnodeUrlSets);
 
   const fetchIntervalInMs = config.fetchInterval * 1_000;
   const stepDuration = (fetchIntervalInMs * 0.9) / callFunctionSets.length;
 
-  setInterval(() => {
-    // eslint-disable-next-line no-console
-    console.log('Interval started');
+  const callsDispatcherFn = () => {
     const now = Date.now();
 
-    // we honour nextRun unless lastRun is outdated, in which case we run any way to deal with a scenario where nextRun wasn't updated for an unknown reason
+    // we honour nextRun unless lastRun is outdated, in which case we run any way to deal with a scenario where nextRun
+    // wasn't updated for an unknown reason. This could be done more elegantly I suspect.
     callFunctionSets.forEach((pendingCall) => {
       if (
         (pendingCall.nextRun < now && !pendingCall.running) ||
-        now - pendingCall.lastRun > HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT + HTTP_SIGNED_DATA_API_HEADROOM
+        now - pendingCall.lastRun > (HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT + HTTP_SIGNED_DATA_API_HEADROOM) * 10
       ) {
+        logger.debug(`Ran call ${pendingCall.whoAmI}: `, {
+          nextRun: pendingCall.nextRun < now && !pendingCall.running,
+          failsafe:
+            now - pendingCall.lastRun > (HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT + HTTP_SIGNED_DATA_API_HEADROOM) * 10,
+        });
+
         pendingCall.running = true;
         pendingCall.lastRun = Date.now();
         pendingCall.fn(() => {
           pendingCall.running = false;
-          pendingCall.nextRun = Date.now() + stepDuration;
+          pendingCall.nextRun = Date.now() + stepDuration * (pendingCall.whoAmI + 1);
+          logger.debug(`Next run is now + ${stepDuration * (pendingCall.whoAmI + 1)}`);
         });
       }
     });
-    // eslint-disable-next-line no-console
-    console.log('interval ended');
-  }, fetchIntervalInMs);
-  // eslint-disable-next-line no-console
-  console.log('Configured data fetcher / set up interval');
-};
-
-const main = async () => {
-  // This is not a secret
-  // https://pool.nodary.io/0xC04575A2773Da9Cd23853A69694e02111b2c4182
-
-  const config: Config = {
-    sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
-    chains: {
-      '31337': {
-        contracts: {
-          Api3ServerV1: '',
-        },
-        providers: { hardhat: { url: 'http://127.0.0.1:8545' } },
-        __Temporary__DapiDataRegistry: {
-          airnodeToSignedApiUrl: {
-            '0xC04575A2773Da9Cd23853A69694e02111b2c4182': 'https://pool.nodary.io',
-          },
-          dataFeedIdToBeacons: {
-            '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04': [
-              {
-                templateId: '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183',
-                airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
-              },
-            ],
-            '0xddc6ca9cc6f5768d9bfa8cc59f79bde8cf97a6521d0b95835255951ce06f19e6': [
-              {
-                templateId: '0x55d08a477d28519c8bc889b0be4f4d08625cfec5369f047258a1a4d7e1e405f3',
-                airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
-              },
-            ],
-            '0x5dd8d9e1429f69ba4bd76df5709155110429857d19670cc157632f66a48ee1f7': [
-              {
-                templateId: '0x96504241fb9ae9a5941f97c9561dcfcd7cee77ee9486a58c8e78551c1268ddec',
-                airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
-              },
-            ],
-          },
-          activeDapiNames: [],
-        },
-      },
-    },
-    fetchInterval: 10,
   };
 
+  setInterval(callsDispatcherFn, 100);
+  callsDispatcherFn();
+
+  // eslint-disable-next-line no-console
+  logger.debug('Configured data fetcher / set up interval');
+};
+
+const main = async (config: Config) => {
   dataFetcherCoordinator(config);
 };
 
-main();
+// This is not a secret
+// https://pool.nodary.io/0xC04575A2773Da9Cd23853A69694e02111b2c4182
+const generateTestConfig = (): Config => ({
+  sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
+  chains: {
+    '31337': {
+      contracts: {
+        Api3ServerV1: '',
+      },
+      providers: { hardhat: { url: 'http://127.0.0.1:8545' } },
+      __Temporary__DapiDataRegistry: {
+        airnodeToSignedApiUrl: {
+          '0xC04575A2773Da9Cd23853A69694e02111b2c4182': 'https://pool.nodary.io',
+        },
+        dataFeedIdToBeacons: {
+          '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04': [
+            {
+              templateId: '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183',
+              airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+            },
+          ],
+          '0xddc6ca9cc6f5768d9bfa8cc59f79bde8cf97a6521d0b95835255951ce06f19e6': [
+            {
+              templateId: '0x55d08a477d28519c8bc889b0be4f4d08625cfec5369f047258a1a4d7e1e405f3',
+              airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+            },
+          ],
+          '0x5dd8d9e1429f69ba4bd76df5709155110429857d19670cc157632f66a48ee1f7': [
+            {
+              templateId: '0x96504241fb9ae9a5941f97c9561dcfcd7cee77ee9486a58c8e78551c1268ddec',
+              airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+            },
+          ],
+        },
+        activeDapiNames: [],
+      },
+    },
+  },
+  fetchInterval: 20,
+});
+
+main(generateTestConfig());
