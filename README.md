@@ -118,7 +118,7 @@ yarn docker:build
 
 ### Run
 
-The docker image can be ran locally with:
+The docker image can be run locally with:
 
 ```sh
 yarn docker:run
