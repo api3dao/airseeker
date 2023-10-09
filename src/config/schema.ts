@@ -45,6 +45,16 @@ export const temporaryDapiDataRegistrySchema = z.object({
 
 export type TemporaryDapiDataRegistry = z.infer<typeof temporaryDapiDataRegistrySchema>;
 
+export const gasSettingsSchema = z.object({
+  recommendedGasPriceMultiplier: z.number(),
+  sanitizationSamplingWindow: z.number(),
+  sanitizationPercentile: z.number(),
+  scalingWindow: z.number(),
+  scalingMultiplier: z.number(),
+});
+
+export type GasSettings = z.infer<typeof gasSettingsSchema>;
+
 // Contracts are optional. If unspecified, they will be loaded from "airnode-protocol-v1" or error out during
 // validation. We need a chain ID from parent schema to load the contracts.
 export const optionalChainSchema = z
@@ -52,6 +62,7 @@ export const optionalChainSchema = z
     providers: z.record(providerSchema), // The record key is the provider "nickname"
     __Temporary__DapiDataRegistry: temporaryDapiDataRegistrySchema,
     contracts: optionalContractsSchema.optional(),
+    gasSettings: gasSettingsSchema,
   })
   .strict();
 
@@ -98,7 +109,7 @@ export const configSchema = z
   .object({
     sponsorWalletMnemonic: z.string().refine((mnemonic) => ethers.utils.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
     chains: chainsSchema,
-    deviationThresholdCoefficient: z.number(),
+    deviationThresholdCoefficient: z.number().optional().default(1),
   })
   .strict();
 
