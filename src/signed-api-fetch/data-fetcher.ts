@@ -35,6 +35,12 @@ export const verifySignedData = (_signedData: SignedData) => {
   return true;
 };
 
+// Useful for tests
+let axiosProd = axios;
+export const setAxios = (customAxios: any) => {
+  axiosProd = customAxios;
+};
+
 /**
  * A function factory that outputs functions that call a remote signed data API.
  *
@@ -61,7 +67,7 @@ const makeApiCallFn =
 
     const result = await go(
       () =>
-        axios({
+        axiosProd({
           method: 'get',
           timeout: HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT - HTTP_SIGNED_DATA_API_HEADROOM / 2,
           //url: `${url}/${airnodeAddress}`,
@@ -230,7 +236,7 @@ const getConfig = async () => {
 
 // This is not a secret
 // https://pool.nodary.io/0xC04575A2773Da9Cd23853A69694e02111b2c4182
-const generateTestConfig = (): Config => {
+export const generateTestConfig = (): Config => {
   const airnodeToSignedApiUrl = {
     '0xC04575A2773Da9Cd23853A69694e02111b2c4182': 'https://pool.nodary.io',
     '0xC04575A2773Da9Cd23853A69694e02111b2c4183': 'https://pool.nodary.io',

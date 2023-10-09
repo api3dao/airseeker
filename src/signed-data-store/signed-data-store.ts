@@ -30,6 +30,12 @@ const setStoreDataPoint = async ({ airnode, templateId, signature, timestamp, en
 const getStoreDataPoint = async (airnode: AirnodeAddress, templateId: TemplateId) =>
   (signedApiStore[airnode] ?? {})[templateId];
 
+const clear = async () => {
+  Object.keys(signedApiStore).forEach((airnodeAddress) => {
+    delete signedApiStore[airnodeAddress];
+  });
+};
+
 const prune = async () => {
   Object.keys(signedApiStore).forEach((airnodeAddress) => {
     Object.keys(signedApiStore[airnodeAddress] ?? {}).forEach((templateId) => {
@@ -58,4 +64,5 @@ export const localDataStore: DataStore = {
   init,
   shutdown,
   prune,
+  clear,
 };

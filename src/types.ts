@@ -27,6 +27,7 @@ export type LocalSignedData = Pick<SignedData, 'timestamp' | 'encodedValue' | 's
 export type DataStore = {
   init: () => Promise<void>;
   prune: () => Promise<void>;
+  clear: () => Promise<void>;
   shutdown: () => Promise<void>;
   setStoreDataPoint: (signedData: SignedData) => Promise<void>;
   getStoreDataPoint: (airnode: AirnodeAddress, templateId: TemplateId) => Promise<LocalSignedData | undefined>;
