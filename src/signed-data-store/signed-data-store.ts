@@ -35,7 +35,8 @@ const prune = async () => {
     Object.keys(signedApiStore[airnodeAddress] ?? {}).forEach((templateId) => {
       const { timestamp } = (signedApiStore[airnodeAddress] ?? {})[templateId] ?? {};
 
-      if (timestamp && Date.now() - parseInt(timestamp) > 24 * 60 * 60 * 1_000) {
+      if (timestamp && Date.now() - parseInt(timestamp) > 24 * 60 * 60) {
+        // timestamps are in s, not ms
         // the datapoint is more than 24 hours old
         delete (signedApiStore[airnodeAddress] ?? {})[templateId];
       }

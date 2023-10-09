@@ -289,4 +289,10 @@ const generateTestConfig = (): Config => {
   };
 };
 
-dataFetcherInitialiser();
+if (require.main === module) {
+  dataFetcherInitialiser().catch((error) => {
+    // eslint-disable-next-line no-console
+    console.trace(error);
+    process.exit(1);
+  });
+}
