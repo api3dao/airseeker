@@ -1,38 +1,13 @@
 import { go } from '@api3/promise-utils';
 import axios from 'axios';
-import { z } from 'zod';
 import { groupBy } from 'lodash';
-import { BigNumber } from 'ethers';
-import { Config, EvmAddress, EvmId } from '../config/schema';
+import { Config } from '../config/schema';
 import { logger } from '../logger';
+import { AirnodeAddress, DataStore, signedApiResponseSchema, SignedData } from '../types';
+import { localDataStore } from '../signed-data-store';
 
 // Express handler/endpoint path: https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/server.ts#L33
 // Actual handler fn: https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/handlers.ts#L81
-
-// Taken from https://github.com/api3dao/signed-api/blob/main/packages/api/src/schema.ts
-// TODO should be imported
-
-export const evmAddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Must be a valid EVM address');
-
-export const evmIdSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Must be a valid EVM hash');
-
-export const signedDataSchema = z.object({
-  airnode: evmAddressSchema,
-  templateId: evmIdSchema,
-  // beaconId: evmIdSchema, // it is removed prior to tx to us | https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/handlers.ts#L94
-  timestamp: z.string(),
-  encodedValue: z.string(),
-  signature: z.string(),
-});
-
-export type SignedData = z.infer<typeof signedDataSchema>;
-
-const signedApiResponseSchema = z.object({
-  count: z.number().positive(),
-  data: z.record(signedDataSchema),
-});
-
-export type LocalSignedData = Pick<SignedData, 'timestamp' | 'encodedValue' | 'signature'>;
 
 type PendingCall = {
   fn: (deferredFunction: () => void) => Promise<void>;
@@ -42,45 +17,13 @@ type PendingCall = {
   whoAmI: number;
 };
 
-type AirnodeAddress = EvmAddress;
-type TemplateId = EvmId;
-
 const HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT = 10_000;
 const HTTP_SIGNED_DATA_API_HEADROOM = 1_000;
 
-const signedApiStore: Record<AirnodeAddress, Record<TemplateId, LocalSignedData>> = {};
-
 export const verifySignedData = (_signedData: SignedData) => {
-  return true;
+  // TODO https://github.com/api3dao/airseeker-v2/issues/23
   // https://github.com/api3dao/airnode-protocol-v1/blob/5bf01edcd0fe76b94d3d6d6720b71ec658216436/contracts/api3-server-v1/BeaconUpdatesWithSignedData.sol#L26
-};
-
-export const setStoreDataPoint = ({ airnode, templateId, signature, timestamp, encodedValue }: SignedData) => {
-  // we should check the signature at this point... especially if it belongs to the airnode we expect
-  // TODO check signature and possibly log failure
-  if (!verifySignedData({ airnode, templateId, signature, timestamp, encodedValue })) {
-    // TODO log error message
-    return;
-  }
-
-  if (!signedApiStore[airnode]) {
-    signedApiStore[airnode] = {};
-  }
-
-  signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
-  logger.debug(
-    `Storing sample for (Airnode ${airnode}) (Template ID ${templateId}) (Timestamp ${new Date(
-      parseInt(timestamp) * 1_000
-    ).toLocaleDateString()}), ${BigNumber.from(encodedValue).div(10e10).toNumber() / 10e8}`
-  );
-};
-
-export const getStoreDataPoint = (airnode: AirnodeAddress, templateId: TemplateId) => {
-  if (!signedApiStore[airnode]) {
-    return undefined;
-  }
-
-  return signedApiStore[airnode]![templateId];
+  return true;
 };
 
 type AirnodesAndSignedDataUrl = { urls: string[]; airnodeAddress: string; templateId: string };
@@ -90,14 +33,16 @@ const makeApiCallFn =
     urls,
     airnodeAddress,
     whoAmI,
+    dataStore,
   }: Pick<AirnodesAndSignedDataUrl, 'urls' | 'airnodeAddress'> & {
     whoAmI: number;
+    dataStore: DataStore;
   }) =>
   async (deferredFunction: () => void) => {
-    logger.debug(`Started API call ${whoAmI}`);
+    logger.debug(`[${whoAmI}] Started API call function`);
 
     const url = urls[Math.ceil(Math.random() * urls.length) - 1];
-    logger.debug(`Calling (${whoAmI}): ${url}/${airnodeAddress}`);
+    logger.debug(`[${whoAmI}] Calling ${url}/${airnodeAddress}`);
 
     const result = await go(
       () =>
@@ -118,25 +63,25 @@ const makeApiCallFn =
     );
 
     if (!result.success) {
-      logger.debug(`Call failed for ${whoAmI}: ${result.error}`);
+      logger.debug(`[${whoAmI}] HTTP call failed: ${result.error}`);
       return;
     }
 
     if (result.data.status !== 200) {
-      logger.debug(`HTTP call failed for ${whoAmI} with code ${result.data.status}: ${result.data.statusText}`);
+      logger.debug(`[${whoAmI}] HTTP call failed with code ${result.data.status}: ${result.data.statusText}`);
       return;
     }
 
     const zodResult = signedApiResponseSchema.safeParse(result.data.data);
     if (!zodResult.success) {
-      logger.debug(`Schema parse failed for ${whoAmI} with error(s) ${JSON.stringify(zodResult.error, null, 2)}`);
+      logger.debug(`[${whoAmI}] Schema parse failed with error(s) ${JSON.stringify(zodResult.error, null, 2)}`);
       return;
     }
 
     const payload = Object.values(zodResult.data.data);
 
-    logger.debug(`Result passed all checks, sending to the store ${whoAmI}`);
-    payload.forEach(setStoreDataPoint);
+    logger.debug(`[${whoAmI}] Result passed all checks, sending to the store`);
+    payload.forEach(dataStore.setStoreDataPoint);
 
     deferredFunction();
   };
@@ -146,9 +91,12 @@ const makeApiCallFn =
  *
  * @param airnodesAndSignedDataUrls
  */
-export const buildApiCalls = (airnodesAndSignedDataUrls: Record<AirnodeAddress, { url: string }[]>): PendingCall[] =>
+export const buildApiCalls = (
+  airnodesAndSignedDataUrls: Record<AirnodeAddress, { url: string }[]>,
+  dataStore: DataStore
+): PendingCall[] =>
   Object.entries(airnodesAndSignedDataUrls).map(([airnodeAddress, url], whoAmI) => ({
-    fn: makeApiCallFn({ urls: url.map((url) => url.url), airnodeAddress, whoAmI }),
+    fn: makeApiCallFn({ urls: url.map((url) => url.url), airnodeAddress, whoAmI, dataStore }),
     nextRun: 0,
     lastRun: 0,
     running: false,
@@ -186,7 +134,7 @@ export const dataFetcherCoordinator = (config: Config) => {
     (item) => item.airnodeAddress
   );
 
-  const callFunctionSets = buildApiCalls(airnodeUrlSets);
+  const callFunctionSets = buildApiCalls(airnodeUrlSets, localDataStore);
 
   const fetchIntervalInMs = config.fetchInterval * 1_000;
   const stepDuration = (fetchIntervalInMs * 0.9) / callFunctionSets.length;
@@ -195,7 +143,7 @@ export const dataFetcherCoordinator = (config: Config) => {
     const now = Date.now();
 
     // we honour nextRun unless lastRun is outdated, in which case we run any way to deal with a scenario where nextRun
-    // wasn't updated for an unknown reason. This could be done more elegantly I suspect.
+    // wasn't updated for an unknown reason. This may be paranoid.
     callFunctionSets.forEach((pendingCall) => {
       if (
         (pendingCall.nextRun < now && !pendingCall.running) ||
@@ -221,8 +169,7 @@ export const dataFetcherCoordinator = (config: Config) => {
   setInterval(callsDispatcherFn, 100);
   callsDispatcherFn();
 
-  // eslint-disable-next-line no-console
-  logger.debug('Configured data fetcher / set up interval');
+  logger.debug('Configured data fetcher / setInterval was configured');
 };
 
 const main = async (config: Config) => {
