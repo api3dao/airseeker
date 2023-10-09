@@ -1,1 +1,1 @@
-export { dataFetcherCoordinator } from './data-fetcher';
+export { initialiseDataFetcher } from './data-fetcher';

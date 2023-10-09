@@ -25,6 +25,9 @@ export const signedApiResponseSchema = z.object({
 export type LocalSignedData = Pick<SignedData, 'timestamp' | 'encodedValue' | 'signature'>;
 
 export type DataStore = {
+  init: () => Promise<void>;
+  prune: () => Promise<void>;
+  shutdown: () => Promise<void>;
   setStoreDataPoint: (signedData: SignedData) => Promise<void>;
   getStoreDataPoint: (airnode: AirnodeAddress, templateId: TemplateId) => Promise<LocalSignedData | undefined>;
 };
