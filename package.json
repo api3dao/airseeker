@@ -7,18 +7,10 @@
     "node": "^18.14.0",
     "pnpm": "^8.8.0"
   },
-  "scripts": {
-    "build": "tsc --project tsconfig.build.json",
-    "clean": "rm -rf coverage dist",
-    "dev": "nodemon --ext ts,js,json,env  --exec \"pnpm ts-node src/index.ts\"",
-    "eslint:check": "eslint . --ext .js,.ts --max-warnings 0",
-    "eslint:fix": "eslint . --ext .js,.ts --fix",
-    "prepare": "husky install",
-    "prettier:check": "prettier --check \"./**/*.{js,ts,md,json}\"",
-    "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json}\"",
-    "test": "jest",
-    "tsc": "tsc --project ."
-  },
+  "files": [
+    "dist",
+    "*.js"
+  ],
   "devDependencies": {
     "@types/jest": "^29.5.5",
     "@types/lodash": "^4.14.199",
@@ -44,5 +36,18 @@
     "ethers": "^5.7.2",
     "lodash": "^4.17.21",
     "zod": "^3.22.2"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "clean": "rm -rf coverage dist",
+    "dev": "nodemon --ext ts,js,json,env  --exec \"pnpm ts-node src/index.ts\"",
+    "eslint:check": "eslint . --ext .js,.ts --max-warnings 0",
+    "eslint:fix": "eslint . --ext .js,.ts --fix",
+    "prettier:check": "prettier --check \"./**/*.{js,ts,md,json}\"",
+    "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json}\"",
+    "test": "jest",
+    "tsc": "tsc --project .",
+    "docker:build": "docker build -t api3/airseekerv2:latest -f docker/Dockerfile .",
+    "docker:run": "docker run -it --rm api3/airseekerv2:latest"
   }
 }
