@@ -5,6 +5,14 @@ import dotenv from 'dotenv';
 import { chainsSchema, configSchema } from './schema';
 import { interpolateSecrets } from './utils';
 
+const gasSettings = {
+  recommendedGasPriceMultiplier: 1.5,
+  sanitizationSamplingWindow: 15,
+  sanitizationPercentile: 80,
+  scalingWindow: 2,
+  scalingMultiplier: 2,
+};
+
 it('validates example config', async () => {
   const exampleConfig = JSON.parse(readFileSync(join(__dirname, '../../config/airseeker.example.json'), 'utf8'));
 
@@ -48,6 +56,7 @@ describe('chains schema', () => {
           dataFeedIdToBeacons: {},
           activeDapiNames: [],
         },
+        gasSettings,
       },
     };
 
@@ -71,6 +80,7 @@ describe('chains schema', () => {
           dataFeedIdToBeacons: {},
           activeDapiNames: [],
         },
+        gasSettings,
       },
     };
 
@@ -94,6 +104,7 @@ describe('chains schema', () => {
           dataFeedIdToBeacons: {},
           activeDapiNames: [],
         },
+        gasSettings,
       },
     };
 
@@ -124,6 +135,7 @@ describe('chains schema', () => {
           dataFeedIdToBeacons: {},
           activeDapiNames: [],
         },
+        gasSettings,
       },
     };
 
