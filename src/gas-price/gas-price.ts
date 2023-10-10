@@ -7,9 +7,7 @@ interface GasState {
   lastUpdateNonce: number;
 }
 
-const gasPriceStore: Record<string, GasState> = {};
-
-// export const getGasStore = (chainId: string) => gasPriceStore[chainId];
+export const gasPriceStore: Record<string, GasState> = {};
 
 export const setStoreGasPrices = (chainId: string, sanitizationSamplingWindow: number, gasPrice: ethers.BigNumber) => {
   if (!gasPriceStore[chainId])
@@ -31,8 +29,6 @@ export const setStoreGasPrices = (chainId: string, sanitizationSamplingWindow: n
 export const setLastTransactionDetails = (chainId: string, nonce: number) => {
   if (!gasPriceStore[chainId])
     gasPriceStore[chainId] = {
-      // cumulativeAverageGasPrice: ethers.BigNumber.from(0),
-      // lastGasPrice: 0,
       gasPrices: [],
       lastUpdateTimestamp: 0,
       lastUpdateNonce: 0,
@@ -50,6 +46,7 @@ export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => 
   const index = Math.ceil(array.length * (percentile / 100)) - 1;
   return array[index];
 };
+
 export const multiplyGasPrice = (gasPrice: ethers.BigNumber, gasPriceMultiplier: number) =>
   gasPrice.mul(ethers.BigNumber.from(Math.round(gasPriceMultiplier * 100))).div(ethers.BigNumber.from(100));
 
@@ -71,7 +68,7 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
   chainId: string,
   rpcUrl: string,
   gasSettings: GasSettings,
-  nonce: number
+  nonce?: number
 ): Promise<ethers.BigNumber> => {
   const {
     recommendedGasPriceMultiplier,
@@ -81,22 +78,23 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
     scalingMultiplier,
   } = gasSettings;
 
-  const gasPrice = await updateGasPriceStore(chainId, rpcUrl, sanitizationSamplingWindow);
-
-  // Check if the next update is a retry of a pending transaction and if it has been pending longer than scalingWindow
-  if (
-    gasPriceStore[chainId] &&
-    gasPriceStore[chainId]!.lastUpdateNonce === nonce &&
-    gasPriceStore[chainId]!.lastUpdateTimestamp < Date.now() - scalingWindow * 60 * 1_000
-  ) {
-    return multiplyGasPrice(gasPrice, scalingMultiplier);
-  }
-
-  // Get the configured percentile of historical gas prices
+  // Get the configured percentile of historical gas prices before adding the new price
   const percentileGasPrice = getPercentile(
     sanitizationPercentile,
     gasPriceStore[chainId]!.gasPrices.map((gasPrice) => gasPrice.price)
   );
+
+  const gasPrice = await updateGasPriceStore(chainId, rpcUrl, sanitizationSamplingWindow);
+
+  // Check if the next update is a retry of a pending transaction and if it has been pending longer than scalingWindow
+  if (
+    nonce &&
+    gasPriceStore[chainId]!.lastUpdateNonce === nonce &&
+    gasPriceStore[chainId] &&
+    gasPriceStore[chainId]!.lastUpdateTimestamp < Date.now() - scalingWindow * 60 * 1_000
+  ) {
+    return multiplyGasPrice(gasPrice, scalingMultiplier);
+  }
 
   // Check if the multiplied gas price is within the percentile and return the smaller value
   // TODO should we check for a minimum length of state gas prices used in the calculation?
