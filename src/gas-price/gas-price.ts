@@ -60,6 +60,7 @@ export const updateGasPriceStore = async (chainId: string, rpcUrl: string, sanit
   // Get the provider recommended gas price
   const goGasPrice = await go(() => provider.getGasPrice(), { retries: 1, attemptTimeoutMs: 2_000 });
   if (!goGasPrice.success) {
+    // eslint-disable-next-line no-console
     console.log(`Failed to get provider gas price. Error: ${goGasPrice.error.message}.`);
     throw goGasPrice.error;
   }
