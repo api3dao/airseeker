@@ -8,11 +8,19 @@ import { logger } from '../logger';
 const signedApiStore: Record<AirnodeAddress, Record<TemplateId, LocalSignedData>> = {};
 let pruner: NodeJS.Timeout | undefined;
 
-export const verifySignedData = (signedData: SignedData) => {
-  // TODO https://github.com/api3dao/airseeker-v2/issues/23
-  // https://github.com/api3dao/airnode-protocol-v1/blob/5bf01edcd0fe76b94d3d6d6720b71ec658216436/contracts/api3-server-v1/BeaconUpdatesWithSignedData.sol#L26
+export const checkMessage = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
+  // 'data' is: ethers.utils.defaultAbiCoder.encode(['int256'], [beaconValue]);
 
-  const { airnode, templateId, timestamp, signature, encodedValue } = signedData;
+  const message = ethers.utils.arrayify(
+    ethers.utils.solidityKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, encodedValue])
+  );
+
+  const signerAddr = ethers.utils.verifyMessage(message, signature);
+  return signerAddr !== airnode;
+};
+
+export const checkSignedDataIntegrity = (signedData: SignedData) => {
+  const { airnode, templateId, timestamp, encodedValue } = signedData;
 
   if (parseInt(timestamp) * 1_000 > Date.now()) {
     logger.warn(
@@ -25,13 +33,7 @@ export const verifySignedData = (signedData: SignedData) => {
     return false;
   }
 
-  // const data = ethers.utils.defaultAbiCoder.encode(['int256'], [beaconValue]);
-  const message = ethers.utils.arrayify(
-    ethers.utils.solidityKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, encodedValue])
-  );
-
-  const signerAddr = ethers.utils.verifyMessage(message, signature);
-  if (signerAddr !== airnode) {
+  if (checkMessage(signedData)) {
     logger.warn(
       `Refusing to store sample as signature does not match: (Airnode ${airnode}) (Template ID ${templateId}) (Received timestamp ${new Date(
         parseInt(timestamp) * 1_000
@@ -48,7 +50,7 @@ export const verifySignedData = (signedData: SignedData) => {
 const setStoreDataPoint = async (signedData: SignedData) => {
   const { airnode, templateId, signature, timestamp, encodedValue } = signedData;
 
-  if (!verifySignedData(signedData)) {
+  if (!checkSignedDataIntegrity(signedData)) {
     logger.warn(`Signed data received from signed data API has a signature mismatch.`);
     logger.warn(JSON.stringify({ airnode, templateId, signature, timestamp, encodedValue }, null, 2));
     return;
@@ -59,15 +61,18 @@ const setStoreDataPoint = async (signedData: SignedData) => {
   }
 
   const existingValue = signedApiStore[airnode]![templateId];
-  if ((existingValue && existingValue.timestamp < timestamp) || !existingValue) {
-    logger.debug(
-      `Storing sample for (Airnode ${airnode}) (Template ID ${templateId}) (Timestamp ${new Date(
-        parseInt(timestamp) * 1_000
-      ).toLocaleDateString()}), ${BigNumber.from(encodedValue).div(10e10).toNumber() / 10e8}`
-    );
-
-    signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
+  if (existingValue && existingValue.timestamp >= timestamp) {
+    logger.debug('Dropping sample at data store as not fresh.');
+    return;
   }
+
+  logger.debug(
+    `Storing sample for (Airnode ${airnode}) (Template ID ${templateId}) (Timestamp ${new Date(
+      parseInt(timestamp) * 1_000
+    ).toISOString()}), ${BigNumber.from(encodedValue).div(10e10).toNumber() / 10e8}`
+  );
+
+  signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
 };
 
 const getStoreDataPoint = async (airnode: AirnodeAddress, templateId: TemplateId) =>

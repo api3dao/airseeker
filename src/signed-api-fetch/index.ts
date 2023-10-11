@@ -1,1 +1,1 @@
-export { initialiseDataFetcher } from './data-fetcher';
+export * from './data-fetcher';

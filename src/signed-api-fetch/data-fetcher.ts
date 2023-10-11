@@ -14,8 +14,6 @@ import { localDataStore } from '../signed-data-store';
 const HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT = 10_000;
 const HTTP_SIGNED_DATA_API_HEADROOM = 1_000;
 
-let mainInterval: NodeJS.Timeout | undefined;
-let configRefresherInterval: NodeJS.Timeout | undefined;
 let dataFetcherInterval: NodeJS.Timeout | undefined;
 
 // Useful for tests
@@ -28,9 +26,7 @@ export const setAxios = (customAxios: any) => {
  * Shuts down the intervals
  */
 export const stopDataFetcher = () => {
-  clearInterval(mainInterval);
   clearInterval(dataFetcherInterval);
-  clearInterval(configRefresherInterval);
 };
 
 const callSignedDataApi = async (url: string, whoAmI = 'unset') => {
@@ -90,12 +86,14 @@ export const runDataFetcher = async () => {
     )
   );
 
-  urls.map((url, idx) =>
-    go(() => callSignedDataApi(url, idx.toString()), {
-      retries: 0,
-      totalTimeoutMs: fetchInterval + HTTP_SIGNED_DATA_API_HEADROOM,
-      attemptTimeoutMs: fetchInterval + HTTP_SIGNED_DATA_API_HEADROOM - 100,
-    })
+  return Promise.allSettled(
+    urls.map((url, idx) =>
+      go(() => callSignedDataApi(url, idx.toString()), {
+        retries: 0,
+        totalTimeoutMs: fetchInterval + HTTP_SIGNED_DATA_API_HEADROOM,
+        attemptTimeoutMs: fetchInterval + HTTP_SIGNED_DATA_API_HEADROOM - 100,
+      })
+    )
   );
 };
 
