@@ -164,6 +164,7 @@ export const generateTestConfig = (): Config => {
       },
     },
     fetchInterval: 10,
+    deviationThresholdCoefficient: 1,
   };
 };
 
