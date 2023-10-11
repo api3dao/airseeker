@@ -11,9 +11,11 @@
     "build": "tsc --project tsconfig.build.json",
     "clean": "rm -rf coverage dist",
     "dev": "nodemon --ext ts,js,json,env  --exec \"pnpm ts-node src/index.ts\"",
-    "lint": "yarn eslint:fix",
+    "docker:build": "docker build -t api3/airseekerv2:latest -f docker/Dockerfile .",
+    "docker:run": "docker run -it --rm api3/airseekerv2:latest",
     "eslint:check": "eslint . --ext .js,.ts --max-warnings 0",
     "eslint:fix": "eslint . --ext .js,.ts --fix",
+    "lint": "yarn eslint:fix",
     "prepare": "husky install",
     "prettier:check": "prettier --check \"./**/*.{js,ts,md,json}\"",
     "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json}\"",
@@ -21,6 +23,10 @@
     "test": "jest",
     "tsc": "tsc --project ."
   },
+  "files": [
+    "dist",
+    "*.js"
+  ],
   "devDependencies": {
     "@api3/ois": "^2.2.0",
     "@types/jest": "^29.5.5",

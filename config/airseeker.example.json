@@ -26,5 +26,6 @@
       }
     }
   },
-  "fetchInterval": 10000
+  "fetchInterval": 10000,
+  "deviationThresholdCoefficient": 1
 }
