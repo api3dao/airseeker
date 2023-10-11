@@ -1,4 +1,4 @@
-import { runDataFetcher, setAxios, stopDataFetcher } from './data-fetcher';
+import { init, runDataFetcher, setAxios, stopDataFetcher } from './data-fetcher';
 import { localDataStore } from '../signed-data-store';
 
 describe('data fetcher', () => {
@@ -14,6 +14,8 @@ describe('data fetcher', () => {
   });
 
   it('retrieves signed data from urls', async () => {
+    await init();
+
     const mockAxios = jest.fn();
     setAxios(mockAxios);
 

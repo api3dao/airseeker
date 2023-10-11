@@ -7,14 +7,13 @@ import { Config } from '../config/schema';
 import { logger } from '../logger';
 import { signedApiResponseSchema } from '../types';
 import { localDataStore } from '../signed-data-store';
+import { getState, setState } from '../state';
 
 // Express handler/endpoint path: https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/server.ts#L33
 // Actual handler fn: https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/handlers.ts#L81
 
 const HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT = 10_000;
 const HTTP_SIGNED_DATA_API_HEADROOM = 1_000;
-
-let dataFetcherInterval: NodeJS.Timeout | undefined;
 
 // Useful for tests
 let axiosProd = axios;
@@ -26,7 +25,7 @@ export const setAxios = (customAxios: any) => {
  * Shuts down the intervals
  */
 export const stopDataFetcher = () => {
-  clearInterval(dataFetcherInterval);
+  clearInterval(getState().dataFetcherInterval);
 };
 
 const callSignedDataApi = async (url: string, whoAmI = 'unset') => {
@@ -70,12 +69,14 @@ const callSignedDataApi = async (url: string, whoAmI = 'unset') => {
 };
 
 export const runDataFetcher = async () => {
-  const config = await getConfig();
+  const state = getState();
+  const { config } = state!;
 
   const fetchInterval = config.fetchInterval * 1_000;
 
-  if (!dataFetcherInterval) {
-    dataFetcherInterval = setInterval(runDataFetcher, fetchInterval);
+  if (!state?.dataFetcherInterval) {
+    const dataFetcherInterval = setInterval(runDataFetcher, fetchInterval);
+    setState({ ...state, dataFetcherInterval });
   }
 
   const urls = uniq(
@@ -168,10 +169,20 @@ export const generateTestConfig = (): Config => {
   };
 };
 
-if (require.main === module) {
-  runDataFetcher().catch((error) => {
-    // eslint-disable-next-line no-console
-    console.trace(error);
-    process.exit(1);
+// this should probably be moved to test fixtures
+export const init = async () => {
+  const config = await getConfig();
+  setState({
+    config,
   });
+};
+
+if (require.main === module) {
+  init().then(() =>
+    runDataFetcher().catch((error) => {
+      // eslint-disable-next-line no-console
+      console.trace(error);
+      process.exit(1);
+    })
+  );
 }
