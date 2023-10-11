@@ -5,6 +5,7 @@ const { join } = require('path');
  * https://jestjs.io/docs/configuration
  */
 module.exports = {
+  projects: ['<rootDir>/jest-e2e.config.js', '<rootDir>/jest-unit.config.js'],
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',

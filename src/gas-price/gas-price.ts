@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { go } from '@api3/promise-utils';
 import { GasSettings } from '../config/schema';
 
 interface GasState {
@@ -57,11 +58,16 @@ export const updateGasPriceStore = async (chainId: string, rpcUrl: string, sanit
   });
 
   // Get the provider recommended gas price
-  const gasPrice = await provider.getGasPrice();
-  // Save the new provider recommended gas price to the state
-  setStoreGasPrices(chainId, sanitizationSamplingWindow, gasPrice);
+  const goGasPrice = await go(() => provider.getGasPrice(), { retries: 1, attemptTimeoutMs: 2_000 });
+  if (!goGasPrice.success) {
+    console.log(`Failed to get provider gas price. Error: ${goGasPrice.error.message}.`);
+    throw goGasPrice.error;
+  }
 
-  return gasPrice;
+  // Save the new provider recommended gas price to the state
+  setStoreGasPrices(chainId, sanitizationSamplingWindow, goGasPrice.data);
+
+  return goGasPrice.data;
 };
 
 export const airseekerV2ProviderRecommendedGasPrice = async (

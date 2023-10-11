@@ -9,7 +9,7 @@ import {
 } from './gas-price';
 
 const chainId = '31337';
-const rpcUrl = 'http://127.0.0.1:8090/';
+const rpcUrl = 'http://127.0.0.1:8545/';
 const gasSettings = {
   recommendedGasPriceMultiplier: 1.5,
   sanitizationSamplingWindow: 15,
