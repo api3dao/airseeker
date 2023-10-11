@@ -4,16 +4,14 @@ import axios from 'axios';
 import { uniq } from 'lodash';
 import { ethers } from 'ethers';
 import { Config } from '../config/schema';
-import { logger } from '../logger';
-import { signedApiResponseSchema } from '../types';
+import { signedApiResponseSchema, SignedData } from '../types';
 import { localDataStore } from '../signed-data-store';
 import { getState, setState } from '../state';
+import { logErrors } from '../logger';
+import { HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT, HTTP_SIGNED_DATA_API_HEADROOM } from '../constants';
 
 // Express handler/endpoint path: https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/server.ts#L33
 // Actual handler fn: https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/handlers.ts#L81
-
-const HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT = 10_000;
-const HTTP_SIGNED_DATA_API_HEADROOM = 1_000;
 
 // Useful for tests
 let axiosProd = axios;
@@ -22,13 +20,18 @@ export const setAxios = (customAxios: any) => {
 };
 
 /**
- * Shuts down the intervals
+ * Shuts down intervals
  */
 export const stopDataFetcher = () => {
   clearInterval(getState().dataFetcherInterval);
 };
 
-const callSignedDataApi = async (url: string, whoAmI = 'unset') => {
+/**
+ * Calls a remote signed data URL and inserts the result into the datastore
+ * @param url
+ * @param whoAmI
+ */
+const callSignedDataApi = async (url: string, whoAmI = 'unset'): Promise<SignedData[]> => {
   const result = await go(
     () =>
       axiosProd({
@@ -48,24 +51,25 @@ const callSignedDataApi = async (url: string, whoAmI = 'unset') => {
   );
 
   if (!result.success) {
-    logger.debug(`[${whoAmI}] HTTP call failed: ${result.error}`);
-    return;
+    throw new Error(`[${whoAmI}] HTTP call failed: ${result.error}`);
   }
 
   if (result.data.status !== 200) {
-    logger.debug(`[${whoAmI}] HTTP call failed with code ${result.data.status}: ${result.data.statusText}`);
-    return;
+    throw new Error(`[${whoAmI}] HTTP call failed with code ${result.data.status}: ${result.data.statusText}`);
   }
 
   const zodResult = signedApiResponseSchema.safeParse(result.data.data);
   if (!zodResult.success) {
-    logger.debug(`[${whoAmI}] Schema parse failed with error(s) ${JSON.stringify(zodResult.error, null, 2)}`);
-    return;
+    throw new Error(`[${whoAmI}] Schema parse failed with error(s) ${JSON.stringify(zodResult.error, null, 2)}`);
   }
 
   const payload = Object.values(zodResult.data.data);
 
-  payload.forEach(localDataStore.setStoreDataPoint);
+  if (!payload) {
+    throw new Error('Empty payload.');
+  }
+
+  return payload;
 };
 
 export const runDataFetcher = async () => {
@@ -89,11 +93,18 @@ export const runDataFetcher = async () => {
 
   return Promise.allSettled(
     urls.map((url, idx) =>
-      go(() => callSignedDataApi(url, idx.toString()), {
-        retries: 0,
-        totalTimeoutMs: fetchInterval + HTTP_SIGNED_DATA_API_HEADROOM,
-        attemptTimeoutMs: fetchInterval + HTTP_SIGNED_DATA_API_HEADROOM - 100,
-      })
+      go(
+        async () => {
+          const payload = await callSignedDataApi(url, idx.toString());
+
+          logErrors(await Promise.allSettled(payload.map(localDataStore.setStoreDataPoint)));
+        },
+        {
+          retries: 0,
+          totalTimeoutMs: fetchInterval + HTTP_SIGNED_DATA_API_HEADROOM,
+          attemptTimeoutMs: fetchInterval + HTTP_SIGNED_DATA_API_HEADROOM - 100,
+        }
+      )
     )
   );
 };

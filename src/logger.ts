@@ -14,6 +14,12 @@ const warn = (...args: any[]) =>
   // eslint-disable-next-line no-console
   console.warn(...args);
 
+export const logErrors = (promiseResults: PromiseSettledResult<any>[], additionalText = '') => {
+  promiseResults
+    .filter((result) => result.status === 'rejected')
+    .forEach((rejectedPromise) => error(additionalText, rejectedPromise));
+};
+
 export const logger = {
   debug,
   error,
