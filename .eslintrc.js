@@ -18,6 +18,8 @@ module.exports = {
   extends: ['./node_modules/@api3/commons/dist/eslint/universal', './node_modules/@api3/commons/dist/eslint/jest'],
   plugins: ['@typescript-eslint', 'import', 'jest'],
   rules: {
+    camelcase: 'off',
+
     // TypeScript
     '@typescript-eslint/ban-ts-comment': 'off',
     '@typescript-eslint/ban-ts-ignore': 'off',
@@ -61,6 +63,7 @@ module.exports = {
     semi: 'error',
 
     // Jest
+    'jest/prefer-strict-equal': 'off',
     'jest/valid-title': 'off', // Prevents using "<function-name>.name" as a test name
   },
 };

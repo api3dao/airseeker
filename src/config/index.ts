@@ -1,5 +1,5 @@
-import fs, { readFileSync } from 'fs';
-import { join } from 'path';
+import fs, { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { go } from '@api3/promise-utils';
 import dotenv from 'dotenv';
 import { configSchema } from './schema';
