@@ -1,6 +1,9 @@
 import { ethers } from 'ethers';
 import { go } from '@api3/promise-utils';
 import { GasSettings } from '../config/schema';
+import { loadConfig } from '../config';
+
+let gasPriceCollectorInterval: NodeJS.Timeout | undefined;
 
 interface GasState {
   gasPrices: { price: ethers.BigNumber; timestamp: number }[];
@@ -10,21 +13,18 @@ interface GasState {
 
 export const gasPriceStore: Record<string, GasState> = {};
 
-export const setStoreGasPrices = (chainId: string, sanitizationSamplingWindow: number, gasPrice: ethers.BigNumber) => {
-  if (!gasPriceStore[chainId])
-    gasPriceStore[chainId] = {
-      gasPrices: [],
-      lastUpdateTimestamp: 0,
-      lastUpdateNonce: 0,
-    };
+export const setStoreGasPrices = (chainId: string, gasPrice: ethers.BigNumber) => {
+  gasPriceStore[chainId]!.gasPrices = [
+    { price: gasPrice, timestamp: Date.now() },
+    ...gasPriceStore[chainId]!.gasPrices,
+  ];
+};
 
-  const newGasPrices = [{ price: gasPrice, timestamp: Date.now() }, ...gasPriceStore[chainId]!.gasPrices];
+export const clearExpiredStoreGasPrices = (chainId: string, sanitizationSamplingWindow: number) => {
   // Remove gasPrices older than the sanitizationSamplingWindow
-  const filteredNewGasPrices = newGasPrices.filter(
+  gasPriceStore[chainId]!.gasPrices = gasPriceStore[chainId]!.gasPrices.filter(
     (gasPrice) => gasPrice.timestamp >= Date.now() - sanitizationSamplingWindow * 60 * 1_000
   );
-
-  gasPriceStore[chainId]!.gasPrices = filteredNewGasPrices;
 };
 
 export const setLastTransactionDetails = (chainId: string, nonce: number) => {
@@ -51,7 +51,7 @@ export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => 
 export const multiplyGasPrice = (gasPrice: ethers.BigNumber, gasPriceMultiplier: number) =>
   gasPrice.mul(ethers.BigNumber.from(Math.round(gasPriceMultiplier * 100))).div(ethers.BigNumber.from(100));
 
-export const updateGasPriceStore = async (chainId: string, rpcUrl: string, sanitizationSamplingWindow: number) => {
+export const updateGasPriceStore = async (chainId: string, rpcUrl: string) => {
   const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
     chainId: parseInt(chainId),
     name: chainId,
@@ -66,7 +66,7 @@ export const updateGasPriceStore = async (chainId: string, rpcUrl: string, sanit
   }
 
   // Save the new provider recommended gas price to the state
-  setStoreGasPrices(chainId, sanitizationSamplingWindow, goGasPrice.data);
+  setStoreGasPrices(chainId, goGasPrice.data);
 
   return goGasPrice.data;
 };
@@ -85,13 +85,24 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
     scalingMultiplier,
   } = gasSettings;
 
+  // Initialize the gas store for the chain if not already present
+  if (!gasPriceStore[chainId])
+    gasPriceStore[chainId] = {
+      gasPrices: [],
+      lastUpdateTimestamp: 0,
+      lastUpdateNonce: 0,
+    };
+
+  // Clear expired gas prices from the store
+  clearExpiredStoreGasPrices(chainId, sanitizationSamplingWindow);
+
   // Get the configured percentile of historical gas prices before adding the new price
   const percentileGasPrice = getPercentile(
     sanitizationPercentile,
     gasPriceStore[chainId]!.gasPrices.map((gasPrice) => gasPrice.price)
   );
 
-  const gasPrice = await updateGasPriceStore(chainId, rpcUrl, sanitizationSamplingWindow);
+  const gasPrice = await updateGasPriceStore(chainId, rpcUrl);
 
   // Check if the next update is a retry of a pending transaction and if it has been pending longer than scalingWindow
   if (
@@ -110,3 +121,34 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
   // const multipliedGasPrice = multiplyGasPrice(sanitizedGasPrice, recommendedGasPriceMultiplier);
   return multiplyGasPrice(sanitizedGasPrice, recommendedGasPriceMultiplier);
 };
+
+export const runGasPriceCollector = async () => {
+  const config = await loadConfig();
+
+  const fetchInterval = /*config.fetchInterval*/ 30 * 1_000;
+
+  if (!gasPriceCollectorInterval) {
+    gasPriceCollectorInterval = setInterval(runGasPriceCollector, fetchInterval);
+  }
+
+  await Promise.all(
+    Object.entries(config.chains).map(([chainId, chain]) =>
+      go(
+        async () =>
+          await airseekerV2ProviderRecommendedGasPrice(
+            chainId,
+            Object.values(chain.providers)[0]!.url,
+            chain.gasSettings
+          )
+      )
+    )
+  );
+};
+
+if (require.main === module) {
+  runGasPriceCollector().catch((error) => {
+    // eslint-disable-next-line no-console
+    console.trace(error);
+    process.exit(1);
+  });
+}
