@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@api3/airnode-protocol-v1": "^2.10.0",
+    "@api3/commons": "^0.2.0",
     "@api3/promise-utils": "^0.4.0",
     "dotenv": "^16.3.1",
     "ethers": "^5.7.2",
@@ -41,8 +42,8 @@
     "build": "tsc --project tsconfig.build.json",
     "clean": "rm -rf coverage dist",
     "dev": "nodemon --ext ts,js,json,env  --exec \"pnpm ts-node src/index.ts\"",
-    "eslint:check": "eslint . --ext .js,.ts --max-warnings 0",
-    "eslint:fix": "eslint . --ext .js,.ts --fix",
+    "eslint:check": "eslint --report-unused-disable-directives --cache --ext js,ts . --max-warnings 0",
+    "eslint:fix": "pnpm run eslint:check --fix",
     "prettier:check": "prettier --check \"./**/*.{js,ts,md,json}\"",
     "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json}\"",
     "test": "jest",
