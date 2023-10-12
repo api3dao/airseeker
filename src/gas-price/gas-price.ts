@@ -154,6 +154,7 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
 export const runGasPriceCollector = async () => {
   const config = await loadConfig();
 
+  // TODO: new config gasFetchInterval? Global or chain level?
   const fetchInterval = /*config.fetchInterval*/ 30 * 1_000;
 
   if (!gasPriceCollectorInterval) {
@@ -166,6 +167,7 @@ export const runGasPriceCollector = async () => {
         async () =>
           await airseekerV2ProviderRecommendedGasPrice(
             chainId,
+            // TODO: what to do with many providers?
             Object.values(chain.providers)[0]!.url,
             chain.gasSettings
           )
