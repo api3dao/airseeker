@@ -37,7 +37,7 @@ const callSignedDataApi = async (url: string, whoAmI = 'unset'): Promise<SignedD
       axiosProd({
         method: 'get',
         timeout: HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT - HTTP_SIGNED_DATA_API_HEADROOM / 2,
-        url: `https://pool.nodary.io/0xC04575A2773Da9Cd23853A69694e02111b2c4182`, // TODO ignore url for testing
+        url: url.indexOf('c52E') ? url : `https://pool.nodary.io/0xC04575A2773Da9Cd23853A69694e02111b2c4182`, // TODO ignore url for testing
         headers: {
           Accept: 'application/json',
           // TODO add API key?
@@ -122,7 +122,7 @@ const getConfig = async () => {
 // https://pool.nodary.io/0xC04575A2773Da9Cd23853A69694e02111b2c4182
 export const generateTestConfig = (): Config => {
   const airnodeToSignedApiUrl = {
-    '0xC04575A2773Da9Cd23853A69694e02111b2c4182': 'https://pool.nodary.io',
+    '0xC04575A2773Da9Cd23853A69694e02111b2c4182': 'https://pool.nodary.io', // all these (except last) have stale data
     '0xC04575A2773Da9Cd23853A69694e02111b2c4183': 'https://pool.nodary.io',
     '0xC04575A2773Da9Cd23853A69694e02111b2c4184': 'https://pool.nodary.io',
     '0xC04575A2773Da9Cd23853A69694e02111b2c4185': 'https://pool.nodary.io',
@@ -131,6 +131,7 @@ export const generateTestConfig = (): Config => {
     '0xC04575A2773Da9Cd23853A69694e02111b2c4188': 'https://pool.nodary.io',
     '0xC04575A2773Da9Cd23853A69694e02111b2c4189': 'https://pool.nodary.io',
     '0xC04575A2773Da9Cd23853A69694e02111b2c418A': 'https://pool.nodary.io',
+    '0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4': 'https://pool.nodary.io', // this contains fresh data
   };
 
   const dataFeedIdToBeacons = Object.fromEntries(
