@@ -62,6 +62,6 @@ describe('data fetcher', () => {
 
     await stopDataFetcher();
 
-    expect(setStoreDataPointSpy).toHaveBeenCalledTimes(27);
+    expect(setStoreDataPointSpy).toHaveBeenCalledTimes(30);
   });
 });
