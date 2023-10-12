@@ -13,6 +13,11 @@ interface GasState {
 
 export const gasPriceStore: Record<string, GasState> = {};
 
+/**
+ * Saves a gas price into the store.
+ * @param chainId
+ * @param gasPrice
+ */
 export const setStoreGasPrices = (chainId: string, gasPrice: ethers.BigNumber) => {
   gasPriceStore[chainId]!.gasPrices = [
     { price: gasPrice, timestamp: Date.now() },
@@ -20,6 +25,11 @@ export const setStoreGasPrices = (chainId: string, gasPrice: ethers.BigNumber) =
   ];
 };
 
+/**
+ * Removes gas prices where the timestamp is older than sanitizationSamplingWindow from the store.
+ * @param chainId
+ * @param sanitizationSamplingWindow
+ */
 export const clearExpiredStoreGasPrices = (chainId: string, sanitizationSamplingWindow: number) => {
   // Remove gasPrices older than the sanitizationSamplingWindow
   gasPriceStore[chainId]!.gasPrices = gasPriceStore[chainId]!.gasPrices.filter(
@@ -27,6 +37,11 @@ export const clearExpiredStoreGasPrices = (chainId: string, sanitizationSampling
   );
 };
 
+/**
+ * Saves last transaction details into the store.
+ * @param chainId
+ * @param nonce
+ */
 export const setLastTransactionDetails = (chainId: string, nonce: number) => {
   if (!gasPriceStore[chainId])
     gasPriceStore[chainId] = {
@@ -51,6 +66,12 @@ export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => 
 export const multiplyGasPrice = (gasPrice: ethers.BigNumber, gasPriceMultiplier: number) =>
   gasPrice.mul(ethers.BigNumber.from(Math.round(gasPriceMultiplier * 100))).div(ethers.BigNumber.from(100));
 
+/**
+ * Fetches the provider recommended gas price and saves it in the store.
+ * @param chainId
+ * @param rpcUrl
+ * @returns {ethers.BigNumber}
+ */
 export const updateGasPriceStore = async (chainId: string, rpcUrl: string) => {
   const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
     chainId: parseInt(chainId),
@@ -71,6 +92,14 @@ export const updateGasPriceStore = async (chainId: string, rpcUrl: string) => {
   return goGasPrice.data;
 };
 
+/**
+ * Fetches the provider recommended gas price and saves it in the store. Clears out expired gas prices and calculates the gas price to be used in a transaction based on sanitization and scaling settings.
+ * @param chainId
+ * @param rpcUrl
+ * @param gasSettings
+ * @param nonce
+ * @returns {ethers.BigNumber}
+ */
 export const airseekerV2ProviderRecommendedGasPrice = async (
   chainId: string,
   rpcUrl: string,
