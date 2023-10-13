@@ -153,8 +153,7 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
 export const runGasPriceCollector = async () => {
   const config = await loadConfig();
 
-  // TODO: new config gasFetchInterval? Global or chain level?
-  const fetchInterval = /*config.fetchInterval*/ 30 * 1_000;
+  const fetchInterval = config.gasCollectorInterval * 1_000;
 
   if (!gasPriceCollectorInterval) {
     gasPriceCollectorInterval = setInterval(runGasPriceCollector, fetchInterval);

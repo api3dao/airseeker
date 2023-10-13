@@ -110,6 +110,7 @@ export const configSchema = z
     sponsorWalletMnemonic: z.string().refine((mnemonic) => ethers.utils.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
     chains: chainsSchema,
     deviationThresholdCoefficient: z.number().optional().default(1),
+    gasCollectorInterval: z.number().optional().default(30),
   })
   .strict();
 
