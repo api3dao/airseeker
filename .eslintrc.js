@@ -7,6 +7,7 @@ module.exports = {
   },
   parser: '@typescript-eslint/parser',
   parserOptions: {
+    project: ['./tsconfig.json'],
     ecmaVersion: 11,
     sourceType: 'module',
   },
@@ -14,16 +15,11 @@ module.exports = {
     Atomics: 'readonly',
     SharedArrayBuffer: 'readonly',
   },
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/eslint-recommended',
-    'plugin:import/recommended',
-    'plugin:import/typescript',
-    'plugin:jest/recommended',
-  ],
+  extends: ['./node_modules/@api3/commons/dist/eslint/universal', './node_modules/@api3/commons/dist/eslint/jest'],
   plugins: ['@typescript-eslint', 'import', 'jest'],
   rules: {
+    camelcase: 'off',
+
     // TypeScript
     '@typescript-eslint/ban-ts-comment': 'off',
     '@typescript-eslint/ban-ts-ignore': 'off',
@@ -60,13 +56,14 @@ module.exports = {
 
     // ESLint
     'comma-dangle': ['error', 'only-multiline'],
+    eqeqeq: ['error', 'smart'],
     indent: 'off',
     'no-console': 'error',
     'no-useless-escape': 'off',
     semi: 'error',
-    eqeqeq: ['error', 'smart'],
 
     // Jest
+    'jest/prefer-strict-equal': 'off',
     'jest/valid-title': 'off', // Prevents using "<function-name>.name" as a test name
   },
 };
