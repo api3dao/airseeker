@@ -147,7 +147,6 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
   // TODO should we check for a minimum length of state gas prices used in the calculation?
   const sanitizedGasPrice = percentileGasPrice && gasPrice.gt(percentileGasPrice) ? percentileGasPrice : gasPrice;
 
-  // const multipliedGasPrice = multiplyGasPrice(sanitizedGasPrice, recommendedGasPriceMultiplier);
   return multiplyGasPrice(sanitizedGasPrice, recommendedGasPriceMultiplier);
 };
 
@@ -163,14 +162,13 @@ export const runGasPriceCollector = async () => {
 
   await Promise.all(
     Object.entries(config.chains).map(([chainId, chain]) =>
-      go(
-        async () =>
-          await airseekerV2ProviderRecommendedGasPrice(
-            chainId,
-            // TODO: what to do with many providers?
-            Object.values(chain.providers)[0]!.url,
-            chain.gasSettings
-          )
+      go(() =>
+        airseekerV2ProviderRecommendedGasPrice(
+          chainId,
+          // TODO: what to do with many providers?
+          Object.values(chain.providers)[0]!.url,
+          chain.gasSettings
+        )
       )
     )
   );

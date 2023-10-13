@@ -46,11 +46,11 @@ export const temporaryDapiDataRegistrySchema = z.object({
 export type TemporaryDapiDataRegistry = z.infer<typeof temporaryDapiDataRegistrySchema>;
 
 export const gasSettingsSchema = z.object({
-  recommendedGasPriceMultiplier: z.number(),
-  sanitizationSamplingWindow: z.number(),
-  sanitizationPercentile: z.number(),
-  scalingWindow: z.number(),
-  scalingMultiplier: z.number(),
+  recommendedGasPriceMultiplier: z.number().positive(),
+  sanitizationSamplingWindow: z.number().positive(),
+  sanitizationPercentile: z.number().positive(),
+  scalingWindow: z.number().positive(),
+  scalingMultiplier: z.number().positive(),
 });
 
 export type GasSettings = z.infer<typeof gasSettingsSchema>;
