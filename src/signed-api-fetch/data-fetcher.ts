@@ -74,7 +74,7 @@ const callSignedDataApi = async (url: string, whoAmI = 'unset'): Promise<SignedD
 
 export const runDataFetcher = async () => {
   const state = getState();
-  const { config } = state!;
+  const { config } = state;
 
   const fetchInterval = config.fetchInterval * 1_000;
 

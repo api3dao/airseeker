@@ -5,7 +5,7 @@ import { logger } from '../logger';
 
 // A simple in-memory data store implementation - the interface allows for swapping in a remote key/value store
 
-const signedApiStore: Record<AirnodeAddress, Record<TemplateId, LocalSignedData>> = {};
+let signedApiStore: Record<AirnodeAddress, Record<TemplateId, LocalSignedData>> = {};
 let pruner: NodeJS.Timeout | undefined;
 
 export const checkMessage = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
@@ -79,9 +79,7 @@ const getStoreDataPoint = async (airnode: AirnodeAddress, templateId: TemplateId
   (signedApiStore[airnode] ?? {})[templateId];
 
 const clear = async () => {
-  Object.keys(signedApiStore).forEach((airnodeAddress) => {
-    delete signedApiStore[airnodeAddress];
-  });
+  signedApiStore = {};
 };
 
 const prune = async () => {
