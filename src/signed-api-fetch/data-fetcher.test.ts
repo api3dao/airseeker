@@ -1,23 +1,17 @@
-import { init, runDataFetcher, setAxios, stopDataFetcher } from './data-fetcher';
+import axios from 'axios';
+import { runDataFetcher, stopDataFetcher } from './data-fetcher';
 import { localDataStore } from '../signed-data-store';
+import { init } from '../../test/fixtures/mock-config';
 
 describe('data fetcher', () => {
-  const mockAxios = jest.fn();
-
-  beforeAll(() => {
-    setAxios(mockAxios);
-  });
-
   beforeEach(() => {
-    mockAxios.mockReset();
     localDataStore.clear();
   });
 
   it('retrieves signed data from urls', async () => {
     await init();
 
-    const mockAxios = jest.fn();
-    setAxios(mockAxios);
+    const mockAxios = jest.spyOn(axios, 'post');
 
     const setStoreDataPointSpy = jest.spyOn(localDataStore, 'setStoreDataPoint');
 
@@ -62,6 +56,6 @@ describe('data fetcher', () => {
 
     await stopDataFetcher();
 
-    expect(setStoreDataPointSpy).toHaveBeenCalledTimes(30);
+    expect(setStoreDataPointSpy).toHaveBeenCalledTimes(142);
   });
 });
