@@ -3,6 +3,9 @@ import { runDataFetcher, stopDataFetcher } from './data-fetcher';
 import * as localDataStore from '../signed-data-store';
 import { init } from '../../test/fixtures/mock-config';
 
+const mockedAxios = axios as jest.MockedFunction<typeof axios>;
+jest.mock('axios');
+
 describe('data fetcher', () => {
   beforeEach(() => {
     localDataStore.clear();
@@ -11,11 +14,9 @@ describe('data fetcher', () => {
   it('retrieves signed data from urls', async () => {
     await init();
 
-    const mockAxios = jest.spyOn(axios, 'post');
-
     const setStoreDataPointSpy = jest.spyOn(localDataStore, 'setStoreDataPoint');
 
-    mockAxios.mockImplementation(async () =>
+    mockedAxios.mockResolvedValue(
       Promise.resolve({
         status: 200,
         data: {
@@ -56,6 +57,7 @@ describe('data fetcher', () => {
 
     await stopDataFetcher();
 
-    expect(setStoreDataPointSpy).toHaveBeenCalledTimes(142);
+    expect(mockedAxios).toHaveBeenCalledTimes(2);
+    expect(setStoreDataPointSpy).toHaveBeenCalledTimes(6);
   });
 });

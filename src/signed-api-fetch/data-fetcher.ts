@@ -21,7 +21,6 @@ export const stopDataFetcher = () => {
 /**
  * Calls a remote signed data URL and inserts the result into the datastore
  * @param url
- * @param whoAmI
  */
 const callSignedDataApi = async (url: string): Promise<SignedData[]> => {
   const result = await go(

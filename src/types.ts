@@ -5,7 +5,6 @@ export type AirnodeAddress = EvmAddress;
 export type TemplateId = EvmId;
 
 // Taken from https://github.com/api3dao/signed-api/blob/main/packages/api/src/schema.ts
-// TODO should be imported
 export const signedDataSchema = z.object({
   airnode: evmAddressSchema,
   templateId: evmIdSchema,
