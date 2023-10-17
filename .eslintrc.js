@@ -23,6 +23,9 @@ module.exports = {
     // TODO this can be removed after removing non-camelcased config values
     camelcase: 'off',
 
+    // Typescript
+    '@typescript-eslint/no-var-requires': 'off',
+
     // Jest
     'jest/no-hooks': 'off',
   },
