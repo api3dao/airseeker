@@ -45,12 +45,12 @@ export const clearExpiredStoreGasPrices = (chainId: string, sanitizationSampling
  */
 export const setLastTransactionDetails = (chainId: string, nonce: number) => {
   if (!gasPriceStore[chainId]) {
- gasPriceStore[chainId] = {
+    gasPriceStore[chainId] = {
       gasPrices: [],
       lastUpdateTimestamp: 0,
       lastUpdateNonce: 0,
-    }; 
-}
+    };
+  }
 
   gasPriceStore[chainId]!.lastUpdateTimestamp = Date.now();
   gasPriceStore[chainId]!.lastUpdateNonce = nonce;
@@ -118,12 +118,12 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
 
   // Initialize the gas store for the chain if not already present
   if (!gasPriceStore[chainId]) {
- gasPriceStore[chainId] = {
+    gasPriceStore[chainId] = {
       gasPrices: [],
       lastUpdateTimestamp: 0,
       lastUpdateNonce: 0,
-    }; 
-}
+    };
+  }
 
   // Clear expired gas prices from the store
   clearExpiredStoreGasPrices(chainId, sanitizationSamplingWindow);
