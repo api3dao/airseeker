@@ -17,4 +17,4 @@ Object.defineProperty = function (object, name, meta) {
 };
 
 // Disable logger if it is not explicitly set to true.
-process.env.LOGGER_ENABLED = process.env.LOGGER_ENABLED || 'false';
+process.env.LOGGER_ENABLED = process.env.LOGGER_ENABLED ?? 'false';

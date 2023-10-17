@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { ethers } from 'ethers';
 import { references } from '@api3/airnode-protocol-v1';
 
-export const evmAddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Must be a valid EVM address');
+export const evmAddressSchema = z.string().regex(/^0x[\dA-Fa-f]{40}$/, 'Must be a valid EVM address');
 
-export const evmIdSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Must be a valid EVM hash');
+export const evmIdSchema = z.string().regex(/^0x[\dA-Fa-f]{64}$/, 'Must be a valid EVM hash');
 
 export type EvmAddress = z.infer<typeof evmAddressSchema>;
 export type EvmId = z.infer<typeof evmIdSchema>;
@@ -74,7 +74,7 @@ export const chainsSchema = z.record(optionalChainSchema).transform((chains, ctx
     Object.entries(chains).map(([chainId, chain]) => {
       const { contracts } = chain;
       const parsedContracts = contractsSchema.safeParse({
-        Api3ServerV1: contracts?.Api3ServerV1 ? contracts.Api3ServerV1 : references.Api3ServerV1[chainId],
+        Api3ServerV1: contracts?.Api3ServerV1 ?? references.Api3ServerV1[chainId],
       });
       if (!parsedContracts.success) {
         ctx.addIssue({

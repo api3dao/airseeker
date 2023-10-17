@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import template from 'lodash/template';
+import { template } from 'lodash';
 import { goSync } from '@api3/promise-utils';
 
 const secretsSchema = z.record(z.string());
@@ -10,10 +10,12 @@ export const parseSecrets = (secrets: unknown) => {
 
 // Regular expression that does not match anything, ensuring no escaping or interpolation happens
 // https://github.com/lodash/lodash/blob/4.17.15/lodash.js#L199
+// eslint-disable-next-line prefer-named-capture-group
 const NO_MATCH_REGEXP = /($^)/;
 // Regular expression matching ES template literal delimiter (${}) with escaping
 // https://github.com/lodash/lodash/blob/4.17.15/lodash.js#L175
-const ES_MATCH_REGEXP = /\$\{([^\\}]*(?:\\.[^\\}]*)*)\}/g;
+// eslint-disable-next-line prefer-named-capture-group
+const ES_MATCH_REGEXP = /\${([^\\}]*(?:\\.[^\\}]*)*)}/g;
 
 export const interpolateSecrets = (config: unknown, secrets: Record<string, string | undefined>) => {
   const goInterpolated = goSync(() =>

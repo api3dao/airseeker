@@ -1,4 +1,4 @@
-const { join } = require('path');
+const { join } = require('node:path');
 
 /*
  * For a detailed explanation regarding each configuration property and type check, visit:
