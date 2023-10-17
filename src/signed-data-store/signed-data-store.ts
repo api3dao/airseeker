@@ -62,7 +62,7 @@ const setStoreDataPoint = async (signedData: SignedData) => {
 
   const existingValue = signedApiStore[airnode]![templateId];
   if (existingValue && existingValue.timestamp >= timestamp) {
-    logger.debug('Dropping sample at data store as not fresh.');
+    logger.debug('Skipping store update. The existing store value is fresher.');
     return;
   }
 
