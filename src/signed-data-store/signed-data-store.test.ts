@@ -1,16 +1,17 @@
 import { BigNumber, ethers } from 'ethers';
 import * as localDataStore from './signed-data-store';
 import { checkSignedDataIntegrity } from './signed-data-store';
-import { SignedData } from '../types';
 import { generateRandomBytes32, getTestSigner, signData } from '../utils';
+import type { SignedData } from '../types';
 
 describe('datastore', () => {
   let testDataPoint: SignedData;
 
+  // eslint-disable-next-line jest/no-hooks
   beforeAll(async () => {
     const signer = getTestSigner();
     const templateId = generateRandomBytes32();
-    const timestamp = Math.floor((Date.now() - 25 * 60 * 60 * 1_000) / 1_000).toString();
+    const timestamp = Math.floor((Date.now() - 25 * 60 * 60 * 1000) / 1000).toString();
     const airnode = signer.address;
     const encodedValue = ethers.utils.defaultAbiCoder.encode(['int256'], [BigNumber.from(1)]);
 
@@ -23,6 +24,7 @@ describe('datastore', () => {
     };
   });
 
+  // eslint-disable-next-line jest/no-hooks
   beforeEach(localDataStore.clear);
 
   it('stores and gets a data point', async () => {
@@ -50,7 +52,7 @@ describe('datastore', () => {
   it('checks that the timestamp on signed data is not in the future', async () => {
     const signer = getTestSigner();
     const templateId = generateRandomBytes32();
-    const timestamp = Math.floor((Date.now() + 61 * 60 * 1_000) / 1_000).toString();
+    const timestamp = Math.floor((Date.now() + 61 * 60 * 1000) / 1000).toString();
     const airnode = signer.address;
     const encodedValue = ethers.utils.defaultAbiCoder.encode(['int256'], [BigNumber.from(1)]);
 
@@ -69,7 +71,7 @@ describe('datastore', () => {
   it('checks the signature on signed data', async () => {
     const signer = getTestSigner();
     const templateId = generateRandomBytes32();
-    const timestamp = Math.floor((Date.now() + 60 * 60 * 1_000) / 1_000).toString();
+    const timestamp = Math.floor((Date.now() + 60 * 60 * 1000) / 1000).toString();
     const airnode = ethers.Wallet.createRandom().address;
     const encodedValue = ethers.utils.defaultAbiCoder.encode(['int256'], [BigNumber.from(1)]);
 

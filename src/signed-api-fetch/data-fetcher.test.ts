@@ -7,12 +7,13 @@ const mockedAxios = axios as jest.MockedFunction<typeof axios>;
 jest.mock('axios');
 
 describe('data fetcher', () => {
-  beforeEach(() => {
-    localDataStore.clear();
+  // eslint-disable-next-line jest/no-hooks
+  beforeEach(async () => {
+    await localDataStore.clear();
   });
 
   it('retrieves signed data from urls', async () => {
-    await init();
+    init();
 
     const setStoreDataPointSpy = jest.spyOn(localDataStore, 'setStoreDataPoint');
 
@@ -55,7 +56,7 @@ describe('data fetcher', () => {
 
     await expect(dataFetcherPromise).resolves.toBeDefined();
 
-    await stopDataFetcher();
+    stopDataFetcher();
 
     expect(mockedAxios).toHaveBeenCalledTimes(2);
     expect(setStoreDataPointSpy).toHaveBeenCalledTimes(6);

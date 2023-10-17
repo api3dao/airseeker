@@ -4,9 +4,7 @@ const debug = (...args: any[]) =>
 const error = (...args: any[]) =>
   // eslint-disable-next-line no-console
   console.error(...args);
-const info = (...args: any[]) =>
-  // eslint-disable-next-line no-console
-  console.info(...args);
+const info = (...args: any[]) => console.info(...args);
 const log = (...args: any[]) =>
   // eslint-disable-next-line no-console
   console.log(...args);
@@ -15,9 +13,8 @@ const warn = (...args: any[]) =>
   console.warn(...args);
 
 export const logErrors = (promiseResults: PromiseSettledResult<any>[], additionalText = '') => {
-  promiseResults
-    .filter((result) => result.status === 'rejected')
-    .forEach((rejectedPromise) => error(additionalText, rejectedPromise));
+  for (const rejectedPromise of promiseResults.filter((result) => result.status === 'rejected'))
+    error(additionalText, rejectedPromise);
 };
 
 export const logger = {

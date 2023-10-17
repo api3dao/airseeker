@@ -1,9 +1,9 @@
-import { Config } from '../config/schema';
+import type { Config } from '../config/schema';
 
-type State = {
+interface State {
   config: Config;
   dataFetcherInterval?: NodeJS.Timeout;
-};
+}
 
 let state: State | undefined;
 

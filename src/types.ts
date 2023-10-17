@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EvmAddress, evmAddressSchema, EvmId, evmIdSchema } from './config/schema';
+import { type EvmAddress, evmAddressSchema, type EvmId, evmIdSchema } from './config/schema';
 
 export type AirnodeAddress = EvmAddress;
 export type TemplateId = EvmId;
@@ -21,13 +21,13 @@ export const signedApiResponseSchema = z.object({
   data: z.record(signedDataSchema),
 });
 
-export type LocalSignedData = Pick<SignedData, 'timestamp' | 'encodedValue' | 'signature'>;
+export type LocalSignedData = Pick<SignedData, 'encodedValue' | 'signature' | 'timestamp'>;
 
-export type DataStore = {
+export interface DataStore {
   init: () => Promise<void>;
   prune: () => Promise<void>;
   clear: () => Promise<void>;
   shutdown: () => Promise<void>;
   setStoreDataPoint: (signedData: SignedData) => Promise<void>;
   getStoreDataPoint: (airnode: AirnodeAddress, templateId: TemplateId) => Promise<LocalSignedData | undefined>;
-};
+}

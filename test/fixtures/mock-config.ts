@@ -1,14 +1,12 @@
 import { ethers } from 'ethers';
-import { Config } from '../../src/config/schema';
 import { setState } from '../../src/state';
 import { runDataFetcher } from '../../src/signed-api-fetch';
+import type { Config } from '../../src/config/schema';
 
 /**
  * A stub to retrieve the latest config
  */
-const getConfig = async () => {
-  return generateTestConfig();
-};
+const getConfig = () => generateTestConfig();
 
 // This is not a secret
 // https://pool.nodary.io/0xC04575A2773Da9Cd23853A69694e02111b2c4182
@@ -48,19 +46,18 @@ export const generateTestConfig = (): Config => ({
 });
 
 // this should probably be moved to test fixtures
-export const init = async () => {
-  const config = await getConfig();
+export const init = () => {
+  const config = getConfig();
   setState({
     config,
   });
 };
 
 if (require.main === module) {
-  init().then(() =>
-    runDataFetcher().catch((error) => {
-      // eslint-disable-next-line no-console
-      console.trace(error);
-      process.exit(1);
-    })
-  );
+  init();
+  // eslint-disable-next-line unicorn/prefer-top-level-await
+  runDataFetcher().catch((error) => {
+    // eslint-disable-next-line no-console
+    console.trace(error);
+  });
 }

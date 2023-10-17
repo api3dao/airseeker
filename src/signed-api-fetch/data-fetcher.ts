@@ -1,8 +1,8 @@
-import { clearInterval } from 'timers';
+import { clearInterval } from 'node:timers';
 import { go } from '@api3/promise-utils';
 import axios from 'axios';
 import { uniq } from 'lodash';
-import { signedApiResponseSchema, SignedData } from '../types';
+import { signedApiResponseSchema, type SignedData } from '../types';
 import * as localDataStore from '../signed-data-store';
 import { getState, setState } from '../state';
 import { logErrors } from '../logger';
@@ -24,7 +24,7 @@ export const stopDataFetcher = () => {
  */
 const callSignedDataApi = async (url: string): Promise<SignedData[]> => {
   const result = await go(
-    () =>
+    async () =>
       axios({
         method: 'get',
         timeout: HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT - HTTP_SIGNED_DATA_API_HEADROOM / 2,
@@ -52,11 +52,11 @@ const callSignedDataApi = async (url: string): Promise<SignedData[]> => {
 
 export const runDataFetcher = async () => {
   const state = getState();
-  const { config } = state;
+  const { config, dataFetcherInterval } = state;
 
-  const fetchInterval = config.fetchInterval * 1_000;
+  const fetchInterval = config.fetchInterval * 1000;
 
-  if (!state.dataFetcherInterval) {
+  if (!dataFetcherInterval) {
     const dataFetcherInterval = setInterval(runDataFetcher, fetchInterval);
     setState({ ...state, dataFetcherInterval });
   }
@@ -70,12 +70,14 @@ export const runDataFetcher = async () => {
   );
 
   return Promise.allSettled(
-    urls.map((url) =>
+    urls.map(async (url) =>
       go(
         async () => {
           const payload = await callSignedDataApi(url);
 
-          logErrors(await Promise.allSettled(payload.map(localDataStore.setStoreDataPoint)));
+          logErrors(
+            await Promise.allSettled(payload.map(async (element) => localDataStore.setStoreDataPoint(element)))
+          );
         },
         {
           retries: 0,
