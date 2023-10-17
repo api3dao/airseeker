@@ -13,8 +13,9 @@ const warn = (...args: any[]) =>
   console.warn(...args);
 
 export const logErrors = (promiseResults: PromiseSettledResult<any>[], additionalText = '') => {
-  for (const rejectedPromise of promiseResults.filter((result) => result.status === 'rejected'))
+  for (const rejectedPromise of promiseResults.filter((result) => result.status === 'rejected')) {
     error(additionalText, rejectedPromise);
+  }
 };
 
 export const logger = {
