@@ -7,26 +7,25 @@
     "node": "^18.14.0",
     "pnpm": "^8.8.0"
   },
-  "scripts": {
-    "build": "tsc --project tsconfig.build.json",
-    "clean": "rm -rf coverage dist",
-    "dev": "nodemon --ext ts,js,json,env  --exec \"pnpm ts-node src/index.ts\"",
-    "docker:build": "docker build -t api3/airseekerv2:latest -f docker/Dockerfile .",
-    "docker:run": "docker run -it --rm api3/airseekerv2:latest",
-    "eslint:check": "eslint . --ext .js,.ts --max-warnings 0",
-    "eslint:fix": "eslint . --ext .js,.ts --fix",
-    "lint": "yarn eslint:fix",
-    "prepare": "husky install",
-    "prettier:check": "prettier --check \"./**/*.{js,ts,md,json}\"",
-    "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json}\"",
-    "prettier:write": "yarn prettier:fix",
-    "test": "jest",
-    "tsc": "tsc --project ."
-  },
   "files": [
     "dist",
     "*.js"
   ],
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "clean": "rm -rf coverage dist",
+    "dev": "nodemon --ext ts,js,json,env  --exec \"pnpm ts-node src/index.ts\"",
+    "eslint:check": "eslint --report-unused-disable-directives --cache --ext js,ts . --max-warnings 0",
+    "eslint:fix": "pnpm run eslint:check --fix",
+    "lint": "pnpm eslint:check",
+    "prettier:check": "prettier --check \"./**/*.{js,ts,md,json}\"",
+    "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json}\"",
+    "prettier:write": "prettier --write \"./**/*.{js,ts,md,json}\"",
+    "test": "jest",
+    "tsc": "tsc --project .",
+    "docker:build": "docker build -t api3/airseekerv2:latest -f docker/Dockerfile .",
+    "docker:run": "docker run -it --rm api3/airseekerv2:latest"
+  },
   "devDependencies": {
     "@api3/ois": "^2.2.0",
     "@types/jest": "^29.5.5",
