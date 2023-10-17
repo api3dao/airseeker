@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { ethers } from 'ethers';
 import { references } from '@api3/airnode-protocol-v1';
+import { ethers } from 'ethers';
+import { z } from 'zod';
 
 export const evmAddressSchema = z.string().regex(/^0x[\dA-Fa-f]{40}$/, 'Must be a valid EVM address');
 

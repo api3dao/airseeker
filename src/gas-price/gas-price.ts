@@ -1,7 +1,8 @@
-import { ethers } from 'ethers';
 import { go } from '@api3/promise-utils';
-import { GasSettings } from '../config/schema';
+import { ethers } from 'ethers';
+
 import { loadConfig } from '../config';
+import type { GasSettings } from '../config/schema';
 
 let gasPriceCollectorInterval: NodeJS.Timeout | undefined;
 
@@ -33,7 +34,7 @@ export const setStoreGasPrices = (chainId: string, gasPrice: ethers.BigNumber) =
 export const clearExpiredStoreGasPrices = (chainId: string, sanitizationSamplingWindow: number) => {
   // Remove gasPrices older than the sanitizationSamplingWindow
   gasPriceStore[chainId]!.gasPrices = gasPriceStore[chainId]!.gasPrices.filter(
-    (gasPrice) => gasPrice.timestamp >= Date.now() - sanitizationSamplingWindow * 60 * 1_000
+    (gasPrice) => gasPrice.timestamp >= Date.now() - sanitizationSamplingWindow * 60 * 1000
   );
 };
 
@@ -43,12 +44,13 @@ export const clearExpiredStoreGasPrices = (chainId: string, sanitizationSampling
  * @param nonce
  */
 export const setLastTransactionDetails = (chainId: string, nonce: number) => {
-  if (!gasPriceStore[chainId])
-    gasPriceStore[chainId] = {
+  if (!gasPriceStore[chainId]) {
+ gasPriceStore[chainId] = {
       gasPrices: [],
       lastUpdateTimestamp: 0,
       lastUpdateNonce: 0,
-    };
+    }; 
+}
 
   gasPriceStore[chainId]!.lastUpdateTimestamp = Date.now();
   gasPriceStore[chainId]!.lastUpdateNonce = nonce;
@@ -56,7 +58,7 @@ export const setLastTransactionDetails = (chainId: string, nonce: number) => {
 
 // TODO: Copied from airnode-utilities, should we import instead?
 export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => {
-  if (!array.length) return;
+  if (array.length === 0) return;
 
   array.sort((a, b) => (a.gt(b) ? 1 : -1));
   const index = Math.ceil(array.length * (percentile / 100)) - 1;
@@ -74,12 +76,12 @@ export const multiplyGasPrice = (gasPrice: ethers.BigNumber, gasPriceMultiplier:
  */
 export const updateGasPriceStore = async (chainId: string, rpcUrl: string) => {
   const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
-    chainId: parseInt(chainId),
+    chainId: Number.parseInt(chainId, 10),
     name: chainId,
   });
 
   // Get the provider recommended gas price
-  const goGasPrice = await go(() => provider.getGasPrice(), { retries: 1, attemptTimeoutMs: 2_000 });
+  const goGasPrice = await go(async () => provider.getGasPrice(), { retries: 1, attemptTimeoutMs: 2000 });
   if (!goGasPrice.success) {
     // eslint-disable-next-line no-console
     console.log(`Failed to get provider gas price. Error: ${goGasPrice.error.message}.`);
@@ -115,12 +117,13 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
   } = gasSettings;
 
   // Initialize the gas store for the chain if not already present
-  if (!gasPriceStore[chainId])
-    gasPriceStore[chainId] = {
+  if (!gasPriceStore[chainId]) {
+ gasPriceStore[chainId] = {
       gasPrices: [],
       lastUpdateTimestamp: 0,
       lastUpdateNonce: 0,
-    };
+    }; 
+}
 
   // Clear expired gas prices from the store
   clearExpiredStoreGasPrices(chainId, sanitizationSamplingWindow);
@@ -138,7 +141,7 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
     nonce &&
     gasPriceStore[chainId]!.lastUpdateNonce === nonce &&
     gasPriceStore[chainId] &&
-    gasPriceStore[chainId]!.lastUpdateTimestamp < Date.now() - scalingWindow * 60 * 1_000
+    gasPriceStore[chainId]!.lastUpdateTimestamp < Date.now() - scalingWindow * 60 * 1000
   ) {
     return multiplyGasPrice(gasPrice, scalingMultiplier);
   }
@@ -153,15 +156,15 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
 export const runGasPriceCollector = async () => {
   const config = await loadConfig();
 
-  const fetchInterval = config.gasCollectorInterval * 1_000;
+  const fetchInterval = config.gasCollectorInterval * 1000;
 
   if (!gasPriceCollectorInterval) {
     gasPriceCollectorInterval = setInterval(runGasPriceCollector, fetchInterval);
   }
 
   await Promise.all(
-    Object.entries(config.chains).map(([chainId, chain]) =>
-      go(() =>
+    Object.entries(config.chains).map(async ([chainId, chain]) =>
+      go(async () =>
         airseekerV2ProviderRecommendedGasPrice(
           chainId,
           // TODO: what to do with many providers?

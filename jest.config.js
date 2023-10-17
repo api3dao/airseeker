@@ -1,4 +1,4 @@
-const { join } = require('node:path');
+import { join } from 'node:path';
 
 /*
  * For a detailed explanation regarding each configuration property and type check, visit:

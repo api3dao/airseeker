@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ZodError } from 'zod';
+
 import dotenv from 'dotenv';
+import { ZodError } from 'zod';
+
 import { chainsSchema, configSchema } from './schema';
 import { interpolateSecrets } from './utils';
 
@@ -13,11 +15,11 @@ const gasSettings = {
   scalingMultiplier: 2,
 };
 
-it('validates example config', async () => {
+test('validates example config', async () => {
   const exampleConfig = JSON.parse(readFileSync(join(__dirname, '../../config/airseeker.example.json'), 'utf8'));
 
   // The mnemonic is not interpolated (and thus invalid).
-  await expect(configSchema.parseAsync(exampleConfig)).rejects.toEqual(
+  await expect(configSchema.parseAsync(exampleConfig)).rejects.toStrictEqual(
     new ZodError([
       {
         validation: 'url',
@@ -34,7 +36,7 @@ it('validates example config', async () => {
   );
 
   const exampleSecrets = dotenv.parse(readFileSync(join(__dirname, '../../config/secrets.example.env'), 'utf8'));
-  await expect(configSchema.parseAsync(interpolateSecrets(exampleConfig, exampleSecrets))).resolves.toEqual(
+  await expect(configSchema.parseAsync(interpolateSecrets(exampleConfig, exampleSecrets))).resolves.toStrictEqual(
     expect.any(Object)
   );
 });
@@ -62,7 +64,7 @@ describe('chains schema', () => {
 
     const parsed = chainsSchema.parse(chains);
 
-    expect(parsed['31337']!.contracts).toEqual({
+    expect(parsed['31337']!.contracts).toStrictEqual({
       Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
     });
   });
@@ -86,7 +88,7 @@ describe('chains schema', () => {
 
     const parsed = chainsSchema.parse(chains);
 
-    expect(parsed['1']!.contracts).toEqual({
+    expect(parsed['1']!.contracts).toStrictEqual({
       Api3ServerV1: '0x3dEC619dc529363767dEe9E71d8dD1A5bc270D76',
     });
   });

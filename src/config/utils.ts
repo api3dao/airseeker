@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { template } from 'lodash';
 import { goSync } from '@api3/promise-utils';
+import { template } from 'lodash';
+import { z } from 'zod';
 
 const secretsSchema = z.record(z.string());
 

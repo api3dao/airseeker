@@ -18,52 +18,12 @@ module.exports = {
   extends: ['./node_modules/@api3/commons/dist/eslint/universal', './node_modules/@api3/commons/dist/eslint/jest'],
   plugins: ['@typescript-eslint', 'import', 'jest'],
   rules: {
+    'unicorn/prefer-top-level-await': 'off',
+    'unicorn/no-process-exit': 'off',
+    // TODO this can be removed after removing non-camelcased config values
     camelcase: 'off',
 
-    // TypeScript
-    '@typescript-eslint/ban-ts-comment': 'off',
-    '@typescript-eslint/ban-ts-ignore': 'off',
-    '@typescript-eslint/ban-types': 'off',
-    '@typescript-eslint/camelcase': 'off',
-    '@typescript-eslint/explicit-function-return-type': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
-    // Turning off, because it conflicts with prettier
-    '@typescript-eslint/indent': ['off'],
-    '@typescript-eslint/no-empty-function': 'off',
-    '@typescript-eslint/no-explicit-any': 'off',
-    '@typescript-eslint/no-non-null-assertion': 'off',
-    // Leave vars as 'all' to force everything to be handled when pattern matching
-    // Variables can be ignored by prefixing with an '_'
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', vars: 'all' }],
-    '@typescript-eslint/no-use-before-define': 'off',
-    '@typescript-eslint/no-var-requires': 'off',
-
-    // eslint-plugin-import
-    'import/namespace': ['error', { allowComputed: true }],
-    'import/order': [
-      'error',
-      {
-        groups: ['builtin', 'external', 'internal', 'sibling', 'parent', 'index', 'object', 'type'],
-        pathGroups: [
-          {
-            pattern: 'mock-utils',
-            group: 'builtin',
-            patternOptions: { matchBase: true, nocomment: true },
-          },
-        ],
-      },
-    ],
-
-    // ESLint
-    'comma-dangle': ['error', 'only-multiline'],
-    eqeqeq: ['error', 'smart'],
-    indent: 'off',
-    'no-console': 'error',
-    'no-useless-escape': 'off',
-    semi: 'error',
-
     // Jest
-    'jest/prefer-strict-equal': 'off',
-    'jest/valid-title': 'off', // Prevents using "<function-name>.name" as a test name
+    'jest/no-hooks': 'off',
   },
 };

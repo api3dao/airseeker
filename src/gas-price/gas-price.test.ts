@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+
 import {
   airseekerV2ProviderRecommendedGasPrice,
   multiplyGasPrice,
@@ -18,7 +19,7 @@ const gasSettings = {
   scalingWindow: 2,
   scalingMultiplier: 2,
 };
-const timestampMock = 1696930907351;
+const timestampMock = 1_696_930_907_351;
 const gasPriceMock = ethers.utils.parseUnits('10', 'gwei');
 
 describe('gas price', () => {
@@ -28,10 +29,10 @@ describe('gas price', () => {
       gasPriceStore[chainId] = { gasPrices: [], lastUpdateTimestamp: 0, lastUpdateNonce: 0 };
     });
 
-    it('clears expired gas prices from the store', async () => {
+    it('clears expired gas prices from the store', () => {
       const oldGasPriceMock = {
         price: ethers.utils.parseUnits('5', 'gwei'),
-        timestamp: timestampMock - gasSettings.sanitizationSamplingWindow * 60 * 1_000 - 1,
+        timestamp: timestampMock - gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
       };
       jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
       jest
@@ -42,7 +43,7 @@ describe('gas price', () => {
       clearExpiredStoreGasPrices(chainId, gasSettings.sanitizationSamplingWindow);
       setStoreGasPrices(chainId, gasPriceMock);
 
-      expect(gasPriceStore[chainId]!.gasPrices).toEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
+      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
     });
   });
 
@@ -52,7 +53,7 @@ describe('gas price', () => {
       gasPriceStore[chainId] = { gasPrices: [], lastUpdateTimestamp: 0, lastUpdateNonce: 0 };
     });
 
-    it('updates store with price data', async () => {
+    it('updates store with price data', () => {
       jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
       jest
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
@@ -60,7 +61,7 @@ describe('gas price', () => {
 
       setStoreGasPrices(chainId, gasPriceMock);
 
-      expect(gasPriceStore[chainId]!.gasPrices).toEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
+      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
     });
   });
 
@@ -78,14 +79,14 @@ describe('gas price', () => {
 
       const gasPrice = await updateGasPriceStore(chainId, rpcUrl);
 
-      expect(gasPrice).toEqual(gasPriceMock);
-      expect(gasPriceStore[chainId]!.gasPrices).toEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
+      expect(gasPrice).toStrictEqual(gasPriceMock);
+      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
     });
 
     it('clears expired gas prices from the store', async () => {
       const oldGasPriceMock = {
         price: ethers.utils.parseUnits('5', 'gwei'),
-        timestamp: timestampMock - gasSettings.sanitizationSamplingWindow * 60 * 1_000 - 1,
+        timestamp: timestampMock - gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
       };
       jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
       jest
@@ -96,8 +97,8 @@ describe('gas price', () => {
       clearExpiredStoreGasPrices(chainId, gasSettings.sanitizationSamplingWindow);
       const gasPrice = await updateGasPriceStore(chainId, rpcUrl);
 
-      expect(gasPrice).toEqual(gasPriceMock);
-      expect(gasPriceStore[chainId]!.gasPrices).toEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
+      expect(gasPrice).toStrictEqual(gasPriceMock);
+      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
     });
   });
 
@@ -106,8 +107,8 @@ describe('gas price', () => {
       jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
       setLastTransactionDetails(chainId, 3);
 
-      expect(gasPriceStore[chainId]!.lastUpdateNonce).toEqual(3);
-      expect(gasPriceStore[chainId]!.lastUpdateTimestamp).toEqual(timestampMock);
+      expect(gasPriceStore[chainId]!.lastUpdateNonce).toBe(3);
+      expect(gasPriceStore[chainId]!.lastUpdateTimestamp).toStrictEqual(timestampMock);
     });
   });
 
@@ -125,12 +126,12 @@ describe('gas price', () => {
 
       const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
 
-      expect(gasPrice).toEqual(multiplyGasPrice(gasPriceMock, gasSettings.recommendedGasPriceMultiplier));
-      expect(gasPriceStore[chainId]!.gasPrices).toEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
+      expect(gasPrice).toStrictEqual(multiplyGasPrice(gasPriceMock, gasSettings.recommendedGasPriceMultiplier));
+      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
     });
 
     it('gets and uses the percentile price from the store', async () => {
-      const gasPricesMock = Array.from(Array(10), (_, i) => ({
+      const gasPricesMock = Array.from(Array.from({ length: 10 }), (_, i) => ({
         price: ethers.utils.parseUnits(`${i + 1}`, 'gwei'),
         timestamp: timestampMock,
       }));
@@ -142,10 +143,10 @@ describe('gas price', () => {
       gasPriceStore[chainId]!.gasPrices = gasPricesMock;
       const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
 
-      expect(gasPrice).toEqual(
+      expect(gasPrice).toStrictEqual(
         multiplyGasPrice(ethers.utils.parseUnits('8', 'gwei'), gasSettings.recommendedGasPriceMultiplier)
       );
-      expect(gasPriceStore[chainId]!.gasPrices).toEqual([
+      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestamp: timestampMock },
         ...gasPricesMock,
       ]);
@@ -154,7 +155,7 @@ describe('gas price', () => {
     it('clears expired gas prices from the store', async () => {
       const oldGasPriceMock = {
         price: ethers.utils.parseUnits('5', 'gwei'),
-        timestamp: timestampMock - gasSettings.sanitizationSamplingWindow * 60 * 1_000 - 1,
+        timestamp: timestampMock - gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
       };
       jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
       jest
@@ -164,7 +165,7 @@ describe('gas price', () => {
       gasPriceStore[chainId]!.gasPrices = [oldGasPriceMock];
       await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
 
-      expect(gasPriceStore[chainId]!.gasPrices).toEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
+      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
     });
 
     it('returns new price if it is within the percentile', async () => {
@@ -181,8 +182,8 @@ describe('gas price', () => {
       gasPriceStore[chainId]!.gasPrices = [oldGasPriceMock];
       const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
 
-      expect(gasPrice).toEqual(multiplyGasPrice(gasPriceMock, gasSettings.recommendedGasPriceMultiplier));
-      expect(gasPriceStore[chainId]!.gasPrices).toEqual([
+      expect(gasPrice).toStrictEqual(multiplyGasPrice(gasPriceMock, gasSettings.recommendedGasPriceMultiplier));
+      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestamp: timestampMock },
         oldGasPriceMock,
       ]);
@@ -202,8 +203,8 @@ describe('gas price', () => {
       gasPriceStore[chainId]!.gasPrices = [oldGasPriceMock];
       const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
 
-      expect(gasPrice).toEqual(multiplyGasPrice(oldGasPriceValueMock, gasSettings.recommendedGasPriceMultiplier));
-      expect(gasPriceStore[chainId]!.gasPrices).toEqual([
+      expect(gasPrice).toStrictEqual(multiplyGasPrice(oldGasPriceValueMock, gasSettings.recommendedGasPriceMultiplier));
+      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestamp: timestampMock },
         oldGasPriceMock,
       ]);
@@ -223,11 +224,11 @@ describe('gas price', () => {
 
       gasPriceStore[chainId]!.gasPrices = [oldGasPriceMock];
       gasPriceStore[chainId]!.lastUpdateNonce = nonceMock;
-      gasPriceStore[chainId]!.lastUpdateTimestamp = timestampMock - gasSettings.scalingWindow * 60 * 1_000 - 1;
+      gasPriceStore[chainId]!.lastUpdateTimestamp = timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1;
       const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings, nonceMock);
 
-      expect(gasPrice).toEqual(multiplyGasPrice(gasPriceMock, gasSettings.scalingMultiplier));
-      expect(gasPriceStore[chainId]!.gasPrices).toEqual([
+      expect(gasPrice).toStrictEqual(multiplyGasPrice(gasPriceMock, gasSettings.scalingMultiplier));
+      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestamp: timestampMock },
         oldGasPriceMock,
       ]);
