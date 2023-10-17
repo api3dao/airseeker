@@ -3,7 +3,7 @@ import { go } from '@api3/promise-utils';
 import axios from 'axios';
 import { uniq } from 'lodash';
 import { signedApiResponseSchema, SignedData } from '../types';
-import { localDataStore } from '../signed-data-store';
+import * as localDataStore from '../signed-data-store';
 import { getState, setState } from '../state';
 import { logErrors } from '../logger';
 import { HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT, HTTP_SIGNED_DATA_API_HEADROOM } from '../constants';
@@ -57,7 +57,7 @@ export const runDataFetcher = async () => {
 
   const fetchInterval = config.fetchInterval * 1_000;
 
-  if (!state?.dataFetcherInterval) {
+  if (!state.dataFetcherInterval) {
     const dataFetcherInterval = setInterval(runDataFetcher, fetchInterval);
     setState({ ...state, dataFetcherInterval });
   }

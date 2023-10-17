@@ -1,6 +1,6 @@
 import { clearInterval } from 'timers';
 import { BigNumber, ethers } from 'ethers';
-import { LocalSignedData, SignedData, AirnodeAddress, DataStore, TemplateId } from '../types';
+import { LocalSignedData, SignedData, AirnodeAddress, TemplateId } from '../types';
 import { logger } from '../logger';
 
 // A simple in-memory data store implementation - the interface allows for swapping in a remote key/value store
@@ -65,7 +65,7 @@ export const checkSignedDataIntegrity = (signedData: SignedData) => {
   return true;
 };
 
-const setStoreDataPoint = async (signedData: SignedData) => {
+export const setStoreDataPoint = async (signedData: SignedData) => {
   const { airnode, templateId, signature, timestamp, encodedValue } = signedData;
 
   if (!checkSignedDataIntegrity(signedData)) {
@@ -93,14 +93,14 @@ const setStoreDataPoint = async (signedData: SignedData) => {
   signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
 };
 
-const getStoreDataPoint = async (airnode: AirnodeAddress, templateId: TemplateId) =>
+export const getStoreDataPoint = async (airnode: AirnodeAddress, templateId: TemplateId) =>
   (signedApiStore[airnode] ?? {})[templateId];
 
-const clear = async () => {
+export const clear = async () => {
   signedApiStore = {};
 };
 
-const prune = async () => {
+export const prune = async () => {
   Object.keys(signedApiStore).forEach((airnodeAddress) => {
     Object.keys(signedApiStore[airnodeAddress] ?? {}).forEach((templateId) => {
       const { timestamp } = (signedApiStore[airnodeAddress] ?? {})[templateId] ?? {};
@@ -114,19 +114,10 @@ const prune = async () => {
   });
 };
 
-const init = async () => {
+export const init = async () => {
   pruner = setInterval(prune, 300_000);
 };
 
-const shutdown = async () => {
+export const shutdown = async () => {
   clearInterval(pruner);
-};
-
-export const localDataStore: DataStore = {
-  getStoreDataPoint,
-  setStoreDataPoint,
-  init,
-  shutdown,
-  prune,
-  clear,
 };

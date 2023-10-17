@@ -1,5 +1,6 @@
 import { BigNumber, ethers } from 'ethers';
-import { checkSignedDataIntegrity, localDataStore } from './signed-data-store';
+import * as localDataStore from './signed-data-store';
+import { checkSignedDataIntegrity } from './signed-data-store';
 import { SignedData } from '../types';
 import { generateRandomBytes32, getTestSigner, signData } from '../utils';
 

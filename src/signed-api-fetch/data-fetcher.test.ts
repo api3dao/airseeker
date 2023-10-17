@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { runDataFetcher, stopDataFetcher } from './data-fetcher';
-import { localDataStore } from '../signed-data-store';
+import * as localDataStore from '../signed-data-store';
 import { init } from '../../test/fixtures/mock-config';
 
 describe('data fetcher', () => {
