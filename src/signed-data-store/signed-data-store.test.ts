@@ -49,7 +49,7 @@ describe('datastore', () => {
   it('checks that the timestamp on signed data is not in the future', async () => {
     const signer = getTestSigner();
     const templateId = generateRandomBytes32();
-    const timestamp = Math.floor((Date.now() + 60 * 60 * 1_000) / 1_000).toString();
+    const timestamp = Math.floor((Date.now() + 61 * 60 * 1_000) / 1_000).toString();
     const airnode = signer.address;
     const encodedValue = ethers.utils.defaultAbiCoder.encode(['int256'], [BigNumber.from(1)]);
 

@@ -1,6 +1,6 @@
 import { BigNumber, ethers } from 'ethers';
 import { SignedData } from '../types';
-import { checkMessage } from '../signed-data-store';
+import { verifySignedData } from '../signed-data-store';
 import { logger } from '../logger';
 
 export const benchmark = async () => {
@@ -22,7 +22,7 @@ export const benchmark = async () => {
   const iterations = 100_000;
   const start = Date.now();
   for (let i = 0; i < iterations; i++) {
-    checkMessage(datapoint);
+    verifySignedData(datapoint);
   }
   const end = Date.now();
   const durationMs = end - start;
