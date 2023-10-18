@@ -1,12 +1,9 @@
-import { clearInterval } from 'node:timers';
 import { BigNumber, ethers } from 'ethers';
 import { logger } from '../logger';
 import type { LocalSignedData, SignedData, AirnodeAddress, TemplateId } from '../types';
 
 // A simple in-memory data store implementation - the interface allows for swapping in a remote key/value store
-
 let signedApiStore: Record<AirnodeAddress, Record<TemplateId, LocalSignedData>> = {};
-let pruner: NodeJS.Timeout | undefined;
 
 export const verifySignedData = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
   // 'encodedValue' is: ethers.utils.defaultAbiCoder.encode(['int256'], [beaconValue]);
@@ -19,15 +16,14 @@ export const verifySignedData = ({ airnode, templateId, timestamp, signature, en
   return signerAddr !== airnode;
 };
 
-const checkTimestamp = ({ timestamp, airnode, encodedValue, templateId }: SignedData) => {
+const verifyTimestamp = ({ timestamp, airnode, encodedValue, templateId }: SignedData) => {
   if (Number.parseInt(timestamp, 10) * 1000 > Date.now() + 60 * 60 * 1000) {
-    logger.warn(
-      `Refusing to store sample as timestamp is more than one hour in the future: (Airnode ${airnode}) (Template ID ${templateId}) (Received timestamp ${new Date(
-        Number.parseInt(timestamp, 10) * 1000
-      ).toLocaleDateString()} vs now ${new Date().toLocaleDateString()}), ${
-        BigNumber.from(encodedValue).div(10e10).toNumber() / 10e8
-      }`
-    );
+    logger.warn(`Refusing to store sample as timestamp is more than one hour in the future.`, {
+      airnode,
+      templateId,
+      systemDateNow: new Date().toLocaleDateString(),
+      signedDataDate: new Date(Number.parseInt(timestamp, 10) * 1000).toLocaleDateString(),
+    });
     return false;
   }
 
@@ -44,11 +40,11 @@ const checkTimestamp = ({ timestamp, airnode, encodedValue, templateId }: Signed
   return true;
 };
 
-export const checkSignedDataIntegrity = (signedData: SignedData) => {
+export const verifySignedDataIntegrity = (signedData: SignedData) => {
   const { airnode, templateId, timestamp, encodedValue } = signedData;
 
-  if (!checkTimestamp(signedData)) {
-    return;
+  if (!verifyTimestamp(signedData)) {
+    return false;
   }
 
   if (verifySignedData(signedData)) {
@@ -65,11 +61,10 @@ export const checkSignedDataIntegrity = (signedData: SignedData) => {
   return true;
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
-export const setStoreDataPoint = async (signedData: SignedData) => {
+export const setStoreDataPoint = (signedData: SignedData) => {
   const { airnode, templateId, signature, timestamp, encodedValue } = signedData;
 
-  if (!checkSignedDataIntegrity(signedData)) {
+  if (!verifySignedDataIntegrity(signedData)) {
     logger.warn(`Signed data received from signed data API has a signature mismatch.`);
     logger.warn(JSON.stringify({ airnode, templateId, signature, timestamp, encodedValue }, null, 2));
     return;
@@ -94,37 +89,10 @@ export const setStoreDataPoint = async (signedData: SignedData) => {
   signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
-export const getStoreDataPoint = async (airnode: AirnodeAddress, templateId: TemplateId) =>
+export const getStoreDataPoint = (airnode: AirnodeAddress, templateId: TemplateId) =>
   signedApiStore[airnode]?.[templateId];
 
 // eslint-disable-next-line @typescript-eslint/require-await
-export const clear = async () => {
+export const clear = () => {
   signedApiStore = {};
-};
-
-// eslint-disable-next-line @typescript-eslint/require-await
-export const prune = async () => {
-  for (const airnodeAddress of Object.keys(signedApiStore)) {
-    for (const templateId of Object.keys(signedApiStore[airnodeAddress] ?? {})) {
-      const { timestamp } = signedApiStore[airnodeAddress]?.[templateId] ?? {};
-
-      if (timestamp && Date.now() - Number.parseInt(timestamp, 10) > 24 * 60 * 60) {
-        // timestamps are in s, not ms
-        // the datapoint is more than 24 hours old
-
-        delete signedApiStore[airnodeAddress]?.[templateId];
-      }
-    }
-  }
-};
-
-// eslint-disable-next-line @typescript-eslint/require-await
-export const init = async () => {
-  pruner = setInterval(prune, 300_000);
-};
-
-// eslint-disable-next-line @typescript-eslint/require-await
-export const shutdown = async () => {
-  clearInterval(pruner);
 };

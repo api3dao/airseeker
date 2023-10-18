@@ -12,4 +12,3 @@ coverage
 airseeker.json
 secrets.env
 .eslintcache
-scratch.ts

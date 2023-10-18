@@ -8,7 +8,6 @@ export type TemplateId = EvmId;
 export const signedDataSchema = z.object({
   airnode: evmAddressSchema,
   templateId: evmIdSchema,
-  // beaconId: evmIdSchema, // it is removed prior to tx to us | https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/handlers.ts#L94
   timestamp: z.string(),
   encodedValue: z.string(),
   signature: z.string(),
@@ -22,12 +21,3 @@ export const signedApiResponseSchema = z.object({
 });
 
 export type LocalSignedData = Pick<SignedData, 'encodedValue' | 'signature' | 'timestamp'>;
-
-export interface DataStore {
-  init: () => Promise<void>;
-  prune: () => Promise<void>;
-  clear: () => Promise<void>;
-  shutdown: () => Promise<void>;
-  setStoreDataPoint: (signedData: SignedData) => Promise<void>;
-  getStoreDataPoint: (airnode: AirnodeAddress, templateId: TemplateId) => Promise<LocalSignedData | undefined>;
-}

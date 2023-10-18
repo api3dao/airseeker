@@ -1,6 +1,6 @@
 import { BigNumber, ethers } from 'ethers';
 import * as localDataStore from './signed-data-store';
-import { checkSignedDataIntegrity } from './signed-data-store';
+import { verifySignedDataIntegrity } from './signed-data-store';
 import { generateRandomBytes32, getTestSigner, signData } from '../utils';
 import type { SignedData } from '../types';
 
@@ -27,26 +27,16 @@ describe('datastore', () => {
   // eslint-disable-next-line jest/no-hooks
   beforeEach(localDataStore.clear);
 
-  it('stores and gets a data point', async () => {
+  it('stores and gets a data point', () => {
+    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
     const promisedStorage = localDataStore.setStoreDataPoint(testDataPoint);
-    await expect(promisedStorage).resolves.toBeFalsy();
+    expect(promisedStorage).toBeFalsy();
 
     const datapoint = localDataStore.getStoreDataPoint(testDataPoint.airnode, testDataPoint.templateId);
 
     const { encodedValue, signature, timestamp } = testDataPoint;
 
-    await expect(datapoint).resolves.toEqual({ encodedValue, signature, timestamp });
-  });
-
-  it('prunes old data', async () => {
-    const promisedStorage = localDataStore.setStoreDataPoint(testDataPoint);
-    await expect(promisedStorage).resolves.toBeFalsy();
-
-    await localDataStore.prune();
-
-    const datapoint = localDataStore.getStoreDataPoint(testDataPoint.airnode, testDataPoint.templateId);
-
-    await expect(datapoint).resolves.toBeUndefined();
+    expect(datapoint).toEqual({ encodedValue, signature, timestamp });
   });
 
   it('checks that the timestamp on signed data is not in the future', async () => {
@@ -64,8 +54,8 @@ describe('datastore', () => {
       timestamp,
     };
 
-    expect(checkSignedDataIntegrity(testDataPoint)).toBeTruthy();
-    expect(checkSignedDataIntegrity(futureTestDataPoint)).toBeFalsy();
+    expect(verifySignedDataIntegrity(testDataPoint)).toBeTruthy();
+    expect(verifySignedDataIntegrity(futureTestDataPoint)).toBeFalsy();
   });
 
   it('checks the signature on signed data', async () => {
@@ -83,6 +73,6 @@ describe('datastore', () => {
       timestamp,
     };
 
-    expect(checkSignedDataIntegrity(badTestDataPoint)).toBeFalsy();
+    expect(verifySignedDataIntegrity(badTestDataPoint)).toBeFalsy();
   });
 });
