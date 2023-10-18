@@ -1,15 +1,15 @@
 import { BigNumber, ethers } from 'ethers';
 import * as localDataStore from './signed-data-store';
 import { verifySignedDataIntegrity } from './signed-data-store';
-import { generateRandomBytes32, getTestSigner, signData } from '../utils';
+import { generateRandomBytes32, signData } from '../../test/utils/evm';
 import type { SignedData } from '../types';
 
 describe('datastore', () => {
   let testDataPoint: SignedData;
+  const signer = ethers.Wallet.fromMnemonic('test test test test test test test test test test test junk');
 
   // eslint-disable-next-line jest/no-hooks
   beforeAll(async () => {
-    const signer = getTestSigner();
     const templateId = generateRandomBytes32();
     const timestamp = Math.floor((Date.now() - 25 * 60 * 60 * 1000) / 1000).toString();
     const airnode = signer.address;
@@ -18,7 +18,7 @@ describe('datastore', () => {
     testDataPoint = {
       airnode,
       encodedValue,
-      signature: await signData(signer, airnode, templateId, timestamp, encodedValue),
+      signature: await signData(signer, templateId, timestamp, encodedValue),
       templateId,
       timestamp,
     };
@@ -40,7 +40,6 @@ describe('datastore', () => {
   });
 
   it('checks that the timestamp on signed data is not in the future', async () => {
-    const signer = getTestSigner();
     const templateId = generateRandomBytes32();
     const timestamp = Math.floor((Date.now() + 61 * 60 * 1000) / 1000).toString();
     const airnode = signer.address;
@@ -49,7 +48,7 @@ describe('datastore', () => {
     const futureTestDataPoint = {
       airnode,
       encodedValue,
-      signature: await signData(signer, airnode, templateId, timestamp, encodedValue),
+      signature: await signData(signer, templateId, timestamp, encodedValue),
       templateId,
       timestamp,
     };
@@ -59,7 +58,6 @@ describe('datastore', () => {
   });
 
   it('checks the signature on signed data', async () => {
-    const signer = getTestSigner();
     const templateId = generateRandomBytes32();
     const timestamp = Math.floor((Date.now() + 60 * 60 * 1000) / 1000).toString();
     const airnode = ethers.Wallet.createRandom().address;
@@ -68,7 +66,7 @@ describe('datastore', () => {
     const badTestDataPoint = {
       airnode,
       encodedValue,
-      signature: await signData(signer, airnode, templateId, timestamp, encodedValue),
+      signature: await signData(signer, templateId, timestamp, encodedValue),
       templateId,
       timestamp,
     };

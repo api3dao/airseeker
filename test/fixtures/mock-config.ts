@@ -1,6 +1,5 @@
 import { ethers } from 'ethers';
 import { setState } from '../../src/state';
-import { runDataFetcher } from '../../src/signed-api-fetch';
 import type { Config } from '../../src/config/schema';
 
 /**
@@ -45,19 +44,9 @@ export const generateTestConfig = (): Config => ({
   deviationThresholdCoefficient: 1,
 });
 
-// this should probably be moved to test fixtures
 export const init = () => {
   const config = getConfig();
   setState({
     config,
   });
 };
-
-if (require.main === module) {
-  init();
-  // eslint-disable-next-line unicorn/prefer-top-level-await
-  runDataFetcher().catch((error) => {
-    // eslint-disable-next-line no-console
-    console.trace(error);
-  });
-}

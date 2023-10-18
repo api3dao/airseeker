@@ -92,7 +92,6 @@ export const setStoreDataPoint = (signedData: SignedData) => {
 export const getStoreDataPoint = (airnode: AirnodeAddress, templateId: TemplateId) =>
   signedApiStore[airnode]?.[templateId];
 
-// eslint-disable-next-line @typescript-eslint/require-await
 export const clear = () => {
   signedApiStore = {};
 };
