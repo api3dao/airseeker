@@ -8,8 +8,8 @@ jest.mock('axios');
 
 describe('data fetcher', () => {
   // eslint-disable-next-line jest/no-hooks
-  beforeEach(async () => {
-    await localDataStore.clear();
+  beforeEach(() => {
+    localDataStore.clear();
   });
 
   it('retrieves signed data from urls', async () => {
