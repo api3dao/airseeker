@@ -6,6 +6,9 @@ export const evmAddressSchema = z.string().regex(/^0x[\dA-Fa-f]{40}$/, 'Must be 
 
 export const evmIdSchema = z.string().regex(/^0x[\dA-Fa-f]{64}$/, 'Must be a valid EVM hash');
 
+export type EvmAddress = z.infer<typeof evmAddressSchema>;
+export type EvmId = z.infer<typeof evmIdSchema>;
+
 export const providerSchema = z
   .object({
     url: z.string().url(),
@@ -98,6 +101,7 @@ export const configSchema = z
   .object({
     sponsorWalletMnemonic: z.string().refine((mnemonic) => ethers.utils.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
     chains: chainsSchema,
+    fetchInterval: z.number().positive(),
     deviationThresholdCoefficient: z.number(),
   })
   .strict();
