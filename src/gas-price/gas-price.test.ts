@@ -3,14 +3,16 @@ import { ethers } from 'ethers';
 import {
   airseekerV2ProviderRecommendedGasPrice,
   multiplyGasPrice,
-  setLastTransactionDetails,
+  setLastOnChainDatafeedValues,
   setStoreGasPrices,
   updateGasPriceStore,
   gasPriceStore,
   clearExpiredStoreGasPrices,
+  initializeGasStore,
 } from './gas-price';
 
 const chainId = '31337';
+const providerName = 'localhost';
 const rpcUrl = 'http://127.0.0.1:8545/';
 const gasSettings = {
   recommendedGasPriceMultiplier: 1.5,
@@ -25,8 +27,9 @@ const gasPriceMock = ethers.utils.parseUnits('10', 'gwei');
 describe('gas price', () => {
   describe('clearExpiredStoreGasPrices', () => {
     beforeEach(() => {
+      initializeGasStore(chainId, providerName);
       // Reset the gasPriceStore
-      gasPriceStore[chainId] = { gasPrices: [], lastUpdateTimestamp: 0, lastUpdateNonce: 0 };
+      gasPriceStore[chainId]![providerName] = { gasPrices: [], lastOnChainDataFeedValues: {} };
     });
 
     it('clears expired gas prices from the store', () => {
@@ -39,18 +42,20 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      gasPriceStore[chainId]!.gasPrices = [oldGasPriceMock];
-      clearExpiredStoreGasPrices(chainId, gasSettings.sanitizationSamplingWindow);
-      setStoreGasPrices(chainId, gasPriceMock);
+      gasPriceStore[chainId]![providerName]!.gasPrices = [oldGasPriceMock];
+      clearExpiredStoreGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
+      setStoreGasPrices(chainId, providerName, gasPriceMock);
 
-      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
+      expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+        { price: gasPriceMock, timestamp: timestampMock },
+      ]);
     });
   });
 
   describe('setStoreGasPrices', () => {
     beforeEach(() => {
       // Reset the gasPriceStore
-      gasPriceStore[chainId] = { gasPrices: [], lastUpdateTimestamp: 0, lastUpdateNonce: 0 };
+      gasPriceStore[chainId]![providerName] = { gasPrices: [], lastOnChainDataFeedValues: {} };
     });
 
     it('updates store with price data', () => {
@@ -59,16 +64,18 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      setStoreGasPrices(chainId, gasPriceMock);
+      setStoreGasPrices(chainId, providerName, gasPriceMock);
 
-      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
+      expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+        { price: gasPriceMock, timestamp: timestampMock },
+      ]);
     });
   });
 
   describe('updateGasPriceStore', () => {
     beforeEach(() => {
       // Reset the gasPriceStore
-      gasPriceStore[chainId] = { gasPrices: [], lastUpdateTimestamp: 0, lastUpdateNonce: 0 };
+      gasPriceStore[chainId]![providerName] = { gasPrices: [], lastOnChainDataFeedValues: {} };
     });
 
     it('returns and updates store with price data', async () => {
@@ -77,10 +84,12 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      const gasPrice = await updateGasPriceStore(chainId, rpcUrl);
+      const gasPrice = await updateGasPriceStore(chainId, providerName, rpcUrl);
 
       expect(gasPrice).toStrictEqual(gasPriceMock);
-      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
+      expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+        { price: gasPriceMock, timestamp: timestampMock },
+      ]);
     });
 
     it('clears expired gas prices from the store', async () => {
@@ -93,29 +102,35 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      gasPriceStore[chainId]!.gasPrices = [oldGasPriceMock];
-      clearExpiredStoreGasPrices(chainId, gasSettings.sanitizationSamplingWindow);
-      const gasPrice = await updateGasPriceStore(chainId, rpcUrl);
+      gasPriceStore[chainId]![providerName]!.gasPrices = [oldGasPriceMock];
+      clearExpiredStoreGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
+      const gasPrice = await updateGasPriceStore(chainId, providerName, rpcUrl);
 
       expect(gasPrice).toStrictEqual(gasPriceMock);
-      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
+      expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+        { price: gasPriceMock, timestamp: timestampMock },
+      ]);
     });
   });
 
   describe('setLastTransactionDetails', () => {
-    it('sets last transcation details', () => {
+    it('sets last datafeed values details', () => {
+      const dataFeedId = '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04';
+      const dataFeedValue = {
+        value: ethers.BigNumber.from(1),
+        timestamp: 1_697_546_898_352,
+      };
       jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
-      setLastTransactionDetails(chainId, 3);
+      setLastOnChainDatafeedValues(chainId, providerName, dataFeedId, dataFeedValue);
 
-      expect(gasPriceStore[chainId]!.lastUpdateNonce).toBe(3);
-      expect(gasPriceStore[chainId]!.lastUpdateTimestamp).toStrictEqual(timestampMock);
+      expect(gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId]).toStrictEqual(dataFeedValue);
     });
   });
 
   describe('airseekerV2ProviderRecommendedGasPrice', () => {
     beforeEach(() => {
       // Reset the gasPriceStore
-      gasPriceStore[chainId] = { gasPrices: [], lastUpdateTimestamp: 0, lastUpdateNonce: 0 };
+      gasPriceStore[chainId]![providerName] = { gasPrices: [], lastOnChainDataFeedValues: {} };
     });
 
     it('gets, sets and returns provider recommended gas prices', async () => {
@@ -124,10 +139,12 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
+      const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
 
       expect(gasPrice).toStrictEqual(multiplyGasPrice(gasPriceMock, gasSettings.recommendedGasPriceMultiplier));
-      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
+      expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+        { price: gasPriceMock, timestamp: timestampMock },
+      ]);
     });
 
     it('gets and uses the percentile price from the store', async () => {
@@ -140,13 +157,13 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      gasPriceStore[chainId]!.gasPrices = gasPricesMock;
-      const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
+      gasPriceStore[chainId]![providerName]!.gasPrices = gasPricesMock;
+      const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
 
       expect(gasPrice).toStrictEqual(
         multiplyGasPrice(ethers.utils.parseUnits('8', 'gwei'), gasSettings.recommendedGasPriceMultiplier)
       );
-      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([
+      expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestamp: timestampMock },
         ...gasPricesMock,
       ]);
@@ -162,10 +179,12 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      gasPriceStore[chainId]!.gasPrices = [oldGasPriceMock];
-      await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
+      gasPriceStore[chainId]![providerName]!.gasPrices = [oldGasPriceMock];
+      await airseekerV2ProviderRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
 
-      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([{ price: gasPriceMock, timestamp: timestampMock }]);
+      expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+        { price: gasPriceMock, timestamp: timestampMock },
+      ]);
     });
 
     it('returns new price if it is within the percentile', async () => {
@@ -179,11 +198,11 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      gasPriceStore[chainId]!.gasPrices = [oldGasPriceMock];
-      const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
+      gasPriceStore[chainId]![providerName]!.gasPrices = [oldGasPriceMock];
+      const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
 
       expect(gasPrice).toStrictEqual(multiplyGasPrice(gasPriceMock, gasSettings.recommendedGasPriceMultiplier));
-      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([
+      expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestamp: timestampMock },
         oldGasPriceMock,
       ]);
@@ -200,11 +219,11 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      gasPriceStore[chainId]!.gasPrices = [oldGasPriceMock];
-      const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
+      gasPriceStore[chainId]![providerName]!.gasPrices = [oldGasPriceMock];
+      const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
 
       expect(gasPrice).toStrictEqual(multiplyGasPrice(oldGasPriceValueMock, gasSettings.recommendedGasPriceMultiplier));
-      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([
+      expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestamp: timestampMock },
         oldGasPriceMock,
       ]);
@@ -216,19 +235,26 @@ describe('gas price', () => {
         price: oldGasPriceValueMock,
         timestamp: timestampMock,
       };
-      const nonceMock = 1;
       jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
       jest
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      gasPriceStore[chainId]!.gasPrices = [oldGasPriceMock];
-      gasPriceStore[chainId]!.lastUpdateNonce = nonceMock;
-      gasPriceStore[chainId]!.lastUpdateTimestamp = timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1;
-      const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings, nonceMock);
+      gasPriceStore[chainId]![providerName]!.gasPrices = [oldGasPriceMock];
+      const dataFeedId = '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04';
+      const dataFeedValue = {
+        value: ethers.BigNumber.from(1),
+        // This sets the timestamp to be 1ms past the scalingWindow
+        timestamp: timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1,
+      };
+      gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId] = dataFeedValue;
+      const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings, {
+        dataFeedId,
+        newDataFeedValue: dataFeedValue,
+      });
 
       expect(gasPrice).toStrictEqual(multiplyGasPrice(gasPriceMock, gasSettings.scalingMultiplier));
-      expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([
+      expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestamp: timestampMock },
         oldGasPriceMock,
       ]);

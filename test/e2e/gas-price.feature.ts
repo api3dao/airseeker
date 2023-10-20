@@ -2,9 +2,15 @@ import { ethers } from 'ethers';
 import * as hre from 'hardhat';
 
 import '@nomiclabs/hardhat-ethers';
-import { airseekerV2ProviderRecommendedGasPrice, multiplyGasPrice, gasPriceStore } from '../../src/gas-price/gas-price';
+import {
+  airseekerV2ProviderRecommendedGasPrice,
+  multiplyGasPrice,
+  gasPriceStore,
+  initializeGasStore,
+} from '../../src/gas-price/gas-price';
 
 const chainId = '31337';
+const providerName = 'localhost';
 const rpcUrl = 'http://127.0.0.1:8545/';
 const gasSettings = {
   recommendedGasPriceMultiplier: 1.5,
@@ -30,8 +36,9 @@ describe('airseekerV2ProviderRecommendedGasPrice', () => {
   beforeEach(async () => {
     // Reset the local hardhat network state for each test to prevent issues with other test contracts
     await hre.network.provider.send('hardhat_reset');
+    initializeGasStore(chainId, providerName);
     // Reset the gasPriceStore
-    gasPriceStore[chainId] = { gasPrices: [], lastUpdateTimestamp: 0, lastUpdateNonce: 0 };
+    gasPriceStore[chainId]![providerName] = { gasPrices: [], lastOnChainDataFeedValues: {} };
   });
 
   it('gets, sets and returns provider recommended gas prices', async () => {
@@ -39,12 +46,12 @@ describe('airseekerV2ProviderRecommendedGasPrice', () => {
     await sendTransaction();
     const providerRecommendedGasprice = await provider.getGasPrice();
 
-    const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
+    const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
 
     expect(gasPrice).toStrictEqual(
       multiplyGasPrice(providerRecommendedGasprice, gasSettings.recommendedGasPriceMultiplier)
     );
-    expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([
+    expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: providerRecommendedGasprice, timestamp: timestampMock },
     ]);
   });
@@ -57,15 +64,15 @@ describe('airseekerV2ProviderRecommendedGasPrice', () => {
     jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
     await sendTransaction();
 
-    gasPriceStore[chainId]!.gasPrices = [oldGasPriceMock];
+    gasPriceStore[chainId]![providerName]!.gasPrices = [oldGasPriceMock];
     const providerRecommendedGasprice = await provider.getGasPrice();
 
-    const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
+    const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
 
     expect(gasPrice).toStrictEqual(
       multiplyGasPrice(providerRecommendedGasprice, gasSettings.recommendedGasPriceMultiplier)
     );
-    expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([
+    expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: providerRecommendedGasprice, timestamp: timestampMock },
     ]);
   });
@@ -79,14 +86,14 @@ describe('airseekerV2ProviderRecommendedGasPrice', () => {
       price: providerRecommendedGasprice.add(ethers.utils.parseUnits('1', 'gwei')),
       timestamp: timestampMock,
     };
-    gasPriceStore[chainId]!.gasPrices = [oldGasPriceMock];
+    gasPriceStore[chainId]![providerName]!.gasPrices = [oldGasPriceMock];
 
-    const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
+    const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
 
     expect(gasPrice).toStrictEqual(
       multiplyGasPrice(providerRecommendedGasprice, gasSettings.recommendedGasPriceMultiplier)
     );
-    expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([
+    expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: providerRecommendedGasprice, timestamp: timestampMock },
       oldGasPriceMock,
     ]);
@@ -102,29 +109,36 @@ describe('airseekerV2ProviderRecommendedGasPrice', () => {
       price: oldGasPriceValueMock,
       timestamp: timestampMock,
     };
-    gasPriceStore[chainId]!.gasPrices = [oldGasPriceMock];
+    gasPriceStore[chainId]![providerName]!.gasPrices = [oldGasPriceMock];
 
-    const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings);
+    const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
 
     expect(gasPrice).toStrictEqual(multiplyGasPrice(oldGasPriceValueMock, gasSettings.recommendedGasPriceMultiplier));
-    expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([
+    expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: providerRecommendedGasprice, timestamp: timestampMock },
       oldGasPriceMock,
     ]);
   });
 
   it('applies scaling if past the scaling window and same nonce', async () => {
-    const nonce = 1;
     jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
     await sendTransaction();
     const providerRecommendedGasprice = await provider.getGasPrice();
 
-    gasPriceStore[chainId]!.lastUpdateNonce = nonce;
-    gasPriceStore[chainId]!.lastUpdateTimestamp = timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1;
-    const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, rpcUrl, gasSettings, nonce);
+    const dataFeedId = '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04';
+    const dataFeedValue = {
+      value: ethers.BigNumber.from(1),
+      // This sets the timestamp to be 1ms past the scalingWindow
+      timestamp: timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1,
+    };
+    gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId] = dataFeedValue;
+    const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings, {
+      dataFeedId,
+      newDataFeedValue: dataFeedValue,
+    });
 
     expect(gasPrice).toStrictEqual(multiplyGasPrice(providerRecommendedGasprice, gasSettings.scalingMultiplier));
-    expect(gasPriceStore[chainId]!.gasPrices).toStrictEqual([
+    expect(gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: providerRecommendedGasprice, timestamp: timestampMock },
     ]);
   });
