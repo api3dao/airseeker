@@ -70,7 +70,6 @@ export const setLastOnChainDatafeedValues = (
   dataFeedValues: { value: ethers.BigNumber; timestamp: number }
 ) => {
   initializeGasStore(chainId, providerName);
-
   gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId] = dataFeedValues;
 };
 
@@ -81,7 +80,9 @@ export const setLastOnChainDatafeedValues = (
  * @param nonce
  */
 export const clearLastOnChainDatafeedValue = (chainId: string, providerName: string, dataFeedId: string) => {
-  delete gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId];
+  if (gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId]) {
+    delete gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId];
+  }
 };
 
 // TODO: Copied from airnode-utilities, should we import instead?
@@ -139,7 +140,25 @@ export const updateGasPriceStore = async (chainId: string, providerName: string,
 };
 
 /**
- * Fetches the provider recommended gas price and saves it in the store. Clears out expired gas prices and calculates the gas price to be used in a transaction based on sanitization and scaling settings.
+ * Fetches the provider recommended gas price, saves it in the store and clears out expired gas prices.
+ * @param chainId
+ * @param providerName
+ * @param rpcUrl
+ */
+export const gasPriceCollector = async (
+  chainId: string,
+  providerName: string,
+  rpcUrl: string,
+  sanitizationSamplingWindow: number
+) => {
+  // Initialize the gas store for the chain if not already present
+  initializeGasStore(chainId, providerName);
+  clearExpiredStoreGasPrices(chainId, providerName, sanitizationSamplingWindow);
+  await updateGasPriceStore(chainId, providerName, rpcUrl);
+};
+
+/**
+ *  Calculates the gas price to be used in a transaction based on sanitization and scaling settings.
  * @param chainId
  * @param providerName
  * @param rpcUrl
@@ -157,20 +176,7 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
     newDataFeedValue: DataFeedValue;
   }
 ): Promise<ethers.BigNumber> => {
-  const {
-    recommendedGasPriceMultiplier,
-    sanitizationSamplingWindow,
-    sanitizationPercentile,
-    scalingWindow,
-    scalingMultiplier,
-  } = gasSettings;
-
-  // Initialize the gas store for the chain if not already present
-  initializeGasStore(chainId, providerName);
-
-  // Clear expired gas prices from the store
-  clearExpiredStoreGasPrices(chainId, providerName, sanitizationSamplingWindow);
-
+  const { recommendedGasPriceMultiplier, sanitizationPercentile, scalingWindow, scalingMultiplier } = gasSettings;
   // Get the configured percentile of historical gas prices before adding the new price
   const percentileGasPrice = getPercentile(
     sanitizationPercentile,
@@ -178,6 +184,9 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
   );
 
   const gasPrice = await updateGasPriceStore(chainId, providerName, rpcUrl);
+  if (!gasPriceStore[chainId]![providerName]!.gasPrices) {
+    return multiplyGasPrice(gasPrice, recommendedGasPriceMultiplier);
+  }
 
   const lastDataFeedValue =
     newDataFeedUpdateOnChainValues &&
@@ -215,14 +224,10 @@ export const runGasPriceCollector = async () => {
   }
 
   await Promise.all(
-    Object.entries(config.chains).map(async ([chainId, chain]) =>
-      go(async () =>
-        airseekerV2ProviderRecommendedGasPrice(
-          chainId,
-          Object.keys(chain.providers)[0]!,
-          // TODO: what to do with many providers?
-          Object.values(chain.providers)[0]!.url,
-          chain.gasSettings
+    Object.entries(config.chains).flatMap(([chainId, chain]) =>
+      Object.entries(chain.providers).map(async ([providerName, rpcUrl]) =>
+        go(async () =>
+          gasPriceCollector(chainId, providerName, rpcUrl.url, chain.gasSettings.sanitizationSamplingWindow)
         )
       )
     )
