@@ -7,6 +7,7 @@ import {
   multiplyGasPrice,
   gasPriceStore,
   initializeGasStore,
+  clearExpiredStoreGasPrices,
 } from '../../src/gas-price/gas-price';
 
 const chainId = '31337';
@@ -67,6 +68,7 @@ describe('airseekerV2ProviderRecommendedGasPrice', () => {
     gasPriceStore[chainId]![providerName]!.gasPrices = [oldGasPriceMock];
     const providerRecommendedGasprice = await provider.getGasPrice();
 
+    clearExpiredStoreGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
     const gasPrice = await airseekerV2ProviderRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
 
     expect(gasPrice).toStrictEqual(
