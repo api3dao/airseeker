@@ -1,13 +1,15 @@
 import axios from 'axios';
-import { runDataFetcher, stopDataFetcher } from './data-fetcher';
-import * as localDataStore from '../signed-data-store';
+
 import { init } from '../../test/fixtures/mock-config';
+import * as localDataStore from '../signed-data-store';
+
+import { runDataFetcher, stopDataFetcher } from './data-fetcher';
 
 const mockedAxios = axios as jest.MockedFunction<typeof axios>;
 jest.mock('axios');
 
 describe('data fetcher', () => {
-  // eslint-disable-next-line jest/no-hooks
+  //
   beforeEach(() => {
     localDataStore.clear();
   });

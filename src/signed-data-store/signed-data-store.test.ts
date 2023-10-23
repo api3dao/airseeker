@@ -1,14 +1,15 @@
 import { BigNumber, ethers } from 'ethers';
-import * as localDataStore from './signed-data-store';
-import { verifySignedDataIntegrity } from './signed-data-store';
+
 import { generateRandomBytes32, signData } from '../../test/utils/evm';
 import type { SignedData } from '../types';
+
+import * as localDataStore from './signed-data-store';
+import { verifySignedDataIntegrity } from './signed-data-store';
 
 describe('datastore', () => {
   let testDataPoint: SignedData;
   const signer = ethers.Wallet.fromMnemonic('test test test test test test test test test test test junk');
 
-  // eslint-disable-next-line jest/no-hooks
   beforeAll(async () => {
     const templateId = generateRandomBytes32();
     const timestamp = Math.floor((Date.now() - 25 * 60 * 60 * 1000) / 1000).toString();
@@ -24,7 +25,6 @@ describe('datastore', () => {
     };
   });
 
-  // eslint-disable-next-line jest/no-hooks
   beforeEach(localDataStore.clear);
 
   it('stores and gets a data point', () => {
@@ -36,7 +36,7 @@ describe('datastore', () => {
 
     const { encodedValue, signature, timestamp } = testDataPoint;
 
-    expect(datapoint).toEqual({ encodedValue, signature, timestamp });
+    expect(datapoint).toStrictEqual({ encodedValue, signature, timestamp });
   });
 
   it('checks that the timestamp on signed data is not in the future', async () => {

@@ -1,4 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
+
 import { logger } from '../logger';
 import type { LocalSignedData, SignedData, AirnodeAddress, TemplateId } from '../types';
 
