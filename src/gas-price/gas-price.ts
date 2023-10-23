@@ -4,7 +4,6 @@ import { ethers } from 'ethers';
 import { loadConfig } from '../config';
 import type { GasSettings } from '../config/schema';
 
-let gasPriceCollectorInterval: NodeJS.Timeout | undefined;
 
 interface DataFeedValue {
   value: ethers.BigNumber;
@@ -217,12 +216,6 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
 
 export const runGasPriceCollector = async () => {
   const config = await loadConfig();
-
-  const fetchInterval = config.gasCollectorInterval * 1000;
-
-  if (!gasPriceCollectorInterval) {
-    gasPriceCollectorInterval = setInterval(runGasPriceCollector, fetchInterval);
-  }
 
   await Promise.all(
     Object.entries(config.chains).flatMap(([chainId, chain]) =>
