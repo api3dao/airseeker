@@ -4,7 +4,6 @@ import { ethers } from 'ethers';
 import { loadConfig } from '../config';
 import type { GasSettings } from '../config/schema';
 
-
 interface DataFeedValue {
   value: ethers.BigNumber;
   timestamp: number;

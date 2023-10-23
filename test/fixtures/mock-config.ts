@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
-import { setState } from '../../src/state';
+
 import type { Config } from '../../src/config/schema';
+import { setState } from '../../src/state';
 
 /**
  * A stub to retrieve the latest config
