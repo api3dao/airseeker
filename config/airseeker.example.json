@@ -34,5 +34,5 @@
     }
   },
   "deviationThresholdCoefficient": 1,
-  "gasCollectorInterval": 30
+  "fetchInterval": 10000
 }
