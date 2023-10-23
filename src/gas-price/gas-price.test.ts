@@ -6,10 +6,12 @@ import {
   setLastOnChainDatafeedValues,
   setStoreGasPrices,
   updateGasPriceStore,
+  clearLastOnChainDatafeedValue,
   gasPriceStore,
   clearExpiredStoreGasPrices,
   initializeGasStore,
   gasPriceCollector,
+  calculateScalingMultiplier,
 } from './gas-price';
 
 const chainId = '31337';
@@ -26,6 +28,20 @@ const timestampMock = 1_696_930_907_351;
 const gasPriceMock = ethers.utils.parseUnits('10', 'gwei');
 
 describe('gas price', () => {
+  describe('calculateScalingMultiplier', () => {
+    it('calculates scaling multiplier', () => {
+      const multiplier = calculateScalingMultiplier(1.5, 2, 1, 5);
+
+      expect(multiplier).toBe(1.6);
+    });
+
+    it('calculates maximum scaling multiplier', () => {
+      const multiplier = calculateScalingMultiplier(1.5, 2, 5, 5);
+
+      expect(multiplier).toBe(2);
+    });
+  });
+
   describe('clearExpiredStoreGasPrices', () => {
     beforeEach(() => {
       initializeGasStore(chainId, providerName);
@@ -127,6 +143,21 @@ describe('gas price', () => {
       setLastOnChainDatafeedValues(chainId, providerName, dataFeedId, dataFeedValue);
 
       expect(gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId]).toStrictEqual(dataFeedValue);
+    });
+  });
+
+  describe('clearLastOnChainDatafeedValue', () => {
+    it('clears last datafeed value details', () => {
+      const dataFeedId = '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04';
+      const dataFeedValue = {
+        value: ethers.BigNumber.from(1),
+        timestamp: 1_697_546_898_352,
+      };
+      jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
+      setLastOnChainDatafeedValues(chainId, providerName, dataFeedId, dataFeedValue);
+      clearLastOnChainDatafeedValue(chainId, providerName, dataFeedId);
+
+      expect(gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId]).toBeUndefined();
     });
   });
 

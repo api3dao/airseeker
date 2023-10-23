@@ -193,6 +193,7 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
     gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[newDataFeedUpdateOnChainValues.dataFeedId];
   // Check if the next update is a retry of a pending transaction and if it has been pending longer than scalingWindow
   if (
+    lastDataFeedValue &&
     newDataFeedUpdateOnChainValues &&
     lastDataFeedValue?.value === newDataFeedUpdateOnChainValues.newDataFeedValue.value &&
     lastDataFeedValue?.timestamp < Date.now() - scalingWindow * 60 * 1000
