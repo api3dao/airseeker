@@ -9,7 +9,6 @@ const mockedAxios = axios as jest.MockedFunction<typeof axios>;
 jest.mock('axios');
 
 describe('data fetcher', () => {
-  //
   beforeEach(() => {
     localDataStore.clear();
   });

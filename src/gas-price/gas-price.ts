@@ -1,15 +1,14 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
-import { loadConfig } from '../config';
 import type { GasSettings } from '../config/schema';
 
 interface DataFeedValue {
   value: ethers.BigNumber;
-  timestamp: number;
+  timestampMs: number;
 }
 interface GasState {
-  gasPrices: { price: ethers.BigNumber; timestamp: number }[];
+  gasPrices: { price: ethers.BigNumber; timestampMs: number }[];
   lastOnChainDataFeedValues: Record<string, DataFeedValue>;
 }
 
@@ -33,7 +32,7 @@ export const initializeGasStore = (chainId: string, providerName: string) => {
  */
 export const setStoreGasPrices = (chainId: string, providerName: string, gasPrice: ethers.BigNumber) => {
   gasPriceStore[chainId]![providerName]!.gasPrices = [
-    { price: gasPrice, timestamp: Date.now() },
+    { price: gasPrice, timestampMs: Date.now() },
     ...gasPriceStore[chainId]![providerName]!.gasPrices,
   ];
 };
@@ -51,7 +50,7 @@ export const clearExpiredStoreGasPrices = (
 ) => {
   // Remove gasPrices older than the sanitizationSamplingWindow
   gasPriceStore[chainId]![providerName]!.gasPrices = gasPriceStore[chainId]![providerName]!.gasPrices.filter(
-    (gasPrice) => gasPrice.timestamp >= Date.now() - sanitizationSamplingWindow * 60 * 1000
+    (gasPrice) => gasPrice.timestampMs >= Date.now() - sanitizationSamplingWindow * 60 * 1000
   );
 };
 
@@ -65,7 +64,7 @@ export const setLastOnChainDatafeedValues = (
   chainId: string,
   providerName: string,
   dataFeedId: string,
-  dataFeedValues: { value: ethers.BigNumber; timestamp: number }
+  dataFeedValues: { value: ethers.BigNumber; timestampMs: number }
 ) => {
   initializeGasStore(chainId, providerName);
   gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId] = dataFeedValues;
@@ -83,7 +82,6 @@ export const clearLastOnChainDatafeedValue = (chainId: string, providerName: str
   }
 };
 
-// TODO: Copied from airnode-utilities, should we import instead?
 export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => {
   if (array.length === 0) return;
 
@@ -98,17 +96,21 @@ export const multiplyGasPrice = (gasPrice: ethers.BigNumber, gasPriceMultiplier:
 /**
  * Calculates the multiplier to use for pending transactions.
  * @param recommendedGasPriceMultiplier
- * @param scalingMultiplier
+ * @param maxScalingMultiplier
  * @param lag
  * @param scalingWindow
  * @returns
  */
 export const calculateScalingMultiplier = (
   recommendedGasPriceMultiplier: number,
-  scalingMultiplier: number,
+  maxScalingMultiplier: number,
   lag: number,
   scalingWindow: number
-) => recommendedGasPriceMultiplier + (scalingMultiplier - recommendedGasPriceMultiplier) * (lag / scalingWindow);
+) =>
+  Math.min(
+    recommendedGasPriceMultiplier + (maxScalingMultiplier - recommendedGasPriceMultiplier) * (lag / scalingWindow),
+    maxScalingMultiplier
+  );
 
 /**
  * Fetches the provider recommended gas price and saves it in the store.
@@ -164,7 +166,7 @@ export const gasPriceCollector = async (
  * @param nonce
  * @returns {ethers.BigNumber}
  */
-export const airseekerV2ProviderRecommendedGasPrice = async (
+export const getAirseekerRecommendedGasPrice = async (
   chainId: string,
   providerName: string,
   rpcUrl: string,
@@ -174,7 +176,7 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
     newDataFeedValue: DataFeedValue;
   }
 ): Promise<ethers.BigNumber> => {
-  const { recommendedGasPriceMultiplier, sanitizationPercentile, scalingWindow, scalingMultiplier } = gasSettings;
+  const { recommendedGasPriceMultiplier, sanitizationPercentile, scalingWindow, maxScalingMultiplier } = gasSettings;
   // Get the configured percentile of historical gas prices before adding the new price
   const percentileGasPrice = getPercentile(
     sanitizationPercentile,
@@ -194,12 +196,12 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
     lastDataFeedValue &&
     newDataFeedUpdateOnChainValues &&
     lastDataFeedValue?.value === newDataFeedUpdateOnChainValues.newDataFeedValue.value &&
-    lastDataFeedValue?.timestamp < Date.now() - scalingWindow * 60 * 1000
+    lastDataFeedValue?.timestampMs < Date.now() - scalingWindow * 60 * 1000
   ) {
     const multiplier = calculateScalingMultiplier(
       recommendedGasPriceMultiplier,
-      scalingMultiplier,
-      (Date.now() - lastDataFeedValue.timestamp) / (60 * 1000),
+      maxScalingMultiplier,
+      (Date.now() - lastDataFeedValue.timestampMs) / (60 * 1000),
       scalingWindow
     );
 
@@ -213,24 +215,5 @@ export const airseekerV2ProviderRecommendedGasPrice = async (
   return multiplyGasPrice(sanitizedGasPrice, recommendedGasPriceMultiplier);
 };
 
-export const runGasPriceCollector = async () => {
-  const config = await loadConfig();
 
-  await Promise.all(
-    Object.entries(config.chains).flatMap(([chainId, chain]) =>
-      Object.entries(chain.providers).map(async ([providerName, rpcUrl]) =>
-        go(async () =>
-          gasPriceCollector(chainId, providerName, rpcUrl.url, chain.gasSettings.sanitizationSamplingWindow)
-        )
-      )
-    )
-  );
-};
 
-if (require.main === module) {
-  runGasPriceCollector().catch((error) => {
-    // eslint-disable-next-line no-console
-    console.trace(error);
-    process.exit(1);
-  });
-}

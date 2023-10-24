@@ -43,7 +43,7 @@ export const generateTestConfig = (): Config => ({
         recommendedGasPriceMultiplier: 1.5,
         sanitizationPercentile: 80,
         sanitizationSamplingWindow: 15,
-        scalingMultiplier: 2,
+        maxScalingMultiplier: 2,
         scalingWindow: 5,
       },
     },

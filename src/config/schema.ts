@@ -53,7 +53,7 @@ export const gasSettingsSchema = z.object({
   sanitizationSamplingWindow: z.number().positive(),
   sanitizationPercentile: z.number().positive(),
   scalingWindow: z.number().positive(),
-  scalingMultiplier: z.number().positive(),
+  maxScalingMultiplier: z.number().positive(),
 });
 
 export type GasSettings = z.infer<typeof gasSettingsSchema>;
