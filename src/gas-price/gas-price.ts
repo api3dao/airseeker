@@ -184,9 +184,6 @@ export const getAirseekerRecommendedGasPrice = async (
   );
 
   const gasPrice = await updateGasPriceStore(chainId, providerName, rpcUrl);
-  if (!gasPriceStore[chainId]![providerName]!.gasPrices) {
-    return multiplyGasPrice(gasPrice, recommendedGasPriceMultiplier);
-  }
 
   const lastDataFeedValue =
     newDataFeedUpdateOnChainValues &&
