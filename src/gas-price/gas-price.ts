@@ -1,4 +1,3 @@
-import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
 import type { GasSettings } from '../config/schema';

@@ -11,6 +11,8 @@ on:
 jobs:
   documentation:
     runs-on: ubuntu-latest
+    # Don't run twice for a push within an internal PR
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
@@ -20,6 +22,8 @@ jobs:
   lint-build-test:
     runs-on: ubuntu-latest
     name: Build, lint and test
+    # Don't run twice for a push within an internal PR
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
