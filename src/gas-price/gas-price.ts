@@ -214,6 +214,3 @@ export const getAirseekerRecommendedGasPrice = async (
 
   return multiplyGasPrice(sanitizedGasPrice, recommendedGasPriceMultiplier);
 };
-
-
-
