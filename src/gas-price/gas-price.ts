@@ -124,19 +124,12 @@ export const updateGasPriceStore = async (chainId: string, providerName: string,
     chainId: Number.parseInt(chainId, 10),
     name: chainId,
   });
-
   // Get the provider recommended gas price
-  const goGasPrice = await go(async () => provider.getGasPrice(), { retries: 1, attemptTimeoutMs: 2000 });
-  if (!goGasPrice.success) {
-    // eslint-disable-next-line no-console
-    console.log(`Failed to get provider gas price. Error: ${goGasPrice.error.message}.`);
-    throw goGasPrice.error;
-  }
-
+  const gasPrice = await provider.getGasPrice();
   // Save the new provider recommended gas price to the state
-  setStoreGasPrices(chainId, providerName, goGasPrice.data);
+  setStoreGasPrices(chainId, providerName, gasPrice);
 
-  return goGasPrice.data;
+  return gasPrice;
 };
 
 /**
