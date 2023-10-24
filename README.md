@@ -5,6 +5,13 @@
 The Airseeker is a rework of the [original Airseeker](https://github.com/api3dao/airseeker). The Airseeker v2 is
 simplified and only works with signed APIs.
 
+## Application Logic Flowchart
+
+A render of the flowchart can be found below. To edit this document, use [diagrams.net](https://app.diagrams.net) to
+edit `airseeker_v2_pipeline.drawio`, preferably by cloning the repository and loading the file locally.
+
+![Airseeker flowchart](airseeker_v2_pipeline.drawio.svg)
+
 ## Getting started
 
 1. `pnpm install` - To install the dependencies.
