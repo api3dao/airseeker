@@ -98,6 +98,30 @@ The Airnode address of the beacon.
 
 The template ID of the beacon.
 
+#### `gasSettings`
+
+The settings used to calculate gas prices used to submit transactions.
+
+##### `recommendedGasPriceMultiplier`
+
+The multiplier used for the provider recommended gas price.
+
+##### `sanitizationSamplingWindow`
+
+The number of minutes for which to keep historical gas prices.
+
+##### `sanitizationPercentile`
+
+The percentile of gas historical prices to use for sanitization.
+
+##### `scalingWindow`
+
+The number of minutes used to calculate the scaling multiplier if a pending transaction is detected.
+
+##### `maxScalingMultiplier`
+
+The maximum scaling multiplier used when the pending transaction lag exceeds the `scalingWindow`.
+
 ### `deviationThresholdCoefficient`
 
 The global coefficient applied to all deviation checks. Used to differentiate alternate deployments. For example:
