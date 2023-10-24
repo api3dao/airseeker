@@ -5,12 +5,15 @@
 The Airseeker is a rework of the [original Airseeker](https://github.com/api3dao/airseeker). The Airseeker v2 is
 simplified and only works with signed APIs.
 
-## Application Logic Flowchart
+## Flowchart and specification
 
 A render of the flowchart can be found below. To edit this document, use [diagrams.net](https://app.diagrams.net) to
 edit `airseeker_v2_pipeline.drawio`, preferably by cloning the repository and loading the file locally.
 
 ![Airseeker flowchart](airseeker_v2_pipeline.drawio.svg)
+
+Link to the
+[Airseeker specification](https://docs.google.com/document/d/1x5QBOGII8IUGjtoNR6PVE_UeqEjRQj2u3Ysa1FQkHf0/edit).
 
 ## Getting started
 
