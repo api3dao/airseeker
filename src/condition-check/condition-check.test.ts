@@ -38,10 +38,10 @@ describe('checkUpdateCondition', () => {
   it('checks all update conditions | heartbeat exceeded', () => {
     const result = checkUpdateConditions(
       BigNumber.from(10),
-      Date.now() / 1000,
+      Date.now() / 1000 - 60 * 60 * 24,
       BigNumber.from(10),
-      Date.now() + 60 * 60 * 25,
-      86_400,
+      Date.now() / 1000,
+      60 * 60 * 23,
       2
     );
 

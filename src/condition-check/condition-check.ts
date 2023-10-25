@@ -14,21 +14,29 @@ export const calculateUpdateInPercentage = (initialValue: ethers.BigNumber, upda
 
 export const calculateMedian = (arr: ethers.BigNumber[]) => {
   const mid = Math.floor(arr.length / 2);
+
   const nums = [...arr].sort((a, b) => {
     if (a.lt(b)) return -1;
     else if (a.gt(b)) return 1;
     else return 0;
   });
 
-  if (arr.length % 2 !== 0) {
-    return nums[mid];
+  const midNumber = nums[mid];
+  if (arr.length % 2 === 0) {
+    const baseNumber = nums[mid - 1];
+
+    if (!baseNumber) {
+      throw new Error('Invalid base number');
+    }
+
+    if (!midNumber) {
+      throw new Error('Invalid mid number');
+    }
+
+    return baseNumber.add(midNumber).div(2);
   }
 
-  if (mid - 1 > 0) {
-    return nums[mid - 1]!.add(nums[mid]!).div(2);
-  }
-
-  throw new Error('Invalid scenario');
+  return midNumber;
 };
 
 export const checkDeviationThresholdExceeded = (
