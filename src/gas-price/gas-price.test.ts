@@ -211,7 +211,7 @@ describe('gas price', () => {
     it('gets and uses the percentile price from the store', async () => {
       const gasPricesMock = Array.from(Array.from({ length: 10 }), (_, i) => ({
         price: ethers.utils.parseUnits(`${i + 1}`, 'gwei'),
-        timestampMs: timestampMock,
+        timestampMs: timestampMock - 0.9 * gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
       }));
       jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
       jest
@@ -255,7 +255,7 @@ describe('gas price', () => {
       const oldGasPriceValueMock = ethers.utils.parseUnits('5', 'gwei');
       const oldGasPriceMock = {
         price: oldGasPriceValueMock,
-        timestampMs: timestampMock,
+        timestampMs: timestampMock - 0.9 * gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
       };
       jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
       jest

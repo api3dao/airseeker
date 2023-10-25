@@ -109,7 +109,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     const oldGasPriceValueMock = providerRecommendedGasprice.sub(ethers.utils.parseUnits('1', 'gwei'));
     const oldGasPriceMock = {
       price: oldGasPriceValueMock,
-      timestampMs: timestampMock,
+      timestampMs: timestampMock - 0.9 * gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
     };
     gasPriceStore[chainId]![providerName]!.gasPrices = [oldGasPriceMock];
 

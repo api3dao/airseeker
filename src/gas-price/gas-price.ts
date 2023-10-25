@@ -168,18 +168,25 @@ export const getAirseekerRecommendedGasPrice = async (
     newDataFeedValue: DataFeedValue;
   }
 ): Promise<ethers.BigNumber> => {
-  const { recommendedGasPriceMultiplier, sanitizationPercentile, scalingWindow, maxScalingMultiplier } = gasSettings;
+  const {
+    recommendedGasPriceMultiplier,
+    sanitizationPercentile,
+    sanitizationSamplingWindow,
+    scalingWindow,
+    maxScalingMultiplier,
+  } = gasSettings;
+  const { gasPrices, lastOnChainDataFeedValues } = gasPriceStore[chainId]![providerName]!;
+
   // Get the configured percentile of historical gas prices before adding the new price
   const percentileGasPrice = getPercentile(
     sanitizationPercentile,
-    gasPriceStore[chainId]![providerName]!.gasPrices.map((gasPrice) => gasPrice.price)
+    gasPrices.map((gasPrice) => gasPrice.price)
   );
 
   const gasPrice = await updateGasPriceStore(chainId, providerName, rpcUrl);
 
   const lastDataFeedValue =
-    newDataFeedUpdateOnChainValues &&
-    gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[newDataFeedUpdateOnChainValues.dataFeedId];
+    newDataFeedUpdateOnChainValues && lastOnChainDataFeedValues[newDataFeedUpdateOnChainValues.dataFeedId];
   // Check if the next update is a retry of a pending transaction and if it has been pending longer than scalingWindow
   if (
     lastDataFeedValue &&
@@ -197,9 +204,18 @@ export const getAirseekerRecommendedGasPrice = async (
     return multiplyGasPrice(gasPrice, multiplier);
   }
 
+  // Check that there are enough entries in the stored gas prices to determine whether to use sanitization or not
+  // Calculate the minimum timestamp that should be within the 90% of the sanitizationSamplingWindow
+  const minTimestampMs = Date.now() - 0.9 * sanitizationSamplingWindow * 60 * 1000;
+
+  // Check if there are entries with a timestamp older than at least 90% of the sanitizationSamplingWindow
+  const hasSufficientSanitizationData = gasPrices.some((gasPrice) => gasPrice.timestampMs <= minTimestampMs);
+
   // Check if the multiplied gas price is within the percentile and return the smaller value
-  // TODO should we check for a minimum length of state gas prices used in the calculation?
-  const sanitizedGasPrice = percentileGasPrice && gasPrice.gt(percentileGasPrice) ? percentileGasPrice : gasPrice;
+  const sanitizedGasPrice =
+    hasSufficientSanitizationData && percentileGasPrice && gasPrice.gt(percentileGasPrice)
+      ? percentileGasPrice
+      : gasPrice;
 
   return multiplyGasPrice(sanitizedGasPrice, recommendedGasPriceMultiplier);
 };
