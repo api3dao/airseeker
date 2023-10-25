@@ -56,5 +56,6 @@ export const init = () => {
   const config = getConfig();
   setState({
     config,
+    gasPriceStore: {},
   });
 };

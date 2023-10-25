@@ -1,25 +1,32 @@
 import { ethers } from 'ethers';
 
 import type { GasSettings } from '../config/schema';
-
-interface DataFeedValue {
-  value: ethers.BigNumber;
-  timestampMs: number;
-}
-interface GasState {
-  gasPrices: { price: ethers.BigNumber; timestampMs: number }[];
-  lastOnChainDataFeedValues: Record<string, DataFeedValue>;
-}
-
-export const gasPriceStore: Record<string, Record<string, GasState>> = {};
+import { getState, setState, type DataFeedValue } from '../state';
 
 export const initializeGasStore = (chainId: string, providerName: string) => {
-  if (!gasPriceStore[chainId]) {
-    gasPriceStore[chainId] = {};
+  const state = getState();
+
+  if (!state.gasPriceStore[chainId]) {
+    setState({
+      ...state,
+      gasPriceStore: {
+        ...state.gasPriceStore,
+        [chainId]: {},
+      },
+    });
   }
 
-  if (!gasPriceStore[chainId]![providerName]) {
-    gasPriceStore[chainId]![providerName] = { gasPrices: [], lastOnChainDataFeedValues: {} };
+  if (!state.gasPriceStore[chainId]?.[providerName]) {
+    setState({
+      ...state,
+      gasPriceStore: {
+        ...state.gasPriceStore,
+        [chainId]: {
+          ...state.gasPriceStore[chainId],
+          [providerName]: { gasPrices: [], lastOnChainDataFeedValues: {} },
+        },
+      },
+    });
   }
 };
 
@@ -30,10 +37,23 @@ export const initializeGasStore = (chainId: string, providerName: string) => {
  * @param gasPrice
  */
 export const setStoreGasPrices = (chainId: string, providerName: string, gasPrice: ethers.BigNumber) => {
-  gasPriceStore[chainId]![providerName]!.gasPrices = [
-    { price: gasPrice, timestampMs: Date.now() },
-    ...gasPriceStore[chainId]![providerName]!.gasPrices,
-  ];
+  const state = getState();
+  setState({
+    ...state,
+    gasPriceStore: {
+      ...state.gasPriceStore,
+      [chainId]: {
+        ...state.gasPriceStore[chainId],
+        [providerName]: {
+          ...state.gasPriceStore[chainId]![providerName]!,
+          gasPrices: [
+            { price: gasPrice, timestampMs: Date.now() },
+            ...state.gasPriceStore[chainId]![providerName]!.gasPrices,
+          ],
+        },
+      },
+    },
+  });
 };
 
 /**
@@ -47,10 +67,23 @@ export const clearExpiredStoreGasPrices = (
   providerName: string,
   sanitizationSamplingWindow: number
 ) => {
+  const state = getState();
   // Remove gasPrices older than the sanitizationSamplingWindow
-  gasPriceStore[chainId]![providerName]!.gasPrices = gasPriceStore[chainId]![providerName]!.gasPrices.filter(
-    (gasPrice) => gasPrice.timestampMs >= Date.now() - sanitizationSamplingWindow * 60 * 1000
-  );
+  setState({
+    ...state,
+    gasPriceStore: {
+      ...state.gasPriceStore,
+      [chainId]: {
+        ...state.gasPriceStore[chainId],
+        [providerName]: {
+          ...state.gasPriceStore[chainId]![providerName]!,
+          gasPrices: state.gasPriceStore[chainId]![providerName]!.gasPrices.filter(
+            (gasPrice) => gasPrice.timestampMs >= Date.now() - sanitizationSamplingWindow * 60 * 1000
+          ),
+        },
+      },
+    },
+  });
 };
 
 /**
@@ -66,7 +99,23 @@ export const setLastOnChainDatafeedValues = (
   dataFeedValues: { value: ethers.BigNumber; timestampMs: number }
 ) => {
   initializeGasStore(chainId, providerName);
-  gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId] = dataFeedValues;
+  const state = getState();
+  setState({
+    ...state,
+    gasPriceStore: {
+      ...state.gasPriceStore,
+      [chainId]: {
+        ...state.gasPriceStore[chainId],
+        [providerName]: {
+          ...state.gasPriceStore[chainId]![providerName]!,
+          lastOnChainDataFeedValues: {
+            ...state.gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues,
+            [dataFeedId]: dataFeedValues,
+          },
+        },
+      },
+    },
+  });
 };
 
 /**
@@ -76,8 +125,25 @@ export const setLastOnChainDatafeedValues = (
  * @param nonce
  */
 export const clearLastOnChainDatafeedValue = (chainId: string, providerName: string, dataFeedId: string) => {
-  if (gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId]) {
-    delete gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId];
+  const state = getState();
+
+  if (state.gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId]) {
+    const { [dataFeedId]: _value, ...lastOnChainDataFeedValues } =
+      state.gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues;
+
+    setState({
+      ...state,
+      gasPriceStore: {
+        ...state.gasPriceStore,
+        [chainId]: {
+          ...state.gasPriceStore[chainId],
+          [providerName]: {
+            ...state.gasPriceStore[chainId]![providerName]!,
+            lastOnChainDataFeedValues,
+          },
+        },
+      },
+    });
   }
 };
 
@@ -175,7 +241,8 @@ export const getAirseekerRecommendedGasPrice = async (
     scalingWindow,
     maxScalingMultiplier,
   } = gasSettings;
-  const { gasPrices, lastOnChainDataFeedValues } = gasPriceStore[chainId]![providerName]!;
+  const state = getState();
+  const { gasPrices, lastOnChainDataFeedValues } = state.gasPriceStore[chainId]![providerName]!;
 
   // Get the configured percentile of historical gas prices before adding the new price
   const percentileGasPrice = getPercentile(
