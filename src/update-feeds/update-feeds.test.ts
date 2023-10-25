@@ -1,9 +1,10 @@
-import { runUpdateFeed, startUpdateFeedsLoops } from './update-feeds';
-import * as contractMockModule from './temporary-contract-mock';
-import * as stateModule from '../state';
-import { logger } from '../logger';
 import { allowPartial } from '../../test/utils';
 import type { Chain } from '../config/schema';
+import { logger } from '../logger';
+import * as stateModule from '../state';
+
+import * as contractMockModule from './temporary-contract-mock';
+import { runUpdateFeed, startUpdateFeedsLoops } from './update-feeds';
 
 describe(startUpdateFeedsLoops.name, () => {
   it('starts staggered update loops for a chain', async () => {

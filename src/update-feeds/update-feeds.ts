@@ -1,10 +1,12 @@
-import { range, size } from 'lodash';
 import { go } from '@api3/promise-utils';
-import { type ActiveDapisBatch, getStaticActiveDapis } from './temporary-contract-mock';
+import { range, size } from 'lodash';
+
+import type { Chain } from '../config/schema';
+import { logger } from '../logger';
 import { getState } from '../state';
 import { isFulfilled, sleep } from '../utils';
-import { logger } from '../logger';
-import type { Chain } from '../config/schema';
+
+import { type ActiveDapisBatch, getStaticActiveDapis } from './temporary-contract-mock';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -78,7 +80,6 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   await Promise.all([processFirstBatchPromise, ...processOtherBatchesPromises]);
 };
 
-// eslint-disable-next-line lodash/prefer-noop
 export const processBatch = async (_batch: ActiveDapisBatch) => {
   // TODO: Implement.
 };

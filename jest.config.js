@@ -6,13 +6,13 @@ const { join } = require('node:path');
  * @type {import('jest').Config}
  */
 module.exports = {
-  projects: ['<rootDir>/jest-e2e.config.js', '<rootDir>/jest-unit.config.js'],
   bail: true,
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',
   modulePathIgnorePatterns: ['<rootDir>/.build', '<rootDir>/dist/', '<rootDir>/build/'],
   preset: 'ts-jest',
+  projects: ['<rootDir>/jest-e2e.config.js', '<rootDir>/jest-unit.config.js'],
   restoreMocks: true,
   setupFiles: [join(__dirname, './jest.setup.js')],
   testEnvironment: 'jest-environment-node',
