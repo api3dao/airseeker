@@ -1,6 +1,6 @@
 import type { ethers } from 'ethers';
 
-// TODO: The contract is not yet published, so we generate the Typechain artifacts locally and import it from there.
+// NOTE: The contract is not yet published, so we generate the Typechain artifacts locally and import it from there.
 import { type DapiDataRegistry, DapiDataRegistry__factory } from '../../typechain-types';
 
 export const getDapiDataRegistry = (address: string, provider: ethers.providers.StaticJsonRpcProvider) =>
