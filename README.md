@@ -199,6 +199,14 @@ The global coefficient applied to all deviation checks. Used to differentiate al
 "deviationThresholdCoefficient": 1,
 ```
 
+#### `dataFeedUpdateInterval`
+
+The interval specifying how often to run the data feed update loop. In seconds.
+
+#### `dataFeedBatchSize`
+
+The batch size of active dAPIs that are to be fetched in a single RPC call.
+
 ## Docker
 
 ### Build
