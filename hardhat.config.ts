@@ -1,7 +1,11 @@
 import type { HardhatUserConfig } from 'hardhat/types';
-import '@nomiclabs/hardhat-ethers';
 
-export const config: HardhatUserConfig = {
+import '@nomicfoundation/hardhat-toolbox';
+
+const config: HardhatUserConfig = {
+  solidity: {
+    version: '0.8.18',
+  },
   networks: {
     localhost: {
       url: 'http://127.0.0.1:8545/',
@@ -9,3 +13,6 @@ export const config: HardhatUserConfig = {
   },
   defaultNetwork: 'localhost',
 };
+
+// eslint-disable-next-line import/no-default-export
+export default config;
