@@ -6,15 +6,14 @@ const { join } = require('node:path');
  * @type {import('jest').Config}
  */
 module.exports = {
-  bail: true,
-  collectCoverage: true,
-  coverageDirectory: 'coverage',
-  coverageProvider: 'v8',
-  modulePathIgnorePatterns: ['<rootDir>/.build', '<rootDir>/dist/', '<rootDir>/build/'],
+  collectCoverage: false, // It doesn't make sense to collect coverage for e2e tests because they target high level features and interaction with other services.
+  maxWorkers: 1, // We don't want to run tests in parallel because they might interfere with each other. This option is the same as --runInBand. See: https://stackoverflow.com/a/46489246.
+
   preset: 'ts-jest',
   restoreMocks: true,
   setupFiles: [join(__dirname, './jest.setup.js')],
   testEnvironment: 'jest-environment-node',
   testMatch: ['**/?(*.)+(feature).[t]s?(x)'],
+  testPathIgnorePatterns: ['<rootDir>/.build', '<rootDir>/dist/', '<rootDir>/build/'],
   verbose: true,
 };
