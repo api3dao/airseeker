@@ -1,4 +1,5 @@
 import { createLogger } from '@api3/commons';
+
 import { loadEnv } from './env/env';
 
 const env = loadEnv();

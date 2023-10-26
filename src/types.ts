@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { type EvmAddress, evmAddressSchema, type EvmId, evmIdSchema } from './config/schema';
 
 export type AirnodeAddress = EvmAddress;

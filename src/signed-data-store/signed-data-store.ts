@@ -1,5 +1,6 @@
-import { ethers } from 'ethers';
 import { goSync } from '@api3/promise-utils';
+import { ethers } from 'ethers';
+
 import { logger } from '../logger';
 import type { LocalSignedData, SignedData, AirnodeAddress, TemplateId } from '../types';
 

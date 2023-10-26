@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { ethers } from 'ethers';
 import { references } from '@api3/airnode-protocol-v1';
+import { ethers } from 'ethers';
+import { z } from 'zod';
 
 export const evmAddressSchema = z.string().regex(/^0x[\dA-Fa-f]{40}$/, 'Must be a valid EVM address');
 
@@ -48,6 +48,16 @@ export const temporaryDapiDataRegistrySchema = z.object({
 
 export type TemporaryDapiDataRegistry = z.infer<typeof temporaryDapiDataRegistrySchema>;
 
+export const gasSettingsSchema = z.object({
+  recommendedGasPriceMultiplier: z.number().positive(),
+  sanitizationSamplingWindow: z.number().positive(),
+  sanitizationPercentile: z.number().positive(),
+  scalingWindow: z.number().positive(),
+  maxScalingMultiplier: z.number().positive(),
+});
+
+export type GasSettings = z.infer<typeof gasSettingsSchema>;
+
 // Contracts are optional. If unspecified, they will be loaded from "airnode-protocol-v1" or error out during
 // validation. We need a chain ID from parent schema to load the contracts.
 export const optionalChainSchema = z
@@ -55,6 +65,7 @@ export const optionalChainSchema = z
     providers: z.record(providerSchema), // The record key is the provider "nickname"
     __Temporary__DapiDataRegistry: temporaryDapiDataRegistrySchema,
     contracts: optionalContractsSchema.optional(),
+    gasSettings: gasSettingsSchema,
   })
   .strict();
 
@@ -101,8 +112,8 @@ export const configSchema = z
   .object({
     sponsorWalletMnemonic: z.string().refine((mnemonic) => ethers.utils.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
     chains: chainsSchema,
+    deviationThresholdCoefficient: z.number().optional().default(1),
     fetchInterval: z.number().positive(),
-    deviationThresholdCoefficient: z.number(),
   })
   .strict();
 
