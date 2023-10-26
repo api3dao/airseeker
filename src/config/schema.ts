@@ -22,6 +22,7 @@ export type Provider = z.infer<typeof providerSchema>;
 export const optionalContractsSchema = z
   .object({
     Api3ServerV1: evmAddressSchema.optional(),
+    DapiDataRegistry: evmAddressSchema, // TODO: Make optional and load from "airnode-protocol-v1" or some other location and document it accordingly.
   })
   .strict();
 
@@ -114,7 +115,8 @@ export const chainsSchema = z
           ctx.addIssue({
             code: 'custom',
             message: 'Invalid contract addresses',
-            path: ['chains', chainId, 'contracts'],
+            // Show at least the first error.
+            path: [chainId, 'contracts', ...parsedContracts.error.errors[0]!.path],
           });
 
           return z.NEVER;

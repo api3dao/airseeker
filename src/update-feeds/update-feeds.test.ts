@@ -1,10 +1,14 @@
+import { ethers } from 'ethers';
+
+import { generateMockDapiDataRegistry, generateReadDapisResponse } from '../../test/fixtures/dapi-data-registry';
 import { allowPartial } from '../../test/utils';
+import type { DapiDataRegistry } from '../../typechain-types';
 import type { Chain } from '../config/schema';
 import { logger } from '../logger';
 import * as stateModule from '../state';
 import * as utilsModule from '../utils';
 
-import * as contractMockModule from './temporary-contract-mock';
+import * as dapiDataRegistryModule from './dapi-data-registry';
 import { runUpdateFeed, startUpdateFeedLoops } from './update-feeds';
 
 describe(startUpdateFeedLoops.name, () => {
@@ -34,7 +38,7 @@ describe(startUpdateFeedLoops.name, () => {
 
     // Expect the intervals to be called with the correct stagger time.
     expect(setInterval).toHaveBeenCalledTimes(2);
-    expect(intervalCalls[1]! - intervalCalls[0]!).toBeGreaterThanOrEqual(50);
+    expect(intervalCalls[1]! - intervalCalls[0]!).toBeGreaterThanOrEqual(40); // Reserving 10s as the buffer for computing stagger time.
 
     // Expect the logs to be called with the correct context.
     expect(logger.debug).toHaveBeenCalledTimes(3);
@@ -111,12 +115,23 @@ describe(startUpdateFeedLoops.name, () => {
 
 describe(runUpdateFeed.name, () => {
   it('aborts when fetching first dAPIs batch fails', async () => {
-    jest.spyOn(contractMockModule, 'getStaticActiveDapis').mockRejectedValue(new Error('provider-error'));
+    const dapiDataRegistry = generateMockDapiDataRegistry();
+    jest
+      .spyOn(dapiDataRegistryModule, 'getDapiDataRegistry')
+      .mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
+    dapiDataRegistry.readDapis.mockRejectedValueOnce(new Error('provider-error'));
     jest.spyOn(logger, 'error');
 
     await runUpdateFeed(
       'provider-name',
-      allowPartial<Chain>({ dataFeedBatchSize: 2, dataFeedUpdateInterval: 10 }),
+      allowPartial<Chain>({
+        dataFeedBatchSize: 2,
+        dataFeedUpdateInterval: 10,
+        providers: { ['provider-name']: { url: 'provider-url' } },
+        contracts: {
+          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+        },
+      }),
       '123'
     );
 
@@ -130,24 +145,35 @@ describe(runUpdateFeed.name, () => {
 
   it('fetches other batches in a staggered way and logs errors', async () => {
     // Prepare the mocked contract so it returns three batches (of size 1) of dAPIs and the second batch fails to load.
-    const mockedFeed = await contractMockModule.getStaticActiveDapis(0, 0);
-    const firstBatch = { ...mockedFeed, totalCount: 3 };
-    const thirdBatch = { ...mockedFeed, totalCount: 3 };
+    const firstBatch = generateReadDapisResponse();
+    const thirdBatch = generateReadDapisResponse();
+    const dapiDataRegistry = generateMockDapiDataRegistry();
+    jest
+      .spyOn(dapiDataRegistryModule, 'getDapiDataRegistry')
+      .mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
+    dapiDataRegistry.readDapis.mockResolvedValueOnce(firstBatch);
+    dapiDataRegistry.readDapis.mockRejectedValueOnce(new Error('provider-error'));
+    dapiDataRegistry.readDapis.mockResolvedValueOnce(thirdBatch);
+    dapiDataRegistry.dapisCount.mockResolvedValueOnce(ethers.BigNumber.from(3));
     const sleepCalls = [] as number[];
     const originalSleep = utilsModule.sleep;
     jest.spyOn(utilsModule, 'sleep').mockImplementation(async (ms) => {
       sleepCalls.push(ms);
       return originalSleep(ms);
     });
-    jest.spyOn(contractMockModule, 'getStaticActiveDapis').mockResolvedValueOnce(firstBatch);
-    jest.spyOn(contractMockModule, 'getStaticActiveDapis').mockRejectedValueOnce(new Error('provider-error'));
-    jest.spyOn(contractMockModule, 'getStaticActiveDapis').mockResolvedValueOnce(thirdBatch);
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'error');
 
     await runUpdateFeed(
       'provider-name',
-      allowPartial<Chain>({ dataFeedBatchSize: 1, dataFeedUpdateInterval: 0.15 }),
+      allowPartial<Chain>({
+        dataFeedBatchSize: 1,
+        dataFeedUpdateInterval: 0.15,
+        providers: { ['provider-name']: { url: 'provider-url' } },
+        contracts: {
+          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+        },
+      }),
       '123'
     );
 

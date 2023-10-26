@@ -47,6 +47,7 @@ describe('chains schema', () => {
       '31337': {
         contracts: {
           Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
         providers: {
           hardhat: {
@@ -68,6 +69,7 @@ describe('chains schema', () => {
 
     expect(parsed['31337']!.contracts).toStrictEqual({
       Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+      DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
     });
   });
 
@@ -87,6 +89,9 @@ describe('chains schema', () => {
         gasSettings,
         dataFeedBatchSize: 10,
         dataFeedUpdateInterval: 60,
+        contracts: {
+          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+        },
       },
     };
 
@@ -94,6 +99,7 @@ describe('chains schema', () => {
 
     expect(parsed['1']!.contracts).toStrictEqual({
       Api3ServerV1: '0x3dEC619dc529363767dEe9E71d8dD1A5bc270D76',
+      DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
     });
   });
 
@@ -121,7 +127,7 @@ describe('chains schema', () => {
         {
           code: 'custom',
           message: 'Invalid contract addresses',
-          path: ['chains', '31337', 'contracts'],
+          path: ['31337', 'contracts', 'Api3ServerV1'],
         },
       ])
     );
@@ -132,6 +138,7 @@ describe('chains schema', () => {
       '31337': {
         contracts: {
           Api3ServerV1: '0xInvalid',
+          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
         providers: {
           hardhat: {

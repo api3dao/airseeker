@@ -113,7 +113,7 @@ A record of chain configurations. The record key is the chain ID. For example:
 }
 ```
 
-##### `contracts` _(optional)_
+##### `contracts`
 
 A record of contract addresses used by Airseeker. If not specified, the addresses are loaded from
 [Airnode protocol v1](https://github.com/api3dao/airnode-protocol-v1).
@@ -122,6 +122,10 @@ A record of contract addresses used by Airseeker. If not specified, the addresse
 
 The address of the Api3ServerV1 contract. If not specified, the address is loaded from the Airnode protocol v1
 repository.
+
+###### DapiDataRegistry
+
+The address of the DapiDataRegistry contract.
 
 ##### `providers`
 
