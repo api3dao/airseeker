@@ -1,11 +1,10 @@
 import { clearInterval } from 'node:timers';
 
-import { go, goSync } from '@api3/promise-utils';
+import { go } from '@api3/promise-utils';
 import axios from 'axios';
 import { uniq } from 'lodash';
 
 import { HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT, HTTP_SIGNED_DATA_API_HEADROOM } from '../constants';
-import { logger } from '../logger';
 import * as localDataStore from '../signed-data-store';
 import { getState, setState } from '../state';
 import { signedApiResponseSchema, type SignedData } from '../types';
@@ -78,11 +77,7 @@ export const runDataFetcher = async () => {
           const payload = await callSignedDataApi(url);
 
           for (const element of payload) {
-            const result = goSync(() => localDataStore.setStoreDataPoint(element));
-
-            if (!result.success) {
-              logger.warn('Error while storing datapoint in data store.', { ...result.error });
-            }
+            localDataStore.setStoreDataPoint(element);
           }
         },
         {
