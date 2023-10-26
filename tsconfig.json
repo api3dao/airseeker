@@ -21,5 +21,14 @@
     "noPropertyAccessFromIndexSignature": false
   },
   "exclude": ["dist/**/*", "node_modules/**/*"],
-  "include": ["./src/**/*", "./test/**/*", "jest.config.js", "jest.setup.js", ".eslintrc.js"]
+  "include": [
+    "./src/**/*",
+    "./test/**/*",
+    "jest.config.js",
+    "jest.setup.js",
+    ".eslintrc.js",
+    "hardhat.config.ts",
+    "jest-e2e.config.js",
+    "jest-unit.config.js"
+  ]
 }

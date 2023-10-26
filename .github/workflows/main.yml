@@ -11,6 +11,8 @@ on:
 jobs:
   documentation:
     runs-on: ubuntu-latest
+    # Don't run twice for a push within an internal PR
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
@@ -20,6 +22,8 @@ jobs:
   lint-build-test:
     runs-on: ubuntu-latest
     name: Build, lint and test
+    # Don't run twice for a push within an internal PR
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
@@ -42,10 +46,31 @@ jobs:
         run: pnpm run prettier:check && pnpm run eslint:check
       - name: Test
         run: pnpm run test
+  
+  test-e2e:
+    name: Test e2e
+    runs-on: ubuntu-latest
+    # Don't run twice for a push within an internal PR
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    timeout-minutes: 10
+    steps:
+      - name: Clone
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'pnpm'
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Start Hardhat
+        run: pnpm dev:eth-node&
+      - name: Test E2E
+        run: pnpm test:e2e
 
   required-checks-passed:
     name: All required checks passed
     runs-on: ubuntu-latest
-    needs: [documentation, lint-build-test]
+    needs: [documentation, lint-build-test, test-e2e]
     steps:
       - run: exit 0

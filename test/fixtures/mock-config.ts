@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
-import { setState } from '../../src/state';
+
 import type { Config } from '../../src/config/schema';
+import { setState } from '../../src/state';
 
 /**
  * A stub to retrieve the latest config
@@ -38,6 +39,13 @@ export const generateTestConfig = (): Config => ({
         },
         activeDapiNames: [],
       },
+      gasSettings: {
+        recommendedGasPriceMultiplier: 1.5,
+        sanitizationPercentile: 80,
+        sanitizationSamplingWindow: 15,
+        maxScalingMultiplier: 2,
+        scalingWindow: 5,
+      },
     },
   },
   fetchInterval: 10,
@@ -48,5 +56,6 @@ export const init = () => {
   const config = getConfig();
   setState({
     config,
+    gasPriceStore: {},
   });
 };

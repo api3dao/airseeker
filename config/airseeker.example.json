@@ -23,9 +23,16 @@
         "hardhat": {
           "url": "${HARDHAT_PROVIDER_URL}"
         }
+      },
+      "gasSettings": {
+        "recommendedGasPriceMultiplier": 1.5,
+        "sanitizationSamplingWindow": 15,
+        "sanitizationPercentile": 80,
+        "scalingWindow": 2,
+        "maxScalingMultiplier": 2
       }
     }
   },
-  "fetchInterval": 10000,
-  "deviationThresholdCoefficient": 1
+  "deviationThresholdCoefficient": 1,
+  "fetchInterval": 10000
 }
