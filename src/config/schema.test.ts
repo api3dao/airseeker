@@ -59,6 +59,8 @@ describe('chains schema', () => {
           activeDapiNames: [],
         },
         gasSettings,
+        dataFeedBatchSize: 10,
+        dataFeedUpdateInterval: 60,
       },
     };
 
@@ -83,6 +85,8 @@ describe('chains schema', () => {
           activeDapiNames: [],
         },
         gasSettings,
+        dataFeedBatchSize: 10,
+        dataFeedUpdateInterval: 60,
       },
     };
 
@@ -107,6 +111,8 @@ describe('chains schema', () => {
           activeDapiNames: [],
         },
         gasSettings,
+        dataFeedBatchSize: 10,
+        dataFeedUpdateInterval: 60,
       },
     };
 
@@ -138,6 +144,8 @@ describe('chains schema', () => {
           activeDapiNames: [],
         },
         gasSettings,
+        dataFeedBatchSize: 10,
+        dataFeedUpdateInterval: 60,
       },
     };
 

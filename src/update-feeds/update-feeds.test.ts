@@ -2,6 +2,7 @@ import { allowPartial } from '../../test/utils';
 import type { Chain } from '../config/schema';
 import { logger } from '../logger';
 import * as stateModule from '../state';
+import * as utilsModule from '../utils';
 
 import * as contractMockModule from './temporary-contract-mock';
 import { runUpdateFeed, startUpdateFeedsLoops } from './update-feeds';
@@ -13,7 +14,7 @@ describe(startUpdateFeedsLoops.name, () => {
         config: {
           chains: {
             '123': {
-              dataFeedUpdateInterval: 1, // Have just 1 second update interval to make the test run quicker.
+              dataFeedUpdateInterval: 0.1, // Have just 100 ms update interval to make the test run quicker.
               providers: {
                 'first-provider': { url: 'first-provider-url' },
                 'second-provider': { url: 'second-provider-url' },
@@ -33,13 +34,13 @@ describe(startUpdateFeedsLoops.name, () => {
 
     // Expect the intervals to be called with the correct stagger time.
     expect(setInterval).toHaveBeenCalledTimes(2);
-    expect(intervalCalls[1]! - intervalCalls[0]!).toBeGreaterThanOrEqual(500);
+    expect(intervalCalls[1]! - intervalCalls[0]!).toBeGreaterThanOrEqual(50);
 
     // Expect the logs to be called with the correct context.
     expect(logger.debug).toHaveBeenCalledTimes(3);
     expect(logger.debug).toHaveBeenCalledWith('Starting update loops for chain', {
       chainId: '123',
-      staggerTime: 500,
+      staggerTime: 50,
       providerNames: ['first-provider', 'second-provider'],
     });
     expect(logger.debug).toHaveBeenCalledWith('Starting update feed loop', {
@@ -58,13 +59,13 @@ describe(startUpdateFeedsLoops.name, () => {
         config: {
           chains: {
             '123': {
-              dataFeedUpdateInterval: 1,
+              dataFeedUpdateInterval: 0.1,
               providers: {
                 'first-provider': { url: 'first-provider-url' },
               },
             },
             '456': {
-              dataFeedUpdateInterval: 1,
+              dataFeedUpdateInterval: 0.1,
               providers: {
                 'another-provider': { url: 'another-provider-url' },
               },
@@ -89,12 +90,12 @@ describe(startUpdateFeedsLoops.name, () => {
     expect(logger.debug).toHaveBeenCalledTimes(4);
     expect(logger.debug).toHaveBeenCalledWith('Starting update loops for chain', {
       chainId: '123',
-      staggerTime: 1000,
+      staggerTime: 100,
       providerNames: ['first-provider'],
     });
     expect(logger.debug).toHaveBeenCalledWith('Starting update loops for chain', {
       chainId: '456',
-      staggerTime: 1000,
+      staggerTime: 100,
       providerNames: ['another-provider'],
     });
     expect(logger.debug).toHaveBeenCalledWith('Starting update feed loop', {
@@ -132,35 +133,29 @@ describe(runUpdateFeed.name, () => {
     const mockedFeed = await contractMockModule.getStaticActiveDapis(0, 0);
     const firstBatch = { ...mockedFeed, totalCount: 3 };
     const thirdBatch = { ...mockedFeed, totalCount: 3 };
-    const getStaticActiveDapisCalls = [] as number[];
-    // eslint-disable-next-line @typescript-eslint/require-await
-    jest.spyOn(contractMockModule, 'getStaticActiveDapis').mockImplementationOnce(async () => {
-      getStaticActiveDapisCalls.push(Date.now());
-      return firstBatch;
+    const sleepCalls = [] as number[];
+    const originalSleep = utilsModule.sleep;
+    jest.spyOn(utilsModule, 'sleep').mockImplementation(async (ms) => {
+      sleepCalls.push(ms);
+      return originalSleep(ms);
     });
-    // eslint-disable-next-line @typescript-eslint/require-await
-    jest.spyOn(contractMockModule, 'getStaticActiveDapis').mockImplementationOnce(async () => {
-      getStaticActiveDapisCalls.push(Date.now());
-      throw new Error('provider-error');
-    });
-    // eslint-disable-next-line @typescript-eslint/require-await
-    jest.spyOn(contractMockModule, 'getStaticActiveDapis').mockImplementationOnce(async () => {
-      getStaticActiveDapisCalls.push(Date.now());
-      return thirdBatch;
-    });
+    jest.spyOn(contractMockModule, 'getStaticActiveDapis').mockResolvedValueOnce(firstBatch);
+    jest.spyOn(contractMockModule, 'getStaticActiveDapis').mockRejectedValueOnce(new Error('provider-error'));
+    jest.spyOn(contractMockModule, 'getStaticActiveDapis').mockResolvedValueOnce(thirdBatch);
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'error');
 
     await runUpdateFeed(
       'provider-name',
-      allowPartial<Chain>({ dataFeedBatchSize: 1, dataFeedUpdateInterval: 1.5 }),
+      allowPartial<Chain>({ dataFeedBatchSize: 1, dataFeedUpdateInterval: 0.15 }),
       '123'
     );
 
     // Expect the contract to fetch the batches to be called with the correct stagger time.
-    expect(getStaticActiveDapisCalls).toHaveLength(3);
-    expect(getStaticActiveDapisCalls[1]! - getStaticActiveDapisCalls[0]!).toBeGreaterThanOrEqual(500);
-    expect(getStaticActiveDapisCalls[2]! - getStaticActiveDapisCalls[1]!).toBeGreaterThanOrEqual(500);
+    expect(utilsModule.sleep).toHaveBeenCalledTimes(3);
+    expect(sleepCalls[0]).toBeGreaterThanOrEqual(40); // Reserving 10s as the buffer for computing stagger time.
+    expect(sleepCalls[1]).toBeGreaterThanOrEqual(0);
+    expect(sleepCalls[2]).toBe(49.999_999_999_999_99); // Stagger time is actually 150 / 3 = 50, but there is an rounding error.
 
     // Expect the logs to be called with the correct context.
     expect(logger.error).toHaveBeenCalledTimes(1);
@@ -175,7 +170,7 @@ describe(runUpdateFeed.name, () => {
     });
     expect(logger.debug).toHaveBeenCalledWith('Fetching batches of active dAPIs', {
       batchesCount: 3,
-      staggerTime: 500,
+      staggerTime: 49.999_999_999_999_99,
       chainId: '123',
       providerName: 'provider-name',
     });
