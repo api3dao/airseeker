@@ -21,22 +21,7 @@ export const calculateMedian = (arr: ethers.BigNumber[]) => {
     else return 0;
   });
 
-  const midNumber = nums[mid];
-  if (arr.length % 2 === 0) {
-    const baseNumber = nums[mid - 1];
-
-    if (!baseNumber) {
-      throw new Error('Invalid base number');
-    }
-
-    if (!midNumber) {
-      throw new Error('Invalid mid number');
-    }
-
-    return baseNumber.add(midNumber).div(2);
-  }
-
-  return midNumber;
+  return arr.length % 2 === 0 ? nums[mid - 1]!.add(nums[mid]!).div(2) : nums[mid];
 };
 
 export const checkDeviationThresholdExceeded = (
