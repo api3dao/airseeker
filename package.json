@@ -11,6 +11,21 @@
     "dist",
     "*.js"
   ],
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "clean": "rm -rf coverage dist",
+    "dev": "nodemon --ext ts,js,json,env  --exec \"pnpm ts-node src/index.ts\"",
+    "eslint:check": "eslint --report-unused-disable-directives --cache --ext js,ts . --max-warnings 0",
+    "eslint:fix": "pnpm run eslint:check --fix",
+    "prettier:check": "prettier --check \"./**/*.{js,ts,md,json}\"",
+    "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json}\"",
+    "test": "jest --selectProjects unit --verbose --runInBand --bail --detectOpenHandles --silent",
+    "test:e2e": "jest --selectProjects e2e --runInBand",
+    "tsc": "tsc --project .",
+    "docker:build": "docker build -t api3/airseekerv2:latest -f docker/Dockerfile .",
+    "docker:run": "docker run -it --rm api3/airseekerv2:latest",
+    "dev:eth-node": "hardhat node"
+  },
   "devDependencies": {
     "@api3/ois": "^2.2.0",
     "@types/jest": "^29.5.5",
@@ -41,20 +56,5 @@
     "hardhat": "^2.18.0",
     "lodash": "^4.17.21",
     "zod": "^3.22.2"
-  },
-  "scripts": {
-    "build": "tsc --project tsconfig.build.json",
-    "clean": "rm -rf coverage dist",
-    "dev": "nodemon --ext ts,js,json,env  --exec \"pnpm ts-node src/index.ts\"",
-    "eslint:check": "eslint --report-unused-disable-directives --cache --ext js,ts . --max-warnings 0",
-    "eslint:fix": "pnpm run eslint:check --fix",
-    "prettier:check": "prettier --check \"./**/*.{js,ts,md,json}\"",
-    "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json}\"",
-    "test": "jest --selectProjects unit --verbose --runInBand --bail --detectOpenHandles --silent",
-    "test:e2e": "jest --selectProjects e2e --runInBand",
-    "tsc": "tsc --project .",
-    "docker:build": "docker build -t api3/airseekerv2:latest -f docker/Dockerfile .",
-    "docker:run": "docker run -it --rm api3/airseekerv2:latest",
-    "dev:eth-node": "hardhat node"
   }
 }
