@@ -11,7 +11,6 @@ on:
 jobs:
   documentation:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
@@ -21,7 +20,6 @@ jobs:
   lint-build-test:
     runs-on: ubuntu-latest
     name: Build, lint and test
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
