@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+
 import { z } from 'zod';
+
 import { loadConfig } from '../src/config';
 
 /*
