@@ -152,4 +152,45 @@ describe('chains schema', () => {
       ])
     );
   });
+
+  it('requires at least 1 chain', () => {
+    const chains = {};
+
+    expect(() => chainsSchema.parse(chains)).toThrow(
+      new ZodError([
+        {
+          code: 'custom',
+          message: 'Missing chains. At least one chain is required.',
+          path: ['chains'],
+        },
+      ])
+    );
+  });
+
+  it('requires at least 1 provider', () => {
+    const chains = {
+      '31337': {
+        contracts: {
+          Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+        },
+        providers: {},
+        __Temporary__DapiDataRegistry: {
+          airnodeToSignedApiUrl: {},
+          dataFeedIdToBeacons: {},
+          activeDapiNames: [],
+        },
+        gasSettings,
+      },
+    };
+
+    expect(() => chainsSchema.parse(chains)).toThrow(
+      new ZodError([
+        {
+          code: 'custom',
+          message: 'Missing provider. At least one provider is required.',
+          path: ['chains', '31337', 'providers'],
+        },
+      ])
+    );
+  });
 });
