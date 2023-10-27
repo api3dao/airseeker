@@ -5,9 +5,9 @@ import * as stateModule from '../state';
 import * as utilsModule from '../utils';
 
 import * as contractMockModule from './temporary-contract-mock';
-import { runUpdateFeed, startUpdateFeedsLoops } from './update-feeds';
+import { runUpdateFeed, startUpdateFeedLoops } from './update-feeds';
 
-describe(startUpdateFeedsLoops.name, () => {
+describe(startUpdateFeedLoops.name, () => {
   it('starts staggered update loops for a chain', async () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
@@ -30,7 +30,7 @@ describe(startUpdateFeedsLoops.name, () => {
     }) as any);
     jest.spyOn(logger, 'debug');
 
-    await startUpdateFeedsLoops();
+    await startUpdateFeedLoops();
 
     // Expect the intervals to be called with the correct stagger time.
     expect(setInterval).toHaveBeenCalledTimes(2);
@@ -80,7 +80,7 @@ describe(startUpdateFeedsLoops.name, () => {
     }) as any);
     jest.spyOn(logger, 'debug');
 
-    await startUpdateFeedsLoops();
+    await startUpdateFeedLoops();
 
     // Expect the intervals to be called with the correct stagger time.
     expect(setInterval).toHaveBeenCalledTimes(2);

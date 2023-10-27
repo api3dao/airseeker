@@ -8,7 +8,7 @@ import { isFulfilled, sleep } from '../utils';
 
 import { type ActiveDapisBatch, getStaticActiveDapis } from './temporary-contract-mock';
 
-export const startUpdateFeedsLoops = async () => {
+export const startUpdateFeedLoops = async () => {
   const state = getState();
   const {
     config: { chains },
