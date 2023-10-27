@@ -30,7 +30,9 @@
         "sanitizationPercentile": 80,
         "scalingWindow": 2,
         "maxScalingMultiplier": 2
-      }
+      },
+      "dataFeedUpdateInterval": 60,
+      "dataFeedBatchSize": 10
     }
   },
   "deviationThresholdCoefficient": 1,

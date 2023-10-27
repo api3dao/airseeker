@@ -66,6 +66,8 @@ export const optionalChainSchema = z
     __Temporary__DapiDataRegistry: temporaryDapiDataRegistrySchema,
     contracts: optionalContractsSchema.optional(),
     gasSettings: gasSettingsSchema,
+    dataFeedUpdateInterval: z.number().positive(),
+    dataFeedBatchSize: z.number().positive(),
   })
   .strict();
 
@@ -133,8 +135,8 @@ export const configSchema = z
   .object({
     sponsorWalletMnemonic: z.string().refine((mnemonic) => ethers.utils.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
     chains: chainsSchema,
-    deviationThresholdCoefficient: z.number().optional().default(1),
-    fetchInterval: z.number().positive(),
+    fetchInterval: z.number().positive(), // TODO: Rename to signedDataFetchInterval
+    deviationThresholdCoefficient: z.number().positive().optional().default(1), // Explicitly agreed to make this optional. See: https://github.com/api3dao/airseeker-v2/pull/20#issuecomment-1750856113.
   })
   .strict();
 

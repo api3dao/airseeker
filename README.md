@@ -191,13 +191,23 @@ The number of minutes used to calculate the scaling multiplier if a pending tran
 
 The maximum scaling multiplier used when the pending transaction lag exceeds the `scalingWindow`.
 
-#### `deviationThresholdCoefficient`
+#### `deviationThresholdCoefficient` _(optional)_
 
 The global coefficient applied to all deviation checks. Used to differentiate alternate deployments. For example:
 
 ```jsonc
 "deviationThresholdCoefficient": 1,
 ```
+
+Defaults to `1`.
+
+#### `dataFeedUpdateInterval`
+
+The interval specifying how often to run the data feed update loop. In seconds.
+
+#### `dataFeedBatchSize`
+
+The batch size of active dAPIs that are to be fetched in a single RPC call.
 
 ## Docker
 

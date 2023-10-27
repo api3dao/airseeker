@@ -46,6 +46,8 @@ export const generateTestConfig = (): Config => ({
         maxScalingMultiplier: 2,
         scalingWindow: 5,
       },
+      dataFeedBatchSize: 10,
+      dataFeedUpdateInterval: 60,
     },
   },
   fetchInterval: 10,
