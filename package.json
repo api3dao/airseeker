@@ -20,7 +20,7 @@
     "prettier:check": "prettier --check \"./**/*.{js,ts,md,json}\"",
     "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json}\"",
     "test": "jest --config=jest-unit.config.js",
-    "test:e2e": "jest ---config=jest-e2e.config.js --runInBand",
+    "test:e2e": "jest ---config=jest-e2e.config.js",
     "tsc": "tsc --project .",
     "docker:build": "docker build -t api3/airseekerv2:latest -f docker/Dockerfile .",
     "docker:run": "docker run -it --rm api3/airseekerv2:latest",

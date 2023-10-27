@@ -188,6 +188,8 @@ describe('chains schema', () => {
           activeDapiNames: [],
         },
         gasSettings,
+        dataFeedBatchSize: 10,
+        dataFeedUpdateInterval: 60,
       },
     };
 
