@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" modified="2023-10-27T08:17:36.301Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36" etag="WjTr7iDY-fgR1x40HEwY" version="22.0.8" type="device">
+<mxfile host="app.diagrams.net" modified="2023-10-27T09:36:25.672Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36" etag="EIms3X1pdoRTbX5VGwcQ" version="22.0.8" type="device">
   <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
-    <mxGraphModel dx="2442" dy="1280" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="4681" math="0" shadow="0">
+    <mxGraphModel dx="1357" dy="711" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="4681" math="0" shadow="0">
       <root>
         <mxCell id="WIyWlLk6GJQsqaUBKTNV-0" />
         <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0" />
@@ -68,7 +68,7 @@
         <mxCell id="ci7EG28U3f9VGxeywyoC-60" value="for each batch&lt;br&gt;in a single RPC call&lt;br&gt;in a staggered way" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-53" target="ci7EG28U3f9VGxeywyoC-57" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="ci7EG28U3f9VGxeywyoC-53" value="Determine the number of batches of active dAPIs.&lt;br&gt;&lt;br&gt;TODO: This is not yet finalized" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+        <mxCell id="ci7EG28U3f9VGxeywyoC-53" value="Multicall to get the first batch of active dAPIs along with the total count of active dAPIs." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="880" y="1479" width="240" height="80" as="geometry" />
         </mxCell>
         <mxCell id="ci7EG28U3f9VGxeywyoC-55" value="fetch&amp;nbsp;from" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-53" target="ci7EG28U3f9VGxeywyoC-56" edge="1">
@@ -118,7 +118,7 @@
         <mxCell id="ci7EG28U3f9VGxeywyoC-78" value="Fetch the active dAPIs batch together with Airnode address and template ID(s).&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;TODO: This is not yet finalized.&lt;br&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="1290" y="1489" width="240" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="ci7EG28U3f9VGxeywyoC-79" value="Fetch the active dAPIs batch together with Airnode address, template ID(s), signed API URLs and on chain values." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+        <mxCell id="ci7EG28U3f9VGxeywyoC-79" value="Fetch the rest of the active dAPI batches together with Airnode address, template ID(s), signed API URLs and on chain values." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="1300" y="1499" width="240" height="80" as="geometry" />
         </mxCell>
         <mxCell id="ci7EG28U3f9VGxeywyoC-89" value="if there is any dAPI &lt;br&gt;to be updated" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-86" target="ci7EG28U3f9VGxeywyoC-88" edge="1">
@@ -201,8 +201,8 @@
             <Array as="points" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="_6md9EJBx8UnATQNPtMW-17" value="clear stored on chain datafeed value from gas price store" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="2310" y="1314" width="120" height="60" as="geometry" />
+        <mxCell id="_6md9EJBx8UnATQNPtMW-18" value="clear stored on chain datafeed value from gas price store" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="2310" y="1304" width="240" height="80" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
