@@ -65,7 +65,7 @@ export const optionalChainSchema = z
   .object({
     providers: z.record(providerSchema), // The record key is the provider "nickname"
     __Temporary__DapiDataRegistry: temporaryDapiDataRegistrySchema,
-    contracts: optionalContractsSchema.optional(),
+    contracts: optionalContractsSchema,
     gasSettings: gasSettingsSchema,
     dataFeedUpdateInterval: z.number().positive(),
     dataFeedBatchSize: z.number().positive(),
@@ -109,7 +109,8 @@ export const chainsSchema = z
       Object.entries(chains).map(([chainId, chain]) => {
         const { contracts } = chain;
         const parsedContracts = contractsSchema.safeParse({
-          Api3ServerV1: contracts?.Api3ServerV1 ?? references.Api3ServerV1[chainId],
+          Api3ServerV1: contracts.Api3ServerV1 ?? references.Api3ServerV1[chainId],
+          DapiDataRegistry: contracts.DapiDataRegistry,
         });
         if (!parsedContracts.success) {
           ctx.addIssue({
