@@ -80,33 +80,54 @@ const chainSchema = optionalChainSchema
 export type Chain = z.infer<typeof chainSchema>;
 
 // Ensure that the contracts are loaded from "airnode-protocol-v1" if not specified.
-export const chainsSchema = z.record(optionalChainSchema).transform((chains, ctx) => {
-  return Object.fromEntries(
-    Object.entries(chains).map(([chainId, chain]) => {
-      const { contracts } = chain;
-      const parsedContracts = contractsSchema.safeParse({
-        Api3ServerV1: contracts?.Api3ServerV1 ?? references.Api3ServerV1[chainId],
+export const chainsSchema = z
+  .record(optionalChainSchema)
+  .superRefine((chains, ctx) => {
+    if (Object.keys(chains).length === 0) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Missing chains. At least one chain is required.',
+        path: ['chains'],
       });
-      if (!parsedContracts.success) {
+    }
+
+    for (const [chainId, chain] of Object.entries(chains)) {
+      if (Object.keys(chain.providers).length === 0) {
         ctx.addIssue({
           code: 'custom',
-          message: 'Invalid contract addresses',
-          path: ['chains', chainId, 'contracts'],
+          message: 'Missing provider. At least one provider is required.',
+          path: ['chains', chainId, 'providers'],
         });
-
-        return z.NEVER;
       }
+    }
+  })
+  .transform((chains, ctx) => {
+    return Object.fromEntries(
+      Object.entries(chains).map(([chainId, chain]) => {
+        const { contracts } = chain;
+        const parsedContracts = contractsSchema.safeParse({
+          Api3ServerV1: contracts?.Api3ServerV1 ?? references.Api3ServerV1[chainId],
+        });
+        if (!parsedContracts.success) {
+          ctx.addIssue({
+            code: 'custom',
+            message: 'Invalid contract addresses',
+            path: ['chains', chainId, 'contracts'],
+          });
 
-      return [
-        chainId,
-        {
-          ...chain,
-          contracts: parsedContracts.data,
-        },
-      ];
-    })
-  );
-});
+          return z.NEVER;
+        }
+
+        return [
+          chainId,
+          {
+            ...chain,
+            contracts: parsedContracts.data,
+          },
+        ];
+      })
+    );
+  });
 
 export const configSchema = z
   .object({
