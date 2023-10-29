@@ -22,6 +22,7 @@ export type Provider = z.infer<typeof providerSchema>;
 export const optionalContractsSchema = z
   .object({
     Api3ServerV1: evmAddressSchema.optional(),
+    DapiDataRegistry: evmAddressSchema, // TODO: Make optional and load from "airnode-protocol-v1" or some other location and document it accordingly.
   })
   .strict();
 
@@ -64,7 +65,7 @@ export const optionalChainSchema = z
   .object({
     providers: z.record(providerSchema), // The record key is the provider "nickname"
     __Temporary__DapiDataRegistry: temporaryDapiDataRegistrySchema,
-    contracts: optionalContractsSchema.optional(),
+    contracts: optionalContractsSchema,
     gasSettings: gasSettingsSchema,
     dataFeedUpdateInterval: z.number().positive(),
     dataFeedBatchSize: z.number().positive(),
@@ -108,13 +109,15 @@ export const chainsSchema = z
       Object.entries(chains).map(([chainId, chain]) => {
         const { contracts } = chain;
         const parsedContracts = contractsSchema.safeParse({
-          Api3ServerV1: contracts?.Api3ServerV1 ?? references.Api3ServerV1[chainId],
+          Api3ServerV1: contracts.Api3ServerV1 ?? references.Api3ServerV1[chainId],
+          DapiDataRegistry: contracts.DapiDataRegistry,
         });
         if (!parsedContracts.success) {
           ctx.addIssue({
             code: 'custom',
             message: 'Invalid contract addresses',
-            path: ['chains', chainId, 'contracts'],
+            // Show at least the first error.
+            path: [chainId, 'contracts', ...parsedContracts.error.errors[0]!.path],
           });
 
           return z.NEVER;

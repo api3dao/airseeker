@@ -1,4 +1,5 @@
 import { go } from '@api3/promise-utils';
+import { ethers } from 'ethers';
 import { range, size } from 'lodash';
 
 import type { Chain } from '../config/schema';
@@ -6,7 +7,7 @@ import { logger } from '../logger';
 import { getState } from '../state';
 import { isFulfilled, sleep } from '../utils';
 
-import { type ActiveDapisBatch, getStaticActiveDapis } from './temporary-contract-mock';
+import { getDapiDataRegistry, type ReadDapisResponse } from './dapi-data-registry';
 
 export const startUpdateFeedLoops = async () => {
   const state = getState();
@@ -35,21 +36,33 @@ export const startUpdateFeedLoops = async () => {
 };
 
 export const runUpdateFeed = async (providerName: string, chain: Chain, chainId: string) => {
-  const { dataFeedBatchSize, dataFeedUpdateInterval } = chain;
+  const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
   // TODO: Consider adding a start timestamp (as ID) to the logs to identify batches from this runUpdateFeed tick.
   const baseLogContext = { chainId, providerName };
 
+  // Create a provider and connect it to the DapiDataRegistry contract.
+  const provider = new ethers.providers.StaticJsonRpcProvider(providers[providerName]);
+  const dapiDataRegistry = getDapiDataRegistry(contracts.DapiDataRegistry, provider);
+
   logger.debug(`Fetching first batch of dAPIs batches`, baseLogContext);
   const firstBatchStartTime = Date.now();
-  const goFirstBatch = await go(async () => getActiveDapiBatch(chain));
+  const goFirstBatch = await go(async () => {
+    // TODO: Use multicall to fetch this is a single RPC call.
+    return {
+      batch: await dapiDataRegistry.readDapis(0, dataFeedBatchSize),
+      // eslint-disable-next-line unicorn/no-await-expression-member
+      totalDapisCount: (await dapiDataRegistry.dapisCount()).toNumber(),
+    };
+  });
   if (!goFirstBatch.success) {
     logger.error(`Failed to get first active dAPIs batch`, goFirstBatch.error, baseLogContext);
     return;
   }
-  const processFirstBatchPromise = processBatch(goFirstBatch.data);
+  const { batch: firstBatch, totalDapisCount: totalCount } = goFirstBatch.data;
+  const processFirstBatchPromise = processBatch(firstBatch);
 
   // Calculate the stagger time between the rest of the batches.
-  const batchesCount = goFirstBatch.data.totalCount / dataFeedBatchSize;
+  const batchesCount = totalCount / dataFeedBatchSize;
   const staggerTime = batchesCount <= 1 ? 0 : (dataFeedUpdateInterval / batchesCount) * 1000;
 
   // Wait the remaining stagger time required after fetching the first batch.
@@ -63,7 +76,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
       await sleep((batchIndex - 1) * staggerTime);
 
       logger.debug(`Fetching batch of active dAPIs`, { batchIndex, ...baseLogContext });
-      return getActiveDapiBatch(chain, batchIndex * dataFeedBatchSize);
+      return dapiDataRegistry.readDapis(batchIndex * dataFeedBatchSize, dataFeedBatchSize);
     })
   );
   for (const batch of otherBatches.filter((batch) => !isFulfilled(batch))) {
@@ -71,7 +84,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   }
   const processOtherBatchesPromises = otherBatches
     .filter((result) => isFulfilled(result))
-    .map(async (result) => processBatch((result as PromiseFulfilledResult<ActiveDapisBatch>).value));
+    .map(async (result) => processBatch((result as PromiseFulfilledResult<ReadDapisResponse>).value));
 
   // Wait for all the batches to be processed.
   //
@@ -80,12 +93,6 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   await Promise.all([processFirstBatchPromise, ...processOtherBatchesPromises]);
 };
 
-export const processBatch = async (_batch: ActiveDapisBatch) => {
+export const processBatch = async (_batch: ReadDapisResponse) => {
   // TODO: Implement.
-};
-
-export const getActiveDapiBatch = async (chain: Chain, offset = 0) => {
-  const { dataFeedBatchSize } = chain;
-
-  return getStaticActiveDapis(offset, dataFeedBatchSize);
 };

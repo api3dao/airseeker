@@ -46,12 +46,14 @@ jobs:
   test-e2e:
     name: Test e2e
     runs-on: ubuntu-latest
-    # Don't run twice for a push within an internal PR
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     timeout-minutes: 10
     steps:
-      - name: Clone
-        uses: actions/checkout@v3
+      - name: Clone repo
+        uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.8.0
       - name: Setup Node
         uses: actions/setup-node@v3
         with:

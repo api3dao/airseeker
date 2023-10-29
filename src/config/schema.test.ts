@@ -15,30 +15,28 @@ const gasSettings = {
   maxScalingMultiplier: 2,
 };
 
-test('validates example config', async () => {
+test('validates example config', () => {
   const exampleConfig = JSON.parse(readFileSync(join(__dirname, '../../config/airseeker.example.json'), 'utf8'));
 
   // The mnemonic is not interpolated (and thus invalid).
-  await expect(configSchema.parseAsync(exampleConfig)).rejects.toStrictEqual(
+  expect(() => configSchema.parse(exampleConfig)).toThrow(
     new ZodError([
+      {
+        code: 'custom',
+        message: 'Invalid mnemonic',
+        path: ['sponsorWalletMnemonic'],
+      },
       {
         validation: 'url',
         code: 'invalid_string',
         message: 'Invalid url',
         path: ['chains', '31337', 'providers', 'hardhat', 'url'],
       },
-      {
-        code: 'custom',
-        message: 'Invalid mnemonic',
-        path: ['sponsorWalletMnemonic'],
-      },
     ])
   );
 
   const exampleSecrets = dotenv.parse(readFileSync(join(__dirname, '../../config/secrets.example.env'), 'utf8'));
-  await expect(configSchema.parseAsync(interpolateSecrets(exampleConfig, exampleSecrets))).resolves.toStrictEqual(
-    expect.any(Object)
-  );
+  expect(configSchema.parse(interpolateSecrets(exampleConfig, exampleSecrets))).toStrictEqual(expect.any(Object));
 });
 
 describe('chains schema', () => {
@@ -47,6 +45,7 @@ describe('chains schema', () => {
       '31337': {
         contracts: {
           Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
         providers: {
           hardhat: {
@@ -68,10 +67,11 @@ describe('chains schema', () => {
 
     expect(parsed['31337']!.contracts).toStrictEqual({
       Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+      DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
     });
   });
 
-  it('uses loads the contract address from airnode-protocol-v1', () => {
+  it('uses the contract address from airnode-protocol-v1', () => {
     const chains = {
       '1': {
         providers: {
@@ -87,6 +87,9 @@ describe('chains schema', () => {
         gasSettings,
         dataFeedBatchSize: 10,
         dataFeedUpdateInterval: 60,
+        contracts: {
+          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+        },
       },
     };
 
@@ -94,6 +97,7 @@ describe('chains schema', () => {
 
     expect(parsed['1']!.contracts).toStrictEqual({
       Api3ServerV1: '0x3dEC619dc529363767dEe9E71d8dD1A5bc270D76',
+      DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
     });
   });
 
@@ -104,6 +108,9 @@ describe('chains schema', () => {
           hardhat: {
             url: 'http://localhost:8545',
           },
+        },
+        contracts: {
+          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
         __Temporary__DapiDataRegistry: {
           airnodeToSignedApiUrl: {},
@@ -121,7 +128,7 @@ describe('chains schema', () => {
         {
           code: 'custom',
           message: 'Invalid contract addresses',
-          path: ['chains', '31337', 'contracts'],
+          path: ['31337', 'contracts', 'Api3ServerV1'],
         },
       ])
     );
@@ -132,6 +139,7 @@ describe('chains schema', () => {
       '31337': {
         contracts: {
           Api3ServerV1: '0xInvalid',
+          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
         providers: {
           hardhat: {
@@ -180,6 +188,7 @@ describe('chains schema', () => {
       '31337': {
         contracts: {
           Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
         providers: {},
         __Temporary__DapiDataRegistry: {
