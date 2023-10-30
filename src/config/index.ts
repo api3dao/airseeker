@@ -13,7 +13,7 @@ export const loadConfig = (configPath = join(__dirname, '../../config'), airseek
   const goLoadConfig = goSync(() => {
     const rawConfig = JSON.parse(fs.readFileSync(join(configPath, airseekerConfigPath), 'utf8'));
     const secrets = parseSecrets(rawSecrets);
-    return configSchema.safeParse(interpolateSecrets(rawConfig, secrets));
+    return configSchema.parse(interpolateSecrets(rawConfig, secrets));
   });
 
   if (!goLoadConfig.success) throw new Error(`Unable to load configuration.`, { cause: goLoadConfig.error });
