@@ -14,7 +14,7 @@ const extractKeys = (item: any): string[] =>
 
 describe('checks README', () => {
   it('checks that the README contains all configuration keys in airseeker.example.json', () => {
-    const config = loadConfig(path.join(__dirname, '../config'), 'airseeker.example.json');
+    const config = loadConfig(path.join(__dirname, '../config'), 'airseeker.example.json', 'secrets.example.env');
     expect(config).toBeDefined();
 
     const readmeData = readFileSync(path.join(__dirname, '../README.md')).toString();
