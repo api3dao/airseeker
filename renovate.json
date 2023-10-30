@@ -33,5 +33,6 @@
   "lockFileMaintenance": {
     "enabled": false
   },
+  "reviewers": ["aquarat"],
   "dependencyDashboard": false
 }
