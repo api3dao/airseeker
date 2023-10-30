@@ -7,7 +7,7 @@ import { logger } from '../logger';
 import { getState } from '../state';
 import { isFulfilled, sleep } from '../utils';
 
-import { getDapiDataRegistry, type ReadDapisResponse } from './dapi-data-registry';
+import { type DapisCountResponse, getDapiDataRegistry, type ReadDapisResponse } from './dapi-data-registry';
 
 export const startUpdateFeedLoops = async () => {
   const state = getState();
@@ -47,11 +47,23 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   logger.debug(`Fetching first batch of dAPIs batches`, baseLogContext);
   const firstBatchStartTime = Date.now();
   const goFirstBatch = await go(async () => {
-    // TODO: Use multicall to fetch this is a single RPC call.
+    const readDapisCall = dapiDataRegistry.interface.encodeFunctionData('readDapis', [0, dataFeedBatchSize]);
+    const dapisCountCall = dapiDataRegistry.interface.encodeFunctionData('dapisCount');
+    const [[readDapisSuccess, dapisCountSuccess], [readDapisReturnData, dapisCountReturnData]] =
+      await dapiDataRegistry.callStatic.tryMulticall([readDapisCall, dapisCountCall]);
+
+    if (!readDapisSuccess || !dapisCountSuccess) throw new Error('One of the multicalls failed');
+
+    const batch = dapiDataRegistry.interface.decodeFunctionResult(
+      'readDapis',
+      readDapisReturnData!
+    )[0] as ReadDapisResponse;
+    const totalDapisCount = (
+      dapiDataRegistry.interface.decodeFunctionResult('dapisCount', dapisCountReturnData!)[0] as DapisCountResponse
+    ).toNumber();
     return {
-      batch: await dapiDataRegistry.readDapis(0, dataFeedBatchSize),
-      // eslint-disable-next-line unicorn/no-await-expression-member
-      totalDapisCount: (await dapiDataRegistry.dapisCount()).toNumber(),
+      batch,
+      totalDapisCount,
     };
   });
   if (!goFirstBatch.success) {

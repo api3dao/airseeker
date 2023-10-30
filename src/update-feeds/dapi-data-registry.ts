@@ -7,3 +7,5 @@ export const getDapiDataRegistry = (address: string, provider: ethers.providers.
   DapiDataRegistry__factory.connect(address, provider);
 
 export type ReadDapisResponse = Awaited<ReturnType<DapiDataRegistry['readDapis']>>;
+
+export type DapisCountResponse = Awaited<ReturnType<DapiDataRegistry['dapisCount']>>;
