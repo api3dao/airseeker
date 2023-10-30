@@ -20,11 +20,10 @@ describe('checks README', () => {
     const readmeData = readFileSync(path.join(__dirname, '../README.md')).toString();
     expect(readmeData).toBeDefined();
 
-    const keys = extractKeys(config)
+    const missingKeys = extractKeys(config)
       .filter((item) => !z.coerce.number().safeParse(item).success)
-      .filter((item) => item !== 'hardhat');
-
-    const missingKeys = keys.filter((key) => !readmeData.includes(`### \`${key}\``));
+      .filter((item) => item !== 'hardhat')
+      .filter((key) => !readmeData.includes(`### \`${key}\``));
 
     // eslint-disable-next-line jest/no-conditional-in-test
     if (missingKeys.length > 0) {
