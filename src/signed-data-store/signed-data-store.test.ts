@@ -1,10 +1,10 @@
 import { BigNumber, ethers } from 'ethers';
 
-import { generateRandomBytes32, signData } from '../../test/utils/evm';
+import { generateRandomBytes32, signData } from '../../test/utils';
 import type { SignedData } from '../types';
 
-import * as localDataStore from './signed-data-store';
 import { verifySignedDataIntegrity } from './signed-data-store';
+import * as localDataStore from './signed-data-store';
 
 describe('datastore', () => {
   let testDataPoint: SignedData;

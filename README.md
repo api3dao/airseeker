@@ -113,15 +113,18 @@ A record of chain configurations. The record key is the chain ID. For example:
 }
 ```
 
-#### `contracts` _(optional)_
+#### `contracts`
 
-A record of contract addresses used by Airseeker. If not specified, the addresses are loaded from
-[Airnode protocol v1](https://github.com/api3dao/airnode-protocol-v1).
+A record of contract addresses used by Airseeker.
 
 ##### `Api3ServerV1` _(optional)_
 
-The address of the Api3ServerV1 contract. If not specified, the address is loaded from the Airnode protocol v1
-repository.
+The address of the Api3ServerV1 contract. If not specified, the address is loaded from the
+[Airnode protocol v1](https://github.com/api3dao/airnode-protocol-v1) repository.
+
+###### DapiDataRegistry
+
+The address of the DapiDataRegistry contract.
 
 #### `providers`
 
@@ -191,7 +194,7 @@ The number of minutes used to calculate the scaling multiplier if a pending tran
 
 The maximum scaling multiplier used when the pending transaction lag exceeds the `scalingWindow`.
 
-### `deviationThresholdCoefficient`
+### `deviationThresholdCoefficient` _optional_
 
 The global coefficient applied to all deviation checks. Used to differentiate alternate deployments. For example:
 
@@ -199,9 +202,19 @@ The global coefficient applied to all deviation checks. Used to differentiate al
 "deviationThresholdCoefficient": 1,
 ```
 
+Defaults to `1`.
+
 ### `fetchInterval`
 
 The fetch interval in seconds between retrievals of signed API data.
+
+### `dataFeedUpdateInterval`
+
+The interval specifying how often to run the data feed update loop. In seconds.
+
+### `dataFeedBatchSize`
+
+The batch size of active dAPIs that are to be fetched in a single RPC call.
 
 ## Docker
 

@@ -3,7 +3,8 @@
   "chains": {
     "31337": {
       "contracts": {
-        "Api3ServerV1": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+        "Api3ServerV1": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+        "DapiDataRegistry": "0xDD78254f864F97f65e2d86541BdaEf88A504D2B2"
       },
       "__Temporary__DapiDataRegistry": {
         "airnodeToSignedApiUrl": {
@@ -30,7 +31,9 @@
         "sanitizationPercentile": 80,
         "scalingWindow": 2,
         "maxScalingMultiplier": 2
-      }
+      },
+      "dataFeedUpdateInterval": 60,
+      "dataFeedBatchSize": 10
     }
   },
   "deviationThresholdCoefficient": 1,

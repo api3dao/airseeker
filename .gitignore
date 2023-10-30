@@ -12,3 +12,10 @@ coverage
 airseeker.json
 secrets.env
 .eslintcache
+
+# Hardhat files
+cache
+artifacts
+coverage.json
+typechain
+typechain-types
