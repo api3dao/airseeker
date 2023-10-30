@@ -115,7 +115,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   }
   const processOtherBatchesPromises = otherBatches
     .filter((result) => isFulfilled(result))
-    .map(async (result) => processBatch((result as PromiseFulfilledResult<any>).value as ReadDapiWithIndexResponse[]));
+    .map(async (result) => processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value));
 
   // Wait for all the batches to be processed.
   //
