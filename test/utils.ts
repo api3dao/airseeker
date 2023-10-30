@@ -20,3 +20,5 @@ type DeepPartial<T> = T extends object
  * convenient to create a mocked data object with properties that are only used for the given test.
  */
 export const allowPartial = <T = unknown>(obj: DeepPartial<T>): T => obj as T;
+
+export const getUnixTimestamp = (dateString: string) => Math.floor(Date.parse(dateString) / 1000);
