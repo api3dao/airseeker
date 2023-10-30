@@ -117,7 +117,7 @@ A record of chain configurations. The record key is the chain ID. For example:
 
 A record of contract addresses used by Airseeker.
 
-###### Api3ServerV1 _(optional)_
+###### `Api3ServerV1` _(optional)_
 
 The address of the Api3ServerV1 contract. If not specified, the address is loaded from the
 [Airnode protocol v1](https://github.com/api3dao/airnode-protocol-v1) repository.
@@ -148,6 +148,10 @@ The data needed to make the requests to signed API. This data will in the future
 
 A mapping from Airnode address to signed API URL. When data from particular beacon is needed a request is made to the
 signed API corresponding to the beacon address.
+
+##### `activeDapiNames`
+
+An array of dAPI names to execute updates for.
 
 ###### `dataFeedIdToBeacons`
 
@@ -211,6 +215,10 @@ The interval specifying how often to run the data feed update loop. In seconds.
 #### `dataFeedBatchSize`
 
 The batch size of active dAPIs that are to be fetched in a single RPC call.
+
+#### `fetchInterval`
+
+The fetch interval in seconds between retrievals of signed API data.
 
 ## Docker
 
