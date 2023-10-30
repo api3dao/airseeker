@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
 import type { GasSettings } from '../config/schema';
-import { getState, setState, type DataFeedValue } from '../state';
+import { getState, setState } from '../state';
 
 export const initializeGasStore = (chainId: string, providerName: string) => {
   const state = getState();
@@ -23,7 +23,7 @@ export const initializeGasStore = (chainId: string, providerName: string) => {
         ...state.gasPriceStore,
         [chainId]: {
           ...state.gasPriceStore[chainId],
-          [providerName]: { gasPrices: [], lastOnChainDataFeedValues: {} },
+          [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} },
         },
       },
     });
@@ -87,16 +87,15 @@ export const clearExpiredStoreGasPrices = (
 };
 
 /**
- * Saves last transaction details into the store.
+ * Saves a sponsor wallet's last update timestamp into the store.
  * @param chainId
  * @param providerName
- * @param nonce
+ * @param sponsorWalletAddress
  */
-export const setLastOnChainDatafeedValues = (
+export const setSponsorLastUpdateTimestampMs = (
   chainId: string,
   providerName: string,
-  dataFeedId: string,
-  dataFeedValues: { value: ethers.BigNumber; timestampMs: number }
+  sponsorWalletAddress: string
 ) => {
   initializeGasStore(chainId, providerName);
   const state = getState();
@@ -108,9 +107,9 @@ export const setLastOnChainDatafeedValues = (
         ...state.gasPriceStore[chainId],
         [providerName]: {
           ...state.gasPriceStore[chainId]![providerName]!,
-          lastOnChainDataFeedValues: {
-            ...state.gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues,
-            [dataFeedId]: dataFeedValues,
+          sponsorLastUpdateTimestampMs: {
+            ...state.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs,
+            [sponsorWalletAddress]: Date.now(),
           },
         },
       },
@@ -119,17 +118,21 @@ export const setLastOnChainDatafeedValues = (
 };
 
 /**
- * Removes last transaction details from the store.
+ * Removes a sponsor wallet's last update timestamp from the store.
  * @param chainId
  * @param providerName
- * @param nonce
+ * @param sponsorWalletAddress
  */
-export const clearLastOnChainDatafeedValue = (chainId: string, providerName: string, dataFeedId: string) => {
+export const clearSponsorLastUpdateTimestampMs = (
+  chainId: string,
+  providerName: string,
+  sponsorWalletAddress: string
+) => {
   const state = getState();
 
-  if (state.gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId]) {
-    const { [dataFeedId]: _value, ...lastOnChainDataFeedValues } =
-      state.gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues;
+  if (state.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress]) {
+    const { [sponsorWalletAddress]: _value, ...sponsorLastUpdateTimestampMs } =
+      state.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs;
 
     setState({
       ...state,
@@ -139,7 +142,7 @@ export const clearLastOnChainDatafeedValue = (chainId: string, providerName: str
           ...state.gasPriceStore[chainId],
           [providerName]: {
             ...state.gasPriceStore[chainId]![providerName]!,
-            lastOnChainDataFeedValues,
+            sponsorLastUpdateTimestampMs,
           },
         },
       },
@@ -221,7 +224,7 @@ export const gasPriceCollector = async (
  * @param providerName
  * @param rpcUrl
  * @param gasSettings
- * @param nonce
+ * @param sponsorWalletAddress
  * @returns {ethers.BigNumber}
  */
 export const getAirseekerRecommendedGasPrice = async (
@@ -229,10 +232,7 @@ export const getAirseekerRecommendedGasPrice = async (
   providerName: string,
   rpcUrl: string,
   gasSettings: GasSettings,
-  newDataFeedUpdateOnChainValues?: {
-    dataFeedId: string;
-    newDataFeedValue: DataFeedValue;
-  }
+  sponsorWalletAddress: string
 ): Promise<ethers.BigNumber> => {
   const {
     recommendedGasPriceMultiplier,
@@ -242,7 +242,7 @@ export const getAirseekerRecommendedGasPrice = async (
     maxScalingMultiplier,
   } = gasSettings;
   const state = getState();
-  const { gasPrices, lastOnChainDataFeedValues } = state.gasPriceStore[chainId]![providerName]!;
+  const { gasPrices, sponsorLastUpdateTimestampMs } = state.gasPriceStore[chainId]![providerName]!;
 
   // Get the configured percentile of historical gas prices before adding the new price
   const percentileGasPrice = getPercentile(
@@ -252,19 +252,14 @@ export const getAirseekerRecommendedGasPrice = async (
 
   const gasPrice = await updateGasPriceStore(chainId, providerName, rpcUrl);
 
-  const lastDataFeedValue =
-    newDataFeedUpdateOnChainValues && lastOnChainDataFeedValues[newDataFeedUpdateOnChainValues.dataFeedId];
+  const lastUpdateTimestampMs = sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+
   // Check if the next update is a retry of a pending transaction and if it has been pending longer than scalingWindow
-  if (
-    lastDataFeedValue &&
-    newDataFeedUpdateOnChainValues &&
-    lastDataFeedValue?.value === newDataFeedUpdateOnChainValues.newDataFeedValue.value &&
-    lastDataFeedValue?.timestampMs < Date.now() - scalingWindow * 60 * 1000
-  ) {
+  if (lastUpdateTimestampMs && lastUpdateTimestampMs < Date.now() - scalingWindow * 60 * 1000) {
     const multiplier = calculateScalingMultiplier(
       recommendedGasPriceMultiplier,
       maxScalingMultiplier,
-      (Date.now() - lastDataFeedValue.timestampMs) / (60 * 1000),
+      (Date.now() - lastUpdateTimestampMs) / (60 * 1000),
       scalingWindow
     );
 
