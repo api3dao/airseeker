@@ -1,7 +1,9 @@
 import axios from 'axios';
+import { produce } from 'immer';
 
 import { init } from '../../test/fixtures/mock-config';
 import * as localDataStore from '../signed-data-store';
+import { getState, setState } from '../state';
 
 import { runDataFetcher, stopDataFetcher } from './data-fetcher';
 
@@ -12,6 +14,16 @@ describe('data fetcher', () => {
   beforeEach(() => {
     init();
     localDataStore.clear();
+    setState(
+      produce(getState(), (draft) => {
+        draft.signedApiUrlStore = {
+          '31337': {
+            '0xbF3137b0a7574563a23a8fC8badC6537F98197CC': 'http://127.0.0.1:8090/',
+            '0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4': 'https://pool.nodary.io',
+          },
+        };
+      })
+    );
   });
 
   it('retrieves signed data from urls', async () => {
