@@ -6,4 +6,4 @@ import { type DapiDataRegistry, DapiDataRegistry__factory } from '../../typechai
 export const getDapiDataRegistry = (address: string, provider: ethers.providers.StaticJsonRpcProvider) =>
   DapiDataRegistry__factory.connect(address, provider);
 
-export type ReadDapisResponse = Awaited<ReturnType<DapiDataRegistry['readDapis']>>;
+export type ReadDapiResponse = Awaited<ReturnType<DapiDataRegistry['readDapiWithIndex']>>;

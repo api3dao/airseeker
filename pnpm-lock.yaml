@@ -13,7 +13,7 @@ dependencies:
     version: 0.3.0(eslint@8.50.0)(jest@29.7.0)(typescript@5.2.2)
   '@api3/dapi-management':
     specifier: github:api3dao/dapi-management#169-DapiDataRegistry
-    version: github.com/api3dao/dapi-management/6782b1628c9781ca5e54c48c09ead8cdd3b414f0
+    version: github.com/api3dao/dapi-management/926f1644d571ca78d9937c4945d9bb8464f9633f
   '@api3/promise-utils':
     specifier: ^0.4.0
     version: 0.4.0
@@ -2452,6 +2452,17 @@ packages:
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
+    dev: false
+
+  /axios@1.6.0:
+    resolution: {integrity: sha512-EZ1DYihju9pwVB+jg67ogm+Tmqc6JmhamRN6I4Zt8DfZu5lbcQGw3ozH9lFejSJgs/ibaef3A9PMXPLeefFGJg==}
+    dependencies:
+      follow-redirects: 1.15.3(debug@4.3.4)
+      form-data: 4.0.0
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+    dev: true
 
   /axobject-query@3.2.1:
     resolution: {integrity: sha512-jsyHu61e6N4Vbz/v18DHwWYKK0bSWLqn47eeDSKPB7m8tqMHF9YJ+mhIk2lVteyZrY8tnSj/jHOv4YiTCuCJgg==}
@@ -3779,7 +3790,7 @@ packages:
         optional: true
     dependencies:
       '@solidity-parser/parser': 0.14.5
-      axios: 1.5.1
+      axios: 1.6.0
       cli-table3: 0.5.1
       colors: 1.4.0
       ethereum-cryptography: 1.2.0
@@ -5932,7 +5943,7 @@ packages:
     resolution: {integrity: sha512-4GUt3kSEYmk4ITxzB/b9vaIDfUVWN/Ml1Fwl11IlnIG2iaJ9O6WXZ9SrYM9NLI8OCBieN2Y8SWC2oJV0RQ7qYg==}
     hasBin: true
     dependencies:
-      abbrev: 1.1.1
+      abbrev: 1.0.9
     dev: true
 
   /normalize-package-data@2.5.0:
@@ -7727,8 +7738,8 @@ packages:
   /zod@3.22.3:
     resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
 
-  github.com/api3dao/dapi-management/6782b1628c9781ca5e54c48c09ead8cdd3b414f0:
-    resolution: {tarball: https://codeload.github.com/api3dao/dapi-management/tar.gz/6782b1628c9781ca5e54c48c09ead8cdd3b414f0}
+  github.com/api3dao/dapi-management/926f1644d571ca78d9937c4945d9bb8464f9633f:
+    resolution: {tarball: https://codeload.github.com/api3dao/dapi-management/tar.gz/926f1644d571ca78d9937c4945d9bb8464f9633f}
     name: '@api3/dapi-management'
     version: 0.1.0
     dependencies:
