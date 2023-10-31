@@ -1,10 +1,11 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
-import { range, size } from 'lodash';
+import { range, size, uniq } from 'lodash';
 
 import type { Chain } from '../config/schema';
 import { logger } from '../logger';
-import { getState } from '../state';
+import { getStoreDataPoint } from '../signed-data-store';
+import { getState, setState } from '../state';
 import { isFulfilled, sleep } from '../utils';
 
 import {
@@ -41,6 +42,10 @@ export const startUpdateFeedLoops = async () => {
   );
 };
 
+type ReadDapiWithIndexResponsesAndChainId = (ReadDapiWithIndexResponse & {
+  chainId: string;
+})[];
+
 export const runUpdateFeed = async (providerName: string, chain: Chain, chainId: string) => {
   const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
   // TODO: Consider adding a start timestamp (as ID) to the logs to identify batches from this runUpdateFeed tick.
@@ -63,7 +68,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
 
     const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata!);
     const firstBatch = readDapiWithIndexCallsReturndata
-      .map((dapiReturndata) => decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata))
+      .map((dapiReturndata) => ({ ...decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata), chainId }))
       // Because the dapisCount is not known during the multicall, we may ask for non-existent dAPIs. These should be filtered out.
       .slice(0, dapisCount);
     return {
@@ -104,9 +109,10 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
         await dapiDataRegistry.callStatic.tryMulticall(readDapiWithIndexCalls)
       );
 
-      const decodedBatch = returndata.map((returndata) =>
-        decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata)
-      );
+      const decodedBatch = returndata.map((returndata) => ({
+        ...decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata),
+        chainId,
+      }));
       return decodedBatch;
     })
   );
@@ -115,7 +121,9 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   }
   const processOtherBatchesPromises = otherBatches
     .filter((result) => isFulfilled(result))
-    .map(async (result) => processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value));
+    .map(async (result) =>
+      processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponsesAndChainId>).value)
+    );
 
   // Wait for all the batches to be processed.
   //
@@ -124,8 +132,55 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   await Promise.all([processFirstBatchPromise, ...processOtherBatchesPromises]);
 };
 
+export const updateDynamicState = (batch: ReadDapiWithIndexResponsesAndChainId) => {
+  batch.map((item) => {
+    const state = getState();
+
+    const cachedDapiResponse = state.dynamicState[item.dapiName] ?? {
+      dataFeed: item.dataFeed,
+      signedApiUrls: [],
+      dataFeedValues: {},
+      updateParameters: {},
+    };
+
+    // We're assuming the received data feed value is newer than what we already have... this may not actually be the case
+    // but the alternative is that we accept a later value but then DoS future values.
+    // This should probably be time-constrained and require updated values (eg. only update if newer but not newer than 15 minutes)
+    const newDapiResponse = {
+      dataFeed: cachedDapiResponse?.dataFeed ?? item.dataFeed,
+      dataFeedValues: { ...cachedDapiResponse?.dataFeedValues, [item.chainId]: item.dataFeedValue },
+      updateParameters: { ...cachedDapiResponse.updateParameters, [item.chainId]: item.updateParameters },
+      signedApiUrls: uniq([...item.signedApiUrls, ...(cachedDapiResponse?.signedApiUrls ?? [])]),
+    };
+
+    setState({ ...state, dynamicState: { ...state.dynamicState, [item.dapiName]: newDapiResponse } });
+  });
+};
+
+export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) => {
+  // const state = getState();
+
+  return batch.map((dapiResponse) => {
+    const signedData = getStoreDataPoint(dapiResponse.dataFeed);
+
+    // TODO do comparison
+
+
+
+    return {
+      ...dapiResponse,
+    };
+  });
+};
+
 // eslint-disable-next-line @typescript-eslint/require-await
-export const processBatch = async (batch: ReadDapiWithIndexResponse[]) => {
+export const processBatch = async (batch: ReadDapiWithIndexResponsesAndChainId) => {
   logger.debug('Processing batch of active dAPIs', { batch });
   // TODO: Implement.
+
+  // Start by merging the dynamic state with the state
+  updateDynamicState(batch);
+
+  // Record<chainId, {dataFeed: string, signedData: SignedData}>
+  const _feedsToUpdate = getFeedsToUpdate(batch);
 };

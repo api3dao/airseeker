@@ -21,4 +21,4 @@ export const signedApiResponseSchema = z.object({
   data: z.record(signedDataSchema),
 });
 
-export type LocalSignedData = Pick<SignedData, 'encodedValue' | 'signature' | 'timestamp'>;
+export type Datafeed = string;

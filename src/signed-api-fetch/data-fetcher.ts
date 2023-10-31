@@ -62,6 +62,11 @@ export const runDataFetcher = async () => {
     setState({ ...state, dataFetcherInterval });
   }
 
+  // TODO grab dynamic urls and add them to statically configured urls
+  // Object.values(state.dynamicState).map(dapiDynamicConfig => {
+  //   signed
+  // })
+
   const urls = uniq(
     Object.values(config.chains).flatMap((chain) =>
       Object.entries(chain.__Temporary__DapiDataRegistry.airnodeToSignedApiUrl).flatMap(

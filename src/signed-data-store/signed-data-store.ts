@@ -2,10 +2,10 @@ import { goSync } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
 import { logger } from '../logger';
-import type { LocalSignedData, SignedData, AirnodeAddress, TemplateId } from '../types';
+import type { SignedData, AirnodeAddress, TemplateId, Datafeed } from '../types';
 
 // A simple in-memory data store implementation - the interface allows for swapping in a remote key/value store
-let signedApiStore: Record<AirnodeAddress, Record<TemplateId, LocalSignedData>> = {};
+let signedApiStore: Record<Datafeed, SignedData> = {};
 
 export const verifySignedData = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
   // Verification is wrapped in goSync, because ethers methods can potentially throw on invalid input.
@@ -59,6 +59,9 @@ export const verifySignedDataIntegrity = (signedData: SignedData) => {
   return verifyTimestamp(signedData) && verifySignedData(signedData);
 };
 
+export const deriveDatafeedId = (airnodeAddress: AirnodeAddress, templateId: TemplateId) =>
+  ethers.utils.solidityKeccak256(['address', 'bytes32'], [airnodeAddress, templateId]);
+
 export const setStoreDataPoint = (signedData: SignedData) => {
   const { airnode, templateId, signature, timestamp, encodedValue } = signedData;
 
@@ -66,11 +69,13 @@ export const setStoreDataPoint = (signedData: SignedData) => {
     return;
   }
 
-  if (!signedApiStore[airnode]) {
-    signedApiStore[airnode] = {};
+  const datafeed = deriveDatafeedId(airnode, templateId);
+
+  if (!signedApiStore[datafeed]) {
+    signedApiStore[datafeed] = signedData;
   }
 
-  const existingValue = signedApiStore[airnode]![templateId];
+  const existingValue = signedApiStore[datafeed];
   if (existingValue && existingValue.timestamp >= timestamp) {
     logger.debug('Skipping store update. The existing store value is fresher.');
     return;
@@ -83,11 +88,10 @@ export const setStoreDataPoint = (signedData: SignedData) => {
     signature,
     encodedValue,
   });
-  signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
+  signedApiStore[datafeed] = signedData;
 };
 
-export const getStoreDataPoint = (airnode: AirnodeAddress, templateId: TemplateId) =>
-  signedApiStore[airnode]?.[templateId];
+export const getStoreDataPoint = (datafeed: Datafeed) => signedApiStore[datafeed];
 
 export const clear = () => {
   signedApiStore = {};
