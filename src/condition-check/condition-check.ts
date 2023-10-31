@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { type BigNumber, ethers } from 'ethers';
 
 import { HUNDRED_PERCENT } from '../constants';
 import { logger } from '../logger';
@@ -27,15 +27,15 @@ export const calculateMedian = (arr: ethers.BigNumber[]) => {
 
 export const checkDeviationThresholdExceeded = (
   onChainValue: ethers.BigNumber,
-  deviationThreshold: number,
+  deviationThreshold: ethers.BigNumber,
   apiValue: ethers.BigNumber
 ) => {
   const updateInPercentage = calculateUpdateInPercentage(onChainValue, apiValue);
-  const threshold = ethers.BigNumber.from(Math.trunc(deviationThreshold * HUNDRED_PERCENT)).div(
-    ethers.BigNumber.from(100)
-  );
+  // const threshold = ethers.BigNumber.from(Math.trunc(deviationThreshold * HUNDRED_PERCENT)).div(
+  //   ethers.BigNumber.from(100)
+  // );
 
-  return updateInPercentage.gt(threshold);
+  return updateInPercentage.gt(deviationThreshold);
 };
 
 /**
@@ -60,7 +60,7 @@ export const checkUpdateConditions = (
   offChainValue: ethers.BigNumber,
   offChainTimestamp: number,
   heartbeatInterval: number,
-  deviationThreshold: number
+  deviationThreshold: BigNumber
 ): boolean => {
   // Check that fulfillment data is newer than on chain data
   const isFulfillmentDataFresh = checkFulfillmentDataTimestamp(onChainTimestamp, offChainTimestamp);
