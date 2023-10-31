@@ -9,7 +9,7 @@ export const signData = async (signer: ethers.Signer, templateId: string, timest
 
 export const generateRandomBytes32 = () => ethers.utils.hexlify(ethers.utils.randomBytes(32));
 
-type DeepPartial<T> = T extends object
+export type DeepPartial<T> = T extends object
   ? {
       [P in keyof T]?: DeepPartial<T[P]>;
     }
