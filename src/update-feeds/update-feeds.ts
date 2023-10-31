@@ -1,12 +1,13 @@
 import { go } from '@api3/promise-utils';
 import { BigNumber, ethers } from 'ethers';
-import { range, size, uniq } from 'lodash';
+import { chunk, range, size, uniq } from 'lodash';
 
 import { checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, setState } from '../state';
+import type { SignedData } from '../types';
 import { isFulfilled, sleep } from '../utils';
 
 import {
@@ -159,34 +160,42 @@ export const updateDynamicState = (batch: ReadDapiWithIndexResponsesAndChainId) 
 };
 
 export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) =>
-  batch
-    .map((dapiResponse) => {
-      const signedData = getStoreDataPoint(dapiResponse.dataFeed);
+  batch.map((dapiResponse) => {
+    const signedData = getStoreDataPoint(dapiResponse.dataFeed);
 
-      if (signedData === undefined) {
-        return false;
-      }
+    if (signedData === undefined) {
+      return { ...batch, shouldUpdate: false };
+    }
 
-      const offChainValue = BigNumber.from(signedData.encodedValue);
-      const offChainTimestamp = Number.parseInt(signedData?.timestamp ?? '0', 10);
-      const deviationThreshold = dapiResponse.updateParameters.deviationThresholdInPercentage;
+    const offChainValue = BigNumber.from(signedData.encodedValue);
+    const offChainTimestamp = Number.parseInt(signedData?.timestamp ?? '0', 10);
+    const deviationThreshold = dapiResponse.updateParameters.deviationThresholdInPercentage;
 
-      const shouldUpdate = checkUpdateConditions(
-        dapiResponse.dataFeedValue.value,
-        dapiResponse.dataFeedValue.timestamp,
-        offChainValue,
-        offChainTimestamp,
-        dapiResponse.updateParameters.heartbeatInterval,
-        deviationThreshold
-      );
+    const shouldUpdate = checkUpdateConditions(
+      dapiResponse.dataFeedValue.value,
+      dapiResponse.dataFeedValue.timestamp,
+      offChainValue,
+      offChainTimestamp,
+      dapiResponse.updateParameters.heartbeatInterval,
+      deviationThreshold
+    );
 
-      return {
-        ...dapiResponse,
-        shouldUpdate,
-        signedData,
-      };
-    })
-    .filter(Boolean);
+    return {
+      ...dapiResponse,
+      shouldUpdate,
+      signedData,
+    };
+  });
+
+export const updateFeeds = async (
+  _batch: (ReadDapiWithIndexResponsesAndChainId & {
+    shouldUpdate: boolean;
+    signedData: SignedData;
+  })[]
+) => {
+  // TODO implement
+  // batch, execute
+};
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const processBatch = async (batch: ReadDapiWithIndexResponsesAndChainId) => {
@@ -197,7 +206,17 @@ export const processBatch = async (batch: ReadDapiWithIndexResponsesAndChainId) 
   updateDynamicState(batch);
 
   // Record<chainId, {dataFeed: string, signedData: SignedData}>
-  const _feedsToUpdate = getFeedsToUpdate(batch);
+  const feedsToUpdate = getFeedsToUpdate(batch);
+
+  // actually I don't think this is necessary, but I'll leave shouldUpdate in anyway
+  // ...
+  // as per flow chart, wipe old data // clear stored on chain datafeed value from gas price store
+  // feedsToUpdate.filter(item => !item).map(feed => {
+  //
+  // });
+
+  const FEEDS_TO_UPDATE_CHUNK_SIZE = 10;
+  return chunk(feedsToUpdate, FEEDS_TO_UPDATE_CHUNK_SIZE).map(async (feed) => updateFeeds(feed));
 
   // then probably send it back to the state
 };
