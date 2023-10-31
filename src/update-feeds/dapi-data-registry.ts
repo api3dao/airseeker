@@ -9,7 +9,7 @@ export const getDapiDataRegistry = (address: string, provider: ethers.providers.
 export const verifyMulticallResponse = (
   response: Awaited<ReturnType<DapiDataRegistry['callStatic']['tryMulticall']>>
 ) => {
-  const [successes, returndata] = response;
+  const { successes, returndata } = response;
 
   if (!successes.every(Boolean)) throw new Error('One of the multicalls failed');
   return returndata;
@@ -19,7 +19,6 @@ export const decodeDapisCountResponse = (dapiDataRegistry: DapiDataRegistry, dap
   const dapisCount = dapiDataRegistry.interface.decodeFunctionResult('dapisCount', dapisCountReturndata)[0] as Awaited<
     ReturnType<DapiDataRegistry['dapisCount']>
   >;
-
   return dapisCount.toNumber();
 };
 
@@ -36,10 +35,16 @@ export const decodeReadDapiWithIndexResponse = (
 
   // Ethers responses are returned as a combination of array and object. When such object is logged, only the array part
   // is logged. To make the logs more readable, we convert the object part to a plain object.
+  const { deviationReference, deviationThresholdInPercentage, heartbeatInterval } = updateParameters;
+  const { value, timestamp } = dataFeedValue;
   return {
     dapiName,
-    updateParameters,
-    dataFeedValue,
+    updateParameters: {
+      deviationReference,
+      deviationThresholdInPercentage,
+      heartbeatInterval,
+    },
+    dataFeedValue: { value, timestamp },
     dataFeed,
     signedApiUrls,
   };
