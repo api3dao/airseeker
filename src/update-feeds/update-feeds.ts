@@ -165,8 +165,6 @@ export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) =>
 
     // TODO do comparison
 
-
-
     return {
       ...dapiResponse,
     };
