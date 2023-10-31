@@ -10,12 +10,11 @@ jest.mock('axios');
 
 describe('data fetcher', () => {
   beforeEach(() => {
+    init();
     localDataStore.clear();
   });
 
   it('retrieves signed data from urls', async () => {
-    init();
-
     const setStoreDataPointSpy = jest.spyOn(localDataStore, 'setStoreDataPoint');
 
     mockedAxios.mockResolvedValue(

@@ -1,6 +1,7 @@
 import type { BigNumber } from 'ethers';
 
 import type { Config } from '../config/schema';
+import type { LocalSignedData, AirnodeAddress, TemplateId } from '../types';
 
 interface GasState {
   gasPrices: { price: BigNumber; timestampMs: number }[];
@@ -11,6 +12,7 @@ export interface State {
   config: Config;
   dataFetcherInterval?: NodeJS.Timeout;
   gasPriceStore: Record<string, Record<string, GasState>>;
+  signedApiStore: Record<AirnodeAddress, Record<TemplateId, LocalSignedData>>;
 }
 
 let state: State | undefined;

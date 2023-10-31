@@ -2,6 +2,7 @@ import { clearInterval } from 'node:timers';
 
 import { go } from '@api3/promise-utils';
 import axios from 'axios';
+import { produce } from 'immer';
 import { uniq } from 'lodash';
 
 import { HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT, HTTP_SIGNED_DATA_API_HEADROOM } from '../constants';
@@ -59,7 +60,11 @@ export const runDataFetcher = async () => {
 
   if (!dataFetcherInterval) {
     const dataFetcherInterval = setInterval(runDataFetcher, fetchInterval);
-    setState({ ...state, dataFetcherInterval });
+    setState(
+      produce(state, (draft) => {
+        draft.dataFetcherInterval = dataFetcherInterval;
+      })
+    );
   }
 
   const urls = uniq(
