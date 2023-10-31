@@ -2,13 +2,9 @@ import type { BigNumber } from 'ethers';
 
 import type { Config } from '../config/schema';
 
-export interface DataFeedValue {
-  value: BigNumber;
-  timestampMs: number;
-}
 interface GasState {
   gasPrices: { price: BigNumber; timestampMs: number }[];
-  lastOnChainDataFeedValues: Record<string, DataFeedValue>;
+  sponsorLastUpdateTimestampMs: Record<string, number>;
 }
 
 export interface State {

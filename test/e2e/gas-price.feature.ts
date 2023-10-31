@@ -23,6 +23,7 @@ const gasSettings = {
 };
 const provider = new hre.ethers.providers.StaticJsonRpcProvider(rpcUrl);
 const timestampMock = 1_696_930_907_351;
+const sponsorWalletAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
 const sendTransaction = async (gasPriceOverride?: ethers.BigNumber) => {
   const wallets = await hre.ethers.getSigners();
@@ -51,7 +52,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
         ...state.gasPriceStore,
         [chainId]: {
           ...state.gasPriceStore[chainId],
-          [providerName]: { gasPrices: [], lastOnChainDataFeedValues: {} },
+          [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} },
         },
       },
     });
@@ -62,7 +63,13 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     await sendTransaction();
     const providerRecommendedGasprice = await provider.getGasPrice();
 
-    const gasPrice = await getAirseekerRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
+    const gasPrice = await getAirseekerRecommendedGasPrice(
+      chainId,
+      providerName,
+      rpcUrl,
+      gasSettings,
+      sponsorWalletAddress
+    );
 
     expect(gasPrice).toStrictEqual(
       multiplyGasPrice(providerRecommendedGasprice, gasSettings.recommendedGasPriceMultiplier)
@@ -97,7 +104,13 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     const providerRecommendedGasprice = await provider.getGasPrice();
 
     clearExpiredStoreGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
-    const gasPrice = await getAirseekerRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
+    const gasPrice = await getAirseekerRecommendedGasPrice(
+      chainId,
+      providerName,
+      rpcUrl,
+      gasSettings,
+      sponsorWalletAddress
+    );
 
     expect(gasPrice).toStrictEqual(
       multiplyGasPrice(providerRecommendedGasprice, gasSettings.recommendedGasPriceMultiplier)
@@ -131,7 +144,13 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
       },
     });
 
-    const gasPrice = await getAirseekerRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
+    const gasPrice = await getAirseekerRecommendedGasPrice(
+      chainId,
+      providerName,
+      rpcUrl,
+      gasSettings,
+      sponsorWalletAddress
+    );
 
     expect(gasPrice).toStrictEqual(
       multiplyGasPrice(providerRecommendedGasprice, gasSettings.recommendedGasPriceMultiplier)
@@ -167,7 +186,13 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
       },
     });
 
-    const gasPrice = await getAirseekerRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings);
+    const gasPrice = await getAirseekerRecommendedGasPrice(
+      chainId,
+      providerName,
+      rpcUrl,
+      gasSettings,
+      sponsorWalletAddress
+    );
 
     expect(gasPrice).toStrictEqual(multiplyGasPrice(oldGasPriceValueMock, gasSettings.recommendedGasPriceMultiplier));
     expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
@@ -176,17 +201,11 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     ]);
   });
 
-  it('applies scaling if past the scaling window and same nonce', async () => {
+  it('applies scaling if last update timestamp is past the scaling window', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
     await sendTransaction();
     const providerRecommendedGasprice = await provider.getGasPrice();
 
-    const dataFeedId = '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04';
-    const dataFeedValue = {
-      value: ethers.BigNumber.from(1),
-      // This sets the timestamp to be 1ms past the scalingWindow
-      timestampMs: timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1,
-    };
     const state = getState();
     setState({
       ...state,
@@ -197,18 +216,21 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
           [providerName]: {
             ...state.gasPriceStore[chainId]![providerName]!,
 
-            lastOnChainDataFeedValues: {
-              ...state.gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues,
-              [dataFeedId]: dataFeedValue,
+            sponsorLastUpdateTimestampMs: {
+              ...state.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs,
+              [sponsorWalletAddress]: timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1,
             },
           },
         },
       },
     });
-    const gasPrice = await getAirseekerRecommendedGasPrice(chainId, providerName, rpcUrl, gasSettings, {
-      dataFeedId,
-      newDataFeedValue: dataFeedValue,
-    });
+    const gasPrice = await getAirseekerRecommendedGasPrice(
+      chainId,
+      providerName,
+      rpcUrl,
+      gasSettings,
+      sponsorWalletAddress
+    );
 
     expect(gasPrice).toStrictEqual(multiplyGasPrice(providerRecommendedGasprice, gasSettings.maxScalingMultiplier));
     expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
