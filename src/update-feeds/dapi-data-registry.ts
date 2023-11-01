@@ -27,7 +27,8 @@ export const decodeDapisCountResponse = (dapiDataRegistry: DapiDataRegistry, dap
 export type DapisCountResponse = ReturnType<typeof decodeDapisCountResponse>;
 
 export const decodeDataFeed = (dataFeed: string): DecodedDataFeed => {
-  if (dataFeed.length === 64 * 2 - 2) {
+  if (dataFeed.length === 130) {
+    // (64 * 2) - 2
     // hex encoded string, contract works with bytes directly
     const [airnodeAddress, templateId] = ethers.utils.defaultAbiCoder.decode(['address', 'bytes32'], dataFeed);
 

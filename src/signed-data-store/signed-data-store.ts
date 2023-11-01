@@ -2,7 +2,8 @@ import { goSync } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
 import { logger } from '../logger';
-import type { SignedData, AirnodeAddress, TemplateId, Datafeed } from '../types';
+import type { SignedData, Datafeed } from '../types';
+import { deriveBeaconId } from '../utils';
 
 // A simple in-memory data store implementation - the interface allows for swapping in a remote key/value store
 let signedApiStore: Record<Datafeed, SignedData> = {};
@@ -59,9 +60,6 @@ export const verifySignedDataIntegrity = (signedData: SignedData) => {
   return verifyTimestamp(signedData) && verifySignedData(signedData);
 };
 
-export const deriveDatafeedId = (airnodeAddress: AirnodeAddress, templateId: TemplateId) =>
-  ethers.utils.solidityKeccak256(['address', 'bytes32'], [airnodeAddress, templateId]);
-
 export const setStoreDataPoint = (signedData: SignedData) => {
   const { airnode, templateId, signature, timestamp, encodedValue } = signedData;
 
@@ -69,7 +67,7 @@ export const setStoreDataPoint = (signedData: SignedData) => {
     return;
   }
 
-  const datafeed = deriveDatafeedId(airnode, templateId);
+  const datafeed = deriveBeaconId(airnode, templateId)!;
 
   if (!signedApiStore[datafeed]) {
     signedApiStore[datafeed] = signedData;

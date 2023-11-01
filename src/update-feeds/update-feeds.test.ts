@@ -9,6 +9,7 @@ import type { DapiDataRegistry } from '../../typechain-types';
 import type { Chain } from '../config/schema';
 import { logger } from '../logger';
 import * as stateModule from '../state';
+import type { State } from '../state';
 import * as utilsModule from '../utils';
 
 import * as dapiDataRegistryModule from './dapi-data-registry';
@@ -169,6 +170,9 @@ describe(runUpdateFeed.name, () => {
     });
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'error');
+
+    const getStateSpy = jest.spyOn(stateModule, 'getState');
+    getStateSpy.mockImplementation(() => ({ dynamicState: {} }) as State);
 
     await runUpdateFeed(
       'provider-name',
