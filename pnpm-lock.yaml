@@ -39,8 +39,8 @@ dependencies:
     specifier: ^4.17.21
     version: 4.17.21
   zod:
-    specifier: ^3.22.2
-    version: 3.22.2
+    specifier: ^3.22.3
+    version: 3.22.3
 
 devDependencies:
   '@api3/ois':
@@ -181,7 +181,7 @@ packages:
     resolution: {integrity: sha512-C4tSMBccDlD8NkZMVATQXOKctI46fSOlzpbZmZoFknsIdYfQvGNU49StGRJZ6fJJkwXEX1TlkRC7rY2yHEJjqw==}
     dependencies:
       lodash: 4.17.21
-      zod: 3.22.4
+      zod: 3.22.3
 
   /@api3/promise-utils@0.4.0:
     resolution: {integrity: sha512-+8fcNjjQeQAuuSXFwu8PMZcYzjwjDiGYcMUfAQ0lpREb1zHonwWZ2N0B9h/g1cvWzg9YhElbeb/SyhCrNm+b/A==}
@@ -210,7 +210,7 @@ packages:
       '@babel/helpers': 7.23.1
       '@babel/parser': 7.23.0
       '@babel/template': 7.22.15
-      '@babel/traverse': 7.23.0
+      '@babel/traverse': 7.23.2
       '@babel/types': 7.23.0
       convert-source-map: 2.0.0
       debug: 4.3.4(supports-color@8.1.1)
@@ -308,7 +308,7 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       '@babel/template': 7.22.15
-      '@babel/traverse': 7.23.0
+      '@babel/traverse': 7.23.2
       '@babel/types': 7.23.0
     transitivePeerDependencies:
       - supports-color
@@ -458,8 +458,8 @@ packages:
       '@babel/parser': 7.23.0
       '@babel/types': 7.23.0
 
-  /@babel/traverse@7.23.0:
-    resolution: {integrity: sha512-t/QaEvyIoIkwzpiZ7aoSKK8kObQYeF7T2v+dazAYCb8SXtp58zEVkWW7zAnju8FNKNdr4ScAOEDmMItbyOmEYw==}
+  /@babel/traverse@7.23.2:
+    resolution: {integrity: sha512-azpe59SQ48qG6nu2CzcMLbxUudtN+dOM9kDbUqGq3HXUJRlo7i8fvPoxQUzYgLZ4cMVmuZgm8vvBpNeRhd6XSw==}
     engines: {node: '>=6.9.0'}
     dependencies:
       '@babel/code-frame': 7.22.13
@@ -7731,12 +7731,8 @@ packages:
       ethers: 5.7.2
     dev: true
 
-  /zod@3.22.2:
-    resolution: {integrity: sha512-wvWkphh5WQsJbVk1tbx1l1Ly4yg+XecD+Mq280uBGt9wa5BKSWf4Mhp6GmrkPixhMxmabYY7RbzlwVP32pbGCg==}
-    dev: false
-
-  /zod@3.22.4:
-    resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
+  /zod@3.22.3:
+    resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
 
   github.com/api3dao/dapi-management/6782b1628c9781ca5e54c48c09ead8cdd3b414f0:
     resolution: {tarball: https://codeload.github.com/api3dao/dapi-management/tar.gz/6782b1628c9781ca5e54c48c09ead8cdd3b414f0}
