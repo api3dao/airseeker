@@ -1,22 +1,21 @@
 import { ethers } from 'ethers';
-import { produce } from 'immer';
 import { remove } from 'lodash';
 
 import type { GasSettings } from '../config/schema';
-import { getState, setState } from '../state';
+import { getState, updateState } from '../state';
 
 export const initializeGasStore = (chainId: string, providerName: string) =>
-  setState(
-    produce(getState(), (draft) => {
-      if (!draft.gasPriceStore[chainId]) {
-        draft.gasPriceStore[chainId] = {};
-      }
+  updateState((draft) => {
+    if (!draft.gasPriceStore[chainId]) {
+      draft.gasPriceStore[chainId] = {};
+    }
 
-      if (!draft.gasPriceStore[chainId]![providerName]) {
-        draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
-      }
-    })
-  );
+    if (!draft.gasPriceStore[chainId]![providerName]) {
+      draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
+    }
+
+    return draft;
+  });
 
 /**
  * Saves a gas price into the store.
@@ -25,11 +24,10 @@ export const initializeGasStore = (chainId: string, providerName: string) =>
  * @param gasPrice
  */
 export const setStoreGasPrices = (chainId: string, providerName: string, gasPrice: ethers.BigNumber) =>
-  setState(
-    produce(getState(), (draft) => {
-      draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift({ price: gasPrice, timestampMs: Date.now() });
-    })
-  );
+  updateState((draft) => {
+    draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift({ price: gasPrice, timestampMs: Date.now() });
+    return draft;
+  });
 
 /**
  * Removes gas prices where the timestamp is older than sanitizationSamplingWindow from the store.
@@ -38,15 +36,14 @@ export const setStoreGasPrices = (chainId: string, providerName: string, gasPric
  * @param sanitizationSamplingWindow
  */
 export const clearExpiredStoreGasPrices = (chainId: string, providerName: string, sanitizationSamplingWindow: number) =>
-  setState(
-    produce(getState(), (draft) => {
-      // Remove gasPrices older than the sanitizationSamplingWindow
-      remove(
-        draft.gasPriceStore[chainId]![providerName]!.gasPrices,
-        (gasPrice) => gasPrice.timestampMs < Date.now() - sanitizationSamplingWindow * 60 * 1000
-      );
-    })
-  );
+  updateState((draft) => {
+    // Remove gasPrices older than the sanitizationSamplingWindow
+    remove(
+      draft.gasPriceStore[chainId]![providerName]!.gasPrices,
+      (gasPrice) => gasPrice.timestampMs < Date.now() - sanitizationSamplingWindow * 60 * 1000
+    );
+    return draft;
+  });
 
 /**
  * Saves a sponsor wallet's last update timestamp into the store.
@@ -60,11 +57,10 @@ export const setSponsorLastUpdateTimestampMs = (
   sponsorWalletAddress: string
 ) => {
   initializeGasStore(chainId, providerName);
-  setState(
-    produce(getState(), (draft) => {
-      draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] = Date.now();
-    })
-  );
+  updateState((draft) => {
+    draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] = Date.now();
+    return draft;
+  });
 };
 
 /**
@@ -78,11 +74,10 @@ export const clearSponsorLastUpdateTimestampMs = (
   providerName: string,
   sponsorWalletAddress: string
 ) =>
-  setState(
-    produce(getState(), (draft) => {
-      delete draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
-    })
-  );
+  updateState((draft) => {
+    delete draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+    return draft;
+  });
 
 export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => {
   if (array.length === 0) return;

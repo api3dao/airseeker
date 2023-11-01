@@ -1,9 +1,8 @@
 import { goSync } from '@api3/promise-utils';
 import { ethers } from 'ethers';
-import { produce } from 'immer';
 
 import { logger } from '../logger';
-import { getState, setState } from '../state';
+import { getState, updateState } from '../state';
 import type { SignedData, AirnodeAddress, TemplateId } from '../types';
 
 export const verifySignedData = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
@@ -79,21 +78,22 @@ export const setStoreDataPoint = (signedData: SignedData) => {
     signature,
     encodedValue,
   });
-  setState(
-    produce(state, (draft) => {
-      if (!draft.signedApiStore[airnode]) draft.signedApiStore[airnode] = {};
-      draft.signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
-    })
-  );
+  updateState((draft) => {
+    if (!draft.signedApiStore[airnode]) {
+      draft.signedApiStore[airnode] = {};
+    }
+
+    draft.signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
+    return draft;
+  });
 };
 
 export const getStoreDataPoint = (airnode: AirnodeAddress, templateId: TemplateId) =>
   getState().signedApiStore[airnode]?.[templateId];
 
 export const clear = () => {
-  setState(
-    produce(getState(), (draft) => {
-      draft.signedApiStore = {};
-    })
-  );
+  updateState((draft) => {
+    draft.signedApiStore = {};
+    return draft;
+  });
 };
