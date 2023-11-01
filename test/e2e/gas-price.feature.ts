@@ -1,6 +1,5 @@
 import { ethers } from 'ethers';
 import * as hre from 'hardhat';
-import { produce } from 'immer';
 
 import '@nomiclabs/hardhat-ethers';
 import {
@@ -9,7 +8,7 @@ import {
   initializeGasStore,
   clearExpiredStoreGasPrices,
 } from '../../src/gas-price/gas-price';
-import { getState, setState } from '../../src/state';
+import { getState, updateState } from '../../src/state';
 import { init } from '../fixtures/mock-config';
 
 const chainId = '31337';
@@ -46,11 +45,10 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     await hre.network.provider.send('hardhat_reset');
     initializeGasStore(chainId, providerName);
     // Reset the gasPriceStore
-    setState(
-      produce(getState(), (draft) => {
-        draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
-      })
-    );
+    updateState((draft) => {
+      draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
+      return draft;
+    });
   });
 
   it('gets, sets and returns provider recommended gas prices', async () => {
@@ -82,11 +80,10 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
     await sendTransaction();
 
-    setState(
-      produce(getState(), (draft) => {
-        draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      })
-    );
+    updateState((draft) => {
+      draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
+      return draft;
+    });
     const providerRecommendedGasprice = await provider.getGasPrice();
 
     clearExpiredStoreGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
@@ -116,11 +113,10 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
       timestampMs: timestampMock,
     };
 
-    setState(
-      produce(getState(), (draft) => {
-        draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      })
-    );
+    updateState((draft) => {
+      draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
+      return draft;
+    });
 
     const gasPrice = await getAirseekerRecommendedGasPrice(
       chainId,
@@ -150,11 +146,10 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
       timestampMs: timestampMock - 0.9 * gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
     };
 
-    setState(
-      produce(getState(), (draft) => {
-        draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      })
-    );
+    updateState((draft) => {
+      draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
+      return draft;
+    });
 
     const gasPrice = await getAirseekerRecommendedGasPrice(
       chainId,
@@ -176,12 +171,11 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     await sendTransaction();
     const providerRecommendedGasprice = await provider.getGasPrice();
 
-    setState(
-      produce(getState(), (draft) => {
-        draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
-          timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1;
-      })
-    );
+    updateState((draft) => {
+      draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
+        timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1;
+      return draft;
+    });
     const gasPrice = await getAirseekerRecommendedGasPrice(
       chainId,
       providerName,
