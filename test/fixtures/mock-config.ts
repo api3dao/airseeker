@@ -55,5 +55,6 @@ export const init = () => {
   setState({
     config,
     gasPriceStore: {},
+    dynamicState: {},
   });
 };

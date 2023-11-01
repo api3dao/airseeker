@@ -163,8 +163,8 @@ export const updateDynamicState = (batch: ReadDapiWithIndexResponsesAndChainId) 
   });
 };
 
-export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) => {
-  return batch.map((dapiResponse) => {
+export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) =>
+  batch.map((dapiResponse) => {
     const signedData = getStoreDataPoint(dapiResponse.dataFeed.dataFeedId);
 
     if (signedData === undefined) {
@@ -190,23 +190,21 @@ export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) =>
       signedData,
     };
   });
-};
 
 export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>) => {
   // TODO implement
   // batch, execute
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
 export const processBatch = async (batch: ReadDapiWithIndexResponsesAndChainId) => {
   logger.debug('Processing batch of active dAPIs', { batch });
-  // TODO: Implement.
 
   // Start by merging the dynamic state with the state
   updateDynamicState(batch);
 
   // TODO Leaving shouldUpdate exposed as flow chart calls for clearing stale data
+  // "for each dAPI where an update is not needed" ... "clear stored on chain datafeed value from gas price store"
   const feedsToUpdate = getFeedsToUpdate(batch).filter((feed) => feed.shouldUpdate);
 
-  return chunk(feedsToUpdate, FEEDS_TO_UPDATE_CHUNK_SIZE).map(async (feed) => updateFeeds(feed));
+  return Promise.allSettled(chunk(feedsToUpdate, FEEDS_TO_UPDATE_CHUNK_SIZE).map(async (feed) => updateFeeds(feed)));
 };
