@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { get } from 'lodash';
 
 import type { GasSettings } from '../config/schema';
 import { getState, setState, type DataFeedValue } from '../state';
@@ -122,12 +123,17 @@ export const setLastOnChainDatafeedValues = (
  * Removes last transaction details from the store.
  * @param chainId
  * @param providerName
- * @param nonce
+ * @param dataFeedId
  */
 export const clearLastOnChainDatafeedValue = (chainId: string, providerName: string, dataFeedId: string) => {
   const state = getState();
 
-  if (state.gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues[dataFeedId]) {
+  const lastOnChainDataFeedValues = get(
+    state,
+    `gasPriceStore[${chainId}][${providerName}].lastOnChainDataFeedValues[${dataFeedId}]`
+  );
+
+  if (lastOnChainDataFeedValues) {
     const { [dataFeedId]: _value, ...lastOnChainDataFeedValues } =
       state.gasPriceStore[chainId]![providerName]!.lastOnChainDataFeedValues;
 

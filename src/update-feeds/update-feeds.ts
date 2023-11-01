@@ -5,6 +5,7 @@ import { chunk, range, size, uniq } from 'lodash';
 import { checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
 import { FEEDS_TO_UPDATE_CHUNK_SIZE } from '../constants';
+import { clearLastOnChainDatafeedValue } from '../gas-price/gas-price';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, setState } from '../state';
@@ -168,7 +169,7 @@ export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) =>
     const signedData = getStoreDataPoint(dapiResponse.dataFeed.dataFeedId);
 
     if (signedData === undefined) {
-      return { ...batch, shouldUpdate: false };
+      return { ...dapiResponse, shouldUpdate: false };
     }
 
     const offChainValue = BigNumber.from(signedData.encodedValue);
@@ -202,9 +203,24 @@ export const processBatch = async (batch: ReadDapiWithIndexResponsesAndChainId) 
   // Start by merging the dynamic state with the state
   updateDynamicState(batch);
 
-  // TODO Leaving shouldUpdate exposed as flow chart calls for clearing stale data
+  const { config } = getState();
+  const allFeeds = getFeedsToUpdate(batch);
+
+  // Flow chart calls for clearing stale data
   // "for each dAPI where an update is not needed" ... "clear stored on chain datafeed value from gas price store"
-  const feedsToUpdate = getFeedsToUpdate(batch).filter((feed) => feed.shouldUpdate);
+  allFeeds
+    .filter((item) => !item.shouldUpdate)
+    .map((feed) => {
+      Object.values(config.chains)
+        .map((chain) => Object.keys(chain.providers))
+        .map((providerNames) => {
+          providerNames.map((providerName) =>
+            clearLastOnChainDatafeedValue(feed.chainId, providerName, feed.dataFeed.dataFeedId)
+          );
+        });
+    });
+
+  const feedsToUpdate = allFeeds.filter((feed) => feed.shouldUpdate);
 
   return Promise.allSettled(chunk(feedsToUpdate, FEEDS_TO_UPDATE_CHUNK_SIZE).map(async (feed) => updateFeeds(feed)));
 };
