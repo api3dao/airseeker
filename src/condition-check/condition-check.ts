@@ -25,15 +25,19 @@ export const calculateMedian = (arr: ethers.BigNumber[]) => {
   return arr.length % 2 === 0 ? nums[mid - 1]!.add(nums[mid]!).div(2) : nums[mid];
 };
 
+/**
+ * Checks if the deviation threshold has been exceeded.
+ *
+ * @param onChainValue
+ * @param deviationThreshold Refer to getDeviationThresholdAsBigNumber()
+ * @param apiValue
+ */
 export const checkDeviationThresholdExceeded = (
   onChainValue: ethers.BigNumber,
   deviationThreshold: ethers.BigNumber,
   apiValue: ethers.BigNumber
 ) => {
   const updateInPercentage = calculateUpdateInPercentage(onChainValue, apiValue);
-  // const threshold = ethers.BigNumber.from(Math.trunc(deviationThreshold * HUNDRED_PERCENT)).div(
-  //   ethers.BigNumber.from(100)
-  // );
 
   return updateInPercentage.gt(deviationThreshold);
 };

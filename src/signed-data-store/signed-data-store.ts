@@ -2,11 +2,11 @@ import { goSync } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
 import { logger } from '../logger';
-import type { SignedData, Datafeed } from '../types';
+import type { SignedData, DataFeedId } from '../types';
 import { deriveBeaconId } from '../utils';
 
 // A simple in-memory data store implementation - the interface allows for swapping in a remote key/value store
-let signedApiStore: Record<Datafeed, SignedData> = {};
+let signedApiStore: Record<DataFeedId, SignedData> = {};
 
 export const verifySignedData = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
   // Verification is wrapped in goSync, because ethers methods can potentially throw on invalid input.
@@ -89,7 +89,7 @@ export const setStoreDataPoint = (signedData: SignedData) => {
   signedApiStore[datafeed] = signedData;
 };
 
-export const getStoreDataPoint = (datafeed: Datafeed) => signedApiStore[datafeed];
+export const getStoreDataPoint = (dataFeedId: DataFeedId) => signedApiStore[dataFeedId];
 
 export const clear = () => {
   signedApiStore = {};

@@ -2,6 +2,7 @@ import { BigNumber, ethers } from 'ethers';
 
 import { getUnixTimestamp } from '../../test/utils';
 import { HUNDRED_PERCENT } from '../constants';
+import { getDeviationThresholdAsBigNumber } from '../utils';
 
 import {
   calculateMedian,
@@ -11,9 +12,6 @@ import {
   checkDeviationThresholdExceeded,
   checkUpdateConditions,
 } from './condition-check';
-
-const getDeviationThresholdAsBigNumber = (input: number) =>
-  ethers.BigNumber.from(Math.trunc(input * HUNDRED_PERCENT)).div(ethers.BigNumber.from(100));
 
 describe('checkUpdateCondition', () => {
   const onChainValue = ethers.BigNumber.from(500);

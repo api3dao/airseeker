@@ -1,20 +1,22 @@
 import type { BigNumber } from 'ethers';
 
 import type { Config } from '../config/schema';
-import type { DecodedDataFeed } from '../types';
+import type { chainId, dapiName, DecodedDataFeed } from '../types';
 
 export interface DataFeedValue {
   value: BigNumber;
   timestampMs: number;
 }
 
+export interface DataFeedOnChainValue {
+  value: BigNumber;
+  timestamp: number; // in seconds
+}
+
 interface GasState {
   gasPrices: { price: BigNumber; timestampMs: number }[];
   lastOnChainDataFeedValues: Record<string, DataFeedValue>;
 }
-
-type chainId = string;
-type dapiName = string;
 
 export interface State {
   config: Config;
@@ -25,7 +27,7 @@ export interface State {
     {
       dataFeed: DecodedDataFeed;
       signedApiUrls: string[];
-      dataFeedValues: Record<chainId, { value: BigNumber; timestamp: number }>;
+      dataFeedValues: Record<chainId, DataFeedOnChainValue>;
       updateParameters: Record<
         chainId,
         {
