@@ -1,6 +1,7 @@
 import type { BigNumber } from 'ethers';
 
 import type { Config } from '../config/schema';
+import type { DecodedDataFeed } from '../types';
 
 export interface DataFeedValue {
   value: BigNumber;
@@ -22,7 +23,7 @@ export interface State {
   dynamicState: Record<
     dapiName,
     {
-      dataFeed: string;
+      dataFeed: DecodedDataFeed;
       signedApiUrls: string[];
       dataFeedValues: Record<chainId, { value: BigNumber; timestamp: number }>;
       updateParameters: Record<

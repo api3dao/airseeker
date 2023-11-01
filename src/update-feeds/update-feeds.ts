@@ -4,10 +4,10 @@ import { chunk, range, size, uniq } from 'lodash';
 
 import { checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
+import { FEEDS_TO_UPDATE_CHUNK_SIZE } from '../constants';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, setState } from '../state';
-import type { SignedData } from '../types';
 import { isFulfilled, sleep } from '../utils';
 
 import {
@@ -68,7 +68,11 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
       await dapiDataRegistry.callStatic.tryMulticall([dapisCountCall, ...readDapiWithIndexCalls])
     );
 
-    const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata!);
+    if (!dapisCountReturndata) {
+      throw new Error('Returned data is undefined.');
+    }
+
+    const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata);
     const firstBatch = readDapiWithIndexCallsReturndata
       .map((dapiReturndata) => ({ ...decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata), chainId }))
       // Because the dapisCount is not known during the multicall, we may ask for non-existent dAPIs. These should be filtered out.
@@ -159,9 +163,9 @@ export const updateDynamicState = (batch: ReadDapiWithIndexResponsesAndChainId) 
   });
 };
 
-export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) =>
-  batch.map((dapiResponse) => {
-    const signedData = getStoreDataPoint(dapiResponse.dataFeed);
+export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) => {
+  return batch.map((dapiResponse) => {
+    const signedData = getStoreDataPoint(dapiResponse.dataFeed.dataFeedId);
 
     if (signedData === undefined) {
       return { ...batch, shouldUpdate: false };
@@ -186,13 +190,9 @@ export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) =>
       signedData,
     };
   });
+};
 
-export const updateFeeds = async (
-  _batch: (ReadDapiWithIndexResponsesAndChainId & {
-    shouldUpdate: boolean;
-    signedData: SignedData;
-  })[]
-) => {
+export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>) => {
   // TODO implement
   // batch, execute
 };
@@ -205,18 +205,8 @@ export const processBatch = async (batch: ReadDapiWithIndexResponsesAndChainId) 
   // Start by merging the dynamic state with the state
   updateDynamicState(batch);
 
-  // Record<chainId, {dataFeed: string, signedData: SignedData}>
-  const feedsToUpdate = getFeedsToUpdate(batch);
+  // TODO Leaving shouldUpdate exposed as flow chart calls for clearing stale data
+  const feedsToUpdate = getFeedsToUpdate(batch).filter((feed) => feed.shouldUpdate);
 
-  // actually I don't think this is necessary, but I'll leave shouldUpdate in anyway
-  // ...
-  // as per flow chart, wipe old data // clear stored on chain datafeed value from gas price store
-  // feedsToUpdate.filter(item => !item).map(feed => {
-  //
-  // });
-
-  const FEEDS_TO_UPDATE_CHUNK_SIZE = 10;
   return chunk(feedsToUpdate, FEEDS_TO_UPDATE_CHUNK_SIZE).map(async (feed) => updateFeeds(feed));
-
-  // then probably send it back to the state
 };

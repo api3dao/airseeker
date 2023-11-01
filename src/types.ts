@@ -22,3 +22,14 @@ export const signedApiResponseSchema = z.object({
 });
 
 export type Datafeed = string;
+
+export interface DataFeedSingle {
+  airnodeAddress: string;
+  templateId: string;
+  dataFeedId: string;
+}
+
+export interface DecodedDataFeed {
+  dataFeedId: string;
+  dataFeeds: DataFeedSingle[];
+}

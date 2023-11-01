@@ -53,7 +53,7 @@ const callSignedDataApi = async (url: string): Promise<SignedData[]> => {
 
 export const runDataFetcher = async () => {
   const state = getState();
-  const { config, dataFetcherInterval } = state;
+  const { config, dataFetcherInterval, dynamicState } = state;
 
   const fetchInterval = config.fetchInterval * 1000;
 
@@ -62,18 +62,22 @@ export const runDataFetcher = async () => {
     setState({ ...state, dataFetcherInterval });
   }
 
-  // TODO grab dynamic urls and add them to statically configured urls
-  // Object.values(state.dynamicState).map(dapiDynamicConfig => {
-  //   signed
-  // })
+  // Generate URLs from dynamically-retrieved configuration
+  const dynamicUrls = Object.values(dynamicState).flatMap((dapiDynamicConfig) =>
+    dapiDynamicConfig.signedApiUrls.flatMap((url) =>
+      dapiDynamicConfig.dataFeed.dataFeeds.flatMap((df) => `${url}/${df.airnodeAddress}`)
+    )
+  );
 
-  const urls = uniq(
-    Object.values(config.chains).flatMap((chain) =>
+  // Merge dynamic and static URLs
+  const urls = uniq([
+    ...dynamicUrls,
+    ...Object.values(config.chains).flatMap((chain) =>
       Object.entries(chain.__Temporary__DapiDataRegistry.airnodeToSignedApiUrl).flatMap(
         ([airnodeAddress, baseUrl]) => `${baseUrl}/${airnodeAddress}`
       )
-    )
-  );
+    ),
+  ]);
 
   return Promise.allSettled(
     urls.map(async (url) =>
