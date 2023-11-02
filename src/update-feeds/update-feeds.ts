@@ -11,11 +11,11 @@ import type { ChainId, Provider } from '../types';
 import { isFulfilled, sleep } from '../utils';
 
 import {
-  getDapiDataRegistry,
-  type ReadDapiWithIndexResponse,
-  verifyMulticallResponse,
-  decodeReadDapiWithIndexResponse,
   decodeDapisCountResponse,
+  decodeReadDapiWithIndexResponse,
+  getDapiDataRegistry,
+  verifyMulticallResponse,
+  type ReadDapiWithIndexResponse,
 } from './dapi-data-registry';
 
 export const startUpdateFeedLoops = async () => {
@@ -55,12 +55,12 @@ export const runUpdateFeed = async (providerName: Provider, chain: Chain, chainI
     logger.debug(`Fetching first batch of dAPIs batches`);
     const firstBatchStartTime = Date.now();
     const goFirstBatch = await go(async () => {
-      const dapisCountCall = dapiDataRegistry.interface.encodeFunctionData('dapisCount');
-      const readDapiWithIndexCalls = range(0, dataFeedBatchSize).map((dapiIndex) =>
+      const dapisCountCalldata = dapiDataRegistry.interface.encodeFunctionData('dapisCount');
+      const readDapiWithIndexCalldatas = range(0, dataFeedBatchSize).map((dapiIndex) =>
         dapiDataRegistry.interface.encodeFunctionData('readDapiWithIndex', [dapiIndex])
       );
       const [dapisCountReturndata, ...readDapiWithIndexCallsReturndata] = verifyMulticallResponse(
-        await dapiDataRegistry.callStatic.tryMulticall([dapisCountCall, ...readDapiWithIndexCalls])
+        await dapiDataRegistry.callStatic.tryMulticall([dapisCountCalldata, ...readDapiWithIndexCalldatas])
       );
 
       const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata!);
@@ -99,11 +99,11 @@ export const runUpdateFeed = async (providerName: Provider, chain: Chain, chainI
         logger.debug(`Fetching batch of active dAPIs`, { batchIndex });
         const dapiBatchIndexStart = batchIndex * dataFeedBatchSize;
         const dapiBatchIndexEnd = Math.min(dapisCount, dapiBatchIndexStart + dataFeedBatchSize);
-        const readDapiWithIndexCalls = range(dapiBatchIndexStart, dapiBatchIndexEnd).map((dapiIndex) =>
+        const readDapiWithIndexCalldatas = range(dapiBatchIndexStart, dapiBatchIndexEnd).map((dapiIndex) =>
           dapiDataRegistry.interface.encodeFunctionData('readDapiWithIndex', [dapiIndex])
         );
         const returndata = verifyMulticallResponse(
-          await dapiDataRegistry.callStatic.tryMulticall(readDapiWithIndexCalls)
+          await dapiDataRegistry.callStatic.tryMulticall(readDapiWithIndexCalldatas)
         );
 
         return returndata.map((returndata) => decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata));

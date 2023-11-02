@@ -5,6 +5,7 @@ import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import type { Signer, Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 
+import type { SignedData } from '../../src/types';
 import { deriveBeaconId } from '../../src/utils';
 import { DapiDataRegistry__factory, HashRegistry__factory } from '../../typechain-types';
 import { generateTestConfig } from '../fixtures/mock-config';
@@ -116,6 +117,20 @@ const buildEIP712Domain = (name: string, chainId: number, verifyingContract: str
   };
 };
 
+// TODO: Move to fixtures?
+export const createSignedData = async (
+  airnodeWallet: Wallet,
+  templateId: string,
+  dataFeedTimestamp: string,
+  apiValue = ethers.BigNumber.from(ethers.utils.randomBytes(Math.floor(Math.random() * 27) + 1)) // Fits into uint224.
+): Promise<SignedData> => {
+  const encodedValue = ethers.utils.defaultAbiCoder.encode(['uint224'], [ethers.BigNumber.from(apiValue)]);
+  const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
+
+  return { airnode: airnodeWallet.address, templateId, timestamp: dataFeedTimestamp, encodedValue, signature };
+};
+
+// TODO: Rename to initialize beacon
 const updateBeacon = async (
   api3ServerV1: Api3ServerV1,
   airnodeWallet: Wallet,
@@ -134,8 +149,17 @@ const updateBeacon = async (
 };
 
 export const deployAndUpdate = async () => {
-  const [deployer, manager, registryOwner, api3MarketContract, rootSigner1, rootSigner2, rootSigner3, randomPerson] =
-    await ethers.getSigners();
+  const [
+    deployer,
+    manager,
+    registryOwner,
+    api3MarketContract,
+    rootSigner1,
+    rootSigner2,
+    rootSigner3,
+    randomPerson,
+    walletFunder,
+  ] = await ethers.getSigners();
 
   // Deploy contracts
   const accessControlRegistryFactory = new AccessControlRegistry__factory(deployer as Signer);
@@ -320,14 +344,16 @@ export const deployAndUpdate = async () => {
     {
       airnodes: [binanceAirnodeWallet.address, krakenAirnodeWallet.address],
       templateIds: [binanceBtcBeacon.templateId, krakenBtcBeacon.templateId],
+      dapiTreeValue: dapiTreeValues[0]!,
     },
     {
       airnodes: [binanceAirnodeWallet.address, krakenAirnodeWallet.address],
       templateIds: [binanceEthBeacon.templateId, krakenEthBeacon.templateId],
+      dapiTreeValue: dapiTreeValues[1]!,
     },
   ];
   for (const dapiInfo of dapiInfos) {
-    const { airnodes, templateIds } = dapiInfo;
+    const { airnodes, templateIds, dapiTreeValue } = dapiInfo;
 
     const encodedBeaconSetData = ethers.utils.defaultAbiCoder.encode(
       ['address[]', 'bytes32[]'],
@@ -338,8 +364,7 @@ export const deployAndUpdate = async () => {
     const deviationThresholdInPercentage = ethers.BigNumber.from(HUNDRED_PERCENT / 50); // 2%
     const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
     const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
-    const [dapiTreeValue] = dapiTreeValues;
-    const [dapiName, beaconSetId, sponsorWallet] = dapiTreeValue!;
+    const [dapiName, beaconSetId, sponsorWallet] = dapiTreeValue;
     await dapiDataRegistry
       .connect(api3MarketContract!)
       .addDapi(
@@ -350,7 +375,7 @@ export const deployAndUpdate = async () => {
         deviationReference,
         heartbeatInterval,
         dapiTree.root,
-        dapiTree.getProof(dapiTreeValue!)
+        dapiTree.getProof(dapiTreeValue)
       );
   }
   // TODO: Generate proper config (change sponsor wallet mnemonic, deployed contract addresses, etc...)
@@ -362,9 +387,21 @@ export const deployAndUpdate = async () => {
   return {
     accessControlRegistry,
     api3ServerV1,
-    btcBeaconSetId,
-    ethBeaconSetId,
-    config,
     dapiDataRegistry,
+
+    binanceAirnodeWallet,
+    krakenAirnodeWallet,
+
+    binanceBtcBeacon,
+    btcBeaconSetId,
+    krakenBtcBeacon,
+
+    binanceEthBeacon,
+    ethBeaconSetId,
+    krakenEthBeacon,
+
+    airseekerSponsorWallet,
+    config,
+    walletFunder: walletFunder!,
   };
 };
