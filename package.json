@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@api3/airnode-protocol-v1": "^2.10.0",
-    "@api3/commons": "^0.3.0",
+    "@api3/commons": "^0.4.1",
     "@api3/dapi-management": "github:api3dao/dapi-management#169-DapiDataRegistry",
     "@api3/promise-utils": "^0.4.0",
     "@ethersproject/abi": "^5.7.0",
