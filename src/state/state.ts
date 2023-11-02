@@ -16,7 +16,7 @@ export interface State {
   signedApiStore: Record<AirnodeAddress, Record<TemplateId, LocalSignedData>>;
 }
 
-type StateUpdater = (draft: Draft<State>) => State;
+type StateUpdater = (draft: Draft<State>) => void;
 
 let state: State | undefined;
 

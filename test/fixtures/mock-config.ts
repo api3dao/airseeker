@@ -1,12 +1,12 @@
 import { ethers } from 'ethers';
 
 import type { Config } from '../../src/config/schema';
-import { setState } from '../../src/state';
+import { setState, type State } from '../../src/state';
 
 /**
  * A stub to retrieve the latest config
  */
-const getConfig = () => generateTestConfig();
+export const getConfig = () => generateTestConfig();
 
 // This is not a secret
 // https://pool.nodary.io/0xC04575A2773Da9Cd23853A69694e02111b2c4182
@@ -55,11 +55,12 @@ export const generateTestConfig = (): Config => ({
   deviationThresholdCoefficient: 1,
 });
 
-export const init = () => {
+export const init = (stateOverride?: Partial<State>) => {
   const config = getConfig();
   setState({
     config,
     gasPriceStore: {},
     signedApiStore: {},
+    ...stateOverride,
   });
 };

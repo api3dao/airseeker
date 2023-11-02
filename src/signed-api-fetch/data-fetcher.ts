@@ -61,7 +61,6 @@ export const runDataFetcher = async () => {
     const dataFetcherInterval = setInterval(runDataFetcher, fetchInterval);
     updateState((draft) => {
       draft.dataFetcherInterval = dataFetcherInterval;
-      return draft;
     });
   }
 

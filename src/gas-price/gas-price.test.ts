@@ -55,7 +55,6 @@ describe('gas price', () => {
       // Reset the gasPriceStore
       updateState((draft) => {
         draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
-        return draft;
       });
     });
 
@@ -71,7 +70,6 @@ describe('gas price', () => {
 
       updateState((draft) => {
         draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-        return draft;
       });
       clearExpiredStoreGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
       setStoreGasPrices(chainId, providerName, gasPriceMock);
@@ -88,7 +86,6 @@ describe('gas price', () => {
       // Reset the gasPriceStore
       updateState((draft) => {
         draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
-        return draft;
       });
     });
 
@@ -112,7 +109,6 @@ describe('gas price', () => {
       // Reset the gasPriceStore
       updateState((draft) => {
         draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
-        return draft;
       });
     });
 
@@ -142,7 +138,6 @@ describe('gas price', () => {
 
       updateState((draft) => {
         draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-        return draft;
       });
       clearExpiredStoreGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
       const gasPrice = await updateGasPriceStore(chainId, providerName, rpcUrl);
@@ -183,7 +178,6 @@ describe('gas price', () => {
       // Reset the gasPriceStore
       updateState((draft) => {
         draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
-        return draft;
       });
     });
 
@@ -199,7 +193,6 @@ describe('gas price', () => {
 
       updateState((draft) => {
         draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-        return draft;
       });
       await gasPriceCollector(chainId, providerName, rpcUrl, gasSettings.sanitizationSamplingWindow);
 
@@ -215,7 +208,6 @@ describe('gas price', () => {
       // Reset the gasPriceStore
       updateState((draft) => {
         draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
-        return draft;
       });
     });
 
@@ -251,7 +243,6 @@ describe('gas price', () => {
 
       updateState((draft) => {
         draft.gasPriceStore[chainId]![providerName]!.gasPrices = gasPricesMock;
-        return draft;
       });
       const gasPrice = await getAirseekerRecommendedGasPrice(
         chainId,
@@ -283,7 +274,6 @@ describe('gas price', () => {
 
       updateState((draft) => {
         draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-        return draft;
       });
       const gasPrice = await getAirseekerRecommendedGasPrice(
         chainId,
@@ -313,7 +303,6 @@ describe('gas price', () => {
 
       updateState((draft) => {
         draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-        return draft;
       });
       const gasPrice = await getAirseekerRecommendedGasPrice(
         chainId,
@@ -345,7 +334,6 @@ describe('gas price', () => {
         draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
         draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
           timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1;
-        return draft;
       });
       const gasPrice = await getAirseekerRecommendedGasPrice(
         chainId,

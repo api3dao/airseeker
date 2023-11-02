@@ -47,7 +47,6 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     // Reset the gasPriceStore
     updateState((draft) => {
       draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
-      return draft;
     });
   });
 
@@ -82,7 +81,6 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
 
     updateState((draft) => {
       draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      return draft;
     });
     const providerRecommendedGasprice = await provider.getGasPrice();
 
@@ -115,7 +113,6 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
 
     updateState((draft) => {
       draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      return draft;
     });
 
     const gasPrice = await getAirseekerRecommendedGasPrice(
@@ -148,7 +145,6 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
 
     updateState((draft) => {
       draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      return draft;
     });
 
     const gasPrice = await getAirseekerRecommendedGasPrice(
@@ -174,7 +170,6 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     updateState((draft) => {
       draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
         timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1;
-      return draft;
     });
     const gasPrice = await getAirseekerRecommendedGasPrice(
       chainId,
