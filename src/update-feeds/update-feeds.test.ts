@@ -140,10 +140,7 @@ describe(runUpdateFeed.name, () => {
 
     // Expect the logs to be called with the correct context.
     expect(logger.error).toHaveBeenCalledTimes(1);
-    expect(logger.error).toHaveBeenCalledWith('Failed to get first active dAPIs batch', new Error('provider-error'), {
-      chainId: '123',
-      providerName: 'provider-name',
-    });
+    expect(logger.error).toHaveBeenCalledWith('Failed to get first active dAPIs batch', new Error('provider-error'));
   });
 
   it('fetches other batches in a staggered way and logs errors', async () => {
@@ -193,33 +190,20 @@ describe(runUpdateFeed.name, () => {
     expect(logger.error).toHaveBeenCalledTimes(1);
     expect(logger.error).toHaveBeenCalledWith(
       'Failed to get active dAPIs batch',
-      new Error('One of the multicalls failed'),
-      {
-        chainId: '123',
-        providerName: 'provider-name',
-      }
+      new Error('One of the multicalls failed')
     );
     expect(logger.debug).toHaveBeenCalledTimes(6);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of dAPIs batches', {
-      chainId: '123',
-      providerName: 'provider-name',
-    });
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of dAPIs batches');
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs', expect.anything());
     expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching batches of active dAPIs', {
       batchesCount: 3,
-      chainId: '123',
-      providerName: 'provider-name',
       staggerTime: 49.999_999_999_999_99,
     });
     expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching batch of active dAPIs', {
       batchIndex: 1,
-      chainId: '123',
-      providerName: 'provider-name',
     });
     expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batch of active dAPIs', {
       batchIndex: 2,
-      chainId: '123',
-      providerName: 'provider-name',
     });
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Processing batch of active dAPIs', expect.anything());
   });

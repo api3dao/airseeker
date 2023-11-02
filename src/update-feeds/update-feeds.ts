@@ -42,86 +42,86 @@ export const startUpdateFeedLoops = async () => {
 };
 
 export const runUpdateFeed = async (providerName: string, chain: Chain, chainId: string) => {
-  const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
-  // TODO: Consider adding a start timestamp (as ID) to the logs to identify batches from this runUpdateFeed tick.
-  const baseLogContext = { chainId, providerName };
+  await logger.runWithContext({ chainId, providerName, coordinatorTimestampMs: Date.now().toString() }, async () => {
+    const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
 
-  // Create a provider and connect it to the DapiDataRegistry contract.
-  const provider = new ethers.providers.StaticJsonRpcProvider(providers[providerName]);
-  const dapiDataRegistry = getDapiDataRegistry(contracts.DapiDataRegistry, provider);
+    // Create a provider and connect it to the DapiDataRegistry contract.
+    const provider = new ethers.providers.StaticJsonRpcProvider(providers[providerName]);
+    const dapiDataRegistry = getDapiDataRegistry(contracts.DapiDataRegistry, provider);
 
-  logger.debug(`Fetching first batch of dAPIs batches`, baseLogContext);
-  const firstBatchStartTime = Date.now();
-  const goFirstBatch = await go(async () => {
-    const dapisCountCall = dapiDataRegistry.interface.encodeFunctionData('dapisCount');
-    const readDapiWithIndexCalls = range(0, dataFeedBatchSize).map((dapiIndex) =>
-      dapiDataRegistry.interface.encodeFunctionData('readDapiWithIndex', [dapiIndex])
-    );
-    const [dapisCountReturndata, ...readDapiWithIndexCallsReturndata] = verifyMulticallResponse(
-      await dapiDataRegistry.callStatic.tryMulticall([dapisCountCall, ...readDapiWithIndexCalls])
-    );
-
-    const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata!);
-    const firstBatch = readDapiWithIndexCallsReturndata
-      .map((dapiReturndata) => decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata))
-      // Because the dapisCount is not known during the multicall, we may ask for non-existent dAPIs. These should be filtered out.
-      .slice(0, dapisCount);
-    return {
-      firstBatch,
-      dapisCount,
-    };
-  });
-  if (!goFirstBatch.success) {
-    logger.error(`Failed to get first active dAPIs batch`, goFirstBatch.error, baseLogContext);
-    return;
-  }
-  const { firstBatch, dapisCount } = goFirstBatch.data;
-  const processFirstBatchPromise = processBatch(firstBatch);
-
-  // Calculate the stagger time between the rest of the batches.
-  const batchesCount = Math.ceil(dapisCount / dataFeedBatchSize);
-  const staggerTime = batchesCount <= 1 ? 0 : (dataFeedUpdateInterval / batchesCount) * 1000;
-
-  // Wait the remaining stagger time required after fetching the first batch.
-  const firstBatchDuration = Date.now() - firstBatchStartTime;
-  await sleep(Math.max(0, staggerTime - firstBatchDuration));
-
-  // Fetch the rest of the batches in parallel in a staggered way.
-  if (batchesCount > 1) {
-    logger.debug('Fetching batches of active dAPIs', { batchesCount, staggerTime, ...baseLogContext });
-  }
-  const otherBatches = await Promise.allSettled(
-    range(1, batchesCount).map(async (batchIndex) => {
-      await sleep((batchIndex - 1) * staggerTime);
-
-      logger.debug(`Fetching batch of active dAPIs`, { batchIndex, ...baseLogContext });
-      const dapiBatchIndexStart = batchIndex * dataFeedBatchSize;
-      const dapiBatchIndexEnd = Math.min(dapisCount, dapiBatchIndexStart + dataFeedBatchSize);
-      const readDapiWithIndexCalls = range(dapiBatchIndexStart, dapiBatchIndexEnd).map((dapiIndex) =>
+    logger.debug(`Fetching first batch of dAPIs batches`);
+    const firstBatchStartTime = Date.now();
+    const goFirstBatch = await go(async () => {
+      const dapisCountCall = dapiDataRegistry.interface.encodeFunctionData('dapisCount');
+      const readDapiWithIndexCalls = range(0, dataFeedBatchSize).map((dapiIndex) =>
         dapiDataRegistry.interface.encodeFunctionData('readDapiWithIndex', [dapiIndex])
       );
-      const returndata = verifyMulticallResponse(
-        await dapiDataRegistry.callStatic.tryMulticall(readDapiWithIndexCalls)
+      const [dapisCountReturndata, ...readDapiWithIndexCallsReturndata] = verifyMulticallResponse(
+        await dapiDataRegistry.callStatic.tryMulticall([dapisCountCall, ...readDapiWithIndexCalls])
       );
 
-      const decodedBatch = returndata.map((returndata) =>
-        decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata)
-      );
-      return decodedBatch;
-    })
-  );
-  for (const batch of otherBatches.filter((batch) => !isFulfilled(batch))) {
-    logger.error(`Failed to get active dAPIs batch`, (batch as PromiseRejectedResult).reason, baseLogContext);
-  }
-  const processOtherBatchesPromises = otherBatches
-    .filter((result) => isFulfilled(result))
-    .map(async (result) => processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value));
+      const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata!);
+      const firstBatch = readDapiWithIndexCallsReturndata
+        .map((dapiReturndata) => decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata))
+        // Because the dapisCount is not known during the multicall, we may ask for non-existent dAPIs. These should be filtered out.
+        .slice(0, dapisCount);
+      return {
+        firstBatch,
+        dapisCount,
+      };
+    });
+    if (!goFirstBatch.success) {
+      logger.error(`Failed to get first active dAPIs batch`, goFirstBatch.error);
+      return;
+    }
+    const { firstBatch, dapisCount } = goFirstBatch.data;
+    const processFirstBatchPromise = processBatch(firstBatch);
 
-  // Wait for all the batches to be processed.
-  //
-  // TODO: Consider returning some information (success/error) and log some statistics (e.g. how many dAPIs were
-  // updated, etc...).
-  await Promise.all([processFirstBatchPromise, ...processOtherBatchesPromises]);
+    // Calculate the stagger time between the rest of the batches.
+    const batchesCount = Math.ceil(dapisCount / dataFeedBatchSize);
+    const staggerTime = batchesCount <= 1 ? 0 : (dataFeedUpdateInterval / batchesCount) * 1000;
+
+    // Wait the remaining stagger time required after fetching the first batch.
+    const firstBatchDuration = Date.now() - firstBatchStartTime;
+    await sleep(Math.max(0, staggerTime - firstBatchDuration));
+
+    // Fetch the rest of the batches in parallel in a staggered way.
+    if (batchesCount > 1) {
+      logger.debug('Fetching batches of active dAPIs', { batchesCount, staggerTime });
+    }
+    const otherBatches = await Promise.allSettled(
+      range(1, batchesCount).map(async (batchIndex) => {
+        await sleep((batchIndex - 1) * staggerTime);
+
+        logger.debug(`Fetching batch of active dAPIs`, { batchIndex });
+        const dapiBatchIndexStart = batchIndex * dataFeedBatchSize;
+        const dapiBatchIndexEnd = Math.min(dapisCount, dapiBatchIndexStart + dataFeedBatchSize);
+        const readDapiWithIndexCalls = range(dapiBatchIndexStart, dapiBatchIndexEnd).map((dapiIndex) =>
+          dapiDataRegistry.interface.encodeFunctionData('readDapiWithIndex', [dapiIndex])
+        );
+        const returndata = verifyMulticallResponse(
+          await dapiDataRegistry.callStatic.tryMulticall(readDapiWithIndexCalls)
+        );
+
+        const decodedBatch = returndata.map((returndata) =>
+          decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata)
+        );
+        return decodedBatch;
+      })
+    );
+    for (const batch of otherBatches.filter((batch) => !isFulfilled(batch))) {
+      logger.error(`Failed to get active dAPIs batch`, (batch as PromiseRejectedResult).reason);
+    }
+    const processOtherBatchesPromises = otherBatches
+      .filter((result) => isFulfilled(result))
+      .map(async (result) => processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value));
+
+    // Wait for all the batches to be processed.
+    //
+    // TODO: Consider returning some information (success/error) and log some statistics (e.g. how many dAPIs were
+    // updated, etc...).
+    await Promise.all([processFirstBatchPromise, ...processOtherBatchesPromises]);
+  });
 };
 
 // eslint-disable-next-line @typescript-eslint/require-await
