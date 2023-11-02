@@ -14,6 +14,7 @@ export interface State {
   dataFetcherInterval?: NodeJS.Timeout;
   gasPriceStore: Record<string, Record<string, GasState>>;
   signedApiStore: Record<AirnodeAddress, Record<TemplateId, LocalSignedData>>;
+  signedApiUrlStore: Record<string, Record<AirnodeAddress, string>>;
 }
 
 type StateUpdater = (draft: Draft<State>) => void;

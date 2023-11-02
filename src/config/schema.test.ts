@@ -52,11 +52,6 @@ describe('chains schema', () => {
             url: 'http://localhost:8545',
           },
         },
-        __Temporary__DapiDataRegistry: {
-          airnodeToSignedApiUrl: {},
-          dataFeedIdToBeacons: {},
-          activeDapiNames: [],
-        },
         gasSettings,
         dataFeedBatchSize: 10,
         dataFeedUpdateInterval: 60,
@@ -78,11 +73,6 @@ describe('chains schema', () => {
           mainnet: {
             url: 'http://mainnet-url.com',
           },
-        },
-        __Temporary__DapiDataRegistry: {
-          airnodeToSignedApiUrl: {},
-          dataFeedIdToBeacons: {},
-          activeDapiNames: [],
         },
         gasSettings,
         dataFeedBatchSize: 10,
@@ -112,11 +102,6 @@ describe('chains schema', () => {
         contracts: {
           DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
-        __Temporary__DapiDataRegistry: {
-          airnodeToSignedApiUrl: {},
-          dataFeedIdToBeacons: {},
-          activeDapiNames: [],
-        },
         gasSettings,
         dataFeedBatchSize: 10,
         dataFeedUpdateInterval: 60,
@@ -145,11 +130,6 @@ describe('chains schema', () => {
           hardhat: {
             url: 'http://localhost:8545',
           },
-        },
-        __Temporary__DapiDataRegistry: {
-          airnodeToSignedApiUrl: {},
-          dataFeedIdToBeacons: {},
-          activeDapiNames: [],
         },
         gasSettings,
         dataFeedBatchSize: 10,
@@ -191,11 +171,6 @@ describe('chains schema', () => {
           DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
         providers: {},
-        __Temporary__DapiDataRegistry: {
-          airnodeToSignedApiUrl: {},
-          dataFeedIdToBeacons: {},
-          activeDapiNames: [],
-        },
         gasSettings,
         dataFeedBatchSize: 10,
         dataFeedUpdateInterval: 60,

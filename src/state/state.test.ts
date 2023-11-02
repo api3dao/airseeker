@@ -25,6 +25,12 @@ const stateMock = {
       },
     },
   },
+  signedApiUrlStore: {
+    '31337': {
+      '0xbF3137b0a7574563a23a8fC8badC6537F98197CC': 'http://127.0.0.1:8090/',
+      '0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4': 'https://pool.nodary.io',
+    },
+  },
 };
 
 describe('state', () => {

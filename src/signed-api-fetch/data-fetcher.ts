@@ -53,7 +53,7 @@ const callSignedDataApi = async (url: string): Promise<SignedData[]> => {
 
 export const runDataFetcher = async () => {
   const state = getState();
-  const { config, dataFetcherInterval } = state;
+  const { config, signedApiUrlStore, dataFetcherInterval } = state;
 
   const fetchInterval = config.fetchInterval * 1000;
 
@@ -65,10 +65,8 @@ export const runDataFetcher = async () => {
   }
 
   const urls = uniq(
-    Object.values(config.chains).flatMap((chain) =>
-      Object.entries(chain.__Temporary__DapiDataRegistry.airnodeToSignedApiUrl).flatMap(
-        ([airnodeAddress, baseUrl]) => `${baseUrl}/${airnodeAddress}`
-      )
+    Object.keys(config.chains).flatMap((chainId) =>
+      Object.entries(signedApiUrlStore[chainId]!).flatMap(([airnodeAddress, baseUrl]) => `${baseUrl}/${airnodeAddress}`)
     )
   );
 

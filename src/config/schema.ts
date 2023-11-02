@@ -32,23 +32,6 @@ const contractsSchema = optionalContractsSchema.required();
 
 export type Contracts = z.infer<typeof contractsSchema>;
 
-export const temporaryBeaconDataSchema = z.object({
-  airnode: evmAddressSchema,
-  templateId: evmIdSchema,
-});
-
-export type TemporaryBeaconData = z.infer<typeof temporaryBeaconDataSchema>;
-
-// The DapiDataRegistry should live on-chain and Airseeker will query the contract for information. However, the
-// contract does not exist as of now, so the data is hardcoded.
-export const temporaryDapiDataRegistrySchema = z.object({
-  airnodeToSignedApiUrl: z.record(z.string()),
-  dataFeedIdToBeacons: z.record(z.array(temporaryBeaconDataSchema)),
-  activeDapiNames: z.array(z.string()),
-});
-
-export type TemporaryDapiDataRegistry = z.infer<typeof temporaryDapiDataRegistrySchema>;
-
 export const gasSettingsSchema = z.object({
   recommendedGasPriceMultiplier: z.number().positive(),
   sanitizationSamplingWindow: z.number().positive(),
@@ -64,7 +47,6 @@ export type GasSettings = z.infer<typeof gasSettingsSchema>;
 export const optionalChainSchema = z
   .object({
     providers: z.record(providerSchema), // The record key is the provider "nickname"
-    __Temporary__DapiDataRegistry: temporaryDapiDataRegistrySchema,
     contracts: optionalContractsSchema,
     gasSettings: gasSettingsSchema,
     dataFeedUpdateInterval: z.number().positive(),
