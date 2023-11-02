@@ -207,12 +207,11 @@ export const processBatch = async (batch: ReadDapiWithIndexResponsesAndChainId) 
   // Start by merging the dynamic state with the state
   updateDynamicState(batch);
 
-  // const { config } = getState();
   const allFeeds = getFeedsToUpdate(batch);
 
   // Flow chart calls for clearing stale data
   // "for each dAPI where an update is not needed" ... "clear stored on chain datafeed value from gas price store"
-  // TODO The fn called has been removed, what replaces it (if any)?
+  // TODO The fn called has been removed, what replaces it (if any)? - it may require sponsor wallet derivation
   // allFeeds
   //   .filter((item) => !item.shouldUpdate)
   //   .map((feed) => {
@@ -220,12 +219,10 @@ export const processBatch = async (batch: ReadDapiWithIndexResponsesAndChainId) 
   //       .map((chain) => Object.keys(chain.providers))
   //       .map((providerNames) => {
   //         providerNames.map((providerName) =>
-  //           clearLastOnChainDatafeedValue(feed.chainId, providerName, feed.dataFeed.dataFeedId)
+  //           clearSponsorLastUpdateTimestampMs(feed.chainId, providerName, feed.dataFeed.dataFeedId)
   //         );
   //       });
   //   });
-
-  // clearSponsorLastUpdateTimestampMs();
 
   const feedsToUpdate = allFeeds.filter((feed) => feed.shouldUpdate);
 
