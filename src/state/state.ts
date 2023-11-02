@@ -2,7 +2,7 @@ import type { BigNumber } from 'ethers';
 import { produce, type Draft } from 'immer';
 
 import type { Config } from '../config/schema';
-import type { AirnodeAddress, chainId, dapiName, DecodedDataFeed, DataFeedId, SignedData } from '../types';
+import type { chainId, dapiName, DecodedDataFeed, DataFeedId, SignedData } from '../types';
 
 interface GasState {
   gasPrices: { price: BigNumber; timestampMs: number }[];
@@ -14,28 +14,25 @@ export interface DataFeedOnChainValue {
   timestamp: number; // in seconds
 }
 
+export interface DApi {
+  dataFeed: DecodedDataFeed;
+  dataFeedValues: Record<chainId, DataFeedOnChainValue>;
+  updateParameters: Record<chainId, UpdateParameters>;
+}
+
+export interface UpdateParameters {
+  deviationThresholdInPercentage: BigNumber;
+  deviationReference: BigNumber;
+  heartbeatInterval: number;
+}
+
 export interface State {
   config: Config;
   dataFetcherInterval?: NodeJS.Timeout;
   gasPriceStore: Record<string, Record<string, GasState>>;
   signedApiStore: Record<DataFeedId, SignedData>;
-  signedApiUrlStore: Record<string, Record<AirnodeAddress, string>>;
-  dynamicState: Record<
-    dapiName,
-    {
-      dataFeed: DecodedDataFeed;
-      signedApiUrls: string[];
-      dataFeedValues: Record<chainId, DataFeedOnChainValue>;
-      updateParameters: Record<
-        chainId,
-        {
-          deviationThresholdInPercentage: BigNumber;
-          deviationReference: BigNumber;
-          heartbeatInterval: number;
-        }
-      >;
-    }
-  >;
+  signedApiUrlStore: { url: string; lastReceived: number }[];
+  dapis: Record<dapiName, DApi>;
 }
 
 type StateUpdater = (draft: Draft<State>) => void;
@@ -53,8 +50,8 @@ export const getState = (): State => {
 export const setState = (newState: State) => {
   state = newState;
 
-  if (!state.dynamicState) {
-    state.dynamicState = {};
+  if (!state.dapis) {
+    state.dapis = {};
   }
 };
 

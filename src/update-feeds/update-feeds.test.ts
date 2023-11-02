@@ -17,6 +17,8 @@ import * as utilsModule from '../utils';
 import * as dapiDataRegistryModule from './dapi-data-registry';
 import { runUpdateFeed, startUpdateFeedLoops } from './update-feeds';
 
+jest.mock('../state');
+
 describe(startUpdateFeedLoops.name, () => {
   it('starts staggered update loops for a chain', async () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
@@ -179,7 +181,9 @@ describe(runUpdateFeed.name, () => {
       () =>
         ({
           config: testConfig,
-          dynamicState: {},
+          dapis: {},
+          signedApiStore: {},
+          signedApiUrlStore: [],
           gasPriceStore: {
             '123': {
               'some-test-provider': {
@@ -209,7 +213,7 @@ describe(runUpdateFeed.name, () => {
       '123'
     );
 
-    expect(getStateSpy).toHaveBeenCalledTimes(2);
+    expect(getStateSpy).toHaveBeenCalledTimes(4);
     // TODO what has this fn been replaced with
     // expect(clearLastOnChainDataFeedValueSpy).toHaveBeenCalledTimes(2);
 

@@ -4,3 +4,5 @@ export const HTTP_SIGNED_DATA_API_HEADROOM = 1000;
 export const HUNDRED_PERCENT = 1e8;
 
 export const FEEDS_TO_UPDATE_CHUNK_SIZE = 10;
+
+export const SIGNED_URL_EXPIRY_IN_MINUTES = 5;

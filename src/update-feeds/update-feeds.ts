@@ -1,13 +1,13 @@
 import { go } from '@api3/promise-utils';
 import { BigNumber, ethers } from 'ethers';
-import { chunk, range, size, uniq } from 'lodash';
+import { chunk, mergeWith, range, size } from 'lodash';
 
 import { checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
-import { FEEDS_TO_UPDATE_CHUNK_SIZE } from '../constants';
+import { FEEDS_TO_UPDATE_CHUNK_SIZE, SIGNED_URL_EXPIRY_IN_MINUTES } from '../constants';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
-import { getState, setState } from '../state';
+import { getState, updateState } from '../state';
 import { isFulfilled, sleep } from '../utils';
 
 import {
@@ -139,28 +139,33 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
 };
 
 export const updateDynamicState = (batch: ReadDapiWithIndexResponsesAndChainId) => {
-  batch.map((item) => {
-    const state = getState();
+  batch.map((item) =>
+    updateState((draft) => {
+      const receivedUrls = item.signedApiUrls.map((url) =>
+        item.dataFeed.dataFeeds.map((dataFeed) => ({
+          url: `${url}/${dataFeed.airnodeAddress}`,
+          lastReceived: Date.now(),
+        }))
+      );
 
-    const cachedDapiResponse = state.dynamicState[item.dapiName] ?? {
-      dataFeed: item.dataFeed,
-      signedApiUrls: [],
-      dataFeedValues: {},
-      updateParameters: {},
-    };
+      const freshExistingUrls = draft.signedApiUrlStore.filter(
+        (url) => Date.now() - url.lastReceived > 1000 * 60 * SIGNED_URL_EXPIRY_IN_MINUTES
+      );
 
-    // We're assuming the received data feed value is newer than what we already have... this may not actually be the case
-    // but the alternative is that we accept a later value but then DoS future values.
-    // This should probably be time-constrained and require updated values (eg. only update if newer but not newer than 15 minutes)
-    const newDapiResponse = {
-      dataFeed: cachedDapiResponse?.dataFeed ?? item.dataFeed,
-      dataFeedValues: { ...cachedDapiResponse?.dataFeedValues, [item.chainId]: item.dataFeedValue },
-      updateParameters: { ...cachedDapiResponse.updateParameters, [item.chainId]: item.updateParameters },
-      signedApiUrls: uniq([...item.signedApiUrls, ...(cachedDapiResponse?.signedApiUrls ?? [])]),
-    };
+      // Appends records that don't already exist, updates records that already exist with new timestamps
+      draft.signedApiUrlStore = mergeWith(receivedUrls, freshExistingUrls, (a, b) => (a.url === b.url ? a : b));
 
-    setState({ ...state, dynamicState: { ...state.dynamicState, [item.dapiName]: newDapiResponse } });
-  });
+      const cachedDapiResponse = draft.dapis[item.dapiName];
+      // We're assuming the received data feed value is newer than what we already have... this may not actually be the case
+      // but the alternative is that we accept a later value but then DoS future values.
+      // This should probably be time-constrained and require updated values (eg. only update if newer but not newer than 15 minutes)
+      draft.dapis[item.dapiName] = {
+        dataFeed: cachedDapiResponse?.dataFeed ?? item.dataFeed,
+        dataFeedValues: { ...cachedDapiResponse?.dataFeedValues, [item.chainId]: item.dataFeedValue },
+        updateParameters: { ...cachedDapiResponse?.updateParameters, [item.chainId]: item.updateParameters },
+      };
+    })
+  );
 };
 
 export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) =>
