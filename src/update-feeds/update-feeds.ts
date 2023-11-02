@@ -220,6 +220,8 @@ export const processBatch = async (batch: ReadDapiWithIndexResponsesAndChainId) 
   //       });
   //   });
 
+  // clearSponsorLastUpdateTimestampMs();
+
   const feedsToUpdate = allFeeds.filter((feed) => feed.shouldUpdate);
 
   return Promise.allSettled(chunk(feedsToUpdate, FEEDS_TO_UPDATE_CHUNK_SIZE).map(async (feed) => updateFeeds(feed)));
