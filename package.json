@@ -24,7 +24,7 @@
     "eslint:fix": "pnpm run eslint:check --fix",
     "prettier:check": "prettier --check \"./**/*.{js,ts,md,json}\"",
     "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json}\"",
-    "test:e2e": "jest ---config=jest-e2e.config.js",
+    "test:e2e": "jest --config=jest-e2e.config.js",
     "test": "jest --config=jest-unit.config.js",
     "tsc": "tsc --project ."
   },
