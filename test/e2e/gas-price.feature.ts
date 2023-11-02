@@ -7,7 +7,7 @@ import {
   initializeGasStore,
   clearExpiredStoreGasPrices,
 } from '../../src/gas-price/gas-price';
-import { getState, setState } from '../../src/state';
+import { getState, updateState } from '../../src/state';
 import { init } from '../fixtures/mock-config';
 
 const chainId = '31337';
@@ -44,16 +44,8 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     await network.provider.send('hardhat_reset');
     initializeGasStore(chainId, providerName);
     // Reset the gasPriceStore
-    const state = getState();
-    setState({
-      ...state,
-      gasPriceStore: {
-        ...state.gasPriceStore,
-        [chainId]: {
-          ...state.gasPriceStore[chainId],
-          [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} },
-        },
-      },
+    updateState((draft) => {
+      draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
     });
   });
 
@@ -86,19 +78,8 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
     await sendTransaction();
 
-    const state = getState();
-    setState({
-      ...state,
-      gasPriceStore: {
-        ...state.gasPriceStore,
-        [chainId]: {
-          ...state.gasPriceStore[chainId],
-          [providerName]: {
-            ...state.gasPriceStore[chainId]![providerName]!,
-            gasPrices: [oldGasPriceMock, ...state.gasPriceStore[chainId]![providerName]!.gasPrices],
-          },
-        },
-      },
+    updateState((draft) => {
+      draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
     });
     const providerRecommendedGasprice = await provider.getGasPrice();
 
@@ -128,19 +109,9 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
       price: providerRecommendedGasprice.add(ethers.utils.parseUnits('1', 'gwei')),
       timestampMs: timestampMock,
     };
-    const state = getState();
-    setState({
-      ...state,
-      gasPriceStore: {
-        ...state.gasPriceStore,
-        [chainId]: {
-          ...state.gasPriceStore[chainId],
-          [providerName]: {
-            ...state.gasPriceStore[chainId]![providerName]!,
-            gasPrices: [oldGasPriceMock, ...state.gasPriceStore[chainId]![providerName]!.gasPrices],
-          },
-        },
-      },
+
+    updateState((draft) => {
+      draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
     });
 
     const gasPrice = await getAirseekerRecommendedGasPrice(
@@ -170,19 +141,9 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
       price: oldGasPriceValueMock,
       timestampMs: timestampMock - 0.9 * gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
     };
-    const state = getState();
-    setState({
-      ...state,
-      gasPriceStore: {
-        ...state.gasPriceStore,
-        [chainId]: {
-          ...state.gasPriceStore[chainId],
-          [providerName]: {
-            ...state.gasPriceStore[chainId]![providerName]!,
-            gasPrices: [oldGasPriceMock, ...state.gasPriceStore[chainId]![providerName]!.gasPrices],
-          },
-        },
-      },
+
+    updateState((draft) => {
+      draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
     });
 
     const gasPrice = await getAirseekerRecommendedGasPrice(
@@ -205,23 +166,9 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     await sendTransaction();
     const providerRecommendedGasprice = await provider.getGasPrice();
 
-    const state = getState();
-    setState({
-      ...state,
-      gasPriceStore: {
-        ...state.gasPriceStore,
-        [chainId]: {
-          ...state.gasPriceStore[chainId],
-          [providerName]: {
-            ...state.gasPriceStore[chainId]![providerName]!,
-
-            sponsorLastUpdateTimestampMs: {
-              ...state.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs,
-              [sponsorWalletAddress]: timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1,
-            },
-          },
-        },
-      },
+    updateState((draft) => {
+      draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
+        timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1;
     });
     const gasPrice = await getAirseekerRecommendedGasPrice(
       chainId,

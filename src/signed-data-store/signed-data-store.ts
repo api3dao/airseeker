@@ -2,10 +2,8 @@ import { goSync } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
 import { logger } from '../logger';
-import type { LocalSignedData, SignedData, AirnodeAddress, TemplateId } from '../types';
-
-// A simple in-memory data store implementation - the interface allows for swapping in a remote key/value store
-let signedApiStore: Record<AirnodeAddress, Record<TemplateId, LocalSignedData>> = {};
+import { getState, updateState } from '../state';
+import type { SignedData, AirnodeAddress, TemplateId } from '../types';
 
 export const verifySignedData = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
   // Verification is wrapped in goSync, because ethers methods can potentially throw on invalid input.
@@ -66,11 +64,8 @@ export const setStoreDataPoint = (signedData: SignedData) => {
     return;
   }
 
-  if (!signedApiStore[airnode]) {
-    signedApiStore[airnode] = {};
-  }
-
-  const existingValue = signedApiStore[airnode]![templateId];
+  const state = getState();
+  const existingValue = state.signedApiStore[airnode]?.[templateId];
   if (existingValue && existingValue.timestamp >= timestamp) {
     logger.debug('Skipping store update. The existing store value is fresher.');
     return;
@@ -83,12 +78,20 @@ export const setStoreDataPoint = (signedData: SignedData) => {
     signature,
     encodedValue,
   });
-  signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
+  updateState((draft) => {
+    if (!draft.signedApiStore[airnode]) {
+      draft.signedApiStore[airnode] = {};
+    }
+
+    draft.signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
+  });
 };
 
 export const getStoreDataPoint = (airnode: AirnodeAddress, templateId: TemplateId) =>
-  signedApiStore[airnode]?.[templateId];
+  getState().signedApiStore[airnode]?.[templateId];
 
 export const clear = () => {
-  signedApiStore = {};
+  updateState((draft) => {
+    draft.signedApiStore = {};
+  });
 };

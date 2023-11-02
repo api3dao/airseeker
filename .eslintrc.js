@@ -27,6 +27,9 @@ module.exports = {
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/no-dynamic-delete': 'off',
 
+    // Lodash
+    'lodash/prefer-immutable-method': 'off',
+
     // Jest
     'jest/no-hooks': 'off',
   },

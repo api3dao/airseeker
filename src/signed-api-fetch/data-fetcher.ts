@@ -6,7 +6,7 @@ import { uniq } from 'lodash';
 
 import { HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT, HTTP_SIGNED_DATA_API_HEADROOM } from '../constants';
 import * as localDataStore from '../signed-data-store';
-import { getState, setState } from '../state';
+import { getState, updateState } from '../state';
 import { signedApiResponseSchema, type SignedData } from '../types';
 
 // Express handler/endpoint path: https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/server.ts#L33
@@ -59,7 +59,9 @@ export const runDataFetcher = async () => {
 
   if (!dataFetcherInterval) {
     const dataFetcherInterval = setInterval(runDataFetcher, fetchInterval);
-    setState({ ...state, dataFetcherInterval });
+    updateState((draft) => {
+      draft.dataFetcherInterval = dataFetcherInterval;
+    });
   }
 
   const urls = uniq(

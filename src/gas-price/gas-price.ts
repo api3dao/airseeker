@@ -1,34 +1,19 @@
 import { ethers } from 'ethers';
+import { remove } from 'lodash';
 
 import type { GasSettings } from '../config/schema';
-import { getState, setState } from '../state';
+import { getState, updateState } from '../state';
 
-export const initializeGasStore = (chainId: string, providerName: string) => {
-  const state = getState();
+export const initializeGasStore = (chainId: string, providerName: string) =>
+  updateState((draft) => {
+    if (!draft.gasPriceStore[chainId]) {
+      draft.gasPriceStore[chainId] = {};
+    }
 
-  if (!state.gasPriceStore[chainId]) {
-    setState({
-      ...state,
-      gasPriceStore: {
-        ...state.gasPriceStore,
-        [chainId]: {},
-      },
-    });
-  }
-
-  if (!state.gasPriceStore[chainId]?.[providerName]) {
-    setState({
-      ...state,
-      gasPriceStore: {
-        ...state.gasPriceStore,
-        [chainId]: {
-          ...state.gasPriceStore[chainId],
-          [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} },
-        },
-      },
-    });
-  }
-};
+    if (!draft.gasPriceStore[chainId]![providerName]) {
+      draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
+    }
+  });
 
 /**
  * Saves a gas price into the store.
@@ -36,25 +21,10 @@ export const initializeGasStore = (chainId: string, providerName: string) => {
  * @param providerName
  * @param gasPrice
  */
-export const setStoreGasPrices = (chainId: string, providerName: string, gasPrice: ethers.BigNumber) => {
-  const state = getState();
-  setState({
-    ...state,
-    gasPriceStore: {
-      ...state.gasPriceStore,
-      [chainId]: {
-        ...state.gasPriceStore[chainId],
-        [providerName]: {
-          ...state.gasPriceStore[chainId]![providerName]!,
-          gasPrices: [
-            { price: gasPrice, timestampMs: Date.now() },
-            ...state.gasPriceStore[chainId]![providerName]!.gasPrices,
-          ],
-        },
-      },
-    },
+export const setStoreGasPrices = (chainId: string, providerName: string, gasPrice: ethers.BigNumber) =>
+  updateState((draft) => {
+    draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift({ price: gasPrice, timestampMs: Date.now() });
   });
-};
 
 /**
  * Removes gas prices where the timestamp is older than sanitizationSamplingWindow from the store.
@@ -62,29 +32,14 @@ export const setStoreGasPrices = (chainId: string, providerName: string, gasPric
  * @param providerName
  * @param sanitizationSamplingWindow
  */
-export const clearExpiredStoreGasPrices = (
-  chainId: string,
-  providerName: string,
-  sanitizationSamplingWindow: number
-) => {
-  const state = getState();
-  // Remove gasPrices older than the sanitizationSamplingWindow
-  setState({
-    ...state,
-    gasPriceStore: {
-      ...state.gasPriceStore,
-      [chainId]: {
-        ...state.gasPriceStore[chainId],
-        [providerName]: {
-          ...state.gasPriceStore[chainId]![providerName]!,
-          gasPrices: state.gasPriceStore[chainId]![providerName]!.gasPrices.filter(
-            (gasPrice) => gasPrice.timestampMs >= Date.now() - sanitizationSamplingWindow * 60 * 1000
-          ),
-        },
-      },
-    },
+export const clearExpiredStoreGasPrices = (chainId: string, providerName: string, sanitizationSamplingWindow: number) =>
+  updateState((draft) => {
+    // Remove gasPrices older than the sanitizationSamplingWindow
+    remove(
+      draft.gasPriceStore[chainId]![providerName]!.gasPrices,
+      (gasPrice) => gasPrice.timestampMs < Date.now() - sanitizationSamplingWindow * 60 * 1000
+    );
   });
-};
 
 /**
  * Saves a sponsor wallet's last update timestamp into the store.
@@ -98,22 +53,8 @@ export const setSponsorLastUpdateTimestampMs = (
   sponsorWalletAddress: string
 ) => {
   initializeGasStore(chainId, providerName);
-  const state = getState();
-  setState({
-    ...state,
-    gasPriceStore: {
-      ...state.gasPriceStore,
-      [chainId]: {
-        ...state.gasPriceStore[chainId],
-        [providerName]: {
-          ...state.gasPriceStore[chainId]![providerName]!,
-          sponsorLastUpdateTimestampMs: {
-            ...state.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs,
-            [sponsorWalletAddress]: Date.now(),
-          },
-        },
-      },
-    },
+  updateState((draft) => {
+    draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] = Date.now();
   });
 };
 
@@ -127,28 +68,10 @@ export const clearSponsorLastUpdateTimestampMs = (
   chainId: string,
   providerName: string,
   sponsorWalletAddress: string
-) => {
-  const state = getState();
-
-  if (state.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress]) {
-    const { [sponsorWalletAddress]: _value, ...sponsorLastUpdateTimestampMs } =
-      state.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs;
-
-    setState({
-      ...state,
-      gasPriceStore: {
-        ...state.gasPriceStore,
-        [chainId]: {
-          ...state.gasPriceStore[chainId],
-          [providerName]: {
-            ...state.gasPriceStore[chainId]![providerName]!,
-            sponsorLastUpdateTimestampMs,
-          },
-        },
-      },
-    });
-  }
-};
+) =>
+  updateState((draft) => {
+    delete draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+  });
 
 export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => {
   if (array.length === 0) return;

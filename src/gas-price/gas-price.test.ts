@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
 import { init } from '../../test/fixtures/mock-config';
-import { getState, setState } from '../state';
+import { getState, updateState } from '../state';
 
 import {
   getAirseekerRecommendedGasPrice,
@@ -53,16 +53,8 @@ describe('gas price', () => {
     beforeEach(() => {
       initializeGasStore(chainId, providerName);
       // Reset the gasPriceStore
-      const state = getState();
-      setState({
-        ...state,
-        gasPriceStore: {
-          ...state.gasPriceStore,
-          [chainId]: {
-            ...state.gasPriceStore[chainId],
-            [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} },
-          },
-        },
+      updateState((draft) => {
+        draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
       });
     });
 
@@ -76,19 +68,8 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      const state = getState();
-      setState({
-        ...state,
-        gasPriceStore: {
-          ...state.gasPriceStore,
-          [chainId]: {
-            ...state.gasPriceStore[chainId],
-            [providerName]: {
-              ...state.gasPriceStore[chainId]![providerName]!,
-              gasPrices: [oldGasPriceMock, ...state.gasPriceStore[chainId]![providerName]!.gasPrices],
-            },
-          },
-        },
+      updateState((draft) => {
+        draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
       });
       clearExpiredStoreGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
       setStoreGasPrices(chainId, providerName, gasPriceMock);
@@ -103,16 +84,8 @@ describe('gas price', () => {
     beforeEach(() => {
       initializeGasStore(chainId, providerName);
       // Reset the gasPriceStore
-      const state = getState();
-      setState({
-        ...state,
-        gasPriceStore: {
-          ...state.gasPriceStore,
-          [chainId]: {
-            ...state.gasPriceStore[chainId],
-            [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} },
-          },
-        },
+      updateState((draft) => {
+        draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
       });
     });
 
@@ -134,16 +107,8 @@ describe('gas price', () => {
     beforeEach(() => {
       initializeGasStore(chainId, providerName);
       // Reset the gasPriceStore
-      const state = getState();
-      setState({
-        ...state,
-        gasPriceStore: {
-          ...state.gasPriceStore,
-          [chainId]: {
-            ...state.gasPriceStore[chainId],
-            [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} },
-          },
-        },
+      updateState((draft) => {
+        draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
       });
     });
 
@@ -171,19 +136,8 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      const state = getState();
-      setState({
-        ...state,
-        gasPriceStore: {
-          ...state.gasPriceStore,
-          [chainId]: {
-            ...state.gasPriceStore[chainId],
-            [providerName]: {
-              ...state.gasPriceStore[chainId]![providerName]!,
-              gasPrices: [oldGasPriceMock, ...state.gasPriceStore[chainId]![providerName]!.gasPrices],
-            },
-          },
-        },
+      updateState((draft) => {
+        draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
       });
       clearExpiredStoreGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
       const gasPrice = await updateGasPriceStore(chainId, providerName, rpcUrl);
@@ -222,16 +176,8 @@ describe('gas price', () => {
     beforeEach(() => {
       initializeGasStore(chainId, providerName);
       // Reset the gasPriceStore
-      const state = getState();
-      setState({
-        ...state,
-        gasPriceStore: {
-          ...state.gasPriceStore,
-          [chainId]: {
-            ...state.gasPriceStore[chainId],
-            [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} },
-          },
-        },
+      updateState((draft) => {
+        draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
       });
     });
 
@@ -245,19 +191,8 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      const state = getState();
-      setState({
-        ...state,
-        gasPriceStore: {
-          ...state.gasPriceStore,
-          [chainId]: {
-            ...state.gasPriceStore[chainId],
-            [providerName]: {
-              ...state.gasPriceStore[chainId]![providerName]!,
-              gasPrices: [oldGasPriceMock, ...state.gasPriceStore[chainId]![providerName]!.gasPrices],
-            },
-          },
-        },
+      updateState((draft) => {
+        draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
       });
       await gasPriceCollector(chainId, providerName, rpcUrl, gasSettings.sanitizationSamplingWindow);
 
@@ -271,16 +206,8 @@ describe('gas price', () => {
     beforeEach(() => {
       initializeGasStore(chainId, providerName);
       // Reset the gasPriceStore
-      const state = getState();
-      setState({
-        ...state,
-        gasPriceStore: {
-          ...state.gasPriceStore,
-          [chainId]: {
-            ...state.gasPriceStore[chainId],
-            [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} },
-          },
-        },
+      updateState((draft) => {
+        draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
       });
     });
 
@@ -314,19 +241,8 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      const state = getState();
-      setState({
-        ...state,
-        gasPriceStore: {
-          ...state.gasPriceStore,
-          [chainId]: {
-            ...state.gasPriceStore[chainId],
-            [providerName]: {
-              ...state.gasPriceStore[chainId]![providerName]!,
-              gasPrices: gasPricesMock,
-            },
-          },
-        },
+      updateState((draft) => {
+        draft.gasPriceStore[chainId]![providerName]!.gasPrices = gasPricesMock;
       });
       const gasPrice = await getAirseekerRecommendedGasPrice(
         chainId,
@@ -356,19 +272,8 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      const state = getState();
-      setState({
-        ...state,
-        gasPriceStore: {
-          ...state.gasPriceStore,
-          [chainId]: {
-            ...state.gasPriceStore[chainId],
-            [providerName]: {
-              ...state.gasPriceStore[chainId]![providerName]!,
-              gasPrices: [oldGasPriceMock, ...state.gasPriceStore[chainId]![providerName]!.gasPrices],
-            },
-          },
-        },
+      updateState((draft) => {
+        draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
       });
       const gasPrice = await getAirseekerRecommendedGasPrice(
         chainId,
@@ -396,19 +301,8 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      const state = getState();
-      setState({
-        ...state,
-        gasPriceStore: {
-          ...state.gasPriceStore,
-          [chainId]: {
-            ...state.gasPriceStore[chainId],
-            [providerName]: {
-              ...state.gasPriceStore[chainId]![providerName]!,
-              gasPrices: [oldGasPriceMock, ...state.gasPriceStore[chainId]![providerName]!.gasPrices],
-            },
-          },
-        },
+      updateState((draft) => {
+        draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
       });
       const gasPrice = await getAirseekerRecommendedGasPrice(
         chainId,
@@ -436,23 +330,10 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      const state = getState();
-      setState({
-        ...state,
-        gasPriceStore: {
-          ...state.gasPriceStore,
-          [chainId]: {
-            ...state.gasPriceStore[chainId],
-            [providerName]: {
-              ...state.gasPriceStore[chainId]![providerName]!,
-              gasPrices: [oldGasPriceMock, ...state.gasPriceStore[chainId]![providerName]!.gasPrices],
-              sponsorLastUpdateTimestampMs: {
-                ...state.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs,
-                [sponsorWalletAddress]: timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1,
-              },
-            },
-          },
-        },
+      updateState((draft) => {
+        draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
+        draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
+          timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1;
       });
       const gasPrice = await getAirseekerRecommendedGasPrice(
         chainId,

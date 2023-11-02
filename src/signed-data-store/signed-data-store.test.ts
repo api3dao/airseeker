@@ -1,5 +1,6 @@
 import { BigNumber, ethers } from 'ethers';
 
+import { init } from '../../test/fixtures/mock-config';
 import { generateRandomBytes32, signData } from '../../test/utils';
 import type { SignedData } from '../types';
 
@@ -11,6 +12,7 @@ describe('datastore', () => {
   const signer = ethers.Wallet.fromMnemonic('test test test test test test test test test test test junk');
 
   beforeAll(async () => {
+    init();
     const templateId = generateRandomBytes32();
     const timestamp = Math.floor((Date.now() - 25 * 60 * 60 * 1000) / 1000).toString();
     const airnode = signer.address;
@@ -25,7 +27,7 @@ describe('datastore', () => {
     };
   });
 
-  beforeEach(localDataStore.clear);
+  beforeEach(() => localDataStore.clear);
 
   it('stores and gets a data point', () => {
     // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
