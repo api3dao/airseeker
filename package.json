@@ -24,7 +24,7 @@
     "eslint:fix": "pnpm run eslint:check --fix",
     "prettier:check": "prettier --check \"./**/*.{js,ts,md,json}\"",
     "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json}\"",
-    "test:e2e": "jest ---config=jest-e2e.config.js",
+    "test:e2e": "jest --config=jest-e2e.config.js",
     "test": "jest --config=jest-unit.config.js",
     "tsc": "tsc --project ."
   },
@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@api3/airnode-protocol-v1": "^2.10.0",
-    "@api3/commons": "^0.3.0",
+    "@api3/commons": "^0.4.1",
     "@api3/dapi-management": "github:api3dao/dapi-management#169-DapiDataRegistry",
     "@api3/promise-utils": "^0.4.0",
     "@ethersproject/abi": "^5.7.0",
