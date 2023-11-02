@@ -1,21 +1,35 @@
-import type { DapiDataRegistry } from '../../typechain-types';
+import { ethers } from 'ethers';
 
-export const generateReadDapisResponse = () => [
-  {
-    totalCount: 1,
-    dapiNames: ['MOCK_FEED'],
-    dataFeedIds: ['0xebba8507d616ed80766292d200a3598fdba656d9938cecc392765d4a284a69a4'],
-    updateParameters: [{ deviationThresholdInPercentage: 0.5, deviationReference: 0.5, heartbeatInterval: 100 }],
-    // NOTE: We will need to decode this from the contract, because it will store the template IDs as encoded bytes.
-    dataFeedTemplateIds: [['0xcc35bd1800c06c12856a87311dd95bfcbb3add875844021d59a929d79f3c99bd']],
-    signedApiUrls: [['http://localhost:8080']],
-    airnodeAddresses: ['0xbF3137b0a7574563a23a8fC8badC6537F98197CC'],
+import type { ReadDapiWithIndexResponse } from '../../src/update-feeds/dapi-data-registry';
+import type { DapiDataRegistry } from '../../typechain-types';
+import type { DeepPartial } from '../utils';
+
+export const generateReadDapiWithIndexResponse = (): ReadDapiWithIndexResponse => ({
+  dapiName: 'MOCK_FEED',
+  updateParameters: {
+    deviationThresholdInPercentage: ethers.BigNumber.from(0.5 * 1e8),
+    deviationReference: ethers.BigNumber.from(0.5 * 1e8),
+    heartbeatInterval: 100,
   },
-];
+  dataFeedValue: {
+    value: ethers.BigNumber.from(123 * 1e6),
+    timestamp: 1_629_811_200,
+  },
+  dataFeed: '0xebba8507d616ed80766292d200a3598fdba656d9938cecc392765d4a284a69a4',
+  signedApiUrls: ['http://localhost:8080'],
+});
 
 export const generateMockDapiDataRegistry = () => {
   return {
-    readDapis: jest.fn(),
+    interface: {
+      encodeFunctionData: jest.fn(),
+      decodeFunctionResult: jest.fn(),
+    },
+    callStatic: {
+      tryMulticall: jest.fn(),
+    },
+    tryMulticall: jest.fn(),
+    readDapiWithIndex: jest.fn(),
     dapisCount: jest.fn(),
-  } satisfies Partial<DapiDataRegistry>;
+  } satisfies DeepPartial<DapiDataRegistry>;
 };

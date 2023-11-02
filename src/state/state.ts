@@ -17,7 +17,7 @@ export interface State {
   signedApiUrlStore: Record<string, Record<AirnodeAddress, string>>;
 }
 
-type StateUpdater = (draft: Draft<State>) => State;
+type StateUpdater = (draft: Draft<State>) => void;
 
 let state: State | undefined;
 

@@ -1,7 +1,6 @@
-import { ethers } from 'ethers';
-import * as hre from 'hardhat';
+import type { BigNumber } from 'ethers';
+import { ethers, network } from 'hardhat';
 
-import '@nomiclabs/hardhat-ethers';
 import {
   getAirseekerRecommendedGasPrice,
   multiplyGasPrice,
@@ -21,16 +20,16 @@ const gasSettings = {
   scalingWindow: 2,
   maxScalingMultiplier: 2,
 };
-const provider = new hre.ethers.providers.StaticJsonRpcProvider(rpcUrl);
+const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl);
 const timestampMock = 1_696_930_907_351;
 const sponsorWalletAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
-const sendTransaction = async (gasPriceOverride?: ethers.BigNumber) => {
-  const wallets = await hre.ethers.getSigners();
+const sendTransaction = async (gasPriceOverride?: BigNumber) => {
+  const wallets = await ethers.getSigners();
   const wallet = wallets[0]!;
 
   await wallet.sendTransaction({
-    to: hre.ethers.constants.AddressZero,
+    to: ethers.constants.AddressZero,
     ...(gasPriceOverride ? { gasPrice: gasPriceOverride } : {}),
   });
 };
@@ -41,13 +40,12 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
   });
 
   beforeEach(async () => {
-    // Reset the local hardhat network getState() for each test to prevent issues with other test contracts
-    await hre.network.provider.send('hardhat_reset');
+    // Reset the local hardhat network state for each test to prevent issues with other test contracts
+    await network.provider.send('hardhat_reset');
     initializeGasStore(chainId, providerName);
     // Reset the gasPriceStore
     updateState((draft) => {
       draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
-      return draft;
     });
   });
 
@@ -82,7 +80,6 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
 
     updateState((draft) => {
       draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      return draft;
     });
     const providerRecommendedGasprice = await provider.getGasPrice();
 
@@ -115,7 +112,6 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
 
     updateState((draft) => {
       draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      return draft;
     });
 
     const gasPrice = await getAirseekerRecommendedGasPrice(
@@ -148,7 +144,6 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
 
     updateState((draft) => {
       draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      return draft;
     });
 
     const gasPrice = await getAirseekerRecommendedGasPrice(
@@ -174,7 +169,6 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     updateState((draft) => {
       draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
         timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1;
-      return draft;
     });
     const gasPrice = await getAirseekerRecommendedGasPrice(
       chainId,

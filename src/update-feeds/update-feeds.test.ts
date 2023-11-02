@@ -1,6 +1,9 @@
 import { ethers } from 'ethers';
 
-import { generateMockDapiDataRegistry, generateReadDapisResponse } from '../../test/fixtures/dapi-data-registry';
+import {
+  generateMockDapiDataRegistry,
+  generateReadDapiWithIndexResponse,
+} from '../../test/fixtures/dapi-data-registry';
 import { allowPartial } from '../../test/utils';
 import type { DapiDataRegistry } from '../../typechain-types';
 import type { Chain } from '../config/schema';
@@ -38,7 +41,7 @@ describe(startUpdateFeedLoops.name, () => {
 
     // Expect the intervals to be called with the correct stagger time.
     expect(setInterval).toHaveBeenCalledTimes(2);
-    expect(intervalCalls[1]! - intervalCalls[0]!).toBeGreaterThanOrEqual(40); // Reserving 10s as the buffer for computing stagger time.
+    expect(intervalCalls[1]! - intervalCalls[0]!).toBeGreaterThanOrEqual(40); // Reserving 10ms as the buffer for computing stagger time.
 
     // Expect the logs to be called with the correct context.
     expect(logger.debug).toHaveBeenCalledTimes(3);
@@ -92,21 +95,21 @@ describe(startUpdateFeedLoops.name, () => {
 
     // Expect the logs to be called with the correct context.
     expect(logger.debug).toHaveBeenCalledTimes(4);
-    expect(logger.debug).toHaveBeenCalledWith('Starting update loops for chain', {
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Starting update loops for chain', {
       chainId: '123',
       staggerTime: 100,
       providerNames: ['first-provider'],
     });
-    expect(logger.debug).toHaveBeenCalledWith('Starting update loops for chain', {
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Starting update feed loop', {
+      chainId: '123',
+      providerName: 'first-provider',
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update loops for chain', {
       chainId: '456',
       staggerTime: 100,
       providerNames: ['another-provider'],
     });
-    expect(logger.debug).toHaveBeenCalledWith('Starting update feed loop', {
-      chainId: '123',
-      providerName: 'first-provider',
-    });
-    expect(logger.debug).toHaveBeenCalledWith('Starting update feed loop', {
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Starting update feed loop', {
       chainId: '456',
       providerName: 'another-provider',
     });
@@ -119,7 +122,7 @@ describe(runUpdateFeed.name, () => {
     jest
       .spyOn(dapiDataRegistryModule, 'getDapiDataRegistry')
       .mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
-    dapiDataRegistry.readDapis.mockRejectedValueOnce(new Error('provider-error'));
+    dapiDataRegistry.callStatic.tryMulticall.mockRejectedValueOnce(new Error('provider-error'));
     jest.spyOn(logger, 'error');
 
     await runUpdateFeed(
@@ -145,16 +148,19 @@ describe(runUpdateFeed.name, () => {
 
   it('fetches other batches in a staggered way and logs errors', async () => {
     // Prepare the mocked contract so it returns three batches (of size 1) of dAPIs and the second batch fails to load.
-    const firstBatch = generateReadDapisResponse();
-    const thirdBatch = generateReadDapisResponse();
+    const firstBatch = generateReadDapiWithIndexResponse();
+    const thirdBatch = generateReadDapiWithIndexResponse();
     const dapiDataRegistry = generateMockDapiDataRegistry();
     jest
       .spyOn(dapiDataRegistryModule, 'getDapiDataRegistry')
       .mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
-    dapiDataRegistry.readDapis.mockResolvedValueOnce(firstBatch);
-    dapiDataRegistry.readDapis.mockRejectedValueOnce(new Error('provider-error'));
-    dapiDataRegistry.readDapis.mockResolvedValueOnce(thirdBatch);
-    dapiDataRegistry.dapisCount.mockResolvedValueOnce(ethers.BigNumber.from(3));
+    dapiDataRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
+    dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
+      successes: [true, true],
+      returndata: [[ethers.BigNumber.from(3)], firstBatch],
+    });
+    dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [false], returndata: [] });
+    dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [true], returndata: [thirdBatch] });
     const sleepCalls = [] as number[];
     const originalSleep = utilsModule.sleep;
     jest.spyOn(utilsModule, 'sleep').mockImplementation(async (ms) => {
@@ -179,36 +185,42 @@ describe(runUpdateFeed.name, () => {
 
     // Expect the contract to fetch the batches to be called with the correct stagger time.
     expect(utilsModule.sleep).toHaveBeenCalledTimes(3);
-    expect(sleepCalls[0]).toBeGreaterThanOrEqual(40); // Reserving 10s as the buffer for computing stagger time.
+    expect(sleepCalls[0]).toBeGreaterThanOrEqual(40); // Reserving 10ms as the buffer for computing stagger time.
     expect(sleepCalls[1]).toBeGreaterThanOrEqual(0);
     expect(sleepCalls[2]).toBe(49.999_999_999_999_99); // Stagger time is actually 150 / 3 = 50, but there is an rounding error.
 
     // Expect the logs to be called with the correct context.
     expect(logger.error).toHaveBeenCalledTimes(1);
-    expect(logger.error).toHaveBeenCalledWith('Failed to get active dAPIs batch', new Error('provider-error'), {
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to get active dAPIs batch',
+      new Error('One of the multicalls failed'),
+      {
+        chainId: '123',
+        providerName: 'provider-name',
+      }
+    );
+    expect(logger.debug).toHaveBeenCalledTimes(6);
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of dAPIs batches', {
       chainId: '123',
       providerName: 'provider-name',
     });
-    expect(logger.debug).toHaveBeenCalledTimes(4);
-    expect(logger.debug).toHaveBeenCalledWith('Fetching first batch of dAPIs batches', {
-      chainId: '123',
-      providerName: 'provider-name',
-    });
-    expect(logger.debug).toHaveBeenCalledWith('Fetching batches of active dAPIs', {
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs', expect.anything());
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching batches of active dAPIs', {
       batchesCount: 3,
-      staggerTime: 49.999_999_999_999_99,
       chainId: '123',
       providerName: 'provider-name',
+      staggerTime: 49.999_999_999_999_99,
     });
-    expect(logger.debug).toHaveBeenCalledWith('Fetching batch of active dAPIs', {
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching batch of active dAPIs', {
       batchIndex: 1,
       chainId: '123',
       providerName: 'provider-name',
     });
-    expect(logger.debug).toHaveBeenCalledWith('Fetching batch of active dAPIs', {
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batch of active dAPIs', {
       batchIndex: 2,
       chainId: '123',
       providerName: 'provider-name',
     });
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Processing batch of active dAPIs', expect.anything());
   });
 });

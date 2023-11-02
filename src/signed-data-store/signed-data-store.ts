@@ -84,7 +84,6 @@ export const setStoreDataPoint = (signedData: SignedData) => {
     }
 
     draft.signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
-    return draft;
   });
 };
 
@@ -94,6 +93,5 @@ export const getStoreDataPoint = (airnode: AirnodeAddress, templateId: TemplateI
 export const clear = () => {
   updateState((draft) => {
     draft.signedApiStore = {};
-    return draft;
   });
 };

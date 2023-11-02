@@ -117,12 +117,12 @@ A record of chain configurations. The record key is the chain ID. For example:
 
 A record of contract addresses used by Airseeker.
 
-###### Api3ServerV1 _(optional)_
+###### `Api3ServerV1` _(optional)_
 
 The address of the Api3ServerV1 contract. If not specified, the address is loaded from the
 [Airnode protocol v1](https://github.com/api3dao/airnode-protocol-v1) repository.
 
-###### DapiDataRegistry
+###### `DapiDataRegistry`
 
 The address of the DapiDataRegistry contract.
 
@@ -180,6 +180,10 @@ The interval specifying how often to run the data feed update loop. In seconds.
 #### `dataFeedBatchSize`
 
 The batch size of active dAPIs that are to be fetched in a single RPC call.
+
+#### `fetchInterval`
+
+The fetch interval in seconds between retrievals of signed API data.
 
 ## Docker
 
