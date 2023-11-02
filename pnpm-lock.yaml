@@ -13,7 +13,7 @@ dependencies:
     version: 0.3.0(eslint@8.50.0)(jest@29.7.0)(typescript@5.2.2)
   '@api3/dapi-management':
     specifier: github:api3dao/dapi-management#169-DapiDataRegistry
-    version: github.com/api3dao/dapi-management/6782b1628c9781ca5e54c48c09ead8cdd3b414f0
+    version: github.com/api3dao/dapi-management/926f1644d571ca78d9937c4945d9bb8464f9633f
   '@api3/promise-utils':
     specifier: ^0.4.0
     version: 0.4.0
@@ -40,6 +40,9 @@ dependencies:
     version: 3.22.3
 
 devDependencies:
+  '@api3/airnode-abi':
+    specifier: ^0.12.0
+    version: 0.12.0
   '@api3/ois':
     specifier: ^2.2.0
     version: 2.2.1
@@ -55,6 +58,9 @@ devDependencies:
   '@openzeppelin/contracts':
     specifier: 4.9.3
     version: 4.9.3
+  '@openzeppelin/merkle-tree':
+    specifier: ^1.0.5
+    version: 1.0.5
   '@typechain/ethers-v5':
     specifier: ^10.1.0
     version: 10.2.1(@ethersproject/abi@5.7.0)(@ethersproject/providers@5.7.2)(ethers@5.7.2)(typechain@8.3.2)(typescript@5.2.2)
@@ -131,6 +137,16 @@ packages:
     dependencies:
       '@jridgewell/gen-mapping': 0.3.3
       '@jridgewell/trace-mapping': 0.3.19
+
+  /@api3/airnode-abi@0.12.0:
+    resolution: {integrity: sha512-UCFYZMxSZU/12fEK8SFdn+C6Vh+SBuB08PpD8QEEvOe8Rfzof541GphES46XHDpwQRd673OfgJRO9iySOSpB+Q==}
+    dependencies:
+      ethers: 5.7.2
+      lodash: 4.17.21
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: true
 
   /@api3/airnode-protocol-v1@2.10.0:
     resolution: {integrity: sha512-5pXI9OUXeyM2IbVYrkW48Eymt7qGT5nfBU8GR2XZsRE8dCRZTIIfp+xdAMH+OFm62GGnUDz9e1uTiAHkRWrtKA==}
@@ -1580,7 +1596,6 @@ packages:
     dependencies:
       '@ethersproject/abi': 5.7.0
       ethereum-cryptography: 1.2.0
-    dev: false
 
   /@pkgjs/parseargs@0.11.0:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -7727,8 +7742,8 @@ packages:
   /zod@3.22.3:
     resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
 
-  github.com/api3dao/dapi-management/6782b1628c9781ca5e54c48c09ead8cdd3b414f0:
-    resolution: {tarball: https://codeload.github.com/api3dao/dapi-management/tar.gz/6782b1628c9781ca5e54c48c09ead8cdd3b414f0}
+  github.com/api3dao/dapi-management/926f1644d571ca78d9937c4945d9bb8464f9633f:
+    resolution: {tarball: https://codeload.github.com/api3dao/dapi-management/tar.gz/926f1644d571ca78d9937c4945d9bb8464f9633f}
     name: '@api3/dapi-management'
     version: 0.1.0
     dependencies:

@@ -3,11 +3,6 @@ import { ethers } from 'ethers';
 import type { Config } from '../../src/config/schema';
 import { setState } from '../../src/state';
 
-/**
- * A stub to retrieve the latest config
- */
-const getConfig = () => generateTestConfig();
-
 // This is not a secret
 // https://pool.nodary.io/0xC04575A2773Da9Cd23853A69694e02111b2c4182
 export const generateTestConfig = (): Config => ({
@@ -56,7 +51,7 @@ export const generateTestConfig = (): Config => ({
 });
 
 export const init = () => {
-  const config = getConfig();
+  const config = generateTestConfig();
   setState({
     config,
     gasPriceStore: {},

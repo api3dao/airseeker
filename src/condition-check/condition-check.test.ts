@@ -1,6 +1,6 @@
 import { BigNumber, ethers } from 'ethers';
 
-import { getUnixTimestamp } from '../../test/fixtures/utils';
+import { getUnixTimestamp } from '../../test/utils';
 import { HUNDRED_PERCENT } from '../constants';
 
 import {

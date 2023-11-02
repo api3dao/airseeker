@@ -7,7 +7,13 @@ import { logger } from '../logger';
 import { getState } from '../state';
 import { isFulfilled, sleep } from '../utils';
 
-import { getDapiDataRegistry, type ReadDapisResponse } from './dapi-data-registry';
+import {
+  getDapiDataRegistry,
+  type ReadDapiWithIndexResponse,
+  verifyMulticallResponse,
+  decodeReadDapiWithIndexResponse,
+  decodeDapisCountResponse,
+} from './dapi-data-registry';
 
 export const startUpdateFeedLoops = async () => {
   const state = getState();
@@ -47,22 +53,33 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   logger.debug(`Fetching first batch of dAPIs batches`, baseLogContext);
   const firstBatchStartTime = Date.now();
   const goFirstBatch = await go(async () => {
-    // TODO: Use multicall to fetch this is a single RPC call.
+    const dapisCountCall = dapiDataRegistry.interface.encodeFunctionData('dapisCount');
+    const readDapiWithIndexCalls = range(0, dataFeedBatchSize).map((dapiIndex) =>
+      dapiDataRegistry.interface.encodeFunctionData('readDapiWithIndex', [dapiIndex])
+    );
+    const [dapisCountReturndata, ...readDapiWithIndexCallsReturndata] = verifyMulticallResponse(
+      await dapiDataRegistry.callStatic.tryMulticall([dapisCountCall, ...readDapiWithIndexCalls])
+    );
+
+    const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata!);
+    const firstBatch = readDapiWithIndexCallsReturndata
+      .map((dapiReturndata) => decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata))
+      // Because the dapisCount is not known during the multicall, we may ask for non-existent dAPIs. These should be filtered out.
+      .slice(0, dapisCount);
     return {
-      batch: await dapiDataRegistry.readDapis(0, dataFeedBatchSize),
-      // eslint-disable-next-line unicorn/no-await-expression-member
-      totalDapisCount: (await dapiDataRegistry.dapisCount()).toNumber(),
+      firstBatch,
+      dapisCount,
     };
   });
   if (!goFirstBatch.success) {
     logger.error(`Failed to get first active dAPIs batch`, goFirstBatch.error, baseLogContext);
     return;
   }
-  const { batch: firstBatch, totalDapisCount: totalCount } = goFirstBatch.data;
+  const { firstBatch, dapisCount } = goFirstBatch.data;
   const processFirstBatchPromise = processBatch(firstBatch);
 
   // Calculate the stagger time between the rest of the batches.
-  const batchesCount = totalCount / dataFeedBatchSize;
+  const batchesCount = Math.ceil(dapisCount / dataFeedBatchSize);
   const staggerTime = batchesCount <= 1 ? 0 : (dataFeedUpdateInterval / batchesCount) * 1000;
 
   // Wait the remaining stagger time required after fetching the first batch.
@@ -70,13 +87,27 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   await sleep(Math.max(0, staggerTime - firstBatchDuration));
 
   // Fetch the rest of the batches in parallel in a staggered way.
-  logger.debug('Fetching batches of active dAPIs', { batchesCount, staggerTime, ...baseLogContext });
+  if (batchesCount > 1) {
+    logger.debug('Fetching batches of active dAPIs', { batchesCount, staggerTime, ...baseLogContext });
+  }
   const otherBatches = await Promise.allSettled(
     range(1, batchesCount).map(async (batchIndex) => {
       await sleep((batchIndex - 1) * staggerTime);
 
       logger.debug(`Fetching batch of active dAPIs`, { batchIndex, ...baseLogContext });
-      return dapiDataRegistry.readDapis(batchIndex * dataFeedBatchSize, dataFeedBatchSize);
+      const dapiBatchIndexStart = batchIndex * dataFeedBatchSize;
+      const dapiBatchIndexEnd = Math.min(dapisCount, dapiBatchIndexStart + dataFeedBatchSize);
+      const readDapiWithIndexCalls = range(dapiBatchIndexStart, dapiBatchIndexEnd).map((dapiIndex) =>
+        dapiDataRegistry.interface.encodeFunctionData('readDapiWithIndex', [dapiIndex])
+      );
+      const returndata = verifyMulticallResponse(
+        await dapiDataRegistry.callStatic.tryMulticall(readDapiWithIndexCalls)
+      );
+
+      const decodedBatch = returndata.map((returndata) =>
+        decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata)
+      );
+      return decodedBatch;
     })
   );
   for (const batch of otherBatches.filter((batch) => !isFulfilled(batch))) {
@@ -84,7 +115,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   }
   const processOtherBatchesPromises = otherBatches
     .filter((result) => isFulfilled(result))
-    .map(async (result) => processBatch((result as PromiseFulfilledResult<ReadDapisResponse>).value));
+    .map(async (result) => processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value));
 
   // Wait for all the batches to be processed.
   //
@@ -93,6 +124,8 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   await Promise.all([processFirstBatchPromise, ...processOtherBatchesPromises]);
 };
 
-export const processBatch = async (_batch: ReadDapisResponse) => {
+// eslint-disable-next-line @typescript-eslint/require-await
+export const processBatch = async (batch: ReadDapiWithIndexResponse[]) => {
+  logger.debug('Processing batch of active dAPIs', { batch });
   // TODO: Implement.
 };
