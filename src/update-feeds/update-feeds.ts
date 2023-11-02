@@ -48,8 +48,8 @@ type ReadDapiWithIndexResponsesAndChainId = (ReadDapiWithIndexResponse & {
   chainId: string;
 })[];
 
-export const runUpdateFeed = async (providerName: string, chain: Chain, chainId: string) =>
-  logger.runWithContext({ chainId, providerName, coordinatorTimestampMs: Date.now().toString() }, async () => {
+export const runUpdateFeed = async (providerName: string, chain: Chain, chainId: string) => {
+  await logger.runWithContext({ chainId, providerName, coordinatorTimestampMs: Date.now().toString() }, async () => {
     const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
 
     // Create a provider and connect it to the DapiDataRegistry contract.
@@ -136,6 +136,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
     // updated, etc...).
     await Promise.all([processFirstBatchPromise, ...processOtherBatchesPromises]);
   });
+};
 
 export const updateDynamicState = (batch: ReadDapiWithIndexResponsesAndChainId) => {
   batch.map((item) =>
