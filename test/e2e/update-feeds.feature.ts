@@ -10,5 +10,5 @@ it('reads blockchain data correctly', async () => {
 
   await runUpdateFeed(providerName, chain, chainId);
 
-  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs', expect.anything());
+  expect(logger.debug).toHaveBeenCalledWith('Fetching first batch of dAPIs batches');
 });
