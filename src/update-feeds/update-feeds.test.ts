@@ -4,11 +4,14 @@ import {
   generateMockDapiDataRegistry,
   generateReadDapiWithIndexResponse,
 } from '../../test/fixtures/dapi-data-registry';
+import { generateTestConfig } from '../../test/fixtures/mock-config';
 import { allowPartial } from '../../test/utils';
 import type { DapiDataRegistry } from '../../typechain-types';
 import type { Chain } from '../config/schema';
+// import * as gasPriceModule from '../gas-price/gas-price';
 import { logger } from '../logger';
 import * as stateModule from '../state';
+import type { State } from '../state';
 import * as utilsModule from '../utils';
 
 import * as dapiDataRegistryModule from './dapi-data-registry';
@@ -170,6 +173,29 @@ describe(runUpdateFeed.name, () => {
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'error');
 
+    const testConfig = generateTestConfig();
+    const getStateSpy = jest.spyOn(stateModule, 'getState');
+    getStateSpy.mockImplementation(
+      () =>
+        ({
+          config: testConfig,
+          dynamicState: {},
+          gasPriceStore: {
+            '123': {
+              'some-test-provider': {
+                gasPrices: [],
+                sponsorLastUpdateTimestampMs: {
+                  '0xdatafeedId': 100,
+                },
+              },
+            },
+          },
+        }) as State
+    );
+
+    // TODO what has this fn been replaced with
+    // const clearLastOnChainDataFeedValueSpy = jest.spyOn(gasPriceModule, 'clearLastOnChainDatafeedValue');
+
     await runUpdateFeed(
       'provider-name',
       allowPartial<Chain>({
@@ -182,6 +208,10 @@ describe(runUpdateFeed.name, () => {
       }),
       '123'
     );
+
+    expect(getStateSpy).toHaveBeenCalledTimes(2);
+    // TODO what has this fn been replaced with
+    // expect(clearLastOnChainDataFeedValueSpy).toHaveBeenCalledTimes(2);
 
     // Expect the contract to fetch the batches to be called with the correct stagger time.
     expect(utilsModule.sleep).toHaveBeenCalledTimes(3);

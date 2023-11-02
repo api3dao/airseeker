@@ -3,6 +3,7 @@ import { BigNumber, ethers } from 'ethers';
 import { init } from '../../test/fixtures/mock-config';
 import { generateRandomBytes32, signData } from '../../test/utils';
 import type { SignedData } from '../types';
+import { deriveBeaconId } from '../utils';
 
 import { verifySignedDataIntegrity } from './signed-data-store';
 import * as localDataStore from './signed-data-store';
@@ -34,11 +35,10 @@ describe('datastore', () => {
     const promisedStorage = localDataStore.setStoreDataPoint(testDataPoint);
     expect(promisedStorage).toBeFalsy();
 
-    const datapoint = localDataStore.getStoreDataPoint(testDataPoint.airnode, testDataPoint.templateId);
+    const dataFeedId = deriveBeaconId(testDataPoint.airnode, testDataPoint.templateId)!;
+    const datapoint = localDataStore.getStoreDataPoint(dataFeedId);
 
-    const { encodedValue, signature, timestamp } = testDataPoint;
-
-    expect(datapoint).toStrictEqual({ encodedValue, signature, timestamp });
+    expect(datapoint).toStrictEqual(testDataPoint);
   });
 
   it('checks that the timestamp on signed data is not in the future', async () => {

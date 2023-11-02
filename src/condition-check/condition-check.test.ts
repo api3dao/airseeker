@@ -2,6 +2,7 @@ import { BigNumber, ethers } from 'ethers';
 
 import { getUnixTimestamp } from '../../test/utils';
 import { HUNDRED_PERCENT } from '../constants';
+import { getDeviationThresholdAsBigNumber } from '../utils';
 
 import {
   calculateMedian,
@@ -16,25 +17,39 @@ describe('checkUpdateCondition', () => {
   const onChainValue = ethers.BigNumber.from(500);
 
   it('returns true when api value is higher and deviation threshold is reached', () => {
-    const shouldUpdate = checkDeviationThresholdExceeded(onChainValue, 10, ethers.BigNumber.from(560));
+    const shouldUpdate = checkDeviationThresholdExceeded(
+      onChainValue,
+      getDeviationThresholdAsBigNumber(10),
+      ethers.BigNumber.from(560)
+    );
 
     expect(shouldUpdate).toBe(true);
   });
 
   it('returns true when api value is lower and deviation threshold is reached', () => {
-    const shouldUpdate = checkDeviationThresholdExceeded(onChainValue, 10, ethers.BigNumber.from(440));
+    const shouldUpdate = checkDeviationThresholdExceeded(
+      onChainValue,
+      getDeviationThresholdAsBigNumber(10),
+      ethers.BigNumber.from(440)
+    );
 
     expect(shouldUpdate).toBe(true);
   });
 
   it('returns false when deviation threshold is not reached', () => {
-    const shouldUpdate = checkDeviationThresholdExceeded(onChainValue, 10, ethers.BigNumber.from(480));
+    const shouldUpdate = checkDeviationThresholdExceeded(
+      onChainValue,
+      getDeviationThresholdAsBigNumber(10),
+      ethers.BigNumber.from(480)
+    );
 
     expect(shouldUpdate).toBe(false);
   });
 
   it('handles correctly bad JS math', () => {
-    expect(() => checkDeviationThresholdExceeded(onChainValue, 0.14, ethers.BigNumber.from(560))).not.toThrow();
+    expect(() =>
+      checkDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigNumber(0.14), ethers.BigNumber.from(560))
+    ).not.toThrow();
   });
 
   it('checks all update conditions | heartbeat exceeded', () => {
@@ -44,7 +59,7 @@ describe('checkUpdateCondition', () => {
       BigNumber.from(10),
       Date.now() / 1000,
       60 * 60 * 23,
-      2
+      getDeviationThresholdAsBigNumber(2)
     );
 
     expect(result).toBe(true);
@@ -57,7 +72,7 @@ describe('checkUpdateCondition', () => {
       BigNumber.from(10),
       Date.now() + 60 * 60 * 23,
       86_400,
-      2
+      getDeviationThresholdAsBigNumber(2)
     );
 
     expect(result).toBe(false);

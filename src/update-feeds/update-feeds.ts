@@ -1,10 +1,13 @@
 import { go } from '@api3/promise-utils';
-import { ethers } from 'ethers';
-import { range, size } from 'lodash';
+import { BigNumber, ethers } from 'ethers';
+import { chunk, range, size, uniq } from 'lodash';
 
+import { checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
+import { FEEDS_TO_UPDATE_CHUNK_SIZE } from '../constants';
 import { logger } from '../logger';
-import { getState } from '../state';
+import { getStoreDataPoint } from '../signed-data-store';
+import { getState, setState } from '../state';
 import { isFulfilled, sleep } from '../utils';
 
 import {
@@ -41,6 +44,10 @@ export const startUpdateFeedLoops = async () => {
   );
 };
 
+type ReadDapiWithIndexResponsesAndChainId = (ReadDapiWithIndexResponse & {
+  chainId: string;
+})[];
+
 export const runUpdateFeed = async (providerName: string, chain: Chain, chainId: string) => {
   const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
   // TODO: Consider adding a start timestamp (as ID) to the logs to identify batches from this runUpdateFeed tick.
@@ -61,9 +68,13 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
       await dapiDataRegistry.callStatic.tryMulticall([dapisCountCall, ...readDapiWithIndexCalls])
     );
 
-    const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata!);
+    if (!dapisCountReturndata) {
+      throw new Error('Returned data is undefined.');
+    }
+
+    const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata);
     const firstBatch = readDapiWithIndexCallsReturndata
-      .map((dapiReturndata) => decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata))
+      .map((dapiReturndata) => ({ ...decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata), chainId }))
       // Because the dapisCount is not known during the multicall, we may ask for non-existent dAPIs. These should be filtered out.
       .slice(0, dapisCount);
     return {
@@ -104,9 +115,10 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
         await dapiDataRegistry.callStatic.tryMulticall(readDapiWithIndexCalls)
       );
 
-      const decodedBatch = returndata.map((returndata) =>
-        decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata)
-      );
+      const decodedBatch = returndata.map((returndata) => ({
+        ...decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata),
+        chainId,
+      }));
       return decodedBatch;
     })
   );
@@ -115,7 +127,9 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   }
   const processOtherBatchesPromises = otherBatches
     .filter((result) => isFulfilled(result))
-    .map(async (result) => processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value));
+    .map(async (result) =>
+      processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponsesAndChainId>).value)
+    );
 
   // Wait for all the batches to be processed.
   //
@@ -124,8 +138,89 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   await Promise.all([processFirstBatchPromise, ...processOtherBatchesPromises]);
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
-export const processBatch = async (batch: ReadDapiWithIndexResponse[]) => {
+export const updateDynamicState = (batch: ReadDapiWithIndexResponsesAndChainId) => {
+  batch.map((item) => {
+    const state = getState();
+
+    const cachedDapiResponse = state.dynamicState[item.dapiName] ?? {
+      dataFeed: item.dataFeed,
+      signedApiUrls: [],
+      dataFeedValues: {},
+      updateParameters: {},
+    };
+
+    // We're assuming the received data feed value is newer than what we already have... this may not actually be the case
+    // but the alternative is that we accept a later value but then DoS future values.
+    // This should probably be time-constrained and require updated values (eg. only update if newer but not newer than 15 minutes)
+    const newDapiResponse = {
+      dataFeed: cachedDapiResponse?.dataFeed ?? item.dataFeed,
+      dataFeedValues: { ...cachedDapiResponse?.dataFeedValues, [item.chainId]: item.dataFeedValue },
+      updateParameters: { ...cachedDapiResponse.updateParameters, [item.chainId]: item.updateParameters },
+      signedApiUrls: uniq([...item.signedApiUrls, ...(cachedDapiResponse?.signedApiUrls ?? [])]),
+    };
+
+    setState({ ...state, dynamicState: { ...state.dynamicState, [item.dapiName]: newDapiResponse } });
+  });
+};
+
+export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) =>
+  batch.map((dapiResponse) => {
+    const signedData = getStoreDataPoint(dapiResponse.dataFeed.dataFeedId);
+
+    if (signedData === undefined) {
+      return { ...dapiResponse, shouldUpdate: false };
+    }
+
+    const offChainValue = BigNumber.from(signedData.encodedValue);
+    const offChainTimestamp = Number.parseInt(signedData?.timestamp ?? '0', 10);
+    const deviationThreshold = dapiResponse.updateParameters.deviationThresholdInPercentage;
+
+    const shouldUpdate = checkUpdateConditions(
+      dapiResponse.dataFeedValue.value,
+      dapiResponse.dataFeedValue.timestamp,
+      offChainValue,
+      offChainTimestamp,
+      dapiResponse.updateParameters.heartbeatInterval,
+      deviationThreshold
+    );
+
+    return {
+      ...dapiResponse,
+      shouldUpdate,
+      signedData,
+    };
+  });
+
+export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>) => {
+  // TODO implement
+  // batch, execute
+};
+
+export const processBatch = async (batch: ReadDapiWithIndexResponsesAndChainId) => {
   logger.debug('Processing batch of active dAPIs', { batch });
-  // TODO: Implement.
+
+  // Start by merging the dynamic state with the state
+  updateDynamicState(batch);
+
+  // const { config } = getState();
+  const allFeeds = getFeedsToUpdate(batch);
+
+  // Flow chart calls for clearing stale data
+  // "for each dAPI where an update is not needed" ... "clear stored on chain datafeed value from gas price store"
+  // TODO The fn called has been removed, what replaces it (if any)?
+  // allFeeds
+  //   .filter((item) => !item.shouldUpdate)
+  //   .map((feed) => {
+  //     Object.values(config.chains)
+  //       .map((chain) => Object.keys(chain.providers))
+  //       .map((providerNames) => {
+  //         providerNames.map((providerName) =>
+  //           clearLastOnChainDatafeedValue(feed.chainId, providerName, feed.dataFeed.dataFeedId)
+  //         );
+  //       });
+  //   });
+
+  const feedsToUpdate = allFeeds.filter((feed) => feed.shouldUpdate);
+
+  return Promise.allSettled(chunk(feedsToUpdate, FEEDS_TO_UPDATE_CHUNK_SIZE).map(async (feed) => updateFeeds(feed)));
 };

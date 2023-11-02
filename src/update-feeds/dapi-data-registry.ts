@@ -1,7 +1,9 @@
-import type { ethers } from 'ethers';
+import { ethers } from 'ethers';
 
 // NOTE: The contract is not yet published, so we generate the Typechain artifacts locally and import it from there.
 import { type DapiDataRegistry, DapiDataRegistry__factory } from '../../typechain-types';
+import type { DecodedDataFeed } from '../types';
+import { deriveBeaconId, deriveBeaconSetId } from '../utils';
 
 export const getDapiDataRegistry = (address: string, provider: ethers.providers.StaticJsonRpcProvider) =>
   DapiDataRegistry__factory.connect(address, provider);
@@ -24,6 +26,31 @@ export const decodeDapisCountResponse = (dapiDataRegistry: DapiDataRegistry, dap
 
 export type DapisCountResponse = ReturnType<typeof decodeDapisCountResponse>;
 
+export const decodeDataFeed = (dataFeed: string): DecodedDataFeed => {
+  if (dataFeed.length === 130) {
+    // (64 * 2) - 2
+    // hex encoded string, contract works with bytes directly
+    const [airnodeAddress, templateId] = ethers.utils.defaultAbiCoder.decode(['address', 'bytes32'], dataFeed);
+
+    const dataFeedId = deriveBeaconId(airnodeAddress, templateId)!;
+
+    return { dataFeedId, dataFeeds: [{ dataFeedId, airnodeAddress, templateId }] };
+  }
+
+  const [airnodeAddresses, templateIds] = ethers.utils.defaultAbiCoder.decode(['address[]', 'bytes32[]'], dataFeed);
+
+  const dataFeeds = (airnodeAddresses as string[]).map((airnodeAddress: string, idx: number) => {
+    const templateId = templateIds[idx] as string;
+    const dataFeedId = deriveBeaconId(airnodeAddress, templateId)!;
+
+    return { dataFeedId, airnodeAddress, templateId };
+  });
+
+  const dataFeedId = deriveBeaconSetId(dataFeeds.map((df) => df.dataFeedId))!;
+
+  return { dataFeedId, dataFeeds };
+};
+
 export const decodeReadDapiWithIndexResponse = (
   dapiDataRegistry: DapiDataRegistry,
   readDapiWithIndexReturndata: string
@@ -37,6 +64,10 @@ export const decodeReadDapiWithIndexResponse = (
   // is logged. To make the logs more readable, we convert the object part to a plain object.
   const { deviationReference, deviationThresholdInPercentage, heartbeatInterval } = updateParameters;
   const { value, timestamp } = dataFeedValue;
+
+  // https://github.com/api3dao/dapi-management/pull/3/files#diff-b6941851ebc92dc9691bbf0cb701fe9c4595cb78488c3bb92ad6e4b917719f4fR346
+  const decodedDataFeed = decodeDataFeed(dataFeed);
+
   return {
     dapiName,
     updateParameters: {
@@ -45,7 +76,7 @@ export const decodeReadDapiWithIndexResponse = (
       heartbeatInterval,
     },
     dataFeedValue: { value, timestamp },
-    dataFeed,
+    dataFeed: decodedDataFeed,
     signedApiUrls,
   };
 };

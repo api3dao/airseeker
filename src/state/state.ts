@@ -2,19 +2,40 @@ import type { BigNumber } from 'ethers';
 import { produce, type Draft } from 'immer';
 
 import type { Config } from '../config/schema';
-import type { LocalSignedData, AirnodeAddress, TemplateId } from '../types';
+import type { AirnodeAddress, chainId, dapiName, DecodedDataFeed, DataFeedId, SignedData } from '../types';
 
 interface GasState {
   gasPrices: { price: BigNumber; timestampMs: number }[];
   sponsorLastUpdateTimestampMs: Record<string, number>;
 }
 
+export interface DataFeedOnChainValue {
+  value: BigNumber;
+  timestamp: number; // in seconds
+}
+
 export interface State {
   config: Config;
   dataFetcherInterval?: NodeJS.Timeout;
   gasPriceStore: Record<string, Record<string, GasState>>;
-  signedApiStore: Record<AirnodeAddress, Record<TemplateId, LocalSignedData>>;
+  signedApiStore: Record<DataFeedId, SignedData>;
   signedApiUrlStore: Record<string, Record<AirnodeAddress, string>>;
+  dynamicState: Record<
+    dapiName,
+    {
+      dataFeed: DecodedDataFeed;
+      signedApiUrls: string[];
+      dataFeedValues: Record<chainId, DataFeedOnChainValue>;
+      updateParameters: Record<
+        chainId,
+        {
+          deviationThresholdInPercentage: BigNumber;
+          deviationReference: BigNumber;
+          heartbeatInterval: number;
+        }
+      >;
+    }
+  >;
 }
 
 type StateUpdater = (draft: Draft<State>) => void;
@@ -31,6 +52,10 @@ export const getState = (): State => {
 
 export const setState = (newState: State) => {
   state = newState;
+
+  if (!state.dynamicState) {
+    state.dynamicState = {};
+  }
 };
 
 export const updateState = (updater: StateUpdater) => {

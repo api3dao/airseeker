@@ -40,5 +40,6 @@ export const init = (stateOverride?: Partial<State>) => {
     signedApiStore: {},
     signedApiUrlStore: {},
     ...stateOverride,
+    dynamicState: {},
   });
 };
