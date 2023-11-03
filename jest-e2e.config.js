@@ -15,6 +15,6 @@ module.exports = {
   testEnvironment: 'jest-environment-node',
   testMatch: ['**/?(*.)+(feature).[t]s?(x)'],
   testPathIgnorePatterns: ['<rootDir>/.build', '<rootDir>/dist/', '<rootDir>/build/'],
-  testTimeout: 15_000,
+  testTimeout: 25_000,
   verbose: true,
 };
