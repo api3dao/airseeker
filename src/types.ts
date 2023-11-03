@@ -6,7 +6,7 @@ export type AirnodeAddress = EvmAddress;
 export type TemplateId = EvmId;
 export type DataFeedId = EvmId;
 export type chainId = string;
-export type dapiName = string;
+export type DApiName = string;
 
 // Taken from https://github.com/api3dao/signed-api/blob/main/packages/api/src/schema.ts
 export const signedDataSchema = z.object({

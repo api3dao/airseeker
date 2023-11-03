@@ -1,4 +1,5 @@
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
+import { cloneDeep } from 'lodash';
 
 import {
   generateMockDapiDataRegistry,
@@ -15,7 +16,13 @@ import type { State } from '../state';
 import * as utilsModule from '../utils';
 
 import * as dapiDataRegistryModule from './dapi-data-registry';
-import { runUpdateFeed, startUpdateFeedLoops } from './update-feeds';
+import {
+  mergeUrls,
+  type ReadDapiWithIndexResponsesAndChainId,
+  runUpdateFeed,
+  startUpdateFeedLoops,
+  updateDynamicState,
+} from './update-feeds';
 
 jest.mock('../state');
 
@@ -180,7 +187,7 @@ describe(runUpdateFeed.name, () => {
           config: testConfig,
           dapis: {},
           signedApiStore: {},
-          signedApiUrlStore: [],
+          signedApiUrlStore: [{ url: 'url-one', lastReceivedMs: 1 }],
           gasPriceStore: {
             '123': {
               'some-test-provider': {
@@ -240,5 +247,111 @@ describe(runUpdateFeed.name, () => {
       batchIndex: 2,
     });
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Processing batch of active dAPIs', expect.anything());
+  });
+});
+
+describe('update-feeds utilities', () => {
+  it('merges urls received from chain with existing urls', () => {
+    const freshUrls = [
+      { url: 'one', lastReceivedMs: 1 },
+      { url: 'two', lastReceivedMs: 2 },
+    ];
+    const existingUrls = [
+      { url: 'one', lastReceivedMs: 100 },
+      { url: 'three', lastReceivedMs: 3 },
+    ];
+
+    const result = mergeUrls(existingUrls, freshUrls);
+
+    expect(result).toStrictEqual([
+      { lastReceivedMs: 100, url: 'one' },
+      {
+        lastReceivedMs: 3,
+        url: 'three',
+      },
+      { lastReceivedMs: 2, url: 'two' },
+    ]);
+  });
+
+  it('updates the state in response to new data from the chain', () => {
+    const batch: ReadDapiWithIndexResponsesAndChainId = [
+      {
+        chainId: '37337',
+        dapiName: 'BTC/USD',
+        updateParameters: {
+          deviationReference: BigNumber.from(0),
+          deviationThresholdInPercentage: BigNumber.from(1),
+          heartbeatInterval: 1,
+        },
+        dataFeedValue: { value: BigNumber.from(100), timestamp: 100 },
+        dataFeed: {
+          dataFeedId: '0x000',
+          dataFeeds: [{ dataFeedId: '0x001', templateId: '0xA01', airnodeAddress: '0x0A1' }],
+        },
+        signedApiUrls: ['https://one', 'https://two'],
+      },
+    ];
+
+    const testConfig = generateTestConfig();
+    const mockState = {
+      config: testConfig,
+      dapis: {},
+      signedApiStore: {},
+      signedApiUrlStore: [{ url: 'url-one', lastReceivedMs: 1 }],
+      gasPriceStore: {
+        '123': {
+          'some-test-provider': {
+            gasPrices: [],
+            sponsorLastUpdateTimestampMs: {
+              '0xdatafeedId': 100,
+            },
+          },
+        },
+      },
+    };
+    const mockStateBefore = cloneDeep(mockState);
+
+    const getStateSpy = jest.spyOn(stateModule, 'getState');
+    getStateSpy.mockImplementation(() => mockState);
+
+    const updateStateSpy = jest.spyOn(stateModule, 'updateState');
+    updateStateSpy.mockImplementation((updaterFn: (draft: State) => unknown) => {
+      updaterFn(mockState);
+    });
+
+    jest.useFakeTimers().setSystemTime(new Date('2023-11-03'));
+
+    updateDynamicState(batch);
+
+    expect(updateStateSpy).toHaveBeenCalledTimes(3);
+    expect(mockState).toStrictEqual({
+      ...mockStateBefore,
+      dapis: {
+        'BTC/USD': {
+          dataFeed: {
+            dataFeedId: '0x000',
+            dataFeeds: [batch[0]!.dataFeed.dataFeeds[0]!],
+          },
+          dataFeedValues: {
+            [batch[0]!.chainId]: batch[0]!.dataFeedValue,
+          },
+          updateParameters: { [batch[0]!.chainId]: batch[0]!.updateParameters },
+        },
+      },
+      signedApiUrlStore: [
+        {
+          url: 'https://one/0x0A1',
+          lastReceivedMs: 1_698_969_600_000,
+        },
+        {
+          url: 'https://two/0x0A1',
+          lastReceivedMs: 1_698_969_600_000,
+        },
+        {
+          url: 'url-one',
+          lastReceivedMs: 1,
+        },
+      ],
+    });
   });
 });

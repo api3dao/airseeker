@@ -1,13 +1,13 @@
 import { go } from '@api3/promise-utils';
 import { BigNumber, ethers } from 'ethers';
-import { chunk, mergeWith, range, size } from 'lodash';
+import { chunk, groupBy, range, size, sortBy } from 'lodash';
 
 import { checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
 import { FEEDS_TO_UPDATE_CHUNK_SIZE, SIGNED_URL_EXPIRY_IN_MINUTES } from '../constants';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
-import { getState, updateState } from '../state';
+import { getState, updateState, type UrlSet } from '../state';
 import { isFulfilled, sleep } from '../utils';
 
 import {
@@ -44,7 +44,7 @@ export const startUpdateFeedLoops = async () => {
   );
 };
 
-type ReadDapiWithIndexResponsesAndChainId = (ReadDapiWithIndexResponse & {
+export type ReadDapiWithIndexResponsesAndChainId = (ReadDapiWithIndexResponse & {
   chainId: string;
 })[];
 
@@ -138,27 +138,30 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   });
 };
 
+export const mergeUrls = (receivedUrls: UrlSet[], freshExistingUrls: UrlSet[]) =>
+  Object.values(groupBy([...receivedUrls, ...freshExistingUrls], 'url')).flatMap(
+    (group) => sortBy(group, 'lastReceivedMs').pop()!
+  );
+
 export const updateDynamicState = (batch: ReadDapiWithIndexResponsesAndChainId) => {
   batch.map((item) =>
     updateState((draft) => {
-      const receivedUrls = item.signedApiUrls.map((url) =>
-        item.dataFeed.dataFeeds.map((dataFeed) => ({
+      const receivedUrls = item.signedApiUrls.flatMap((url) =>
+        item.dataFeed.dataFeeds.flatMap((dataFeed) => ({
           url: `${url}/${dataFeed.airnodeAddress}`,
-          lastReceived: Date.now(),
+          lastReceivedMs: Date.now(),
         }))
       );
 
       const freshExistingUrls = draft.signedApiUrlStore.filter(
-        (url) => Date.now() - url.lastReceived > 1000 * 60 * SIGNED_URL_EXPIRY_IN_MINUTES
+        (url) => Date.now() - url.lastReceivedMs > 1000 * 60 * SIGNED_URL_EXPIRY_IN_MINUTES
       );
 
       // Appends records that don't already exist, updates records that already exist with new timestamps
-      draft.signedApiUrlStore = mergeWith(receivedUrls, freshExistingUrls, (a, b) => (a.url === b.url ? a : b));
+      draft.signedApiUrlStore = mergeUrls(receivedUrls.flat(), freshExistingUrls);
 
       const cachedDapiResponse = draft.dapis[item.dapiName];
-      // We're assuming the received data feed value is newer than what we already have... this may not actually be the case
-      // but the alternative is that we accept a later value but then DoS future values.
-      // This should probably be time-constrained and require updated values (eg. only update if newer but not newer than 15 minutes)
+
       draft.dapis[item.dapiName] = {
         dataFeed: cachedDapiResponse?.dataFeed ?? item.dataFeed,
         dataFeedValues: { ...cachedDapiResponse?.dataFeedValues, [item.chainId]: item.dataFeedValue },
@@ -169,32 +172,37 @@ export const updateDynamicState = (batch: ReadDapiWithIndexResponsesAndChainId) 
 };
 
 export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) =>
-  batch.map((dapiResponse) => {
-    const signedData = getStoreDataPoint(dapiResponse.dataFeed.dataFeedId);
+  batch
+    .map((dapiResponse) => {
+      const signedData = getStoreDataPoint(dapiResponse.dataFeed.dataFeedId);
 
-    if (signedData === undefined) {
-      return { ...dapiResponse, shouldUpdate: false };
-    }
+      if (signedData === undefined) {
+        return { ...dapiResponse, shouldUpdate: false };
+      }
 
-    const offChainValue = BigNumber.from(signedData.encodedValue);
-    const offChainTimestamp = Number.parseInt(signedData?.timestamp ?? '0', 10);
-    const deviationThreshold = dapiResponse.updateParameters.deviationThresholdInPercentage;
+      const offChainValue = BigNumber.from(signedData.encodedValue);
+      const offChainTimestamp = Number.parseInt(signedData?.timestamp ?? '0', 10);
+      const deviationThreshold = dapiResponse.updateParameters.deviationThresholdInPercentage;
 
-    const shouldUpdate = checkUpdateConditions(
-      dapiResponse.dataFeedValue.value,
-      dapiResponse.dataFeedValue.timestamp,
-      offChainValue,
-      offChainTimestamp,
-      dapiResponse.updateParameters.heartbeatInterval,
-      deviationThreshold
-    );
+      const shouldUpdate = checkUpdateConditions(
+        dapiResponse.dataFeedValue.value,
+        dapiResponse.dataFeedValue.timestamp,
+        offChainValue,
+        offChainTimestamp,
+        dapiResponse.updateParameters.heartbeatInterval,
+        deviationThreshold
+      );
 
-    return {
-      ...dapiResponse,
-      shouldUpdate,
-      signedData,
-    };
-  });
+      if (shouldUpdate) {
+        return {
+          ...dapiResponse,
+          signedData,
+        };
+      }
+
+      return false;
+    })
+    .filter(Boolean);
 
 export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>) => {
   // TODO implement
@@ -207,13 +215,7 @@ export const processBatch = async (batch: ReadDapiWithIndexResponsesAndChainId) 
   // Start by merging the dynamic state with the state
   updateDynamicState(batch);
 
-  const allFeeds = getFeedsToUpdate(batch);
-
-  // Flow chart calls for clearing stale data
-  // "for each dAPI where an update is not needed" ... "clear stored on chain datafeed value from gas price store"
-  // TODO The fn called has been removed, what replaces it (if any)? - it may require sponsor wallet derivation
-
-  const feedsToUpdate = allFeeds.filter((feed) => feed.shouldUpdate);
+  const feedsToUpdate = getFeedsToUpdate(batch);
 
   return Promise.allSettled(chunk(feedsToUpdate, FEEDS_TO_UPDATE_CHUNK_SIZE).map(async (feed) => updateFeeds(feed)));
 };

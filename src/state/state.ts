@@ -2,7 +2,7 @@ import type { BigNumber } from 'ethers';
 import { produce, type Draft } from 'immer';
 
 import type { Config } from '../config/schema';
-import type { chainId, dapiName, DecodedDataFeed, DataFeedId, SignedData } from '../types';
+import type { chainId, DApiName, DecodedDataFeed, DataFeedId, SignedData } from '../types';
 
 interface GasState {
   gasPrices: { price: BigNumber; timestampMs: number }[];
@@ -26,13 +26,18 @@ export interface UpdateParameters {
   heartbeatInterval: number;
 }
 
+export interface UrlSet {
+  url: string;
+  lastReceivedMs: number;
+}
+
 export interface State {
   config: Config;
   dataFetcherInterval?: NodeJS.Timeout;
   gasPriceStore: Record<string, Record<string, GasState>>;
   signedApiStore: Record<DataFeedId, SignedData>;
-  signedApiUrlStore: { url: string; lastReceived: number }[];
-  dapis: Record<dapiName, DApi>;
+  signedApiUrlStore: UrlSet[];
+  dapis: Record<DApiName, DApi>;
 }
 
 type StateUpdater = (draft: Draft<State>) => void;
