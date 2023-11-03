@@ -24,9 +24,7 @@ export const signedApiResponseSchema = z.object({
   data: z.record(signedDataSchema),
 });
 
-export type LocalSignedData = Pick<SignedData, 'encodedValue' | 'signature' | 'timestamp'>;
-
-export interface DataFeedSingle {
+export interface Beacon {
   airnodeAddress: AirnodeAddress;
   templateId: TemplateId;
   dataFeedId: string;
@@ -34,5 +32,5 @@ export interface DataFeedSingle {
 
 export interface DecodedDataFeed {
   dataFeedId: string;
-  dataFeeds: DataFeedSingle[];
+  beacons: Beacon[];
 }

@@ -201,9 +201,6 @@ describe(runUpdateFeed.name, () => {
         }) as State
     );
 
-    // TODO what has this fn been replaced with
-    // const clearLastOnChainDataFeedValueSpy = jest.spyOn(gasPriceModule, 'clearLastOnChainDatafeedValue');
-
     await runUpdateFeed(
       'provider-name',
       allowPartial<Chain>({
@@ -218,8 +215,6 @@ describe(runUpdateFeed.name, () => {
     );
 
     expect(getStateSpy).toHaveBeenCalledTimes(4);
-    // TODO what has this fn been replaced with
-    // expect(clearLastOnChainDataFeedValueSpy).toHaveBeenCalledTimes(2);
 
     // Expect the contract to fetch the batches to be called with the correct stagger time.
     expect(utilsModule.sleep).toHaveBeenCalledTimes(3);
@@ -286,7 +281,7 @@ describe('update-feeds utilities', () => {
         dataFeedValue: { value: BigNumber.from(100), timestamp: 100 },
         dataFeed: {
           dataFeedId: '0x000',
-          dataFeeds: [{ dataFeedId: '0x001', templateId: '0xA01', airnodeAddress: '0x0A1' }],
+          beacons: [{ dataFeedId: '0x001', templateId: '0xA01', airnodeAddress: '0x0A1' }],
         },
         signedApiUrls: ['https://one', 'https://two'],
       },
@@ -330,7 +325,7 @@ describe('update-feeds utilities', () => {
         'BTC/USD': {
           dataFeed: {
             dataFeedId: '0x000',
-            dataFeeds: [batch[0]!.dataFeed.dataFeeds[0]!],
+            beacons: [batch[0]!.dataFeed.beacons[0]!],
           },
           dataFeedValues: {
             [batch[0]!.chainId]: batch[0]!.dataFeedValue,

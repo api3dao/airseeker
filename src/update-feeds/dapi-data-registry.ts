@@ -28,13 +28,13 @@ export type DapisCountResponse = ReturnType<typeof decodeDapisCountResponse>;
 
 export const decodeDataFeed = (dataFeed: string): DecodedDataFeed => {
   if (dataFeed.length === 130) {
-    // (64 * 2) - 2
-    // hex encoded string, contract works with bytes directly
+    // (64 [actual bytes] * 2[hex encoding] ) + 2 [for the '0x' preamble]
+    // This is a hex encoded string, the contract works with bytes directly
     const [airnodeAddress, templateId] = ethers.utils.defaultAbiCoder.decode(['address', 'bytes32'], dataFeed);
 
     const dataFeedId = deriveBeaconId(airnodeAddress, templateId)!;
 
-    return { dataFeedId, dataFeeds: [{ dataFeedId, airnodeAddress, templateId }] };
+    return { dataFeedId, beacons: [{ dataFeedId, airnodeAddress, templateId }] };
   }
 
   const [airnodeAddresses, templateIds] = ethers.utils.defaultAbiCoder.decode(['address[]', 'bytes32[]'], dataFeed);
@@ -48,7 +48,7 @@ export const decodeDataFeed = (dataFeed: string): DecodedDataFeed => {
 
   const dataFeedId = deriveBeaconSetId(dataFeeds.map((df) => df.dataFeedId))!;
 
-  return { dataFeedId, dataFeeds };
+  return { dataFeedId, beacons: dataFeeds };
 };
 
 export const decodeReadDapiWithIndexResponse = (

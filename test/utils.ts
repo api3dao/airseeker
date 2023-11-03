@@ -1,5 +1,8 @@
 import { ethers } from 'ethers';
 
+import type { Beacon } from '../src/types';
+import { deriveBeaconId } from '../src/utils';
+
 export const signData = async (signer: ethers.Signer, templateId: string, timestamp: string, data: string) =>
   signer.signMessage(
     ethers.utils.arrayify(
@@ -21,4 +24,4 @@ export type DeepPartial<T> = T extends object
  */
 export const allowPartial = <T = unknown>(obj: DeepPartial<T>): T => obj as T;
 
-export const getUnixTimestamp = (dateString: string) => Math.floor(Date.parse(dateString) / 1000);
+export const encodeBeaconFeed = (dataFeed: Beacon) => deriveBeaconId(dataFeed.airnodeAddress, dataFeed.templateId);

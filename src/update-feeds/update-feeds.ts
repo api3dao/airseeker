@@ -67,11 +67,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
         await dapiDataRegistry.callStatic.tryMulticall([dapisCountCall, ...readDapiWithIndexCalls])
       );
 
-      if (!dapisCountReturndata) {
-        throw new Error('Returned data is undefined.');
-      }
-
-      const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata);
+      const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata!);
       const firstBatch = readDapiWithIndexCallsReturndata
         .map((dapiReturndata) => ({ ...decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata), chainId }))
         // Because the dapisCount is not known during the multicall, we may ask for non-existent dAPIs. These should be filtered out.
@@ -147,7 +143,7 @@ export const updateDynamicState = (batch: ReadDapiWithIndexResponsesAndChainId) 
   batch.map((item) =>
     updateState((draft) => {
       const receivedUrls = item.signedApiUrls.flatMap((url) =>
-        item.dataFeed.dataFeeds.flatMap((dataFeed) => ({
+        item.dataFeed.beacons.flatMap((dataFeed) => ({
           url: `${url}/${dataFeed.airnodeAddress}`,
           lastReceivedMs: Date.now(),
         }))
