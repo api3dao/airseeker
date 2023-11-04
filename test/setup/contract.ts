@@ -5,7 +5,6 @@ import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import type { Signer, Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 
-import type { SignedData } from '../../src/types';
 import { deriveBeaconId } from '../../src/utils';
 import { DapiDataRegistry__factory, HashRegistry__factory } from '../../typechain-types';
 import { generateTestConfig } from '../fixtures/mock-config';
@@ -117,21 +116,7 @@ const buildEIP712Domain = (name: string, chainId: number, verifyingContract: str
   };
 };
 
-// TODO: Move to fixtures?
-export const createSignedData = async (
-  airnodeWallet: Wallet,
-  templateId: string,
-  dataFeedTimestamp: string,
-  apiValue = ethers.BigNumber.from(ethers.utils.randomBytes(Math.floor(Math.random() * 27) + 1)) // Fits into uint224.
-): Promise<SignedData> => {
-  const encodedValue = ethers.utils.defaultAbiCoder.encode(['uint224'], [ethers.BigNumber.from(apiValue)]);
-  const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
-
-  return { airnode: airnodeWallet.address, templateId, timestamp: dataFeedTimestamp, encodedValue, signature };
-};
-
-// TODO: Rename to initialize beacon
-const updateBeacon = async (
+const initializeBeacon = async (
   api3ServerV1: Api3ServerV1,
   airnodeWallet: Wallet,
   airseekerSponsorWallet: SignerWithAddress | Wallet,
@@ -226,28 +211,28 @@ export const deployAndUpdate = async () => {
   const binanceEthBeacon = deriveBeaconData(createBinanceEthBeacon(binanceAirnodeWallet.address));
 
   // Update beacons with starting values
-  await updateBeacon(
+  await initializeBeacon(
     api3ServerV1,
     krakenAirnodeWallet,
     airseekerSponsorWallet,
     krakenBtcBeacon.templateId,
     Math.floor(740 * 1_000_000)
   );
-  await updateBeacon(
+  await initializeBeacon(
     api3ServerV1,
     krakenAirnodeWallet,
     airseekerSponsorWallet,
     krakenEthBeacon.templateId,
     Math.floor(41_000 * 1_000_000)
   );
-  await updateBeacon(
+  await initializeBeacon(
     api3ServerV1,
     binanceAirnodeWallet,
     airseekerSponsorWallet,
     binanceBtcBeacon.templateId,
     Math.floor(750 * 1_000_000)
   );
-  await updateBeacon(
+  await initializeBeacon(
     api3ServerV1,
     binanceAirnodeWallet,
     airseekerSponsorWallet,
@@ -378,7 +363,8 @@ export const deployAndUpdate = async () => {
         dapiTree.getProof(dapiTreeValue)
       );
   }
-  // TODO: Generate proper config (change sponsor wallet mnemonic, deployed contract addresses, etc...)
+
+  // Set up config
   const config = generateTestConfig();
   config.sponsorWalletMnemonic = airseekerSponsorWallet.mnemonic.phrase;
   config.chains[31_337]!.contracts.Api3ServerV1 = api3ServerV1.address;

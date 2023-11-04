@@ -1,6 +1,6 @@
-import { ethers } from 'ethers';
+import { type Wallet, ethers } from 'ethers';
 
-import type { Beacon } from '../src/types';
+import type { SignedData, Beacon } from '../src/types';
 
 export const signData = async (signer: ethers.Signer, templateId: string, timestamp: string, data: string) =>
   signer.signMessage(
@@ -31,3 +31,16 @@ export const encodeBeaconFeedSet = (dataFeed: Beacon[]) =>
     ['address[]', 'bytes32[]'],
     [dataFeed.map((item) => item.airnodeAddress), dataFeed.map((item) => item.templateId)]
   );
+export const getUnixTimestamp = (dateString: string) => Math.floor(Date.parse(dateString) / 1000);
+
+export const generateSignedData = async (
+  airnodeWallet: Wallet,
+  templateId: string,
+  dataFeedTimestamp: string,
+  apiValue = ethers.BigNumber.from(ethers.utils.randomBytes(Math.floor(Math.random() * 27) + 1)) // Fits into uint224.
+): Promise<SignedData> => {
+  const encodedValue = ethers.utils.defaultAbiCoder.encode(['uint224'], [ethers.BigNumber.from(apiValue)]);
+  const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
+
+  return { airnode: airnodeWallet.address, templateId, timestamp: dataFeedTimestamp, encodedValue, signature };
+};
