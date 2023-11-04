@@ -65,7 +65,11 @@ export const updateFeeds = async (
               : beaconUpdateCalls;
 
           logger.debug('Estimating gas limit');
-          const gasLimit = await estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas);
+          const gasLimit = await estimateMulticallGasLimit(
+            api3ServerV1,
+            dataFeedUpdateCalldatas,
+            updateableBeacons.map((beacon) => beacon.beaconId)
+          );
 
           logger.debug('Deriving sponsor wallet');
           // TODO: These wallets could be persisted as a performance optimization.
@@ -89,7 +93,7 @@ export const updateFeeds = async (
 };
 
 // TODO: Test for all of these functions below.
-const estimateMulticallGasLimit = async (api3ServerV1: Api3ServerV1, calldatas: string[]) => {
+const estimateMulticallGasLimit = async (api3ServerV1: Api3ServerV1, calldatas: string[], beaconIds: string[]) => {
   const goEstimateGas = await go(async () => api3ServerV1.estimateGas.multicall(calldatas));
   if (goEstimateGas.success) {
     // Adding a extra 10% because multicall consumes less gas than tryMulticall
@@ -100,18 +104,20 @@ const estimateMulticallGasLimit = async (api3ServerV1: Api3ServerV1, calldatas: 
   const goEstimateDummyBeaconUpdateGas = await go(async () => {
     const { dummyAirnode, dummyBeaconTemplateId, dummyBeaconTimestamp, dummyBeaconData, dummyBeaconSignature } =
       await createDummyBeaconUpdateData();
-    return api3ServerV1.estimateGas.updateBeaconWithSignedData(
-      dummyAirnode.address,
-      dummyBeaconTemplateId,
-      dummyBeaconTimestamp,
-      dummyBeaconData,
-      dummyBeaconSignature
-    );
+    return [
+      await api3ServerV1.estimateGas.updateBeaconWithSignedData(
+        dummyAirnode.address,
+        dummyBeaconTemplateId,
+        dummyBeaconTimestamp,
+        dummyBeaconData,
+        dummyBeaconSignature
+      ),
+      await api3ServerV1.estimateGas.updateBeaconSetWithBeacons(beaconIds),
+    ] as const;
   });
   if (goEstimateDummyBeaconUpdateGas.success) {
-    // This logic is taken from Airseeker v1. One of the calldatas will actually be the beacon set update so this logic
-    // is not 100% accurate. The beacon set update consumles less gas so this is a safe estimate.
-    return goEstimateDummyBeaconUpdateGas.data.mul(calldatas.length);
+    const [updateBeaconWithSignedDataGas, updateBeaconSetWithBeaconsGas] = goEstimateDummyBeaconUpdateGas.data;
+    return updateBeaconWithSignedDataGas.mul(beaconIds.length).add(updateBeaconSetWithBeaconsGas);
   }
 
   return ethers.BigNumber.from(2_000_000);
