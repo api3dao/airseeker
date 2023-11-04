@@ -1,3 +1,4 @@
+import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { ethers } from 'ethers';
 
 import type { ReadDapiWithIndexResponse } from '../../src/update-feeds/dapi-data-registry';
@@ -32,4 +33,14 @@ export const generateMockDapiDataRegistry = () => {
     readDapiWithIndex: jest.fn(),
     dapisCount: jest.fn(),
   } satisfies DeepPartial<DapiDataRegistry>;
+};
+
+export const generateMockApi3ServerV1 = () => {
+  return {
+    estimateGas: {
+      multicall: jest.fn(),
+      updateBeaconWithSignedData: jest.fn(),
+      updateBeaconSetWithBeacons: jest.fn(),
+    },
+  } satisfies DeepPartial<Api3ServerV1>;
 };

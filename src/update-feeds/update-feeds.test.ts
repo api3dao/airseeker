@@ -1,9 +1,6 @@
 import { ethers } from 'ethers';
 
-import {
-  generateMockDapiDataRegistry,
-  generateReadDapiWithIndexResponse,
-} from '../../test/fixtures/dapi-data-registry';
+import { generateMockDapiDataRegistry, generateReadDapiWithIndexResponse } from '../../test/fixtures/mock-contract';
 import { allowPartial } from '../../test/utils';
 import type { DapiDataRegistry } from '../../typechain-types';
 import type { Chain } from '../config/schema';
