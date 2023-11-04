@@ -94,8 +94,11 @@ export const updateFeeds = async (
   );
 };
 
-// TODO: Test for all of these functions below.
-const estimateMulticallGasLimit = async (api3ServerV1: Api3ServerV1, calldatas: string[], beaconIds: string[]) => {
+export const estimateMulticallGasLimit = async (
+  api3ServerV1: Api3ServerV1,
+  calldatas: string[],
+  beaconIds: string[]
+) => {
   const goEstimateGas = await go(async () => api3ServerV1.estimateGas.multicall(calldatas));
   if (goEstimateGas.success) {
     // Adding a extra 10% because multicall consumes less gas than tryMulticall
@@ -137,7 +140,7 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: str
   return sponsorWallet;
 };
 
-function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
+export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
   const sponsorAddressBN = ethers.BigNumber.from(sponsorAddress);
   const paths = [];
   for (let i = 0; i < 6; i++) {
