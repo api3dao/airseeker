@@ -4,8 +4,8 @@ import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
 import { runUpdateFeed } from '../../src/update-feeds';
 import { deriveSponsorWallet, updateFeeds } from '../../src/update-feeds/update-transactions';
-import { createSignedData, deployAndUpdate } from '../setup/contract';
-import { allowPartial } from '../utils';
+import { deployAndUpdate } from '../setup/contract';
+import { allowPartial, generateSignedData } from '../utils';
 
 it('reads blockchain data', async () => {
   const { config } = await deployAndUpdate();
@@ -33,12 +33,12 @@ it('updates blockchain data', async () => {
   const btcDapi = await dapiDataRegistry.readDapiWithIndex(0);
   const currentBlock = await dapiDataRegistry.provider.getBlock('latest');
   const currentBlockTimestamp = currentBlock.timestamp;
-  const binanceBtcSignedData = await createSignedData(
+  const binanceBtcSignedData = await generateSignedData(
     binanceAirnodeWallet,
     binanceBtcBeacon.templateId,
     (currentBlockTimestamp + 1).toString()
   );
-  const krakenBtcSignedData = await createSignedData(
+  const krakenBtcSignedData = await generateSignedData(
     krakenAirnodeWallet,
     krakenBtcBeacon.templateId,
     (currentBlockTimestamp + 2).toString()

@@ -110,14 +110,10 @@ const estimateMulticallGasLimit = async (api3ServerV1: Api3ServerV1, calldatas: 
   });
   if (goEstimateDummyBeaconUpdateGas.success) {
     // This logic is taken from Airseeker v1. One of the calldatas will actually be the beacon set update so this logic
-    // is not 100% accurate.
-    //
-    // TODO: Is it because the gas limit is larger for the beacon update (a.k.a it's an upper bound for beacon set
-    // update).
+    // is not 100% accurate. The beacon set update consumles less gas so this is a safe estimate.
     return goEstimateDummyBeaconUpdateGas.data.mul(calldatas.length);
   }
 
-  // TODO: Do we want to use 2M as a fixed gas limit?
   return ethers.BigNumber.from(2_000_000);
 };
 

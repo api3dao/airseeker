@@ -1,4 +1,6 @@
-import { ethers } from 'ethers';
+import { type Wallet, ethers } from 'ethers';
+
+import type { SignedData } from '../src/types';
 
 export const signData = async (signer: ethers.Signer, templateId: string, timestamp: string, data: string) =>
   signer.signMessage(
@@ -22,3 +24,15 @@ export type DeepPartial<T> = T extends object
 export const allowPartial = <T = unknown>(obj: DeepPartial<T>): T => obj as T;
 
 export const getUnixTimestamp = (dateString: string) => Math.floor(Date.parse(dateString) / 1000);
+
+export const generateSignedData = async (
+  airnodeWallet: Wallet,
+  templateId: string,
+  dataFeedTimestamp: string,
+  apiValue = ethers.BigNumber.from(ethers.utils.randomBytes(Math.floor(Math.random() * 27) + 1)) // Fits into uint224.
+): Promise<SignedData> => {
+  const encodedValue = ethers.utils.defaultAbiCoder.encode(['uint224'], [ethers.BigNumber.from(apiValue)]);
+  const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
+
+  return { airnode: airnodeWallet.address, templateId, timestamp: dataFeedTimestamp, encodedValue, signature };
+};
