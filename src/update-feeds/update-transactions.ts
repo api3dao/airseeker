@@ -1,7 +1,7 @@
+import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
-import type { Api3ServerV1 } from '../../typechain-types';
 import { AIRSEEKER_PROTOCOL_ID } from '../constants';
 import { logger } from '../logger';
 import { getState } from '../state';
