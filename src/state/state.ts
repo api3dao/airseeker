@@ -2,7 +2,7 @@ import type { BigNumber } from 'ethers';
 import { produce, type Draft } from 'immer';
 
 import type { Config } from '../config/schema';
-import type { chainId, DApiName, DecodedDataFeed, DataFeedId, SignedData } from '../types';
+import type { ChainId, DApiName, DecodedDataFeed, DataFeedId, SignedData } from '../types';
 
 interface GasState {
   gasPrices: { price: BigNumber; timestampMs: number }[];
@@ -16,8 +16,8 @@ export interface DataFeedValue {
 
 export interface DapiState {
   dataFeed: DecodedDataFeed;
-  dataFeedValues: Record<chainId, DataFeedValue>;
-  updateParameters: Record<chainId, UpdateParameters>;
+  dataFeedValues: Record<ChainId, DataFeedValue>;
+  updateParameters: Record<ChainId, UpdateParameters>;
 }
 
 export interface UpdateParameters {

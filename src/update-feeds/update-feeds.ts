@@ -139,9 +139,7 @@ export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]) =>
         signedData,
       };
     })
-    .filter((dapi) => {
-      const { signedData, updateParameters, dataFeedValue } = dapi;
-
+    .filter(({ signedData, updateParameters, dataFeedValue }) => {
       if (!signedData) {
         return false;
       }
