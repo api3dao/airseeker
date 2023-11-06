@@ -129,58 +129,36 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   });
 };
 
-export const updateDynamicState = (batch: ReadDapiWithIndexResponse[], chainId: string) => {
-  batch.map((item) =>
-    updateState((draft) => {
-      const receivedUrls = item.signedApiUrls.flatMap((url) =>
-        item.decodedDataFeed.beacons.flatMap((dataFeed) => `${url}/${dataFeed.airnodeAddress}`)
-      );
-
-      draft.signedApiUrlStore = receivedUrls.flat();
-
-      const cachedDapiResponse = draft.dapis[item.dapiName];
-
-      draft.dapis[item.dapiName] = {
-        dataFeed: cachedDapiResponse?.dataFeed ?? item.decodedDataFeed,
-        dataFeedValues: { ...cachedDapiResponse?.dataFeedValues, [chainId]: item.dataFeedValue },
-        updateParameters: { ...cachedDapiResponse?.updateParameters, [chainId]: item.updateParameters },
-      };
-    })
-  );
-};
-
 export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]) =>
   batch
-    .map((dapiResponse) => {
+    .map((dapiResponse: ReadDapiWithIndexResponse) => {
       const signedData = getStoreDataPoint(dapiResponse.decodedDataFeed.dataFeedId);
 
-      if (signedData === undefined) {
-        return { ...dapiResponse, shouldUpdate: false };
+      return {
+        ...dapiResponse,
+        signedData,
+      };
+    })
+    .filter((dapi) => {
+      const { signedData, updateParameters, dataFeedValue } = dapi;
+
+      if (!signedData) {
+        return false;
       }
 
       const offChainValue = ethers.BigNumber.from(signedData.encodedValue);
       const offChainTimestamp = Number.parseInt(signedData?.timestamp ?? '0', 10);
-      const deviationThreshold = dapiResponse.updateParameters.deviationThresholdInPercentage;
+      const deviationThreshold = updateParameters.deviationThresholdInPercentage;
 
-      const shouldUpdate = checkUpdateConditions(
-        dapiResponse.dataFeedValue.value,
-        dapiResponse.dataFeedValue.timestamp,
+      return checkUpdateConditions(
+        dataFeedValue.value,
+        dataFeedValue.timestamp,
         offChainValue,
         offChainTimestamp,
-        dapiResponse.updateParameters.heartbeatInterval,
+        updateParameters.heartbeatInterval,
         deviationThreshold
       );
-
-      if (shouldUpdate) {
-        return {
-          ...dapiResponse,
-          signedData,
-        };
-      }
-
-      return false;
-    })
-    .filter(Boolean);
+    });
 
 export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>, _chainId: string) => {
   // TODO implement
@@ -190,8 +168,23 @@ export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>, _
 export const processBatch = async (batch: ReadDapiWithIndexResponse[], chainId: string) => {
   logger.debug('Processing batch of active dAPIs', { batch });
 
-  // Start by merging the dynamic state with the state
-  updateDynamicState(batch, chainId);
+  updateState((draft) => {
+    for (const dapi of batch) {
+      const receivedUrls = dapi.signedApiUrls.flatMap((url) =>
+        dapi.decodedDataFeed.beacons.flatMap((dataFeed) => `${url}/${dataFeed.airnodeAddress}`)
+      );
+
+      draft.signedApiUrlStore = receivedUrls.flat();
+
+      const cachedDapiResponse = draft.dapis[dapi.dapiName];
+
+      draft.dapis[dapi.dapiName] = {
+        dataFeed: cachedDapiResponse?.dataFeed ?? dapi.decodedDataFeed,
+        dataFeedValues: { ...cachedDapiResponse?.dataFeedValues, [chainId]: dapi.dataFeedValue },
+        updateParameters: { ...cachedDapiResponse?.updateParameters, [chainId]: dapi.updateParameters },
+      };
+    }
+  });
 
   const feedsToUpdate = getFeedsToUpdate(batch);
 
