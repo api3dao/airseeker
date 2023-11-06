@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
 
 import { AIRSEEKER_PROTOCOL_ID } from '../constants';
 import { logger } from '../logger';
-import { getState } from '../state';
+import { getState, updateState } from '../state';
 import type { SignedData } from '../types';
 
 import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
@@ -127,6 +127,12 @@ export const estimateMulticallGasLimit = async (
 };
 
 export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: string) => {
+  const { derivedSponsorWallets } = getState();
+
+  if (derivedSponsorWallets[dapiName]) {
+    return new ethers.Wallet(derivedSponsorWallets[dapiName]!);
+  }
+
   // Take first 20 bytes of dapiName as sponsor address together with the "0x" prefix.
   const sponsorAddress = ethers.utils.getAddress(dapiName.slice(0, 42));
   const sponsorWallet = ethers.Wallet.fromMnemonic(
@@ -134,6 +140,13 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: str
     `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
   );
   logger.debug('Derived sponsor wallet', { sponsorAddress, sponsorWalletAddress: sponsorWallet.address });
+
+  updateState((draft) => {
+    draft.derivedSponsorWallets = {
+      ...draft.derivedSponsorWallets,
+      [dapiName]: sponsorWallet._signingKey().privateKey,
+    };
+  });
 
   return sponsorWallet;
 };

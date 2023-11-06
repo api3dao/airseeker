@@ -31,6 +31,7 @@ const stateMock = {
       '0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4': 'https://pool.nodary.io',
     },
   },
+  derivedSponsorWallets: {},
 };
 
 describe('state', () => {
