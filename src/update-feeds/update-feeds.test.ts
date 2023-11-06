@@ -8,7 +8,6 @@ import { generateTestConfig } from '../../test/fixtures/mock-config';
 import { allowPartial } from '../../test/utils';
 import type { DapiDataRegistry } from '../../typechain-types';
 import type { Chain } from '../config/schema';
-// import * as gasPriceModule from '../gas-price/gas-price';
 import { logger } from '../logger';
 import * as stateModule from '../state';
 import type { State } from '../state';

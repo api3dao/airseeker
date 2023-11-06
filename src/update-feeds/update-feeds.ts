@@ -1,10 +1,9 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
-import { chunk, range, size } from 'lodash';
+import { range, size } from 'lodash';
 
 import { checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
-import { FEEDS_TO_UPDATE_CHUNK_SIZE } from '../constants';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, updateState } from '../state';
@@ -184,9 +183,5 @@ export const processBatch = async (batch: ReadDapiWithIndexResponse[], chainId: 
     }
   });
 
-  const feedsToUpdate = getFeedsToUpdate(batch);
-
-  return Promise.allSettled(
-    chunk(feedsToUpdate, FEEDS_TO_UPDATE_CHUNK_SIZE).map(async (feed) => updateFeeds(feed, chainId))
-  );
+  return updateFeeds(getFeedsToUpdate(batch), chainId);
 };
