@@ -76,7 +76,7 @@ export const decodeReadDapiWithIndexResponse = (
       heartbeatInterval,
     },
     dataFeedValue: { value, timestamp },
-    dataFeed: decodedDataFeed,
+    decodedDataFeed,
     signedApiUrls,
   };
 };

@@ -1,8 +1,6 @@
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 
-import { getUnixTimestamp } from '../../test/utils';
 import { HUNDRED_PERCENT } from '../constants';
-import { getDeviationThresholdAsBigNumber } from '../utils';
 
 import {
   calculateMedian,
@@ -12,6 +10,11 @@ import {
   checkDeviationThresholdExceeded,
   checkUpdateConditions,
 } from './condition-check';
+
+const getUnixTimestamp = (dateString: string) => Math.floor(Date.parse(dateString) / 1000);
+
+const getDeviationThresholdAsBigNumber = (input: number) =>
+  ethers.BigNumber.from(Math.trunc(input * HUNDRED_PERCENT)).div(ethers.BigNumber.from(100));
 
 describe('checkUpdateCondition', () => {
   const onChainValue = ethers.BigNumber.from(500);
@@ -54,9 +57,9 @@ describe('checkUpdateCondition', () => {
 
   it('checks all update conditions | heartbeat exceeded', () => {
     const result = checkUpdateConditions(
-      BigNumber.from(10),
+      ethers.BigNumber.from(10),
       Date.now() / 1000 - 60 * 60 * 24,
-      BigNumber.from(10),
+      ethers.BigNumber.from(10),
       Date.now() / 1000,
       60 * 60 * 23,
       getDeviationThresholdAsBigNumber(2)
@@ -67,9 +70,9 @@ describe('checkUpdateCondition', () => {
 
   it('checks all update conditions | no update', () => {
     const result = checkUpdateConditions(
-      BigNumber.from(10),
+      ethers.BigNumber.from(10),
       Date.now() / 1000,
-      BigNumber.from(10),
+      ethers.BigNumber.from(10),
       Date.now() + 60 * 60 * 23,
       86_400,
       getDeviationThresholdAsBigNumber(2)
@@ -165,25 +168,47 @@ describe('calculateUpdateInPercentage', () => {
 describe('calculateMedian', () => {
   describe('for array with odd number of elements', () => {
     it('calculates median for sorted array', () => {
-      const arr = [BigNumber.from(10), BigNumber.from(11), BigNumber.from(24), BigNumber.from(30), BigNumber.from(47)];
-      expect(calculateMedian(arr)).toStrictEqual(BigNumber.from(24));
+      const arr = [
+        ethers.BigNumber.from(10),
+        ethers.BigNumber.from(11),
+        ethers.BigNumber.from(24),
+        ethers.BigNumber.from(30),
+        ethers.BigNumber.from(47),
+      ];
+      expect(calculateMedian(arr)).toStrictEqual(ethers.BigNumber.from(24));
     });
 
     it('calculates median for unsorted array', () => {
-      const arr = [BigNumber.from(24), BigNumber.from(11), BigNumber.from(10), BigNumber.from(47), BigNumber.from(30)];
-      expect(calculateMedian(arr)).toStrictEqual(BigNumber.from(24));
+      const arr = [
+        ethers.BigNumber.from(24),
+        ethers.BigNumber.from(11),
+        ethers.BigNumber.from(10),
+        ethers.BigNumber.from(47),
+        ethers.BigNumber.from(30),
+      ];
+      expect(calculateMedian(arr)).toStrictEqual(ethers.BigNumber.from(24));
     });
   });
 
   describe('for array with even number of elements', () => {
     it('calculates median for sorted array', () => {
-      const arr = [BigNumber.from(10), BigNumber.from(11), BigNumber.from(24), BigNumber.from(30)];
-      expect(calculateMedian(arr)).toStrictEqual(BigNumber.from(17));
+      const arr = [
+        ethers.BigNumber.from(10),
+        ethers.BigNumber.from(11),
+        ethers.BigNumber.from(24),
+        ethers.BigNumber.from(30),
+      ];
+      expect(calculateMedian(arr)).toStrictEqual(ethers.BigNumber.from(17));
     });
 
     it('calculates median for unsorted array', () => {
-      const arr = [BigNumber.from(24), BigNumber.from(11), BigNumber.from(10), BigNumber.from(30)];
-      expect(calculateMedian(arr)).toStrictEqual(BigNumber.from(17));
+      const arr = [
+        ethers.BigNumber.from(24),
+        ethers.BigNumber.from(11),
+        ethers.BigNumber.from(10),
+        ethers.BigNumber.from(30),
+      ];
+      expect(calculateMedian(arr)).toStrictEqual(ethers.BigNumber.from(17));
     });
   });
 });

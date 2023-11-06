@@ -9,14 +9,14 @@ interface GasState {
   sponsorLastUpdateTimestampMs: Record<string, number>;
 }
 
-export interface DataFeedOnChainValue {
+export interface DataFeedValue {
   value: BigNumber;
-  timestamp: number; // in seconds
+  timestamp: number;
 }
 
-export interface DApi {
+export interface DapiState {
   dataFeed: DecodedDataFeed;
-  dataFeedValues: Record<chainId, DataFeedOnChainValue>;
+  dataFeedValues: Record<chainId, DataFeedValue>;
   updateParameters: Record<chainId, UpdateParameters>;
 }
 
@@ -37,7 +37,7 @@ export interface State {
   gasPriceStore: Record<string, Record<string, GasState>>;
   signedApiStore: Record<DataFeedId, SignedData>;
   signedApiUrlStore: UrlSet[];
-  dapis: Record<DApiName, DApi>;
+  dapis: Record<DApiName, DapiState>;
 }
 
 type StateUpdater = (draft: Draft<State>) => void;
@@ -54,10 +54,6 @@ export const getState = (): State => {
 
 export const setState = (newState: State) => {
   state = newState;
-
-  if (!state.dapis) {
-    state.dapis = {};
-  }
 };
 
 export const updateState = (updater: StateUpdater) => {

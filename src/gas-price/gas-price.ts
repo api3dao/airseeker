@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { get, remove } from 'lodash';
+import { remove } from 'lodash';
 
 import type { GasSettings } from '../config/schema';
 import { getState, updateState } from '../state';
@@ -70,10 +70,10 @@ export const clearSponsorLastUpdateTimestampMs = (
   sponsorWalletAddress: string
 ) =>
   updateState((draft) => {
-    const sponsorLastUpdateTimestampMs = get(
-      draft,
-      `gasPriceStore[${chainId}][${providerName}].sponsorLastUpdateTimestampMs[${sponsorWalletAddress}]`
-    );
+    const gasPriceStorePerChain = draft?.gasPriceStore[chainId] ?? {};
+
+    const sponsorLastUpdateTimestampMs =
+      gasPriceStorePerChain[providerName]?.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
 
     if (sponsorLastUpdateTimestampMs) {
       delete draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress];

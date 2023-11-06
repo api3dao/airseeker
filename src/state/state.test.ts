@@ -59,7 +59,6 @@ describe('state', () => {
   it('should update the state correctly', () => {
     const stateBefore = getState();
     updateState((draft) => {
-      delete draft.signedApiStore[beaconId];
       draft.signedApiStore[beaconId] = signedDataSample;
     });
 

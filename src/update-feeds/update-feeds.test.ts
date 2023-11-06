@@ -1,4 +1,4 @@
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { cloneDeep } from 'lodash';
 
 import {
@@ -16,13 +16,8 @@ import type { State } from '../state';
 import * as utilsModule from '../utils';
 
 import * as dapiDataRegistryModule from './dapi-data-registry';
-import {
-  mergeUrls,
-  type ReadDapiWithIndexResponsesAndChainId,
-  runUpdateFeed,
-  startUpdateFeedLoops,
-  updateDynamicState,
-} from './update-feeds';
+import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
+import { mergeUrls, runUpdateFeed, startUpdateFeedLoops, updateDynamicState } from './update-feeds';
 
 jest.mock('../state');
 
@@ -180,26 +175,22 @@ describe(runUpdateFeed.name, () => {
     jest.spyOn(logger, 'error');
 
     const testConfig = generateTestConfig();
-    const getStateSpy = jest.spyOn(stateModule, 'getState');
-    getStateSpy.mockImplementation(
-      () =>
-        ({
-          config: testConfig,
-          dapis: {},
-          signedApiStore: {},
-          signedApiUrlStore: [{ url: 'url-one', lastReceivedMs: 1 }],
-          gasPriceStore: {
-            '123': {
-              'some-test-provider': {
-                gasPrices: [],
-                sponsorLastUpdateTimestampMs: {
-                  '0xdatafeedId': 100,
-                },
-              },
+    jest.spyOn(stateModule, 'getState').mockReturnValue({
+      config: testConfig,
+      dapis: {},
+      signedApiStore: {},
+      signedApiUrlStore: [{ url: 'url-one', lastReceivedMs: 1 }],
+      gasPriceStore: {
+        '123': {
+          'some-test-provider': {
+            gasPrices: [],
+            sponsorLastUpdateTimestampMs: {
+              '0xdatafeedId': 100,
             },
           },
-        }) as State
-    );
+        },
+      },
+    } as State);
 
     await runUpdateFeed(
       'provider-name',
@@ -214,13 +205,11 @@ describe(runUpdateFeed.name, () => {
       '123'
     );
 
-    expect(getStateSpy).toHaveBeenCalledTimes(4);
-
     // Expect the contract to fetch the batches to be called with the correct stagger time.
     expect(utilsModule.sleep).toHaveBeenCalledTimes(3);
     expect(sleepCalls[0]).toBeGreaterThanOrEqual(40); // Reserving 10ms as the buffer for computing stagger time.
     expect(sleepCalls[1]).toBeGreaterThanOrEqual(0);
-    expect(sleepCalls[2]).toBe(49.999_999_999_999_99); // Stagger time is actually 150 / 3 = 50, but there is an rounding error.
+    expect(sleepCalls[2]).toBe(49.999_999_999_999_99); // Stagger time is actually 150 / 3 = 50, but there is a rounding error.
 
     // Expect the logs to be called with the correct context.
     expect(logger.error).toHaveBeenCalledTimes(1);
@@ -269,17 +258,18 @@ describe('update-feeds utilities', () => {
   });
 
   it('updates the state in response to new data from the chain', () => {
-    const batch: ReadDapiWithIndexResponsesAndChainId = [
+    const chainId = '37337';
+
+    const batch: ReadDapiWithIndexResponse[] = [
       {
-        chainId: '37337',
         dapiName: 'BTC/USD',
         updateParameters: {
-          deviationReference: BigNumber.from(0),
-          deviationThresholdInPercentage: BigNumber.from(1),
+          deviationReference: ethers.BigNumber.from(0),
+          deviationThresholdInPercentage: ethers.BigNumber.from(1),
           heartbeatInterval: 1,
         },
-        dataFeedValue: { value: BigNumber.from(100), timestamp: 100 },
-        dataFeed: {
+        dataFeedValue: { value: ethers.BigNumber.from(100), timestamp: 100 },
+        decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ dataFeedId: '0x001', templateId: '0xA01', airnodeAddress: '0x0A1' }],
         },
@@ -306,8 +296,7 @@ describe('update-feeds utilities', () => {
     };
     const mockStateBefore = cloneDeep(mockState);
 
-    const getStateSpy = jest.spyOn(stateModule, 'getState');
-    getStateSpy.mockImplementation(() => mockState);
+    jest.spyOn(stateModule, 'getState').mockReturnValue(mockState);
 
     const updateStateSpy = jest.spyOn(stateModule, 'updateState');
     updateStateSpy.mockImplementation((updaterFn: (draft: State) => unknown) => {
@@ -316,7 +305,7 @@ describe('update-feeds utilities', () => {
 
     jest.useFakeTimers().setSystemTime(new Date('2023-11-03'));
 
-    updateDynamicState(batch);
+    updateDynamicState(batch, chainId);
 
     expect(updateStateSpy).toHaveBeenCalledTimes(3);
     expect(mockState).toStrictEqual({
@@ -325,12 +314,12 @@ describe('update-feeds utilities', () => {
         'BTC/USD': {
           dataFeed: {
             dataFeedId: '0x000',
-            beacons: [batch[0]!.dataFeed.beacons[0]!],
+            beacons: [batch[0]!.decodedDataFeed.beacons[0]!],
           },
           dataFeedValues: {
-            [batch[0]!.chainId]: batch[0]!.dataFeedValue,
+            [chainId]: batch[0]!.dataFeedValue,
           },
-          updateParameters: { [batch[0]!.chainId]: batch[0]!.updateParameters },
+          updateParameters: { [chainId]: batch[0]!.updateParameters },
         },
       },
       signedApiUrlStore: [

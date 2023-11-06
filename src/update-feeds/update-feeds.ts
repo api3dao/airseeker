@@ -1,10 +1,10 @@
 import { go } from '@api3/promise-utils';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { chunk, groupBy, range, size, sortBy } from 'lodash';
 
 import { checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
-import { FEEDS_TO_UPDATE_CHUNK_SIZE, SIGNED_URL_EXPIRY_IN_MINUTES } from '../constants';
+import { FEEDS_TO_UPDATE_CHUNK_SIZE } from '../constants';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, updateState, type UrlSet } from '../state';
@@ -44,10 +44,6 @@ export const startUpdateFeedLoops = async () => {
   );
 };
 
-export type ReadDapiWithIndexResponsesAndChainId = (ReadDapiWithIndexResponse & {
-  chainId: string;
-})[];
-
 export const runUpdateFeed = async (providerName: string, chain: Chain, chainId: string) => {
   await logger.runWithContext({ chainId, providerName, coordinatorTimestampMs: Date.now().toString() }, async () => {
     const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
@@ -82,7 +78,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
       return;
     }
     const { firstBatch, dapisCount } = goFirstBatch.data;
-    const processFirstBatchPromise = processBatch(firstBatch);
+    const processFirstBatchPromise = processBatch(firstBatch, chainId);
 
     // Calculate the stagger time between the rest of the batches.
     const batchesCount = Math.ceil(dapisCount / dataFeedBatchSize);
@@ -112,7 +108,6 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
 
         const decodedBatch = returndata.map((returndata) => ({
           ...decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata),
-          chainId,
         }));
         return decodedBatch;
       })
@@ -123,7 +118,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
     const processOtherBatchesPromises = otherBatches
       .filter((result) => isFulfilled(result))
       .map(async (result) =>
-        processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponsesAndChainId>).value)
+        processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value, chainId)
       );
 
     // Wait for all the batches to be processed.
@@ -139,44 +134,40 @@ export const mergeUrls = (receivedUrls: UrlSet[], freshExistingUrls: UrlSet[]) =
     (group) => sortBy(group, 'lastReceivedMs').pop()!
   );
 
-export const updateDynamicState = (batch: ReadDapiWithIndexResponsesAndChainId) => {
+export const updateDynamicState = (batch: ReadDapiWithIndexResponse[], chainId: string) => {
   batch.map((item) =>
     updateState((draft) => {
       const receivedUrls = item.signedApiUrls.flatMap((url) =>
-        item.dataFeed.beacons.flatMap((dataFeed) => ({
+        item.decodedDataFeed.beacons.flatMap((dataFeed) => ({
           url: `${url}/${dataFeed.airnodeAddress}`,
           lastReceivedMs: Date.now(),
         }))
       );
 
-      const freshExistingUrls = draft.signedApiUrlStore.filter(
-        (url) => Date.now() - url.lastReceivedMs > 1000 * 60 * SIGNED_URL_EXPIRY_IN_MINUTES
-      );
-
       // Appends records that don't already exist, updates records that already exist with new timestamps
-      draft.signedApiUrlStore = mergeUrls(receivedUrls.flat(), freshExistingUrls);
+      draft.signedApiUrlStore = mergeUrls(receivedUrls.flat(), draft.signedApiUrlStore);
 
       const cachedDapiResponse = draft.dapis[item.dapiName];
 
       draft.dapis[item.dapiName] = {
-        dataFeed: cachedDapiResponse?.dataFeed ?? item.dataFeed,
-        dataFeedValues: { ...cachedDapiResponse?.dataFeedValues, [item.chainId]: item.dataFeedValue },
-        updateParameters: { ...cachedDapiResponse?.updateParameters, [item.chainId]: item.updateParameters },
+        dataFeed: cachedDapiResponse?.dataFeed ?? item.decodedDataFeed,
+        dataFeedValues: { ...cachedDapiResponse?.dataFeedValues, [chainId]: item.dataFeedValue },
+        updateParameters: { ...cachedDapiResponse?.updateParameters, [chainId]: item.updateParameters },
       };
     })
   );
 };
 
-export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) =>
+export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]) =>
   batch
     .map((dapiResponse) => {
-      const signedData = getStoreDataPoint(dapiResponse.dataFeed.dataFeedId);
+      const signedData = getStoreDataPoint(dapiResponse.decodedDataFeed.dataFeedId);
 
       if (signedData === undefined) {
         return { ...dapiResponse, shouldUpdate: false };
       }
 
-      const offChainValue = BigNumber.from(signedData.encodedValue);
+      const offChainValue = ethers.BigNumber.from(signedData.encodedValue);
       const offChainTimestamp = Number.parseInt(signedData?.timestamp ?? '0', 10);
       const deviationThreshold = dapiResponse.updateParameters.deviationThresholdInPercentage;
 
@@ -200,18 +191,20 @@ export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponsesAndChainId) =>
     })
     .filter(Boolean);
 
-export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>) => {
+export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>, _chainId: string) => {
   // TODO implement
   // batch, execute
 };
 
-export const processBatch = async (batch: ReadDapiWithIndexResponsesAndChainId) => {
+export const processBatch = async (batch: ReadDapiWithIndexResponse[], chainId: string) => {
   logger.debug('Processing batch of active dAPIs', { batch });
 
   // Start by merging the dynamic state with the state
-  updateDynamicState(batch);
+  updateDynamicState(batch, chainId);
 
   const feedsToUpdate = getFeedsToUpdate(batch);
 
-  return Promise.allSettled(chunk(feedsToUpdate, FEEDS_TO_UPDATE_CHUNK_SIZE).map(async (feed) => updateFeeds(feed)));
+  return Promise.allSettled(
+    chunk(feedsToUpdate, FEEDS_TO_UPDATE_CHUNK_SIZE).map(async (feed) => updateFeeds(feed, chainId))
+  );
 };
