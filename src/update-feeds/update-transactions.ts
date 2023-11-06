@@ -40,8 +40,6 @@ export const updateFeeds = async (
 
       await logger.runWithContext({ dapiName, dataFeedId }, async () => {
         const goUpdate = await go(async () => {
-          logger.debug('Updating dAPI');
-
           // Create calldata for all beacons of the particular data feed the dAPI points to.
           const beaconUpdateCalls = updateableBeacons.map((beacon) => {
             const { signedData } = beacon;
