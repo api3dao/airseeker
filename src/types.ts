@@ -5,6 +5,7 @@ import { type EvmAddress, evmAddressSchema, type EvmId, evmIdSchema } from './co
 export type AirnodeAddress = EvmAddress;
 export type TemplateId = EvmId;
 export type DApiName = string;
+export type PrivateKey = string;
 
 // Taken from https://github.com/api3dao/signed-api/blob/main/packages/api/src/schema.ts
 export const signedDataSchema = z.object({

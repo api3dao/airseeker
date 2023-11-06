@@ -2,7 +2,7 @@ import type { BigNumber } from 'ethers';
 import { produce, type Draft } from 'immer';
 
 import type { Config } from '../config/schema';
-import type { LocalSignedData, AirnodeAddress, TemplateId, DApiName } from '../types';
+import type { LocalSignedData, AirnodeAddress, TemplateId, DApiName, PrivateKey } from '../types';
 
 interface GasState {
   gasPrices: { price: BigNumber; timestampMs: number }[];
@@ -15,7 +15,7 @@ export interface State {
   gasPriceStore: Record<string, Record<string, GasState>>;
   signedApiStore: Record<AirnodeAddress, Record<TemplateId, LocalSignedData>>;
   signedApiUrlStore: Record<string, Record<AirnodeAddress, string>>;
-  derivedSponsorWallets: Record<DApiName, string>;
+  derivedSponsorWallets: Record<DApiName, PrivateKey>;
 }
 
 type StateUpdater = (draft: Draft<State>) => void;
