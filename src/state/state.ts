@@ -26,17 +26,12 @@ export interface UpdateParameters {
   heartbeatInterval: number;
 }
 
-export interface UrlSet {
-  url: string;
-  lastReceivedMs: number;
-}
-
 export interface State {
   config: Config;
   dataFetcherInterval?: NodeJS.Timeout;
   gasPriceStore: Record<string, Record<string, GasState>>;
   signedApiStore: Record<DataFeedId, SignedData>;
-  signedApiUrlStore: UrlSet[];
+  signedApiUrlStore: string[];
   dapis: Record<DApiName, DapiState>;
 }
 

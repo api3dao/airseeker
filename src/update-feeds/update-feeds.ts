@@ -1,13 +1,13 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
-import { chunk, groupBy, range, size, sortBy } from 'lodash';
+import { chunk, range, size } from 'lodash';
 
 import { checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
 import { FEEDS_TO_UPDATE_CHUNK_SIZE } from '../constants';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
-import { getState, updateState, type UrlSet } from '../state';
+import { getState, updateState } from '../state';
 import { isFulfilled, sleep } from '../utils';
 
 import {
@@ -129,23 +129,14 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   });
 };
 
-export const mergeUrls = (receivedUrls: UrlSet[], freshExistingUrls: UrlSet[]) =>
-  Object.values(groupBy([...receivedUrls, ...freshExistingUrls], 'url')).flatMap(
-    (group) => sortBy(group, 'lastReceivedMs').pop()!
-  );
-
 export const updateDynamicState = (batch: ReadDapiWithIndexResponse[], chainId: string) => {
   batch.map((item) =>
     updateState((draft) => {
       const receivedUrls = item.signedApiUrls.flatMap((url) =>
-        item.decodedDataFeed.beacons.flatMap((dataFeed) => ({
-          url: `${url}/${dataFeed.airnodeAddress}`,
-          lastReceivedMs: Date.now(),
-        }))
+        item.decodedDataFeed.beacons.flatMap((dataFeed) => `${url}/${dataFeed.airnodeAddress}`)
       );
 
-      // Appends records that don't already exist, updates records that already exist with new timestamps
-      draft.signedApiUrlStore = mergeUrls(receivedUrls.flat(), draft.signedApiUrlStore);
+      draft.signedApiUrlStore = receivedUrls.flat();
 
       const cachedDapiResponse = draft.dapis[item.dapiName];
 

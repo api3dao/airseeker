@@ -64,7 +64,7 @@ export const runDataFetcher = async () => {
   }
 
   return Promise.allSettled(
-    signedApiUrlStore.map(async ({ url }) =>
+    signedApiUrlStore.map(async (url) =>
       go(
         async () => {
           const payload = await callSignedDataApi(url);

@@ -17,7 +17,7 @@ import * as utilsModule from '../utils';
 
 import * as dapiDataRegistryModule from './dapi-data-registry';
 import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
-import { mergeUrls, runUpdateFeed, startUpdateFeedLoops, updateDynamicState } from './update-feeds';
+import { runUpdateFeed, startUpdateFeedLoops, updateDynamicState } from './update-feeds';
 
 jest.mock('../state');
 
@@ -179,7 +179,7 @@ describe(runUpdateFeed.name, () => {
       config: testConfig,
       dapis: {},
       signedApiStore: {},
-      signedApiUrlStore: [{ url: 'url-one', lastReceivedMs: 1 }],
+      signedApiUrlStore: ['url-one'],
       gasPriceStore: {
         '123': {
           'some-test-provider': {
@@ -235,28 +235,6 @@ describe(runUpdateFeed.name, () => {
 });
 
 describe('update-feeds utilities', () => {
-  it('merges urls received from chain with existing urls', () => {
-    const freshUrls = [
-      { url: 'one', lastReceivedMs: 1 },
-      { url: 'two', lastReceivedMs: 2 },
-    ];
-    const existingUrls = [
-      { url: 'one', lastReceivedMs: 100 },
-      { url: 'three', lastReceivedMs: 3 },
-    ];
-
-    const result = mergeUrls(existingUrls, freshUrls);
-
-    expect(result).toStrictEqual([
-      { lastReceivedMs: 100, url: 'one' },
-      {
-        lastReceivedMs: 3,
-        url: 'three',
-      },
-      { lastReceivedMs: 2, url: 'two' },
-    ]);
-  });
-
   it('updates the state in response to new data from the chain', () => {
     const chainId = '37337';
 
@@ -282,7 +260,7 @@ describe('update-feeds utilities', () => {
       config: testConfig,
       dapis: {},
       signedApiStore: {},
-      signedApiUrlStore: [{ url: 'url-one', lastReceivedMs: 1 }],
+      signedApiUrlStore: ['url-one'],
       gasPriceStore: {
         '123': {
           'some-test-provider': {
@@ -322,20 +300,7 @@ describe('update-feeds utilities', () => {
           updateParameters: { [chainId]: batch[0]!.updateParameters },
         },
       },
-      signedApiUrlStore: [
-        {
-          url: 'https://one/0x0A1',
-          lastReceivedMs: 1_698_969_600_000,
-        },
-        {
-          url: 'https://two/0x0A1',
-          lastReceivedMs: 1_698_969_600_000,
-        },
-        {
-          url: 'url-one',
-          lastReceivedMs: 1,
-        },
-      ],
+      signedApiUrlStore: ['https://one/0x0A1', 'https://two/0x0A1'],
     });
   });
 });
