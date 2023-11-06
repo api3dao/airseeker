@@ -24,8 +24,6 @@ export const decodeDapisCountResponse = (dapiDataRegistry: DapiDataRegistry, dap
   return dapisCount.toNumber();
 };
 
-export type DapisCountResponse = ReturnType<typeof decodeDapisCountResponse>;
-
 export const decodeDataFeed = (dataFeed: string): DecodedDataFeed => {
   if (dataFeed.length === 130) {
     // (64 [actual bytes] * 2[hex encoding] ) + 2 [for the '0x' preamble]

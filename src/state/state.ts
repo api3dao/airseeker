@@ -39,13 +39,7 @@ type StateUpdater = (draft: Draft<State>) => void;
 
 let state: State | undefined;
 
-export const getState = (): State => {
-  if (!state) {
-    throw new Error('State is undefined.');
-  }
-
-  return state;
-};
+export const getState = (): State => state!;
 
 export const setState = (newState: State) => {
   state = newState;

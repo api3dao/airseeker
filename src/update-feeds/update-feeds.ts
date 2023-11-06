@@ -64,9 +64,9 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
 
       const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata!);
       const firstBatch = readDapiWithIndexCallsReturndata
-        .map((dapiReturndata) => ({ ...decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata), chainId }))
         // Because the dapisCount is not known during the multicall, we may ask for non-existent dAPIs. These should be filtered out.
-        .slice(0, dapisCount);
+        .slice(0, dapisCount)
+        .map((dapiReturndata) => ({ ...decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata), chainId }));
       return {
         firstBatch,
         dapisCount,
