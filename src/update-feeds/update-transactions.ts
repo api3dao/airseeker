@@ -78,20 +78,25 @@ export const updateFeeds = async (
           // TODO: These wallets could be persisted as a performance optimization.
           const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
 
-          const gasPrice = await getAirseekerRecommendedGasPrice(
-            chainId,
-            providerName,
-            provider,
-            chains[chainId]!.gasSettings,
-            sponsorWallet.address
+          const goGasPrice = await go(async () =>
+            getAirseekerRecommendedGasPrice(
+              chainId,
+              providerName,
+              provider,
+              chains[chainId]!.gasSettings,
+              sponsorWallet.address
+            )
           );
+          if (!goGasPrice.success) {
+            logger.error(`Failed to get gas price`, goGasPrice.error);
+          }
 
-          logger.debug('Updating dAPI', { gasPrice, gasLimit });
+          logger.debug('Updating dAPI', { gasPrice: goGasPrice.data, gasLimit });
           await api3ServerV1
             // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
             // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
             .connect(sponsorWallet.connect(api3ServerV1.provider))
-            .tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit });
+            .tryMulticall(dataFeedUpdateCalldatas, { gasPrice: goGasPrice.data!, gasLimit });
           logger.debug('Successfully updated dAPI');
         });
 

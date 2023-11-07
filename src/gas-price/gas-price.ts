@@ -163,7 +163,7 @@ export const getAirseekerRecommendedGasPrice = async (
   provider: ethers.providers.StaticJsonRpcProvider,
   gasSettings: GasSettings,
   sponsorWalletAddress: string
-): Promise<ethers.BigNumber> => {
+) => {
   const {
     recommendedGasPriceMultiplier,
     sanitizationPercentile,
