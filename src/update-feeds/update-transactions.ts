@@ -33,13 +33,13 @@ export const updateFeeds = async (
   await Promise.all(
     updateableDapis.map(async (dapi) => {
       const { dapiInfo, updateableBeacons } = dapi;
-      // TODO: dapiInfo.dataFeed as of now is the encoded data feed information.
-      const { dapiName, dataFeed: dataFeedId } = dapiInfo;
+      const {
+        dapiName,
+        decodedDataFeed: { dataFeedId },
+      } = dapiInfo;
 
       await logger.runWithContext({ dapiName, dataFeedId }, async () => {
         const goUpdate = await go(async () => {
-          logger.debug('Updating dAPI');
-
           // Create calldata for all beacons of the particular data feed the dAPI points to.
           const beaconUpdateCalls = updateableBeacons.map((beacon) => {
             const { signedData } = beacon;

@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 
+import { generateTestConfig } from '../../test/fixtures/mock-config';
 import { generateMockDapiDataRegistry, generateReadDapiWithIndexResponse } from '../../test/fixtures/mock-contract';
 import { allowPartial } from '../../test/utils';
 import type { DapiDataRegistry } from '../../typechain-types';
@@ -10,6 +11,8 @@ import * as utilsModule from '../utils';
 
 import * as dapiDataRegistryModule from './dapi-data-registry';
 import { runUpdateFeed, startUpdateFeedLoops } from './update-feeds';
+
+jest.mock('../state');
 
 describe(startUpdateFeedLoops.name, () => {
   it('starts staggered update loops for a chain', async () => {
@@ -164,6 +167,25 @@ describe(runUpdateFeed.name, () => {
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'error');
 
+    const testConfig = generateTestConfig();
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: testConfig,
+        signedApiUrlStore: { '31337': { 'some-test-provider': ['url-one'] } },
+        signedApiStore: {},
+        gasPriceStore: {
+          '123': {
+            'some-test-provider': {
+              gasPrices: [],
+              sponsorLastUpdateTimestampMs: {
+                '0xdatafeedId': 100,
+              },
+            },
+          },
+        },
+      })
+    );
+
     await runUpdateFeed(
       'provider-name',
       allowPartial<Chain>({
@@ -181,7 +203,7 @@ describe(runUpdateFeed.name, () => {
     expect(utilsModule.sleep).toHaveBeenCalledTimes(3);
     expect(sleepCalls[0]).toBeGreaterThanOrEqual(40); // Reserving 10ms as the buffer for computing stagger time.
     expect(sleepCalls[1]).toBeGreaterThanOrEqual(0);
-    expect(sleepCalls[2]).toBe(49.999_999_999_999_99); // Stagger time is actually 150 / 3 = 50, but there is an rounding error.
+    expect(sleepCalls[2]).toBe(49.999_999_999_999_99); // Stagger time is actually 150 / 3 = 50, but there is a rounding error.
 
     // Expect the logs to be called with the correct context.
     expect(logger.error).toHaveBeenCalledTimes(1);

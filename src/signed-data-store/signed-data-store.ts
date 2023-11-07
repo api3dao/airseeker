@@ -3,7 +3,8 @@ import { ethers } from 'ethers';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { SignedData, AirnodeAddress, TemplateId } from '../types';
+import type { SignedData, AirnodeAddress, TemplateId, DataFeedId } from '../types';
+import { deriveBeaconId } from '../utils';
 
 export const verifySignedData = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
   // Verification is wrapped in goSync, because ethers methods can potentially throw on invalid input.
@@ -65,7 +66,10 @@ export const setStoreDataPoint = (signedData: SignedData) => {
   }
 
   const state = getState();
-  const existingValue = state.signedApiStore[airnode]?.[templateId];
+
+  const dataFeedId = deriveBeaconId(airnode, templateId)!;
+
+  const existingValue = state.signedApiStore[dataFeedId];
   if (existingValue && existingValue.timestamp >= timestamp) {
     logger.debug('Skipping store update. The existing store value is fresher.');
     return;
@@ -79,16 +83,14 @@ export const setStoreDataPoint = (signedData: SignedData) => {
     encodedValue,
   });
   updateState((draft) => {
-    if (!draft.signedApiStore[airnode]) {
-      draft.signedApiStore[airnode] = {};
-    }
-
-    draft.signedApiStore[airnode]![templateId] = { signature, timestamp, encodedValue };
+    draft.signedApiStore[dataFeedId] = signedData;
   });
 };
 
-export const getStoreDataPoint = (airnode: AirnodeAddress, templateId: TemplateId) =>
-  getState().signedApiStore[airnode]?.[templateId];
+export const getStoreDataPointByAirnodeAndTemplate = (airnode: AirnodeAddress, template: TemplateId) =>
+  getState().signedApiStore[deriveBeaconId(airnode, template)!];
+
+export const getStoreDataPoint = (dataFeedId: DataFeedId) => getState().signedApiStore[dataFeedId];
 
 export const clear = () => {
   updateState((draft) => {

@@ -40,6 +40,7 @@ export const init = (stateOverride?: Partial<State>) => {
     signedApiStore: {},
     signedApiUrlStore: {},
     derivedSponsorWallets: {},
+    dapis: {},
     ...stateOverride,
   });
 };

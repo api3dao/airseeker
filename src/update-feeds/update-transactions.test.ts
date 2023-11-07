@@ -70,6 +70,7 @@ describe(deriveSponsorWallet.name, () => {
     const btcEthSponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, btcEthDapiName);
 
     expect(btcEthSponsorWallet.address).toBe('0xDa8b0388F435F609C8cdA6cf73C890D90205c863');
+
     expect(getState().derivedSponsorWallets).toStrictEqual({
       '0x4254432f45544800000000000000000000000000000000000000000000000000':
         '0xb69b0c7c2623257b72b020d13044f86eb2a4a1f41c994cfd5198c95bb2f7de7c',
