@@ -10,6 +10,7 @@ import { getState, updateState } from '../state';
 import type { ChainId, Provider } from '../types';
 import { isFulfilled, sleep } from '../utils';
 
+import { getApi3ServerV1 } from './api3-server-v1';
 import {
   decodeDapisCountResponse,
   decodeReadDapiWithIndexResponse,
@@ -162,7 +163,59 @@ export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>, _
   // batch, execute
 };
 
-export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerName: Provider, chainId: string) => {
+export const deepCheckFeeds = async (
+  batch: ReturnType<typeof getFeedsToUpdate>,
+  providerName: Provider,
+  chainId: ChainId
+) => {
+  const { config } = getState();
+  const chain = config.chains[chainId]!;
+  const { providers, contracts } = chain;
+
+  const provider = new ethers.providers.StaticJsonRpcProvider(providers[providerName]);
+  const server = getApi3ServerV1(contracts.Api3ServerV1, provider);
+
+  const _results = await Promise.allSettled(
+    batch.map((parentFeed) =>
+      parentFeed.decodedDataFeed.beacons.map(async (beacon) => {
+        const { airnodeAddress, templateId, dataFeedId } = beacon;
+
+        const datapoint = getStoreDataPoint(dataFeedId);
+        if (!datapoint) {
+          return { ...beacon, updateSuccess: false };
+        }
+
+        const { timestamp, encodedValue, signature } = datapoint ?? {};
+
+        const result = await go(
+          async () =>
+            server.estimateGas.updateBeaconWithSignedData(
+              airnodeAddress,
+              templateId,
+              timestamp,
+              encodedValue,
+              signature
+            ),
+          { retries: 0 }
+        );
+
+        if (!result.success) {
+          return { ...beacon, updateSuccess: false };
+        }
+
+        return { ...beacon, updateSuccess: true };
+      })
+    )
+  );
+
+  // TODO add logger+context
+  // TODO confirm estimateGas is being handled correctly
+  // TODO and then we have to figure out if the parent beaconsets would update with the successful calls
+
+  return batch;
+};
+
+export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerName: Provider, chainId: ChainId) => {
   logger.debug('Processing batch of active dAPIs', { batch });
 
   updateState((draft) => {
@@ -186,5 +239,9 @@ export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerN
     }
   });
 
-  return updateFeeds(getFeedsToUpdate(batch), chainId);
+  const initialFeedsToUpdate = getFeedsToUpdate(batch);
+
+  const finalFeedsToUpdate = await deepCheckFeeds(initialFeedsToUpdate, chainId, providerName);
+
+  return updateFeeds(finalFeedsToUpdate, chainId);
 };

@@ -174,7 +174,7 @@ describe(runUpdateFeed.name, () => {
         signedApiUrlStore: { '31337': { 'some-test-provider': ['url-one'] } },
         signedApiStore: {},
         gasPriceStore: {
-          '123': {
+          '31337': {
             'some-test-provider': {
               gasPrices: [],
               sponsorLastUpdateTimestampMs: {
@@ -187,16 +187,16 @@ describe(runUpdateFeed.name, () => {
     );
 
     await runUpdateFeed(
-      'provider-name',
+      'some-test-provider',
       allowPartial<Chain>({
         dataFeedBatchSize: 1,
         dataFeedUpdateInterval: 0.15,
-        providers: { ['provider-name']: { url: 'provider-url' } },
+        providers: { ['some-test-provider']: { url: 'provider-url' } },
         contracts: {
           DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
       }),
-      '123'
+      '31337'
     );
 
     // Expect the contract to fetch the batches to be called with the correct stagger time.
