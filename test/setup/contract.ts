@@ -107,15 +107,6 @@ export const deriveRole = (adminRole: string, roleDescription: string) => {
   );
 };
 
-const buildEIP712Domain = (name: string, chainId: number, verifyingContract: string) => {
-  return {
-    name,
-    version: '1.0.0',
-    chainId,
-    verifyingContract,
-  };
-};
-
 const initializeBeacon = async (
   api3ServerV1: Api3ServerV1,
   airnodeWallet: Wallet,
@@ -172,15 +163,19 @@ export const deployAndUpdate = async () => {
   // Set up roles
   const rootRole = deriveRootRole(manager!.address);
   const dapiDataRegistryAdminRole = deriveRole(rootRole, dapiDataRegistryAdminRoleDescription);
-  const registrarRoleDescription = await dapiDataRegistry.REGISTRAR_ROLE_DESCRIPTION();
-  const registrarRole = deriveRole(dapiDataRegistryAdminRole, registrarRoleDescription);
+  const dapiAdderRoleDescription = await dapiDataRegistry.DAPI_ADDER_ROLE_DESCRIPTION();
+  const dapiAdderRole = deriveRole(dapiDataRegistryAdminRole, dapiAdderRoleDescription);
+  const dapiRemoverRoleDescription = await dapiDataRegistry.DAPI_REMOVER_ROLE_DESCRIPTION();
   await accessControlRegistry
     .connect(manager!)
     .initializeRoleAndGrantToSender(rootRole, dapiDataRegistryAdminRoleDescription);
   await accessControlRegistry
     .connect(manager!)
-    .initializeRoleAndGrantToSender(dapiDataRegistryAdminRole, registrarRoleDescription);
-  await accessControlRegistry.connect(manager!).grantRole(registrarRole, api3MarketContract!.address);
+    .initializeRoleAndGrantToSender(dapiDataRegistryAdminRole, dapiAdderRoleDescription);
+  await accessControlRegistry
+    .connect(manager!)
+    .initializeRoleAndGrantToSender(dapiDataRegistryAdminRole, dapiRemoverRoleDescription);
+  await accessControlRegistry.connect(manager!).grantRole(dapiAdderRole, api3MarketContract!.address);
   await accessControlRegistry
     .connect(manager!)
     .initializeRoleAndGrantToSender(rootRole, api3ServerV1AdminRoleDescription);
@@ -258,15 +253,6 @@ export const deployAndUpdate = async () => {
 
   // Register merkle tree hashes
   const timestamp = Math.floor(Date.now() / 1000);
-  const { chainId } = await hashRegistry.provider.getNetwork();
-  const domain = buildEIP712Domain('HashRegistry', chainId, hashRegistry.address);
-  const types = {
-    SignedHash: [
-      { name: 'hashType', type: 'bytes32' },
-      { name: 'hash', type: 'bytes32' },
-      { name: 'timestamp', type: 'uint256' },
-    ],
-  };
   const apiTreeValues = [
     [krakenAirnodeWallet.address, 'https://kraken.com/'],
     [binanceAirnodeWallet.address, 'https://binance.com/'],
@@ -274,14 +260,11 @@ export const deployAndUpdate = async () => {
   const apiTree = StandardMerkleTree.of(apiTreeValues as any, ['address', 'string']);
   const apiHashType = ethers.utils.solidityKeccak256(['string'], ['Signed API URL Merkle tree root']);
   const rootSigners = [rootSigner1!, rootSigner2!, rootSigner3!];
+  const apiMessages = ethers.utils.arrayify(
+    ethers.utils.solidityKeccak256(['bytes32', 'bytes32', 'uint256'], [apiHashType, apiTree.root, timestamp])
+  );
   const apiTreeRootSignatures = await Promise.all(
-    rootSigners.map(async (rootSigner) =>
-      rootSigner._signTypedData(domain, types, {
-        hashType: apiHashType,
-        hash: apiTree.root,
-        timestamp,
-      })
-    )
+    rootSigners.map(async (rootSigner) => rootSigner.signMessage(apiMessages))
   );
   await hashRegistry.connect(registryOwner!).setupSigners(
     apiHashType,
@@ -300,14 +283,11 @@ export const deployAndUpdate = async () => {
   const dapiTree = StandardMerkleTree.of(dapiTreeValues, ['bytes32', 'bytes32', 'address']);
   const dapiTreeRoot = dapiTree.root;
   const dapiHashType = ethers.utils.solidityKeccak256(['string'], ['dAPI management Merkle tree root']);
+  const dapiMessages = ethers.utils.arrayify(
+    ethers.utils.solidityKeccak256(['bytes32', 'bytes32', 'uint256'], [dapiHashType, dapiTreeRoot, timestamp])
+  );
   const dapiTreeRootSignatures = await Promise.all(
-    rootSigners.map(async (rootSigner) =>
-      rootSigner._signTypedData(domain, types, {
-        hashType: dapiHashType,
-        hash: dapiTreeRoot,
-        timestamp,
-      })
-    )
+    rootSigners.map(async (rootSigner) => rootSigner.signMessage(dapiMessages))
   );
   await hashRegistry.connect(registryOwner!).setupSigners(
     dapiHashType,
