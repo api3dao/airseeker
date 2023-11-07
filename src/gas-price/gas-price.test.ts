@@ -19,6 +19,10 @@ import {
 const chainId = '31337';
 const providerName = 'localhost';
 const rpcUrl = 'http://127.0.0.1:8545/';
+const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
+  chainId: Number.parseInt(chainId, 10),
+  name: chainId,
+});
 const gasSettings = {
   recommendedGasPriceMultiplier: 1.5,
   sanitizationSamplingWindow: 15,
@@ -118,7 +122,7 @@ describe('gas price', () => {
         .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
         .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
-      const gasPrice = await updateGasPriceStore(chainId, providerName, rpcUrl);
+      const gasPrice = await updateGasPriceStore(chainId, providerName, provider);
 
       expect(gasPrice).toStrictEqual(gasPriceMock);
       expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
@@ -140,7 +144,7 @@ describe('gas price', () => {
         draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
       });
       clearExpiredStoreGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
-      const gasPrice = await updateGasPriceStore(chainId, providerName, rpcUrl);
+      const gasPrice = await updateGasPriceStore(chainId, providerName, provider);
 
       expect(gasPrice).toStrictEqual(gasPriceMock);
       expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
@@ -194,7 +198,7 @@ describe('gas price', () => {
       updateState((draft) => {
         draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
       });
-      await gasPriceCollector(chainId, providerName, rpcUrl, gasSettings.sanitizationSamplingWindow);
+      await gasPriceCollector(chainId, providerName, provider, gasSettings.sanitizationSamplingWindow);
 
       expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestampMs: timestampMock },
@@ -220,7 +224,7 @@ describe('gas price', () => {
       const gasPrice = await getAirseekerRecommendedGasPrice(
         chainId,
         providerName,
-        rpcUrl,
+        provider,
         gasSettings,
         sponsorWalletAddress
       );
@@ -247,7 +251,7 @@ describe('gas price', () => {
       const gasPrice = await getAirseekerRecommendedGasPrice(
         chainId,
         providerName,
-        rpcUrl,
+        provider,
         gasSettings,
         sponsorWalletAddress
       );
@@ -278,7 +282,7 @@ describe('gas price', () => {
       const gasPrice = await getAirseekerRecommendedGasPrice(
         chainId,
         providerName,
-        rpcUrl,
+        provider,
         gasSettings,
         sponsorWalletAddress
       );
@@ -307,7 +311,7 @@ describe('gas price', () => {
       const gasPrice = await getAirseekerRecommendedGasPrice(
         chainId,
         providerName,
-        rpcUrl,
+        provider,
         gasSettings,
         sponsorWalletAddress
       );
@@ -338,7 +342,7 @@ describe('gas price', () => {
       const gasPrice = await getAirseekerRecommendedGasPrice(
         chainId,
         providerName,
-        rpcUrl,
+        provider,
         gasSettings,
         sponsorWalletAddress
       );

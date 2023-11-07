@@ -10,6 +10,11 @@ import { init } from '../fixtures/mock-config';
 import { deployAndUpdate } from '../setup/contract';
 import { allowPartial, generateSignedData } from '../utils';
 
+const chainId = '31337';
+const providerName = 'localhost';
+const rpcUrl = 'http://127.0.0.1:8545/';
+const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl);
+
 it('reads blockchain data', async () => {
   const { config } = await deployAndUpdate();
   const [chainId, chain] = Object.entries(config.chains)[0]!;
@@ -34,7 +39,6 @@ it('updates blockchain data', async () => {
     airseekerSponsorWallet,
     walletFunder,
   } = await deployAndUpdate();
-  const gasPrice = await api3ServerV1.provider.getGasPrice();
   const btcDapi = await dapiDataRegistry.readDapiWithIndex(0);
 
   const decodedDataFeed = decodeDataFeed(btcDapi.dataFeed);
@@ -64,7 +68,7 @@ it('updates blockchain data', async () => {
       allowPartial<stateModule.State>({ config: { sponsorWalletMnemonic: airseekerSponsorWallet.mnemonic.phrase } })
     );
 
-  await updateFeeds(api3ServerV1, gasPrice, [
+  await updateFeeds(chainId, providerName, provider, api3ServerV1, [
     {
       dapiInfo: decodedBtcDapi,
       updateableBeacons: [
