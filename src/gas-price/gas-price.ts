@@ -70,7 +70,14 @@ export const clearSponsorLastUpdateTimestampMs = (
   sponsorWalletAddress: string
 ) =>
   updateState((draft) => {
-    delete draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+    const gasPriceStorePerChain = draft?.gasPriceStore[chainId] ?? {};
+
+    const sponsorLastUpdateTimestampMs =
+      gasPriceStorePerChain[providerName]?.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+
+    if (sponsorLastUpdateTimestampMs) {
+      delete draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+    }
   });
 
 export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => {

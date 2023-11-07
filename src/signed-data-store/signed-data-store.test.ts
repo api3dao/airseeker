@@ -1,8 +1,9 @@
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 
 import { init } from '../../test/fixtures/mock-config';
 import { generateRandomBytes32, signData } from '../../test/utils';
 import type { SignedData } from '../types';
+import { deriveBeaconId } from '../utils';
 
 import { verifySignedDataIntegrity } from './signed-data-store';
 import * as localDataStore from './signed-data-store';
@@ -16,7 +17,7 @@ describe('datastore', () => {
     const templateId = generateRandomBytes32();
     const timestamp = Math.floor((Date.now() - 25 * 60 * 60 * 1000) / 1000).toString();
     const airnode = signer.address;
-    const encodedValue = ethers.utils.defaultAbiCoder.encode(['int256'], [BigNumber.from(1)]);
+    const encodedValue = ethers.utils.defaultAbiCoder.encode(['int256'], [ethers.BigNumber.from(1)]);
 
     testDataPoint = {
       airnode,
@@ -34,18 +35,17 @@ describe('datastore', () => {
     const promisedStorage = localDataStore.setStoreDataPoint(testDataPoint);
     expect(promisedStorage).toBeFalsy();
 
-    const datapoint = localDataStore.getStoreDataPoint(testDataPoint.airnode, testDataPoint.templateId);
+    const dataFeedId = deriveBeaconId(testDataPoint.airnode, testDataPoint.templateId)!;
+    const datapoint = localDataStore.getStoreDataPoint(dataFeedId);
 
-    const { encodedValue, signature, timestamp } = testDataPoint;
-
-    expect(datapoint).toStrictEqual({ encodedValue, signature, timestamp });
+    expect(datapoint).toStrictEqual(testDataPoint);
   });
 
   it('checks that the timestamp on signed data is not in the future', async () => {
     const templateId = generateRandomBytes32();
     const timestamp = Math.floor((Date.now() + 61 * 60 * 1000) / 1000).toString();
     const airnode = signer.address;
-    const encodedValue = ethers.utils.defaultAbiCoder.encode(['int256'], [BigNumber.from(1)]);
+    const encodedValue = ethers.utils.defaultAbiCoder.encode(['int256'], [ethers.BigNumber.from(1)]);
 
     const futureTestDataPoint = {
       airnode,
@@ -63,7 +63,7 @@ describe('datastore', () => {
     const templateId = generateRandomBytes32();
     const timestamp = Math.floor((Date.now() + 60 * 60 * 1000) / 1000).toString();
     const airnode = ethers.Wallet.createRandom().address;
-    const encodedValue = ethers.utils.defaultAbiCoder.encode(['int256'], [BigNumber.from(1)]);
+    const encodedValue = ethers.utils.defaultAbiCoder.encode(['int256'], [ethers.BigNumber.from(1)]);
 
     const badTestDataPoint = {
       airnode,

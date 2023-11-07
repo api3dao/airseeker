@@ -2,9 +2,12 @@ import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 import { range, size } from 'lodash';
 
+import { checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
 import { logger } from '../logger';
-import { getState } from '../state';
+import { getStoreDataPoint } from '../signed-data-store';
+import { getState, updateState } from '../state';
+import type { ChainId, Provider } from '../types';
 import { isFulfilled, sleep } from '../utils';
 
 import {
@@ -41,7 +44,7 @@ export const startUpdateFeedLoops = async () => {
   );
 };
 
-export const runUpdateFeed = async (providerName: string, chain: Chain, chainId: string) => {
+export const runUpdateFeed = async (providerName: Provider, chain: Chain, chainId: ChainId) => {
   await logger.runWithContext({ chainId, providerName, coordinatorTimestampMs: Date.now().toString() }, async () => {
     const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
 
@@ -62,9 +65,9 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
 
       const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata!);
       const firstBatch = readDapiWithIndexCallsReturndata
-        .map((dapiReturndata) => decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata))
         // Because the dapisCount is not known during the multicall, we may ask for non-existent dAPIs. These should be filtered out.
-        .slice(0, dapisCount);
+        .slice(0, dapisCount)
+        .map((dapiReturndata) => ({ ...decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata), chainId }));
       return {
         firstBatch,
         dapisCount,
@@ -75,7 +78,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
       return;
     }
     const { firstBatch, dapisCount } = goFirstBatch.data;
-    const processFirstBatchPromise = processBatch(firstBatch);
+    const processFirstBatchPromise = processBatch(firstBatch, providerName, chainId);
 
     // Calculate the stagger time between the rest of the batches.
     const batchesCount = Math.ceil(dapisCount / dataFeedBatchSize);
@@ -103,10 +106,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
           await dapiDataRegistry.callStatic.tryMulticall(readDapiWithIndexCalls)
         );
 
-        const decodedBatch = returndata.map((returndata) =>
-          decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata)
-        );
-        return decodedBatch;
+        return returndata.map((returndata) => decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata));
       })
     );
     for (const batch of otherBatches.filter((batch) => !isFulfilled(batch))) {
@@ -114,7 +114,9 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
     }
     const processOtherBatchesPromises = otherBatches
       .filter((result) => isFulfilled(result))
-      .map(async (result) => processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value));
+      .map(async (result) =>
+        processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value, providerName, chainId)
+      );
 
     // Wait for all the batches to be processed.
     //
@@ -124,8 +126,63 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
   });
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
-export const processBatch = async (batch: ReadDapiWithIndexResponse[]) => {
+export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]) =>
+  batch
+    .map((dapiResponse: ReadDapiWithIndexResponse) => {
+      const signedData = getStoreDataPoint(dapiResponse.decodedDataFeed.dataFeedId);
+
+      return {
+        ...dapiResponse,
+        signedData,
+      };
+    })
+    .filter(({ signedData, updateParameters, dataFeedValue }) => {
+      if (!signedData) {
+        return false;
+      }
+
+      const offChainValue = ethers.BigNumber.from(signedData.encodedValue);
+      const offChainTimestamp = Number.parseInt(signedData?.timestamp ?? '0', 10);
+      const deviationThreshold = updateParameters.deviationThresholdInPercentage;
+
+      return checkUpdateConditions(
+        dataFeedValue.value,
+        dataFeedValue.timestamp,
+        offChainValue,
+        offChainTimestamp,
+        updateParameters.heartbeatInterval,
+        deviationThreshold
+      );
+    });
+
+export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>, _chainId: string) => {
+  // TODO implement
+  // batch, execute
+};
+
+export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerName: Provider, chainId: string) => {
   logger.debug('Processing batch of active dAPIs', { batch });
-  // TODO: Implement.
+
+  updateState((draft) => {
+    for (const dapi of batch) {
+      const receivedUrls = dapi.signedApiUrls.flatMap((url) =>
+        dapi.decodedDataFeed.beacons.flatMap((dataFeed) => `${url}/${dataFeed.airnodeAddress}`)
+      );
+
+      draft.signedApiUrlStore = {
+        ...draft.signedApiUrlStore,
+        [chainId]: { ...draft.signedApiUrlStore[chainId], [providerName]: receivedUrls.flat() },
+      };
+
+      const cachedDapiResponse = draft.dapis[dapi.dapiName];
+
+      draft.dapis[dapi.dapiName] = {
+        dataFeed: cachedDapiResponse?.dataFeed ?? dapi.decodedDataFeed,
+        dataFeedValues: { ...cachedDapiResponse?.dataFeedValues, [chainId]: dapi.dataFeedValue },
+        updateParameters: { ...cachedDapiResponse?.updateParameters, [chainId]: dapi.updateParameters },
+      };
+    }
+  });
+
+  return updateFeeds(getFeedsToUpdate(batch), chainId);
 };

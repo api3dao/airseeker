@@ -4,6 +4,10 @@ import { type EvmAddress, evmAddressSchema, type EvmId, evmIdSchema } from './co
 
 export type AirnodeAddress = EvmAddress;
 export type TemplateId = EvmId;
+export type DataFeedId = EvmId;
+export type ChainId = string;
+export type DApiName = string;
+export type Provider = string;
 
 // Taken from https://github.com/api3dao/signed-api/blob/main/packages/api/src/schema.ts
 export const signedDataSchema = z.object({
@@ -21,4 +25,13 @@ export const signedApiResponseSchema = z.object({
   data: z.record(signedDataSchema),
 });
 
-export type LocalSignedData = Pick<SignedData, 'encodedValue' | 'signature' | 'timestamp'>;
+export interface Beacon {
+  airnodeAddress: AirnodeAddress;
+  templateId: TemplateId;
+  dataFeedId: string;
+}
+
+export interface DecodedDataFeed {
+  dataFeedId: string;
+  beacons: Beacon[];
+}

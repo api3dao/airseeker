@@ -65,9 +65,9 @@ export const runDataFetcher = async () => {
   }
 
   const urls = uniq(
-    Object.keys(config.chains).flatMap((chainId) =>
-      Object.entries(signedApiUrlStore[chainId]!).flatMap(([airnodeAddress, baseUrl]) => `${baseUrl}/${airnodeAddress}`)
-    )
+    Object.values(signedApiUrlStore)
+      .flatMap((urlsPerProvider) => Object.values(urlsPerProvider))
+      .flat()
   );
 
   return Promise.allSettled(
