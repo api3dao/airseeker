@@ -64,7 +64,11 @@ export const runDataFetcher = async () => {
     });
   }
 
-  const urls = uniq(Object.values(signedApiUrlStore).flat());
+  const urls = uniq(
+    Object.values(signedApiUrlStore)
+      .flatMap((urlsPerProvider) => Object.values(urlsPerProvider))
+      .flat()
+  );
 
   return Promise.allSettled(
     urls.map(async (url) =>

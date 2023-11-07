@@ -174,7 +174,7 @@ describe(runUpdateFeed.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrlStore: { 'some-test-provider': ['url-one'] },
+        signedApiUrlStore: { '31337': { 'some-test-provider': ['url-one'] } },
         signedApiStore: {},
         gasPriceStore: {
           '123': {

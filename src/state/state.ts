@@ -31,7 +31,7 @@ export interface State {
   dataFetcherInterval?: NodeJS.Timeout;
   gasPriceStore: Record<string, Record<string, GasState>>;
   signedApiStore: Record<DataFeedId, SignedData>;
-  signedApiUrlStore: Record<Provider, string[]>;
+  signedApiUrlStore: Record<ChainId, Record<Provider, string[]>>;
   dapis: Record<DApiName, DapiState>;
 }
 
