@@ -2,6 +2,7 @@ import { clearInterval } from 'node:timers';
 
 import { go } from '@api3/promise-utils';
 import axios from 'axios';
+import { uniq } from 'lodash';
 
 import { HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT, HTTP_SIGNED_DATA_API_HEADROOM } from '../constants';
 import * as localDataStore from '../signed-data-store';
@@ -63,8 +64,10 @@ export const runDataFetcher = async () => {
     });
   }
 
+  const urls = uniq(Object.values(signedApiUrlStore).flat());
+
   return Promise.allSettled(
-    signedApiUrlStore.map(async (url) =>
+    urls.map(async (url) =>
       go(
         async () => {
           const payload = await callSignedDataApi(url);

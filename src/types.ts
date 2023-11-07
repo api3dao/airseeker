@@ -7,6 +7,7 @@ export type TemplateId = EvmId;
 export type DataFeedId = EvmId;
 export type ChainId = string;
 export type DApiName = string;
+export type Provider = string;
 
 // Taken from https://github.com/api3dao/signed-api/blob/main/packages/api/src/schema.ts
 export const signedDataSchema = z.object({

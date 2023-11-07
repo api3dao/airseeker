@@ -38,7 +38,7 @@ export const init = (stateOverride?: Partial<State>) => {
     config,
     gasPriceStore: {},
     signedApiStore: {},
-    signedApiUrlStore: [],
+    signedApiUrlStore: {},
     dapis: {},
     ...stateOverride,
   });

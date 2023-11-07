@@ -7,6 +7,7 @@ import type { Chain } from '../config/schema';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, updateState } from '../state';
+import type { ChainId, Provider } from '../types';
 import { isFulfilled, sleep } from '../utils';
 
 import {
@@ -43,7 +44,7 @@ export const startUpdateFeedLoops = async () => {
   );
 };
 
-export const runUpdateFeed = async (providerName: string, chain: Chain, chainId: string) => {
+export const runUpdateFeed = async (providerName: Provider, chain: Chain, chainId: ChainId) => {
   await logger.runWithContext({ chainId, providerName, coordinatorTimestampMs: Date.now().toString() }, async () => {
     const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
 
@@ -77,7 +78,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
       return;
     }
     const { firstBatch, dapisCount } = goFirstBatch.data;
-    const processFirstBatchPromise = processBatch(firstBatch, chainId);
+    const processFirstBatchPromise = processBatch(firstBatch, providerName, chainId);
 
     // Calculate the stagger time between the rest of the batches.
     const batchesCount = Math.ceil(dapisCount / dataFeedBatchSize);
@@ -105,10 +106,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
           await dapiDataRegistry.callStatic.tryMulticall(readDapiWithIndexCalls)
         );
 
-        const decodedBatch = returndata.map((returndata) => ({
-          ...decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata),
-        }));
-        return decodedBatch;
+        return returndata.map((returndata) => decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata));
       })
     );
     for (const batch of otherBatches.filter((batch) => !isFulfilled(batch))) {
@@ -117,7 +115,7 @@ export const runUpdateFeed = async (providerName: string, chain: Chain, chainId:
     const processOtherBatchesPromises = otherBatches
       .filter((result) => isFulfilled(result))
       .map(async (result) =>
-        processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value, chainId)
+        processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value, providerName, chainId)
       );
 
     // Wait for all the batches to be processed.
@@ -162,7 +160,7 @@ export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>, _
   // batch, execute
 };
 
-export const processBatch = async (batch: ReadDapiWithIndexResponse[], chainId: string) => {
+export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerName: Provider, chainId: string) => {
   logger.debug('Processing batch of active dAPIs', { batch });
 
   updateState((draft) => {
@@ -171,7 +169,7 @@ export const processBatch = async (batch: ReadDapiWithIndexResponse[], chainId: 
         dapi.decodedDataFeed.beacons.flatMap((dataFeed) => `${url}/${dataFeed.airnodeAddress}`)
       );
 
-      draft.signedApiUrlStore = receivedUrls.flat();
+      draft.signedApiUrlStore[providerName] = receivedUrls.flat();
 
       const cachedDapiResponse = draft.dapis[dapi.dapiName];
 

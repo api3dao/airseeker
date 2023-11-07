@@ -2,7 +2,7 @@ import type { BigNumber } from 'ethers';
 import { produce, type Draft } from 'immer';
 
 import type { Config } from '../config/schema';
-import type { ChainId, DApiName, DecodedDataFeed, DataFeedId, SignedData } from '../types';
+import type { ChainId, DApiName, DecodedDataFeed, DataFeedId, SignedData, Provider } from '../types';
 
 interface GasState {
   gasPrices: { price: BigNumber; timestampMs: number }[];
@@ -31,7 +31,7 @@ export interface State {
   dataFetcherInterval?: NodeJS.Timeout;
   gasPriceStore: Record<string, Record<string, GasState>>;
   signedApiStore: Record<DataFeedId, SignedData>;
-  signedApiUrlStore: string[];
+  signedApiUrlStore: Record<Provider, string[]>;
   dapis: Record<DApiName, DapiState>;
 }
 
@@ -39,7 +39,13 @@ type StateUpdater = (draft: Draft<State>) => void;
 
 let state: State | undefined;
 
-export const getState = (): State => state!;
+export const getState = (): State => {
+  if (!state) {
+    throw new Error('State is undefined.');
+  }
+
+  return state;
+};
 
 export const setState = (newState: State) => {
   state = newState;

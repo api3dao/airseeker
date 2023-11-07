@@ -16,10 +16,12 @@ describe('data fetcher', () => {
     localDataStore.clear();
     setState(
       produce(getState(), (draft) => {
-        draft.signedApiUrlStore = [
-          'http://127.0.0.1:8090/0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
-          'https://pool.nodary.io/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4',
-        ];
+        draft.signedApiUrlStore = {
+          hardhat: [
+            'http://127.0.0.1:8090/0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
+            'https://pool.nodary.io/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4',
+          ],
+        };
       })
     );
   });

@@ -10,7 +10,6 @@ import type { DapiDataRegistry } from '../../typechain-types';
 import type { Chain } from '../config/schema';
 import { logger } from '../logger';
 import * as stateModule from '../state';
-import type { State } from '../state';
 import * as utilsModule from '../utils';
 
 import * as dapiDataRegistryModule from './dapi-data-registry';
@@ -172,22 +171,23 @@ describe(runUpdateFeed.name, () => {
     jest.spyOn(logger, 'error');
 
     const testConfig = generateTestConfig();
-    jest.spyOn(stateModule, 'getState').mockReturnValue({
-      config: testConfig,
-      dapis: {},
-      signedApiStore: {},
-      signedApiUrlStore: ['url-one'],
-      gasPriceStore: {
-        '123': {
-          'some-test-provider': {
-            gasPrices: [],
-            sponsorLastUpdateTimestampMs: {
-              '0xdatafeedId': 100,
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: testConfig,
+        signedApiUrlStore: { 'some-test-provider': ['url-one'] },
+        signedApiStore: {},
+        gasPriceStore: {
+          '123': {
+            'some-test-provider': {
+              gasPrices: [],
+              sponsorLastUpdateTimestampMs: {
+                '0xdatafeedId': 100,
+              },
             },
           },
         },
-      },
-    } as State);
+      })
+    );
 
     await runUpdateFeed(
       'provider-name',
