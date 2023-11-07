@@ -80,5 +80,7 @@ it('updates blockchain data', async () => {
     },
   ]);
 
-  expect(logger.debug).toHaveBeenCalledWith('Successfully updated dAPI');
+  expect(logger.debug).toHaveBeenNthCalledWith(1, 'Estimating gas limit');
+  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Deriving sponsor wallet');
+  expect(logger.debug).toHaveBeenNthCalledWith(5, 'Successfully updated dAPI');
 });

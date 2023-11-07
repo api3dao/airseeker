@@ -129,8 +129,9 @@ export const estimateMulticallGasLimit = async (
 export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: string) => {
   const { derivedSponsorWallets } = getState();
 
-  if (derivedSponsorWallets[dapiName]) {
-    return new ethers.Wallet(derivedSponsorWallets[dapiName]!);
+  const privateKey = derivedSponsorWallets?.[dapiName];
+  if (privateKey) {
+    return new ethers.Wallet(privateKey);
   }
 
   // Take first 20 bytes of dapiName as sponsor address together with the "0x" prefix.
