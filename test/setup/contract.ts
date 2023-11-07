@@ -116,7 +116,7 @@ const buildEIP712Domain = (name: string, chainId: number, verifyingContract: str
   };
 };
 
-const updateBeacon = async (
+const initializeBeacon = async (
   api3ServerV1: Api3ServerV1,
   airnodeWallet: Wallet,
   airseekerSponsorWallet: SignerWithAddress | Wallet,
@@ -134,8 +134,17 @@ const updateBeacon = async (
 };
 
 export const deployAndUpdate = async () => {
-  const [deployer, manager, registryOwner, api3MarketContract, rootSigner1, rootSigner2, rootSigner3, randomPerson] =
-    await ethers.getSigners();
+  const [
+    deployer,
+    manager,
+    registryOwner,
+    api3MarketContract,
+    rootSigner1,
+    rootSigner2,
+    rootSigner3,
+    randomPerson,
+    walletFunder,
+  ] = await ethers.getSigners();
 
   // Deploy contracts
   const accessControlRegistryFactory = new AccessControlRegistry__factory(deployer as Signer);
@@ -202,28 +211,28 @@ export const deployAndUpdate = async () => {
   const binanceEthBeacon = deriveBeaconData(createBinanceEthBeacon(binanceAirnodeWallet.address));
 
   // Update beacons with starting values
-  await updateBeacon(
+  await initializeBeacon(
     api3ServerV1,
     krakenAirnodeWallet,
     airseekerSponsorWallet,
     krakenBtcBeacon.templateId,
     Math.floor(740 * 1_000_000)
   );
-  await updateBeacon(
+  await initializeBeacon(
     api3ServerV1,
     krakenAirnodeWallet,
     airseekerSponsorWallet,
     krakenEthBeacon.templateId,
     Math.floor(41_000 * 1_000_000)
   );
-  await updateBeacon(
+  await initializeBeacon(
     api3ServerV1,
     binanceAirnodeWallet,
     airseekerSponsorWallet,
     binanceBtcBeacon.templateId,
     Math.floor(750 * 1_000_000)
   );
-  await updateBeacon(
+  await initializeBeacon(
     api3ServerV1,
     binanceAirnodeWallet,
     airseekerSponsorWallet,
@@ -320,14 +329,16 @@ export const deployAndUpdate = async () => {
     {
       airnodes: [binanceAirnodeWallet.address, krakenAirnodeWallet.address],
       templateIds: [binanceBtcBeacon.templateId, krakenBtcBeacon.templateId],
+      dapiTreeValue: dapiTreeValues[0]!,
     },
     {
       airnodes: [binanceAirnodeWallet.address, krakenAirnodeWallet.address],
       templateIds: [binanceEthBeacon.templateId, krakenEthBeacon.templateId],
+      dapiTreeValue: dapiTreeValues[1]!,
     },
   ];
   for (const dapiInfo of dapiInfos) {
-    const { airnodes, templateIds } = dapiInfo;
+    const { airnodes, templateIds, dapiTreeValue } = dapiInfo;
 
     const encodedBeaconSetData = ethers.utils.defaultAbiCoder.encode(
       ['address[]', 'bytes32[]'],
@@ -338,8 +349,7 @@ export const deployAndUpdate = async () => {
     const deviationThresholdInPercentage = ethers.BigNumber.from(HUNDRED_PERCENT / 50); // 2%
     const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
     const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
-    const [dapiTreeValue] = dapiTreeValues;
-    const [dapiName, beaconSetId, sponsorWallet] = dapiTreeValue!;
+    const [dapiName, beaconSetId, sponsorWallet] = dapiTreeValue;
     await dapiDataRegistry
       .connect(api3MarketContract!)
       .addDapi(
@@ -350,10 +360,11 @@ export const deployAndUpdate = async () => {
         deviationReference,
         heartbeatInterval,
         dapiTree.root,
-        dapiTree.getProof(dapiTreeValue!)
+        dapiTree.getProof(dapiTreeValue)
       );
   }
-  // TODO: Generate proper config (change sponsor wallet mnemonic, deployed contract addresses, etc...)
+
+  // Set up config
   const config = generateTestConfig();
   config.sponsorWalletMnemonic = airseekerSponsorWallet.mnemonic.phrase;
   config.chains[31_337]!.contracts.Api3ServerV1 = api3ServerV1.address;
@@ -362,9 +373,21 @@ export const deployAndUpdate = async () => {
   return {
     accessControlRegistry,
     api3ServerV1,
-    btcBeaconSetId,
-    ethBeaconSetId,
-    config,
     dapiDataRegistry,
+
+    binanceAirnodeWallet,
+    krakenAirnodeWallet,
+
+    binanceBtcBeacon,
+    btcBeaconSetId,
+    krakenBtcBeacon,
+
+    binanceEthBeacon,
+    ethBeaconSetId,
+    krakenEthBeacon,
+
+    airseekerSponsorWallet,
+    config,
+    walletFunder: walletFunder!,
   };
 };
