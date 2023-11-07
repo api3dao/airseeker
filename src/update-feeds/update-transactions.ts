@@ -3,9 +3,10 @@ import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
 import { AIRSEEKER_PROTOCOL_ID } from '../constants';
+import { getAirseekerRecommendedGasPrice } from '../gas-price/gas-price';
 import { logger } from '../logger';
 import { getState } from '../state';
-import type { SignedData } from '../types';
+import type { SignedData, ChainId, Provider } from '../types';
 
 import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
 
@@ -20,13 +21,15 @@ export interface UpdateableDapi {
 }
 
 export const updateFeeds = async (
+  chainId: ChainId,
+  providerName: Provider,
+  provider: ethers.providers.StaticJsonRpcProvider,
   api3ServerV1: Api3ServerV1,
-  gasPrice: ethers.BigNumber,
   updateableDapis: UpdateableDapi[]
 ) => {
   const state = getState();
   const {
-    config: { sponsorWalletMnemonic },
+    config: { chains, sponsorWalletMnemonic },
   } = state;
 
   // Update all of the dAPIs in parallel.
@@ -74,6 +77,14 @@ export const updateFeeds = async (
           logger.debug('Deriving sponsor wallet');
           // TODO: These wallets could be persisted as a performance optimization.
           const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
+
+          const gasPrice = await getAirseekerRecommendedGasPrice(
+            chainId,
+            providerName,
+            provider,
+            chains[chainId]!.gasSettings,
+            sponsorWallet.address
+          );
 
           logger.debug('Updating dAPI', { gasPrice, gasLimit });
           await api3ServerV1

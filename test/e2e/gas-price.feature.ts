@@ -57,7 +57,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     const gasPrice = await getAirseekerRecommendedGasPrice(
       chainId,
       providerName,
-      rpcUrl,
+      provider,
       gasSettings,
       sponsorWalletAddress
     );
@@ -87,7 +87,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     const gasPrice = await getAirseekerRecommendedGasPrice(
       chainId,
       providerName,
-      rpcUrl,
+      provider,
       gasSettings,
       sponsorWalletAddress
     );
@@ -117,7 +117,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     const gasPrice = await getAirseekerRecommendedGasPrice(
       chainId,
       providerName,
-      rpcUrl,
+      provider,
       gasSettings,
       sponsorWalletAddress
     );
@@ -149,7 +149,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     const gasPrice = await getAirseekerRecommendedGasPrice(
       chainId,
       providerName,
-      rpcUrl,
+      provider,
       gasSettings,
       sponsorWalletAddress
     );
@@ -173,7 +173,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     const gasPrice = await getAirseekerRecommendedGasPrice(
       chainId,
       providerName,
-      rpcUrl,
+      provider,
       gasSettings,
       sponsorWalletAddress
     );

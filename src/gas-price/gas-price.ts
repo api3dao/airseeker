@@ -114,14 +114,14 @@ export const calculateScalingMultiplier = (
  * Fetches the provider recommended gas price and saves it in the store.
  * @param chainId
  * @param providerName
- * @param rpcUrl
+ * @param provider
  * @returns {ethers.BigNumber}
  */
-export const updateGasPriceStore = async (chainId: string, providerName: string, rpcUrl: string) => {
-  const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
-    chainId: Number.parseInt(chainId, 10),
-    name: chainId,
-  });
+export const updateGasPriceStore = async (
+  chainId: string,
+  providerName: string,
+  provider: ethers.providers.StaticJsonRpcProvider
+) => {
   // Get the provider recommended gas price
   const gasPrice = await provider.getGasPrice();
   // Save the new provider recommended gas price to the state
@@ -134,25 +134,25 @@ export const updateGasPriceStore = async (chainId: string, providerName: string,
  * Fetches the provider recommended gas price, saves it in the store and clears out expired gas prices.
  * @param chainId
  * @param providerName
- * @param rpcUrl
+ * @param provider
  */
 export const gasPriceCollector = async (
   chainId: string,
   providerName: string,
-  rpcUrl: string,
+  provider: ethers.providers.StaticJsonRpcProvider,
   sanitizationSamplingWindow: number
 ) => {
   // Initialize the gas store for the chain if not already present
   initializeGasStore(chainId, providerName);
   clearExpiredStoreGasPrices(chainId, providerName, sanitizationSamplingWindow);
-  await updateGasPriceStore(chainId, providerName, rpcUrl);
+  await updateGasPriceStore(chainId, providerName, provider);
 };
 
 /**
  *  Calculates the gas price to be used in a transaction based on sanitization and scaling settings.
  * @param chainId
  * @param providerName
- * @param rpcUrl
+ * @param provider
  * @param gasSettings
  * @param sponsorWalletAddress
  * @returns {ethers.BigNumber}
@@ -160,7 +160,7 @@ export const gasPriceCollector = async (
 export const getAirseekerRecommendedGasPrice = async (
   chainId: string,
   providerName: string,
-  rpcUrl: string,
+  provider: ethers.providers.StaticJsonRpcProvider,
   gasSettings: GasSettings,
   sponsorWalletAddress: string
 ): Promise<ethers.BigNumber> => {
@@ -180,7 +180,7 @@ export const getAirseekerRecommendedGasPrice = async (
     gasPrices.map((gasPrice) => gasPrice.price)
   );
 
-  const gasPrice = await updateGasPriceStore(chainId, providerName, rpcUrl);
+  const gasPrice = await updateGasPriceStore(chainId, providerName, provider);
 
   const lastUpdateTimestampMs = sponsorLastUpdateTimestampMs[sponsorWalletAddress];
 

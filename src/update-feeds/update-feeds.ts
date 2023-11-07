@@ -145,6 +145,8 @@ export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]) =>
       const offChainTimestamp = Number.parseInt(signedData?.timestamp ?? '0', 10);
       const deviationThreshold = updateParameters.deviationThresholdInPercentage;
 
+      // TODO clear last update timestamps if an update is not needed
+
       return checkUpdateConditions(
         dataFeedValue.value,
         dataFeedValue.timestamp,
