@@ -144,7 +144,7 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: str
   updateState((draft) => {
     draft.derivedSponsorWallets = {
       ...draft.derivedSponsorWallets,
-      [dapiName]: sponsorWallet._signingKey().privateKey,
+      [dapiName]: sponsorWallet.privateKey,
     };
   });
 
