@@ -4,6 +4,8 @@ import { type EvmAddress, evmAddressSchema, type EvmId, evmIdSchema } from './co
 
 export type AirnodeAddress = EvmAddress;
 export type TemplateId = EvmId;
+export type DapiName = string;
+export type PrivateKey = string;
 export type DataFeedId = EvmId;
 export type ChainId = string;
 export type DApiName = string;

@@ -5,7 +5,7 @@ import { ethers } from 'ethers';
 import { AIRSEEKER_PROTOCOL_ID } from '../constants';
 import { getAirseekerRecommendedGasPrice } from '../gas-price/gas-price';
 import { logger } from '../logger';
-import { getState } from '../state';
+import { getState, updateState } from '../state';
 import type { SignedData, ChainId, Provider } from '../types';
 
 import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
@@ -143,6 +143,13 @@ export const estimateMulticallGasLimit = async (
 };
 
 export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: string) => {
+  const { derivedSponsorWallets } = getState();
+
+  const privateKey = derivedSponsorWallets?.[dapiName];
+  if (privateKey) {
+    return new ethers.Wallet(privateKey);
+  }
+
   // Take first 20 bytes of dapiName as sponsor address together with the "0x" prefix.
   const sponsorAddress = ethers.utils.getAddress(dapiName.slice(0, 42));
   const sponsorWallet = ethers.Wallet.fromMnemonic(
@@ -150,6 +157,13 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: str
     `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
   );
   logger.debug('Derived sponsor wallet', { sponsorAddress, sponsorWalletAddress: sponsorWallet.address });
+
+  updateState((draft) => {
+    draft.derivedSponsorWallets = {
+      ...draft.derivedSponsorWallets,
+      [dapiName]: sponsorWallet.privateKey,
+    };
+  });
 
   return sponsorWallet;
 };

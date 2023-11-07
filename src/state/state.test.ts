@@ -38,6 +38,7 @@ const stateMock = {
       ],
     },
   },
+  derivedSponsorWallets: {},
   dapis: {},
 };
 
