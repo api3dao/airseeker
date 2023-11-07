@@ -169,10 +169,6 @@ export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerN
         dapi.decodedDataFeed.beacons.flatMap((dataFeed) => `${url}/${dataFeed.airnodeAddress}`)
       );
 
-      if (!draft.signedApiUrlStore[chainId]) {
-        draft.signedApiUrlStore[chainId] = {};
-      }
-
       draft.signedApiUrlStore = {
         ...draft.signedApiUrlStore,
         [chainId]: { ...draft.signedApiUrlStore[chainId], [providerName]: receivedUrls.flat() },
