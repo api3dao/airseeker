@@ -10,11 +10,11 @@ import * as stateModule from '../state';
 import * as utilsModule from '../utils';
 
 import * as dapiDataRegistryModule from './dapi-data-registry';
-import { runUpdateFeed, startUpdateFeedLoops } from './update-feeds';
+import * as updateFeedsModule from './update-feeds';
 
 jest.mock('../state');
 
-describe(startUpdateFeedLoops.name, () => {
+describe(updateFeedsModule.startUpdateFeedLoops.name, () => {
   it('starts staggered update loops for a chain', async () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
@@ -37,7 +37,7 @@ describe(startUpdateFeedLoops.name, () => {
     }) as any);
     jest.spyOn(logger, 'debug');
 
-    await startUpdateFeedLoops();
+    await updateFeedsModule.startUpdateFeedLoops();
 
     // Expect the intervals to be called with the correct stagger time.
     expect(setInterval).toHaveBeenCalledTimes(2);
@@ -87,7 +87,7 @@ describe(startUpdateFeedLoops.name, () => {
     }) as any);
     jest.spyOn(logger, 'debug');
 
-    await startUpdateFeedLoops();
+    await updateFeedsModule.startUpdateFeedLoops();
 
     // Expect the intervals to be called with the correct stagger time.
     expect(setInterval).toHaveBeenCalledTimes(2);
@@ -116,7 +116,7 @@ describe(startUpdateFeedLoops.name, () => {
   });
 });
 
-describe(runUpdateFeed.name, () => {
+describe(updateFeedsModule.runUpdateFeed.name, () => {
   it('aborts when fetching first dAPIs batch fails', async () => {
     const dapiDataRegistry = generateMockDapiDataRegistry();
     jest
@@ -125,7 +125,7 @@ describe(runUpdateFeed.name, () => {
     dapiDataRegistry.callStatic.tryMulticall.mockRejectedValueOnce(new Error('provider-error'));
     jest.spyOn(logger, 'error');
 
-    await runUpdateFeed(
+    await updateFeedsModule.runUpdateFeed(
       'provider-name',
       allowPartial<Chain>({
         dataFeedBatchSize: 2,
@@ -185,8 +185,11 @@ describe(runUpdateFeed.name, () => {
         },
       })
     );
+    jest
+      .spyOn(updateFeedsModule, 'getFeedsToUpdate')
+      .mockImplementation((feeds) => feeds.map((feed) => ({ ...feed, shouldUpdate: true })));
 
-    await runUpdateFeed(
+    await updateFeedsModule.runUpdateFeed(
       'provider-name',
       allowPartial<Chain>({
         dataFeedBatchSize: 1,

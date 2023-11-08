@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { omit } from 'lodash';
 
+import { initializeGasStore } from '../../src/gas-price/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
 import { runUpdateFeed } from '../../src/update-feeds';
@@ -30,6 +31,7 @@ it('reads blockchain data', async () => {
 
 it('updates blockchain data', async () => {
   const {
+    config,
     api3ServerV1,
     dapiDataRegistry,
     krakenBtcBeacon,
@@ -39,6 +41,8 @@ it('updates blockchain data', async () => {
     airseekerSponsorWallet,
     walletFunder,
   } = await deployAndUpdate();
+  init({ config });
+  initializeGasStore(chainId, providerName);
   const btcDapi = await dapiDataRegistry.readDapiWithIndex(0);
 
   const decodedDataFeed = decodeDataFeed(btcDapi.dataFeed);

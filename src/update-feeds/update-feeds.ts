@@ -4,6 +4,7 @@ import { range, size } from 'lodash';
 
 import { checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
+import { clearSponsorLastUpdateTimestampMs } from '../gas-price/gas-price';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, updateState } from '../state';
@@ -17,6 +18,7 @@ import {
   verifyMulticallResponse,
   type ReadDapiWithIndexResponse,
 } from './dapi-data-registry';
+import { deriveSponsorWallet } from './update-transactions';
 
 export const startUpdateFeedLoops = async () => {
   const state = getState();
@@ -127,35 +129,30 @@ export const runUpdateFeed = async (providerName: Provider, chain: Chain, chainI
 };
 
 export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]) =>
-  batch
-    .map((dapiResponse: ReadDapiWithIndexResponse) => {
-      const signedData = getStoreDataPoint(dapiResponse.decodedDataFeed.dataFeedId);
+  batch.map((dapiResponse: ReadDapiWithIndexResponse) => {
+    const signedData = getStoreDataPoint(dapiResponse.decodedDataFeed.dataFeedId);
+    if (!signedData) {
+      return { ...dapiResponse, shouldUpdate: false };
+    }
 
-      return {
-        ...dapiResponse,
-        signedData,
-      };
-    })
-    .filter(({ signedData, updateParameters, dataFeedValue }) => {
-      if (!signedData) {
-        return false;
-      }
+    const offChainValue = ethers.BigNumber.from(signedData.encodedValue);
+    const offChainTimestamp = Number.parseInt(signedData?.timestamp ?? '0', 10);
+    const deviationThreshold = dapiResponse.updateParameters.deviationThresholdInPercentage;
+    const shouldUpdate = checkUpdateConditions(
+      dapiResponse.dataFeedValue.value,
+      dapiResponse.dataFeedValue.timestamp,
+      offChainValue,
+      offChainTimestamp,
+      dapiResponse.updateParameters.heartbeatInterval,
+      deviationThreshold
+    );
 
-      const offChainValue = ethers.BigNumber.from(signedData.encodedValue);
-      const offChainTimestamp = Number.parseInt(signedData?.timestamp ?? '0', 10);
-      const deviationThreshold = updateParameters.deviationThresholdInPercentage;
-
-      // TODO clear last update timestamps if an update is not needed
-
-      return checkUpdateConditions(
-        dataFeedValue.value,
-        dataFeedValue.timestamp,
-        offChainValue,
-        offChainTimestamp,
-        updateParameters.heartbeatInterval,
-        deviationThreshold
-      );
-    });
+    return {
+      ...dapiResponse,
+      signedData,
+      shouldUpdate,
+    };
+  });
 
 export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>, _chainId: string) => {
   // TODO implement
@@ -164,6 +161,9 @@ export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>, _
 
 export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerName: Provider, chainId: string) => {
   logger.debug('Processing batch of active dAPIs', { batch });
+  const {
+    config: { sponsorWalletMnemonic },
+  } = getState();
 
   updateState((draft) => {
     for (const dapi of batch) {
@@ -186,5 +186,19 @@ export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerN
     }
   });
 
-  return updateFeeds(getFeedsToUpdate(batch), chainId);
+  const feeds = getFeedsToUpdate(batch);
+
+  // Clear last update timestamps for feeds that don't need an update
+  for (const feed of feeds.filter((feed) => !feed.shouldUpdate)) {
+    clearSponsorLastUpdateTimestampMs(
+      chainId,
+      providerName,
+      deriveSponsorWallet(sponsorWalletMnemonic, feed.dapiName).address
+    );
+  }
+
+  return updateFeeds(
+    feeds.filter((feed) => feed.shouldUpdate),
+    chainId
+  );
 };
