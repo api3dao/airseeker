@@ -5,7 +5,7 @@ import type { DapiDataRegistry } from '../../typechain-types';
 import { type DeepPartial, encodeBeaconFeed } from '../utils';
 
 export const generateReadDapiWithIndexResponse = () => ({
-  dapiName: 'MOCK_FEED',
+  dapiName: ethers.utils.formatBytes32String('MOCK_FEED'),
   updateParameters: {
     deviationThresholdInPercentage: ethers.BigNumber.from(0.5 * 1e8),
     deviationReference: ethers.BigNumber.from(0.5 * 1e8),

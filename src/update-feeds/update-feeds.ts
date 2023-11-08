@@ -193,7 +193,7 @@ export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerN
     clearSponsorLastUpdateTimestampMs(
       chainId,
       providerName,
-      deriveSponsorWallet(sponsorWalletMnemonic, ethers.utils.formatBytes32String(feed.dapiName)).address
+      deriveSponsorWallet(sponsorWalletMnemonic, feed.dapiName).address
     );
   }
 
