@@ -171,11 +171,11 @@ describe(runUpdateFeed.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrlStore: { '31337': { 'some-test-provider': ['url-one'] } },
+        signedApiUrlStore: { '31337': { hardhat: ['url-one'] } },
         signedApiStore: {},
         gasPriceStore: {
           '31337': {
-            'some-test-provider': {
+            hardhat: {
               gasPrices: [],
               sponsorLastUpdateTimestampMs: {
                 '0xdatafeedId': 100,
@@ -187,11 +187,11 @@ describe(runUpdateFeed.name, () => {
     );
 
     await runUpdateFeed(
-      'some-test-provider',
+      'hardhat',
       allowPartial<Chain>({
         dataFeedBatchSize: 1,
         dataFeedUpdateInterval: 0.15,
-        providers: { ['some-test-provider']: { url: 'provider-url' } },
+        providers: { hardhat: { url: 'http://127.0.0.1:8545' } },
         contracts: {
           DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
