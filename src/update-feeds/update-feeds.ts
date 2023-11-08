@@ -188,7 +188,7 @@ export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerN
 
   const feeds = getFeedsToUpdate(batch);
 
-  // CLear last update timestamps for feeds that don't need an update
+  // Clear last update timestamps for feeds that don't need an update
   for (const feed of feeds.filter((feed) => !feed.shouldUpdate)) {
     clearSponsorLastUpdateTimestampMs(
       chainId,
