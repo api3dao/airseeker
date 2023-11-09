@@ -1,4 +1,4 @@
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 
 import { init } from '../../test/fixtures/mock-config';
 import { allowPartial } from '../../test/utils';
@@ -7,8 +7,6 @@ import type * as stateModule from '../state';
 import * as contractUtils from './api3-server-v1';
 import { callAndParseMulticall, shallowCheckFeeds } from './check-feeds';
 import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
-
-// jest.mock('../state');
 
 describe('checks whether feeds should be updated or not', () => {
   describe('shallow analysis', () => {
@@ -114,8 +112,7 @@ describe('checks whether feeds should be updated or not', () => {
             tryMulticall: tryMulticallMock,
           },
         }),
-
-        interface: { encodeFunctionData: () => 'does not matter' },
+        interface: { encodeFunctionData: jest.fn().mockReturnValue('does not matter') },
       };
 
       jest.spyOn(contractUtils, 'getApi3ServerV1').mockReturnValue(mockContract as any);
