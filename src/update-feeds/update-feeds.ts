@@ -1,10 +1,9 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
-import { chunk, range, size, uniqBy } from 'lodash';
+import { range, size, uniqBy } from 'lodash';
 
 import { calculateMedian, checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
-import { MULTICALL_CHUNK_SIZE } from '../constants';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, updateState } from '../state';
@@ -174,111 +173,69 @@ export const getFeedsToUpdate = async (
       );
     });
 
-  const updateCalldataBatches = chunk(
-    uniqBy(
-      shallowCheckedFeedsToUpdate
-        .flatMap((parent) => parent.decodedDataFeed.beacons)
-        .map((beacon) => {
-          const datapoint = getStoreDataPoint(beacon.dataFeedId);
-          if (!datapoint) {
-            return {
-              dataFeedId: beacon.dataFeedId,
-              calldata: [],
-            };
-          }
+  const feedCalldata = uniqBy(shallowCheckedFeedsToUpdate.flat(), 'dataFeedId')
+    .flatMap((parentFeed) => parentFeed.decodedDataFeed.beacons)
+    .map(({ dataFeedId }) => ({
+      dataFeedId,
+      calldata: server.interface.encodeFunctionData('dataFeeds', [dataFeedId]),
+    }));
 
-          const { timestamp, encodedValue, signature } = datapoint;
-
-          return {
-            dataFeedId: beacon.dataFeedId,
-            calldata: server.interface.encodeFunctionData('updateBeaconWithSignedData', [
-              beacon.airnodeAddress,
-              beacon.templateId,
-              timestamp,
-              encodedValue,
-              signature,
-            ]),
-          };
-        })
-        .filter((calldata) => calldata.calldata.length === 0),
-      'dataFeedId'
-    ),
-    MULTICALL_CHUNK_SIZE
+  const multicallResult = await go(
+    async () => server.connect(voidSigner).callStatic.tryMulticall(feedCalldata.map((feed) => feed.calldata)),
+    { retries: 1 }
   );
 
-  // TODO timeouts
-  const updateCalldataResults = await Promise.all(
-    updateCalldataBatches.map(async (updateCalldataBatch) => {
-      const multicallResult = await go(
-        async () =>
-          server.connect(voidSigner).callStatic.tryMulticall(updateCalldataBatch.map((item) => item.calldata)),
-        { retries: 1 }
-      );
-      if (!multicallResult.success) {
-        logger.warn(`The multicall static-call attempt to update feeds has failed.`, { error: multicallResult.error });
-        return updateCalldataBatch.map((feed) => ({ dataFeedId: feed.dataFeedId, shouldUpdate: true }));
+  if (!multicallResult.success) {
+    logger.warn(`The multicall attempt to read potentially updateable feed values has failed.`, {
+      error: multicallResult.error,
+    });
+    return shallowCheckedFeedsToUpdate;
+  }
+
+  const { successes, returndata } = multicallResult.data;
+  if (!(successes.length === feedCalldata.length && returndata.length === feedCalldata.length)) {
+    logger.warn(`The number of returned records from the read multicall call does not match the number requested.`);
+    return shallowCheckedFeedsToUpdate;
+  }
+
+  const feedsThatWouldFailToUpdate = feedCalldata
+    .map(({ dataFeedId }, idx) => {
+      if (successes[idx]) {
+        const [value, timestamp] = ethers.utils.defaultAbiCoder.decode(['int224', 'uint32'], returndata[idx]!);
+
+        return {
+          dataFeedId,
+          onChainValue: { timestamp: ethers.BigNumber.from(timestamp), value: ethers.BigNumber.from(value) },
+        };
       }
 
-      const { successes, returndata } = multicallResult.data;
-      if (!(successes.length === updateCalldataBatch.length && returndata.length === updateCalldataBatch.length)) {
-        logger.warn(
-          `The number of returned records from the updateCalldata multicall batch does not match the number requested.`
-        );
-        return updateCalldataBatch.map((feed) => ({ dataFeedId: feed.dataFeedId, shouldUpdate: true }));
-      }
-
-      return updateCalldataBatch.map((feed, idx) => ({ shouldUpdate: !!successes[idx], dataFeedId: feed.dataFeedId }));
+      return { dataFeedId, onChainValue: undefined };
     })
-  );
-
-  const failedFeedUpdateValueCalldata = await Promise.all(
-    // Chunk the feeds to reduce the likelyhood of the multicall failing due to exceeded gas limit
-    chunk(
-      // deduplicate the feeds to be queried
-      updateCalldataResults
-        .flat()
-        .filter((updateAttemptResult) => !updateAttemptResult.shouldUpdate)
-        .map((feed) => ({
-          dataFeedId: feed.dataFeedId,
-          calldata: server.interface.encodeFunctionData('dataFeeds', [feed.dataFeedId]),
-        })),
-      MULTICALL_CHUNK_SIZE
-    ).map(async (feedBatch) => {
-      const multicallResult = await go(
-        async () => server.connect(voidSigner).callStatic.tryMulticall(feedBatch.map((batch) => batch.calldata)),
-        { retries: 1 }
-      );
-      if (!multicallResult.success) {
-        logger.warn(`The multicall attempt to read feed values that previously failed to update has failed.`, {
-          error: multicallResult.error,
-        });
-        return feedBatch.map((feed) => ({ dataFeedId: feed.dataFeedId, onChainValue: undefined }));
+    .filter(({ dataFeedId, onChainValue }) => {
+      if (!onChainValue) {
+        return false;
       }
 
-      const { successes, returndata } = multicallResult.data;
-      if (!(successes.length === feedBatch.length && returndata.length === feedBatch.length)) {
-        logger.warn(`The number of returned records from the multicall batch does not match the number requested.`);
-        return feedBatch.map((feed) => ({ dataFeedId: feed.dataFeedId, onChainValue: undefined }));
+      const signedData = getStoreDataPoint(dataFeedId);
+      if (!signedData) {
+        return false;
       }
 
-      return multicallResult.data.map((_, idx) => {
-        if (successes[idx]) {
-          const [value, timestamp] = ethers.utils.defaultAbiCoder.decode(['int224', 'uint32'], returndata[idx]!);
+      const numericalSignedTimestamp = Number.parseInt(signedData.timestamp, 10);
+      const numericalOnChainTimestamp = onChainValue.timestamp.toNumber();
 
-          return { dataFeedId: feedBatch[idx]!.dataFeedId, onChainValue: { timestamp, value } };
-        }
+      // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L121
+      if (numericalSignedTimestamp < numericalOnChainTimestamp) {
+        return true;
+      }
 
-        return { dataFeedId: feedBatch[idx]!.dataFeedId, onChainValue: undefined };
-      });
-    })
-  );
-
-  const flattenedFailedFeedValues = failedFeedUpdateValueCalldata.flat();
+      return numericalSignedTimestamp > Date.now() + 60 * 60;
+    });
 
   return batch
     .map((feed) => {
       const beaconValues = feed.decodedDataFeed.beacons.map((beacon) => {
-        const latestOnChainValue = flattenedFailedFeedValues.find(
+        const latestOnChainValue = feedsThatWouldFailToUpdate.find(
           (failedFeed) => failedFeed.dataFeedId === beacon.dataFeedId && failedFeed.onChainValue
         );
         if (latestOnChainValue?.onChainValue) {
@@ -288,7 +245,7 @@ export const getFeedsToUpdate = async (
         const storeDatapoint = getStoreDataPoint(feed.decodedDataFeed.dataFeedId);
 
         const value = ethers.BigNumber.from(storeDatapoint?.encodedValue ?? '1');
-        const timestamp = storeDatapoint?.timestamp ?? 1;
+        const timestamp = ethers.BigNumber.from(storeDatapoint?.timestamp ?? 1);
 
         return { timestamp, value };
       });
@@ -311,7 +268,7 @@ export const getFeedsToUpdate = async (
         decodedDataFeed: {
           ...feed.decodedDataFeed,
           beacons: feed.decodedDataFeed.beacons.filter(
-            (beacon) => !flattenedFailedFeedValues.some((childFeed) => childFeed.dataFeedId === beacon.dataFeedId)
+            (beacon) => !feedsThatWouldFailToUpdate.some((childFeed) => childFeed.dataFeedId === beacon.dataFeedId)
           ),
         },
         shouldUpdate,
