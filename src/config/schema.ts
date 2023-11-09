@@ -22,7 +22,7 @@ export type Provider = z.infer<typeof providerSchema>;
 export const optionalContractsSchema = z
   .object({
     Api3ServerV1: evmAddressSchema.optional(),
-    DapiDataRegistry: evmAddressSchema, // TODO: Make optional and load from "airnode-protocol-v1" or some other location and document it accordingly.
+    DapiDataRegistry: evmAddressSchema,
   })
   .strict();
 

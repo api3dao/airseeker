@@ -32,7 +32,6 @@ const callSignedDataApi = async (url: string): Promise<SignedData[]> => {
         url,
         headers: {
           Accept: 'application/json',
-          // TODO add API key?
         },
       }),
     {

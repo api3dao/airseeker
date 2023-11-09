@@ -75,7 +75,6 @@ export const updateFeeds = async (
           );
 
           logger.debug('Deriving sponsor wallet');
-          // TODO: These wallets could be persisted as a performance optimization.
           const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
 
           const goGasPrice = await go(async () =>
