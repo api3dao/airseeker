@@ -1,6 +1,6 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
-import { chunk, range, size } from 'lodash';
+import { chunk, range, size, uniqBy } from 'lodash';
 
 import { calculateMedian, checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
@@ -128,8 +128,25 @@ export const runUpdateFeed = async (providerName: Provider, chain: Chain, chainI
   });
 };
 
-export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]) =>
-  batch
+export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>, _chainId: string) => {
+  // TODO implement
+  // batch, execute
+};
+
+export const getFeedsToUpdate = async (
+  batch: ReadDapiWithIndexResponse[], // ReturnType<typeof getFeedsToUpdate>,
+  providerName: Provider,
+  chainId: ChainId
+) => {
+  const { config } = getState();
+  const chain = config.chains[chainId]!;
+  const { providers, contracts } = chain;
+
+  const provider = new ethers.providers.StaticJsonRpcProvider(providers[providerName]);
+  const server = getApi3ServerV1(contracts.Api3ServerV1, provider);
+  const voidSigner = new ethers.VoidSigner(ethers.constants.AddressZero, provider);
+
+  const shallowCheckedFeedsToUpdate = batch
     .map((dapiResponse: ReadDapiWithIndexResponse) => {
       const signedData = getStoreDataPoint(dapiResponse.decodedDataFeed.dataFeedId);
 
@@ -147,8 +164,6 @@ export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]) =>
       const offChainTimestamp = Number.parseInt(signedData?.timestamp ?? '0', 10);
       const deviationThreshold = updateParameters.deviationThresholdInPercentage;
 
-      // TODO clear last update timestamps if an update is not needed
-
       return checkUpdateConditions(
         dataFeedValue.value,
         dataFeedValue.timestamp,
@@ -159,75 +174,67 @@ export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]) =>
       );
     });
 
-export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>, _chainId: string) => {
-  // TODO implement
-  // batch, execute
-};
-
-export const deepCheckFeeds = async (
-  batch: ReturnType<typeof getFeedsToUpdate>,
-  providerName: Provider,
-  chainId: ChainId
-) => {
-  const { config } = getState();
-  const chain = config.chains[chainId]!;
-  const { providers, contracts } = chain;
-
-  const provider = new ethers.providers.StaticJsonRpcProvider(providers[providerName]);
-  const server = getApi3ServerV1(contracts.Api3ServerV1, provider);
-  const voidSigner = new ethers.VoidSigner(ethers.constants.AddressZero, provider);
-
-  // We surely have to chunk these? they'll get big.
   const updateCalldataBatches = chunk(
-    batch
-      .flatMap((parent) => parent.decodedDataFeed.beacons)
-      .map((beacon) => {
-        const datapoint = getStoreDataPoint(beacon.dataFeedId);
-        if (!datapoint) {
+    uniqBy(
+      shallowCheckedFeedsToUpdate
+        .flatMap((parent) => parent.decodedDataFeed.beacons)
+        .map((beacon) => {
+          const datapoint = getStoreDataPoint(beacon.dataFeedId);
+          if (!datapoint) {
+            return {
+              dataFeedId: beacon.dataFeedId,
+              calldata: [],
+            };
+          }
+
+          const { timestamp, encodedValue, signature } = datapoint;
+
           return {
             dataFeedId: beacon.dataFeedId,
-            calldata: [],
+            calldata: server.interface.encodeFunctionData('updateBeaconWithSignedData', [
+              beacon.airnodeAddress,
+              beacon.templateId,
+              timestamp,
+              encodedValue,
+              signature,
+            ]),
           };
-        }
-
-        const { timestamp, encodedValue, signature } = datapoint;
-
-        return {
-          dataFeedId: beacon.dataFeedId,
-          calldata: server.interface.encodeFunctionData('updateBeaconWithSignedData', [
-            beacon.airnodeAddress,
-            beacon.templateId,
-            timestamp,
-            encodedValue,
-            signature,
-          ]),
-        };
-      })
-      .filter((calldata) => calldata.calldata.length === 0),
+        })
+        .filter((calldata) => calldata.calldata.length === 0),
+      'dataFeedId'
+    ),
     MULTICALL_CHUNK_SIZE
   );
 
-  // TODO deduplicate feeds based on ID
   // TODO timeouts
   const updateCalldataResults = await Promise.all(
-    updateCalldataBatches.map(async (ucdb) => {
+    updateCalldataBatches.map(async (updateCalldataBatch) => {
       const multicallResult = await go(
-        async () => server.connect(voidSigner).callStatic.tryMulticall(ucdb.map((item) => item.calldata)),
+        async () =>
+          server.connect(voidSigner).callStatic.tryMulticall(updateCalldataBatch.map((item) => item.calldata)),
         { retries: 1 }
       );
       if (!multicallResult.success) {
-        // TODO log failure
-        return ucdb.map((feed) => ({ dataFeedId: feed.dataFeedId, shouldUpdate: true }));
+        logger.warn(`The multicall static-call attempt to update feeds has failed.`, { error: multicallResult.error });
+        return updateCalldataBatch.map((feed) => ({ dataFeedId: feed.dataFeedId, shouldUpdate: true }));
       }
 
-      const { successes } = multicallResult.data;
+      const { successes, returndata } = multicallResult.data;
+      if (!(successes.length === updateCalldataBatch.length && returndata.length === updateCalldataBatch.length)) {
+        logger.warn(
+          `The number of returned records from the updateCalldata multicall batch does not match the number requested.`
+        );
+        return updateCalldataBatch.map((feed) => ({ dataFeedId: feed.dataFeedId, shouldUpdate: true }));
+      }
 
-      return ucdb.map((feed, idx) => ({ shouldUpdate: !!successes[idx], dataFeedId: feed.dataFeedId }));
+      return updateCalldataBatch.map((feed, idx) => ({ shouldUpdate: !!successes[idx], dataFeedId: feed.dataFeedId }));
     })
   );
 
   const failedFeedUpdateValueCalldata = await Promise.all(
+    // Chunk the feeds to reduce the likelyhood of the multicall failing due to exceeded gas limit
     chunk(
+      // deduplicate the feeds to be queried
       updateCalldataResults
         .flat()
         .filter((updateAttemptResult) => !updateAttemptResult.shouldUpdate)
@@ -242,11 +249,17 @@ export const deepCheckFeeds = async (
         { retries: 1 }
       );
       if (!multicallResult.success) {
-        // TODO log failure
+        logger.warn(`The multicall attempt to read feed values that previously failed to update has failed.`, {
+          error: multicallResult.error,
+        });
         return feedBatch.map((feed) => ({ dataFeedId: feed.dataFeedId, onChainValue: undefined }));
       }
 
       const { successes, returndata } = multicallResult.data;
+      if (!(successes.length === feedBatch.length && returndata.length === feedBatch.length)) {
+        logger.warn(`The number of returned records from the multicall batch does not match the number requested.`);
+        return feedBatch.map((feed) => ({ dataFeedId: feed.dataFeedId, onChainValue: undefined }));
+      }
 
       return multicallResult.data.map((_, idx) => {
         if (successes[idx]) {
@@ -262,7 +275,7 @@ export const deepCheckFeeds = async (
 
   const flattenedFailedFeedValues = failedFeedUpdateValueCalldata.flat();
 
-  const filteredBatch = batch
+  return batch
     .map((feed) => {
       const beaconValues = feed.decodedDataFeed.beacons.map((beacon) => {
         const latestOnChainValue = flattenedFailedFeedValues.find(
@@ -305,10 +318,6 @@ export const deepCheckFeeds = async (
       };
     })
     .filter((feed) => feed.shouldUpdate);
-
-  // TODO add logger+context
-
-  return filteredBatch;
 };
 
 export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerName: Provider, chainId: ChainId) => {
@@ -335,9 +344,7 @@ export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerN
     }
   });
 
-  const initialFeedsToUpdate = getFeedsToUpdate(batch);
+  const feedsToUpdate = getFeedsToUpdate(batch, chainId, providerName);
 
-  const finalFeedsToUpdate = await deepCheckFeeds(initialFeedsToUpdate, chainId, providerName);
-
-  return updateFeeds(finalFeedsToUpdate, chainId);
+  return updateFeeds(feedsToUpdate, chainId);
 };
