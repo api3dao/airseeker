@@ -33,7 +33,7 @@ export const updateFeeds = async (
   } = state;
 
   // Update all of the dAPIs in parallel.
-  await Promise.all(
+  return Promise.all(
     updateableDapis.map(async (dapi) => {
       const { dapiInfo, updateableBeacons } = dapi;
       const {
@@ -41,7 +41,7 @@ export const updateFeeds = async (
         decodedDataFeed: { dataFeedId },
       } = dapiInfo;
 
-      await logger.runWithContext({ dapiName, dataFeedId }, async () => {
+      return logger.runWithContext({ dapiName, dataFeedId }, async () => {
         const goUpdate = await go(async () => {
           // Create calldata for all beacons of the particular data feed the dAPI points to.
           const beaconUpdateCalls = updateableBeacons.map((beacon) => {
@@ -91,17 +91,21 @@ export const updateFeeds = async (
           }
 
           logger.debug('Updating dAPI', { gasPrice: goGasPrice.data, gasLimit });
-          await api3ServerV1
-            // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
-            // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
-            .connect(sponsorWallet.connect(api3ServerV1.provider))
-            .tryMulticall(dataFeedUpdateCalldatas, { gasPrice: goGasPrice.data!, gasLimit });
-          logger.debug('Successfully updated dAPI');
+          return (
+            api3ServerV1
+              // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
+              // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
+              .connect(sponsorWallet.connect(api3ServerV1.provider))
+              .tryMulticall(dataFeedUpdateCalldatas, { gasPrice: goGasPrice.data!, gasLimit })
+          );
         });
 
         if (!goUpdate.success) {
           logger.error(`Failed to update a dAPI`, goUpdate.error);
+          return null;
         }
+
+        return goUpdate.data;
       });
     })
   );

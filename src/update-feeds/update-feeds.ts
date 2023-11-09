@@ -82,6 +82,7 @@ export const runUpdateFeed = async (providerName: ProviderName, chain: Chain, ch
       return;
     }
     const { firstBatch, dapisCount } = goFirstBatch.data;
+    // TODO: Handle case when there are no dAPIs.
     const processFirstBatchPromise = processBatch(firstBatch, providerName, chainId);
 
     // Calculate the stagger time between the rest of the batches.
@@ -122,11 +123,11 @@ export const runUpdateFeed = async (providerName: ProviderName, chain: Chain, ch
         processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value, providerName, chainId)
       );
 
-    // Wait for all the batches to be processed.
-    //
-    // TODO: Consider returning some information (success/error) and log some statistics (e.g. how many dAPIs were
-    // updated, etc...).
-    await Promise.all([processFirstBatchPromise, ...processOtherBatchesPromises]);
+    // Wait for all the batches to be processed and print stats from this run.
+    const processingResult = await Promise.all([processFirstBatchPromise, ...processOtherBatchesPromises]);
+    const successCount = processingResult.reduce((acc, { successCount }) => acc + successCount, 0);
+    const errorCount = processingResult.reduce((acc, { errorCount }) => acc + errorCount, 0);
+    logger.debug(`Finished processing batches of active dAPIs`, { batchesCount, successCount, errorCount });
   });
 };
 
@@ -226,5 +227,13 @@ export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerN
     );
   }
 
-  return updateFeeds(chainId, providerName, provider, getApi3ServerV1(contracts.Api3ServerV1, provider), feedsToUpdate);
+  const updatedFeeds = await updateFeeds(
+    chainId,
+    providerName,
+    provider,
+    getApi3ServerV1(contracts.Api3ServerV1, provider),
+    feedsToUpdate
+  );
+  const successCount = updatedFeeds.filter(Boolean).length;
+  return { successCount, errorCount: size(feedsToUpdate) - successCount };
 };
