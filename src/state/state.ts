@@ -9,8 +9,8 @@ import type {
   ChainId,
   SignedData,
   DataFeedId,
-  Provider,
-  DApiName,
+  ProviderName,
+  DapiName,
 } from '../types';
 
 interface GasState {
@@ -41,8 +41,8 @@ export interface State {
   gasPriceStore: Record<string, Record<string, GasState>>;
   derivedSponsorWallets: Record<DapiName, PrivateKey>;
   signedApiStore: Record<DataFeedId, SignedData>;
-  signedApiUrlStore: Record<ChainId, Record<Provider, string[]>>;
-  dapis: Record<DApiName, DapiState>;
+  signedApiUrlStore: Record<ChainId, Record<ProviderName, string[]>>;
+  dapis: Record<DapiName, DapiState>;
 }
 
 type StateUpdater = (draft: Draft<State>) => void;

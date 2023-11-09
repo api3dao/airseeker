@@ -9,7 +9,7 @@ import { clearSponsorLastUpdateTimestampMs } from '../gas-price/gas-price';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, updateState } from '../state';
-import type { ChainId, Provider } from '../types';
+import type { ChainId, ProviderName } from '../types';
 import { isFulfilled, sleep } from '../utils';
 
 import { getApi3ServerV1 } from './api3-server-v1';
@@ -48,7 +48,7 @@ export const startUpdateFeedLoops = async () => {
   );
 };
 
-export const runUpdateFeed = async (providerName: Provider, chain: Chain, chainId: ChainId) => {
+export const runUpdateFeed = async (providerName: ProviderName, chain: Chain, chainId: ChainId) => {
   await logger.runWithContext({ chainId, providerName, coordinatorTimestampMs: Date.now().toString() }, async () => {
     const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
 
@@ -145,7 +145,7 @@ export const decodeBeaconValue = (encodedBeaconValue: string) => {
 export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]): UpdateableDapi[] =>
   batch
     .map((dapiInfo): UpdateableDapi | null => {
-      const beaconsSignedData = dapiInfo.decodedDataFeed.beacons.map((beacon) => getStoreDataPoint(beacon.dataFeedId));
+      const beaconsSignedData = dapiInfo.decodedDataFeed.beacons.map((beacon) => getStoreDataPoint(beacon.beaconId));
 
       // Only update data feed when we have signed data for all constituent beacons.
       if (beaconsSignedData.some((signedData) => !signedData)) return null;
@@ -177,13 +177,13 @@ export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]): Updateable
         dapiInfo,
         updateableBeacons: zip(dapiInfo.decodedDataFeed.beacons, beaconsSignedData).map(([beacon, signedData]) => ({
           signedData: signedData!,
-          beaconId: beacon!.dataFeedId,
+          beaconId: beacon!.beaconId,
         })),
       };
     })
     .filter((updateableDapi): updateableDapi is UpdateableDapi => updateableDapi !== null);
 
-export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerName: Provider, chainId: string) => {
+export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerName: ProviderName, chainId: string) => {
   logger.debug('Processing batch of active dAPIs', { batch });
   const {
     config: { sponsorWalletMnemonic, chains },

@@ -32,21 +32,21 @@ export const decodeDataFeed = (dataFeed: string): DecodedDataFeed => {
 
     const dataFeedId = deriveBeaconId(airnodeAddress, templateId)!;
 
-    return { dataFeedId, beacons: [{ dataFeedId, airnodeAddress, templateId }] };
+    return { dataFeedId, beacons: [{ beaconId: dataFeedId, airnodeAddress, templateId }] };
   }
 
   const [airnodeAddresses, templateIds] = ethers.utils.defaultAbiCoder.decode(['address[]', 'bytes32[]'], dataFeed);
 
-  const dataFeeds = (airnodeAddresses as string[]).map((airnodeAddress: string, idx: number) => {
+  const beacons = (airnodeAddresses as string[]).map((airnodeAddress: string, idx: number) => {
     const templateId = templateIds[idx] as string;
-    const dataFeedId = deriveBeaconId(airnodeAddress, templateId)!;
+    const beaconId = deriveBeaconId(airnodeAddress, templateId)!;
 
-    return { dataFeedId, airnodeAddress, templateId };
+    return { beaconId, airnodeAddress, templateId };
   });
 
-  const dataFeedId = deriveBeaconSetId(dataFeeds.map((df) => df.dataFeedId))!;
+  const dataFeedId = deriveBeaconSetId(beacons.map((df) => df.beaconId))!;
 
-  return { dataFeedId, beacons: dataFeeds };
+  return { dataFeedId, beacons };
 };
 
 export const decodeReadDapiWithIndexResponse = (
@@ -79,5 +79,4 @@ export const decodeReadDapiWithIndexResponse = (
   };
 };
 
-// TODO: Consider renaming, but it's probably OK as is
 export type ReadDapiWithIndexResponse = ReturnType<typeof decodeReadDapiWithIndexResponse>;

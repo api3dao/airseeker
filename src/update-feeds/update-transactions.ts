@@ -6,7 +6,7 @@ import { AIRSEEKER_PROTOCOL_ID } from '../constants';
 import { getAirseekerRecommendedGasPrice } from '../gas-price/gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { SignedData, ChainId, Provider } from '../types';
+import type { SignedData, ChainId, ProviderName } from '../types';
 
 import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
 
@@ -22,7 +22,7 @@ export interface UpdateableDapi {
 
 export const updateFeeds = async (
   chainId: ChainId,
-  providerName: Provider,
+  providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
   api3ServerV1: Api3ServerV1,
   updateableDapis: UpdateableDapi[]
