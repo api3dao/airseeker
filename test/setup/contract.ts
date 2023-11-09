@@ -1,12 +1,19 @@
 import * as abi from '@api3/airnode-abi';
-import { AccessControlRegistry__factory, type Api3ServerV1, Api3ServerV1__factory } from '@api3/airnode-protocol-v1';
+import {
+  AccessControlRegistry__factory as AccessControlRegistryFactory,
+  type Api3ServerV1,
+  Api3ServerV1__factory as Api3ServerV1Factory,
+} from '@api3/airnode-protocol-v1';
 import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import type { Signer, Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 
 import { deriveBeaconId } from '../../src/utils';
-import { DapiDataRegistry__factory, HashRegistry__factory } from '../../typechain-types';
+import {
+  DapiDataRegistry__factory as DapiDataRegistryFactory,
+  HashRegistry__factory as HashRegistryFactory,
+} from '../../typechain-types';
 import { generateTestConfig } from '../fixtures/mock-config';
 import { signData } from '../utils';
 
@@ -138,19 +145,19 @@ export const deployAndUpdate = async () => {
   ] = await ethers.getSigners();
 
   // Deploy contracts
-  const accessControlRegistryFactory = new AccessControlRegistry__factory(deployer as Signer);
+  const accessControlRegistryFactory = new AccessControlRegistryFactory(deployer as Signer);
   const accessControlRegistry = await accessControlRegistryFactory.deploy();
-  const api3ServerV1Factory = new Api3ServerV1__factory(deployer as Signer);
+  const api3ServerV1Factory = new Api3ServerV1Factory(deployer as Signer);
   const api3ServerV1AdminRoleDescription = 'Api3ServerV1 admin';
   const api3ServerV1 = await api3ServerV1Factory.deploy(
     accessControlRegistry.address,
     api3ServerV1AdminRoleDescription,
     manager!.address
   );
-  const hashRegistryFactory = new HashRegistry__factory(deployer as Signer);
+  const hashRegistryFactory = new HashRegistryFactory(deployer as Signer);
   const hashRegistry = await hashRegistryFactory.deploy();
   await hashRegistry.connect(deployer!).transferOwnership(registryOwner!.address);
-  const dapiDataRegistryFactory = new DapiDataRegistry__factory(deployer as Signer);
+  const dapiDataRegistryFactory = new DapiDataRegistryFactory(deployer as Signer);
   const dapiDataRegistryAdminRoleDescription = 'DapiDataRegistry admin';
   const dapiDataRegistry = await dapiDataRegistryFactory.deploy(
     accessControlRegistry.address,

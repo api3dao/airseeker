@@ -20,8 +20,6 @@ module.exports = {
   rules: {
     'unicorn/prefer-top-level-await': 'off',
     'unicorn/no-process-exit': 'off',
-    // TODO this can be removed after removing non-camelcased config values
-    camelcase: 'off',
 
     // Typescript
     '@typescript-eslint/no-var-requires': 'off',

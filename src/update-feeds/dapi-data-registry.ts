@@ -1,12 +1,12 @@
 import { ethers } from 'ethers';
 
 // NOTE: The contract is not yet published, so we generate the Typechain artifacts locally and import it from there.
-import { type DapiDataRegistry, DapiDataRegistry__factory } from '../../typechain-types';
+import { type DapiDataRegistry, DapiDataRegistry__factory as DapiDataRegistryFactory } from '../../typechain-types';
 import type { DecodedDataFeed } from '../types';
 import { deriveBeaconId, deriveBeaconSetId } from '../utils';
 
 export const getDapiDataRegistry = (address: string, provider: ethers.providers.StaticJsonRpcProvider) =>
-  DapiDataRegistry__factory.connect(address, provider);
+  DapiDataRegistryFactory.connect(address, provider);
 
 export const verifyMulticallResponse = (
   response: Awaited<ReturnType<DapiDataRegistry['callStatic']['tryMulticall']>>
