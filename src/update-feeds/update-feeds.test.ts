@@ -11,6 +11,7 @@ import * as utilsModule from '../utils';
 
 import * as dapiDataRegistryModule from './dapi-data-registry';
 import * as updateFeedsModule from './update-feeds';
+import * as updateTransactionModule from './update-transactions';
 
 jest.mock('../state');
 
@@ -145,8 +146,8 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
 
   it('fetches other batches in a staggered way and logs errors', async () => {
     // Prepare the mocked contract so it returns three batches (of size 1) of dAPIs and the second batch fails to load.
-    const firstBatch = generateReadDapiWithIndexResponse();
-    const thirdBatch = generateReadDapiWithIndexResponse();
+    const firstDapi = generateReadDapiWithIndexResponse();
+    const thirdDapi = generateReadDapiWithIndexResponse();
     const dapiDataRegistry = generateMockDapiDataRegistry();
     jest
       .spyOn(dapiDataRegistryModule, 'getDapiDataRegistry')
@@ -154,10 +155,10 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
     dapiDataRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
     dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
       successes: [true, true],
-      returndata: [[ethers.BigNumber.from(3)], firstBatch],
+      returndata: [[ethers.BigNumber.from(3)], firstDapi],
     });
     dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [false], returndata: [] });
-    dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [true], returndata: [thirdBatch] });
+    dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [true], returndata: [thirdDapi] });
     const sleepCalls = [] as number[];
     const originalSleep = utilsModule.sleep;
     jest.spyOn(utilsModule, 'sleep').mockImplementation(async (ms) => {
@@ -174,7 +175,7 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
         signedApiUrlStore: { '31337': { 'some-test-provider': ['url-one'] } },
         signedApiStore: {},
         gasPriceStore: {
-          '123': {
+          '31337': {
             'some-test-provider': {
               gasPrices: [],
               sponsorLastUpdateTimestampMs: {
@@ -185,7 +186,13 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
         },
       })
     );
-    jest.spyOn(updateFeedsModule, 'getFeedsToUpdate').mockImplementation(() => []);
+    jest
+      .spyOn(updateFeedsModule, 'getFeedsToUpdate')
+      .mockImplementation(() => [
+        allowPartial<updateTransactionModule.UpdateableDapi>({ dapiInfo: firstDapi }),
+        allowPartial<updateTransactionModule.UpdateableDapi>({ dapiInfo: thirdDapi }),
+      ]);
+    jest.spyOn(updateTransactionModule, 'updateFeeds').mockResolvedValue([null, null]);
 
     await updateFeedsModule.runUpdateFeed(
       'provider-name',
@@ -197,12 +204,12 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
           DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
       }),
-      '123'
+      '31337'
     );
 
     // Expect the contract to fetch the batches to be called with the correct stagger time.
     expect(utilsModule.sleep).toHaveBeenCalledTimes(3);
-    expect(sleepCalls[0]).toBeGreaterThanOrEqual(40); // Reserving 10ms as the buffer for computing stagger time.
+    expect(sleepCalls[0]).toBeGreaterThanOrEqual(30); // Reserving 20ms as the buffer for computing stagger time.
     expect(sleepCalls[1]).toBeGreaterThanOrEqual(0);
     expect(sleepCalls[2]).toBe(49.999_999_999_999_99); // Stagger time is actually 150 / 3 = 50, but there is a rounding error.
 
@@ -212,7 +219,7 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
       'Failed to get active dAPIs batch',
       new Error('One of the multicalls failed')
     );
-    expect(logger.debug).toHaveBeenCalledTimes(6);
+    expect(logger.debug).toHaveBeenCalledTimes(7);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of dAPIs batches');
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs', expect.anything());
     expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching batches of active dAPIs', {
@@ -226,5 +233,10 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
       batchIndex: 2,
     });
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Processing batch of active dAPIs', expect.anything());
+    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Finished processing batches of active dAPIs', {
+      batchesCount: 3,
+      errorCount: 4,
+      successCount: 0,
+    });
   });
 });

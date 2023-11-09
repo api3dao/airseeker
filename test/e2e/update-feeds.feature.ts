@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { omit } from 'lodash';
 
-import { initializeGasStore } from '../../src/gas-price/gas-price';
+import { initializeGasStore } from '../../src/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
 import { runUpdateFeed } from '../../src/update-feeds';
@@ -82,7 +82,9 @@ it('updates blockchain data', async () => {
     },
   ]);
 
+  expect(logger.debug).toHaveBeenCalledTimes(4);
   expect(logger.debug).toHaveBeenNthCalledWith(1, 'Estimating gas limit');
-  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Deriving sponsor wallet');
-  expect(logger.debug).toHaveBeenNthCalledWith(5, 'Successfully updated dAPI');
+  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Getting derived sponsor wallet');
+  expect(logger.debug).toHaveBeenNthCalledWith(3, 'Derived new sponsor wallet', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(4, 'Updating dAPI', expect.anything());
 });

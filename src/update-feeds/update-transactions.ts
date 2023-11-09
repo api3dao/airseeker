@@ -2,7 +2,7 @@ import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
-import { getAirseekerRecommendedGasPrice } from '../gas-price/gas-price';
+import { getAirseekerRecommendedGasPrice } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { SignedData, ChainId, ProviderName } from '../types';
@@ -74,7 +74,7 @@ export const updateFeeds = async (
             updateableBeacons.map((beacon) => beacon.beaconId)
           );
 
-          logger.debug('Deriving sponsor wallet');
+          logger.debug('Getting derived sponsor wallet');
           const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
 
           const goGasPrice = await go(async () =>

@@ -5,7 +5,7 @@ import { range, size, zip } from 'lodash';
 import { calculateMedian, checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
 import { INT224_MAX, INT224_MIN } from '../constants';
-import { clearSponsorLastUpdateTimestampMs } from '../gas-price/gas-price';
+import { clearSponsorLastUpdateTimestampMs } from '../gas-price';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, updateState } from '../state';

@@ -6,7 +6,7 @@ import {
   multiplyGasPrice,
   initializeGasStore,
   clearExpiredStoreGasPrices,
-} from '../../src/gas-price/gas-price';
+} from '../../src/gas-price';
 import { getState, updateState } from '../../src/state';
 import { init } from '../fixtures/mock-config';
 
