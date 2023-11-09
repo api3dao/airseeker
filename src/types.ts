@@ -30,6 +30,7 @@ export const signedApiResponseSchema = z.object({
 export interface Beacon {
   airnodeAddress: AirnodeAddress;
   templateId: TemplateId;
+  // TODO: Rename to beaconId
   dataFeedId: string;
 }
 

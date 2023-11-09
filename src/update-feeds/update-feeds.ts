@@ -1,9 +1,10 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
-import { range, size } from 'lodash';
+import { range, size, zip } from 'lodash';
 
-import { checkUpdateConditions } from '../condition-check';
+import { calculateMedian, checkUpdateConditions } from '../condition-check';
 import type { Chain } from '../config/schema';
+import { INT224_MAX, INT224_MIN } from '../constants';
 import { clearSponsorLastUpdateTimestampMs } from '../gas-price/gas-price';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
@@ -11,6 +12,7 @@ import { getState, updateState } from '../state';
 import type { ChainId, Provider } from '../types';
 import { isFulfilled, sleep } from '../utils';
 
+import { getApi3ServerV1 } from './api3-server-v1';
 import {
   decodeDapisCountResponse,
   decodeReadDapiWithIndexResponse,
@@ -18,7 +20,7 @@ import {
   verifyMulticallResponse,
   type ReadDapiWithIndexResponse,
 } from './dapi-data-registry';
-import { deriveSponsorWallet } from './update-transactions';
+import { type UpdateableDapi, deriveSponsorWallet, updateFeeds } from './update-transactions';
 
 export const startUpdateFeedLoops = async () => {
   const state = getState();
@@ -128,42 +130,66 @@ export const runUpdateFeed = async (providerName: Provider, chain: Chain, chainI
   });
 };
 
-export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]) =>
-  batch.map((dapiResponse: ReadDapiWithIndexResponse) => {
-    const signedData = getStoreDataPoint(dapiResponse.decodedDataFeed.dataFeedId);
-    if (!signedData) {
-      return { ...dapiResponse, shouldUpdate: false };
-    }
+// https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
+export const decodeBeaconValue = (encodedBeaconValue: string) => {
+  const decodedBeaconValue = ethers.BigNumber.from(
+    ethers.utils.defaultAbiCoder.decode(['int256'], encodedBeaconValue)[0]
+  );
+  if (decodedBeaconValue.gt(INT224_MAX) || decodedBeaconValue.lt(INT224_MIN)) {
+    return null;
+  }
 
-    const offChainValue = ethers.BigNumber.from(signedData.encodedValue);
-    const offChainTimestamp = Number.parseInt(signedData?.timestamp ?? '0', 10);
-    const deviationThreshold = dapiResponse.updateParameters.deviationThresholdInPercentage;
-    const shouldUpdate = checkUpdateConditions(
-      dapiResponse.dataFeedValue.value,
-      dapiResponse.dataFeedValue.timestamp,
-      offChainValue,
-      offChainTimestamp,
-      dapiResponse.updateParameters.heartbeatInterval,
-      deviationThreshold
-    );
-
-    return {
-      ...dapiResponse,
-      signedData,
-      shouldUpdate,
-    };
-  });
-
-export const updateFeeds = async (_batch: ReturnType<typeof getFeedsToUpdate>, _chainId: string) => {
-  // TODO implement
-  // batch, execute
+  return decodedBeaconValue;
 };
+
+export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]): UpdateableDapi[] =>
+  batch
+    .map((dapiInfo): UpdateableDapi | null => {
+      const beaconsSignedData = dapiInfo.decodedDataFeed.beacons.map((beacon) => getStoreDataPoint(beacon.dataFeedId));
+
+      // Only update data feed when we have signed data for all constituent beacons.
+      if (beaconsSignedData.some((signedData) => !signedData)) return null;
+
+      const beaconsDecodedValues = beaconsSignedData.map((signedData) => decodeBeaconValue(signedData!.encodedValue));
+      // Only update data feed when all beacon values are valid.
+      if (beaconsDecodedValues.includes(null)) return null;
+
+      // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L163
+      const newBeaconSetValue = calculateMedian(beaconsDecodedValues.map((decodedValue) => decodedValue!));
+      const newBeaconSetTimestamp = calculateMedian(
+        beaconsSignedData.map((signedData) => ethers.BigNumber.from(signedData!.timestamp))
+      )!.toNumber();
+      const deviationThreshold = dapiInfo.updateParameters.deviationThresholdInPercentage;
+      if (
+        !checkUpdateConditions(
+          dapiInfo.dataFeedValue.value,
+          dapiInfo.dataFeedValue.timestamp,
+          newBeaconSetValue,
+          newBeaconSetTimestamp,
+          dapiInfo.updateParameters.heartbeatInterval,
+          deviationThreshold
+        )
+      ) {
+        return null;
+      }
+
+      return {
+        dapiInfo,
+        updateableBeacons: zip(dapiInfo.decodedDataFeed.beacons, beaconsSignedData).map(([beacon, signedData]) => ({
+          signedData: signedData!,
+          beaconId: beacon!.dataFeedId,
+        })),
+      };
+    })
+    .filter((updateableDapi): updateableDapi is UpdateableDapi => updateableDapi !== null);
 
 export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerName: Provider, chainId: string) => {
   logger.debug('Processing batch of active dAPIs', { batch });
   const {
-    config: { sponsorWalletMnemonic },
+    config: { sponsorWalletMnemonic, chains },
   } = getState();
+  const { contracts, providers } = chains[chainId]!;
+  const provider = new ethers.providers.StaticJsonRpcProvider(providers[providerName]);
 
   updateState((draft) => {
     for (const dapi of batch) {
@@ -186,10 +212,13 @@ export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerN
     }
   });
 
-  const feeds = getFeedsToUpdate(batch);
+  const feedsToUpdate = getFeedsToUpdate(batch);
+  const dapiNamesToUpdate = new Set(feedsToUpdate.map((feed) => feed.dapiInfo.dapiName));
 
   // Clear last update timestamps for feeds that don't need an update
-  for (const feed of feeds.filter((feed) => !feed.shouldUpdate)) {
+  for (const feed of batch) {
+    if (dapiNamesToUpdate.has(feed.dapiName)) continue;
+
     clearSponsorLastUpdateTimestampMs(
       chainId,
       providerName,
@@ -197,8 +226,5 @@ export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerN
     );
   }
 
-  return updateFeeds(
-    feeds.filter((feed) => feed.shouldUpdate),
-    chainId
-  );
+  return updateFeeds(chainId, providerName, provider, getApi3ServerV1(contracts.Api3ServerV1, provider), feedsToUpdate);
 };

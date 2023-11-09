@@ -185,9 +185,7 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
         },
       })
     );
-    jest
-      .spyOn(updateFeedsModule, 'getFeedsToUpdate')
-      .mockImplementation((feeds) => feeds.map((feed) => ({ ...feed, shouldUpdate: true })));
+    jest.spyOn(updateFeedsModule, 'getFeedsToUpdate').mockImplementation(() => []);
 
     await updateFeedsModule.runUpdateFeed(
       'provider-name',

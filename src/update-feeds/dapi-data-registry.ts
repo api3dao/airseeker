@@ -79,4 +79,5 @@ export const decodeReadDapiWithIndexResponse = (
   };
 };
 
+// TODO: Consider renaming, but it's probably OK as is
 export type ReadDapiWithIndexResponse = ReturnType<typeof decodeReadDapiWithIndexResponse>;
