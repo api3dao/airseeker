@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 
 import { init } from '../../test/fixtures/mock-config';
 import { allowPartial } from '../../test/utils';
@@ -71,12 +71,18 @@ describe('checks whether feeds should be updated or not', () => {
 
   describe('deep analysis', () => {
     it('reports an updatable feed as updatable', async () => {
+      const feedIds = [
+        '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+        '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
+        '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
+      ] as const;
+
       init(
         allowPartial<stateModule.State>({
           signedApiStore: {
-            '0x000a': { timestamp: '100', encodedValue: ethers.BigNumber.from(200).toHexString() },
-            '0x000b': { timestamp: '150', encodedValue: ethers.BigNumber.from(250).toHexString() },
-            '0x000c': { timestamp: '200', encodedValue: ethers.BigNumber.from(300).toHexString() },
+            [feedIds[0]]: { timestamp: '100', encodedValue: ethers.BigNumber.from(200).toHexString() },
+            [feedIds[1]]: { timestamp: '150', encodedValue: ethers.BigNumber.from(250).toHexString() },
+            [feedIds[2]]: { timestamp: '200', encodedValue: ethers.BigNumber.from(300).toHexString() },
           },
         })
       );
@@ -87,38 +93,49 @@ describe('checks whether feeds should be updated or not', () => {
           dataFeedValue: { value: ethers.BigNumber.from(1), timestamp: 1 },
           decodedDataFeed: {
             dataFeedId: '0x000',
-            beacons: [
-              { dataFeedId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6' },
-              { dataFeedId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7' },
-              { dataFeedId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8' },
-            ],
+            beacons: [{ dataFeedId: feedIds[0] }, { dataFeedId: feedIds[1] }, { dataFeedId: feedIds[2] }],
           },
           dapiName: 'test',
         },
       ]);
 
+      const tryMulticallMock = jest.fn().mockReturnValue({
+        successes: [true, true, true],
+        returndata: [
+          ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [100, 105]),
+          ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [101, 106]),
+          ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [102, 107]),
+        ],
+      });
+
       const mockContract = {
         connect: jest.fn().mockReturnValue({
           callStatic: {
-            tryMulticall: jest.fn().mockReturnValue({
-              successes: [true, true, true],
-              returndata: [
-                ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [100, 105]),
-                ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [101, 106]),
-                ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [102, 107]),
-              ],
-            }),
+            tryMulticall: tryMulticallMock,
           },
         }),
+
+        interface: { encodeFunctionData: () => 'does not matter' },
       };
 
       jest.spyOn(contractUtils, 'getApi3ServerV1').mockReturnValue(mockContract as any);
 
       const shallowFeedsToUpdate = shallowCheckFeeds(batch);
 
-      const multicallPromise = await callAndParseMulticall(shallowFeedsToUpdate, 'hardhat', '31337');
+      expect(shallowFeedsToUpdate).toHaveLength(1);
 
-      await expect(multicallPromise).resolves.toBe([]);
+      const callAndParseMulticallPromise = callAndParseMulticall(shallowFeedsToUpdate, 'hardhat', '31337');
+
+      await expect(callAndParseMulticallPromise).resolves.toStrictEqual([
+        {
+          dataFeedId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+          onChainValue: {
+            timestamp: ethers.BigNumber.from('0x69'),
+            value: ethers.BigNumber.from('0x64'),
+          },
+        },
+      ]);
+      expect(tryMulticallMock).toHaveBeenCalledWith(['does not matter', 'does not matter', 'does not matter']);
     });
   });
 });

@@ -59,6 +59,10 @@ export const callAndParseMulticall = async (
       calldata: server.interface.encodeFunctionData('dataFeeds', [dataFeedId]),
     }));
 
+  if (feedCalldata.length === 0) {
+    return [];
+  }
+
   const multicallResult = await go(
     async () => server.connect(voidSigner).callStatic.tryMulticall(feedCalldata.map((feed) => feed.calldata)),
     { retries: 1 }
