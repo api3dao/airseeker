@@ -82,7 +82,10 @@ export const runUpdateFeed = async (providerName: ProviderName, chain: Chain, ch
       return;
     }
     const { firstBatch, dapisCount } = goFirstBatch.data;
-    // TODO: Handle case when there are no dAPIs.
+    if (dapisCount === 0) {
+      logger.warn(`No active dAPIs found`);
+      return;
+    }
     const processFirstBatchPromise = processBatch(firstBatch, providerName, chainId);
 
     // Calculate the stagger time between the rest of the batches.
