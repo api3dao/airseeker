@@ -120,7 +120,7 @@ export const configSchema = z
   .object({
     sponsorWalletMnemonic: z.string().refine((mnemonic) => ethers.utils.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
     chains: chainsSchema,
-    fetchInterval: z.number().positive(), // TODO: Rename to signedDataFetchInterval
+    signedDataFetchInterval: z.number().positive(),
     deviationThresholdCoefficient: z.number().positive().optional().default(1), // Explicitly agreed to make this optional. See: https://github.com/api3dao/airseeker-v2/pull/20#issuecomment-1750856113.
   })
   .strict();
