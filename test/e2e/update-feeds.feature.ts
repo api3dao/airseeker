@@ -6,7 +6,7 @@ import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
 import { runUpdateFeed } from '../../src/update-feeds';
 import { decodeDataFeed } from '../../src/update-feeds/dapi-data-registry';
-import { deriveSponsorWallet, updateFeeds } from '../../src/update-feeds/update-transactions';
+import { updateFeeds } from '../../src/update-feeds/update-transactions';
 import { init } from '../fixtures/mock-config';
 import { deployAndUpdate } from '../setup/contract';
 import { allowPartial, generateSignedData } from '../utils';
@@ -38,8 +38,7 @@ it('updates blockchain data', async () => {
     binanceBtcBeacon,
     krakenAirnodeWallet,
     binanceAirnodeWallet,
-    airseekerSponsorWallet,
-    walletFunder,
+    airseekerWallet,
   } = await deployAndUpdate();
   init({ config });
   initializeGasStore(chainId, providerName);
@@ -60,16 +59,11 @@ it('updates blockchain data', async () => {
     krakenBtcBeacon.templateId,
     (currentBlockTimestamp + 2).toString()
   );
-  const btcDapiSponsorWallet = deriveSponsorWallet(airseekerSponsorWallet.mnemonic.phrase, btcDapi.dapiName);
-  await walletFunder.sendTransaction({
-    to: btcDapiSponsorWallet.address,
-    value: ethers.utils.parseEther('1'),
-  });
   jest.spyOn(logger, 'debug');
   jest
     .spyOn(stateModule, 'getState')
     .mockReturnValue(
-      allowPartial<stateModule.State>({ config: { sponsorWalletMnemonic: airseekerSponsorWallet.mnemonic.phrase } })
+      allowPartial<stateModule.State>({ config: { sponsorWalletMnemonic: airseekerWallet.mnemonic.phrase } })
     );
 
   await updateFeeds(chainId, providerName, provider, api3ServerV1, [

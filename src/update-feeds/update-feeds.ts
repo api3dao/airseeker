@@ -20,7 +20,7 @@ import {
   verifyMulticallResponse,
   type ReadDapiWithIndexResponse,
 } from './dapi-data-registry';
-import { type UpdateableDapi, deriveSponsorWallet, updateFeeds } from './update-transactions';
+import { type UpdateableDapi, getDerivedSponsorWallet, updateFeeds } from './update-transactions';
 
 export const startUpdateFeedLoops = async () => {
   const state = getState();
@@ -222,7 +222,7 @@ export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerN
     clearSponsorLastUpdateTimestampMs(
       chainId,
       providerName,
-      deriveSponsorWallet(sponsorWalletMnemonic, feed.dapiName).address
+      getDerivedSponsorWallet(sponsorWalletMnemonic, feed.dapiName).address
     );
   }
 

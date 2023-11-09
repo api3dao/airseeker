@@ -2,11 +2,11 @@ import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
-import { AIRSEEKER_PROTOCOL_ID } from '../constants';
 import { getAirseekerRecommendedGasPrice } from '../gas-price/gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { SignedData, ChainId, ProviderName } from '../types';
+import { deriveSponsorWallet } from '../utils';
 
 import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
 
@@ -75,7 +75,7 @@ export const updateFeeds = async (
           );
 
           logger.debug('Deriving sponsor wallet');
-          const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
+          const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
 
           const goGasPrice = await go(async () =>
             getAirseekerRecommendedGasPrice(
@@ -141,7 +141,7 @@ export const estimateMulticallGasLimit = async (
   return ethers.BigNumber.from(2_000_000);
 };
 
-export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: string) => {
+export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiName: string) => {
   const { derivedSponsorWallets } = getState();
 
   const privateKey = derivedSponsorWallets?.[dapiName];
@@ -149,13 +149,8 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: str
     return new ethers.Wallet(privateKey);
   }
 
-  // Take first 20 bytes of dapiName as sponsor address together with the "0x" prefix.
-  const sponsorAddress = ethers.utils.getAddress(dapiName.slice(0, 42));
-  const sponsorWallet = ethers.Wallet.fromMnemonic(
-    sponsorWalletMnemonic,
-    `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
-  );
-  logger.debug('Derived sponsor wallet', { sponsorAddress, sponsorWalletAddress: sponsorWallet.address });
+  const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
+  logger.debug('Derived new sponsor wallet', { dapiName, sponsorWalletAddress: sponsorWallet.address });
 
   updateState((draft) => {
     draft.derivedSponsorWallets = {
@@ -166,16 +161,6 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: str
 
   return sponsorWallet;
 };
-
-export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
-  const sponsorAddressBN = ethers.BigNumber.from(sponsorAddress);
-  const paths = [];
-  for (let i = 0; i < 6; i++) {
-    const shiftedSponsorAddressBN = sponsorAddressBN.shr(31 * i);
-    paths.push(shiftedSponsorAddressBN.mask(31).toString());
-  }
-  return `${AIRSEEKER_PROTOCOL_ID}/${paths.join('/')}`;
-}
 
 export const createDummyBeaconUpdateData = async (dummyAirnode: ethers.Wallet = ethers.Wallet.createRandom()) => {
   const dummyBeaconTemplateId = ethers.utils.hexlify(ethers.utils.randomBytes(32));

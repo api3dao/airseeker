@@ -9,7 +9,7 @@ import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import type { Signer, Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 
-import { deriveBeaconId } from '../../src/utils';
+import { deriveBeaconId, deriveSponsorWallet } from '../../src/utils';
 import {
   DapiDataRegistry__factory as DapiDataRegistryFactory,
   HashRegistry__factory as HashRegistryFactory,
@@ -117,7 +117,7 @@ export const deriveRole = (adminRole: string, roleDescription: string) => {
 const initializeBeacon = async (
   api3ServerV1: Api3ServerV1,
   airnodeWallet: Wallet,
-  airseekerSponsorWallet: SignerWithAddress | Wallet,
+  sponsorWalletMnemonic: SignerWithAddress | Wallet,
   templateId: string,
   apiValue: number
 ) => {
@@ -127,7 +127,7 @@ const initializeBeacon = async (
   const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
 
   await api3ServerV1
-    .connect(airseekerSponsorWallet)
+    .connect(sponsorWalletMnemonic)
     .updateBeaconWithSignedData(airnodeWallet.address, templateId, dataFeedTimestamp, encodedValue, signature);
 };
 
@@ -196,11 +196,10 @@ export const deployAndUpdate = async () => {
     .connect(manager!)
     .grantRole(await api3ServerV1.dapiNameSetterRole(), dapiDataRegistry.address);
 
-  // Initialize sponsor wallets
-  // TODO: This is the old Airseeker wallet derivation. We should have a dedicated wallet for each dAPI.
-  const airseekerSponsorWallet = ethers.Wallet.createRandom().connect(ethers.provider);
-  await deployer!.sendTransaction({
-    to: airseekerSponsorWallet.address,
+  // Initialize special wallet for contract initialization
+  const airseekerInitializationWallet = ethers.Wallet.createRandom().connect(ethers.provider);
+  await walletFunder!.sendTransaction({
+    to: airseekerInitializationWallet.address,
     value: ethers.utils.parseEther('1'),
   });
 
@@ -216,38 +215,38 @@ export const deployAndUpdate = async () => {
   await initializeBeacon(
     api3ServerV1,
     krakenAirnodeWallet,
-    airseekerSponsorWallet,
+    airseekerInitializationWallet,
     krakenBtcBeacon.templateId,
     Math.floor(740 * 1_000_000)
   );
   await initializeBeacon(
     api3ServerV1,
     krakenAirnodeWallet,
-    airseekerSponsorWallet,
+    airseekerInitializationWallet,
     krakenEthBeacon.templateId,
     Math.floor(41_000 * 1_000_000)
   );
   await initializeBeacon(
     api3ServerV1,
     binanceAirnodeWallet,
-    airseekerSponsorWallet,
+    airseekerInitializationWallet,
     binanceBtcBeacon.templateId,
     Math.floor(750 * 1_000_000)
   );
   await initializeBeacon(
     api3ServerV1,
     binanceAirnodeWallet,
-    airseekerSponsorWallet,
+    airseekerInitializationWallet,
     binanceEthBeacon.templateId,
     Math.floor(41_200 * 1_000_000)
   );
 
   // Update beacon sets
   await api3ServerV1
-    .connect(airseekerSponsorWallet)
+    .connect(airseekerInitializationWallet)
     .updateBeaconSetWithBeacons([binanceBtcBeacon.beaconId, krakenBtcBeacon.beaconId], { gasLimit: 500_000 });
   await api3ServerV1
-    .connect(airseekerSponsorWallet)
+    .connect(airseekerInitializationWallet)
     .updateBeaconSetWithBeacons([binanceEthBeacon.beaconId, krakenEthBeacon.beaconId], { gasLimit: 500_000 });
 
   // Derive beacon set IDs
@@ -281,8 +280,8 @@ export const deployAndUpdate = async () => {
 
   // Add dAPIs hashes
   const dapiNamesInfo = [
-    ['BTC/USD', btcBeaconSetId, airseekerSponsorWallet.address],
-    ['ETH/USD', ethBeaconSetId, airseekerSponsorWallet.address],
+    ['BTC/USD', btcBeaconSetId, airseekerInitializationWallet.address],
+    ['ETH/USD', ethBeaconSetId, airseekerInitializationWallet.address],
   ] as const;
   const dapiTreeValues = dapiNamesInfo.map(([dapiName, beaconSetId, sponsorWalletAddress]) => {
     return [ethers.utils.formatBytes32String(dapiName), beaconSetId, sponsorWalletAddress];
@@ -302,7 +301,8 @@ export const deployAndUpdate = async () => {
   );
   await hashRegistry.registerHash(dapiHashType, dapiTreeRoot, timestamp, dapiTreeRootSignatures);
 
-  // Set active dAPIs
+  // Set active dAPIs and initialize sponsor wallets
+  const airseekerWallet = ethers.Wallet.createRandom();
   const apiTreeRoot = apiTree.root;
   await Promise.all(
     apiTreeValues.map(async ([airnode, url]) => {
@@ -336,24 +336,31 @@ export const deployAndUpdate = async () => {
     const deviationThresholdInPercentage = ethers.BigNumber.from(HUNDRED_PERCENT / 50); // 2%
     const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
     const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
-    const [dapiName, beaconSetId, sponsorWallet] = dapiTreeValue;
+    const [dapiName, beaconSetId, sponsorWalletMnemonic] = dapiTreeValue;
     await dapiDataRegistry
       .connect(api3MarketContract!)
       .addDapi(
         dapiName!,
         beaconSetId!,
-        sponsorWallet!,
+        sponsorWalletMnemonic!,
         deviationThresholdInPercentage,
         deviationReference,
         heartbeatInterval,
         dapiTree.root,
         dapiTree.getProof(dapiTreeValue)
       );
+
+    // Initialize sponsor wallets
+    const sponsorWallet = deriveSponsorWallet(airseekerWallet.mnemonic.phrase, dapiName!);
+    await walletFunder!.sendTransaction({
+      to: sponsorWallet.address,
+      value: ethers.utils.parseEther('1'),
+    });
   }
 
   // Set up config
   const config = generateTestConfig();
-  config.sponsorWalletMnemonic = airseekerSponsorWallet.mnemonic.phrase;
+  config.sponsorWalletMnemonic = airseekerWallet.mnemonic.phrase;
   config.chains[31_337]!.contracts.Api3ServerV1 = api3ServerV1.address;
   config.chains[31_337]!.contracts.DapiDataRegistry = dapiDataRegistry.address;
 
@@ -373,8 +380,7 @@ export const deployAndUpdate = async () => {
     ethBeaconSetId,
     krakenEthBeacon,
 
-    airseekerSponsorWallet,
+    airseekerWallet,
     config,
-    walletFunder: walletFunder!,
   };
 };
