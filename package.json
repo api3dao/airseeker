@@ -66,7 +66,7 @@
     "@api3/promise-utils": "^0.4.0",
     "@ethersproject/abi": "^5.7.0",
     "@ethersproject/providers": "^5.7.2",
-    "axios": "^1.5.1",
+    "axios": "^1.6.0",
     "dotenv": "^16.3.1",
     "ethers": "^5.7.2",
     "immer": "^10.0.3",
