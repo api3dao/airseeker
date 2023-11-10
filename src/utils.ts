@@ -37,3 +37,6 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: str
 
   return sponsorWallet;
 };
+
+export const multiplyBigNumber = (bigNumber: ethers.BigNumber, multiplier: number) =>
+  bigNumber.mul(ethers.BigNumber.from(Math.round(multiplier * 100))).div(ethers.BigNumber.from(100));

@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { omit } from 'lodash';
 
 import { generateTestConfig } from '../../test/fixtures/mock-config';
 import { generateMockDapiDataRegistry, generateReadDapiWithIndexResponse } from '../../test/fixtures/mock-contract';
@@ -238,5 +239,60 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
       errorCount: 4,
       successCount: 0,
     });
+  });
+});
+
+describe(updateFeedsModule.getFeedsToUpdate.name, () => {
+  it('applies deviationThresholdCoefficient from config', () => {
+    const dapi = generateReadDapiWithIndexResponse();
+    const decodedDataFeed = dapiDataRegistryModule.decodeDataFeed(dapi.dataFeed);
+    const decodedDapi = { ...omit(dapi, ['dataFeed']), decodedDataFeed };
+    jest.spyOn(Date, 'now').mockReturnValue(dapi.dataFeedValue.timestamp);
+    const testConfig = generateTestConfig();
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: testConfig,
+        signedApiUrlStore: { '31337': { 'some-test-provider': ['url-one'] } },
+        signedApiStore: {
+          '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
+            airnode: '0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4',
+            templateId: '0x457a3b3da67e394a895ea49e534a4d91b2d009477bef15eab8cbed313925b010',
+            encodedValue: ethers.utils.defaultAbiCoder.encode(
+              ['int256'],
+              [
+                ethers.BigNumber.from(
+                  dapi.dataFeedValue.value
+                    // Multiply the new value by the on chain deviationThresholdInPercentage
+                    .mul(dapi.updateParameters.deviationThresholdInPercentage.add(1 * 1e8))
+                    .div(1e8)
+                ),
+              ]
+            ),
+            signature:
+              '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
+            timestamp: (dapi.dataFeedValue.timestamp + 1).toString(),
+          },
+        },
+        gasPriceStore: {
+          '31337': {
+            'some-test-provider': {
+              gasPrices: [],
+              sponsorLastUpdateTimestampMs: {
+                '0xdatafeedId': 100,
+              },
+            },
+          },
+        },
+      })
+    );
+    jest.spyOn(logger, 'warn');
+    jest.spyOn(logger, 'info');
+
+    const feeds = updateFeedsModule.getFeedsToUpdate([decodedDapi], 2);
+
+    expect(logger.warn).not.toHaveBeenCalledWith(`Off-chain sample's timestamp is older than on-chain timestamp.`);
+    expect(logger.warn).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
+    expect(logger.info).not.toHaveBeenCalledWith(`Deviation exceeded.`);
+    expect(feeds).toStrictEqual([]);
   });
 });
