@@ -111,7 +111,7 @@ export const callAndParseMulticall = async (
         return true;
       }
 
-      return numericalSignedTimestamp > Date.now() + 60 * 60;
+      return numericalSignedTimestamp > Date.now() / 1000 + 60 * 60;
     });
 };
 
@@ -142,7 +142,7 @@ export const getFeedsToUpdate = async (
           return latestOnChainValue.onChainValue;
         }
 
-        const storeDatapoint = getStoreDataPoint(feed.decodedDataFeed.dataFeedId);
+        const storeDatapoint = getStoreDataPoint(beacon.dataFeedId);
 
         const value = ethers.BigNumber.from(storeDatapoint?.encodedValue ?? '1');
         const timestamp = ethers.BigNumber.from(storeDatapoint?.timestamp ?? 1);

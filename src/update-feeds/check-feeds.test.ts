@@ -2,10 +2,13 @@ import { ethers } from 'ethers';
 
 import { init } from '../../test/fixtures/mock-config';
 import { allowPartial } from '../../test/utils';
+import * as signedDataStore from '../signed-data-store/signed-data-store';
 import type * as stateModule from '../state';
+import type { SignedData } from '../types';
 
 import * as contractUtils from './api3-server-v1';
-import { callAndParseMulticall, shallowCheckFeeds } from './check-feeds';
+import * as checkFeeds from './check-feeds';
+import { callAndParseMulticall, getFeedsToUpdate, shallowCheckFeeds } from './check-feeds';
 import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
 
 describe('checks whether feeds should be updated or not', () => {
@@ -68,13 +71,13 @@ describe('checks whether feeds should be updated or not', () => {
   });
 
   describe('deep analysis', () => {
-    it('reports an updatable feed as updatable', async () => {
-      const feedIds = [
-        '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-        '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
-        '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-      ] as const;
+    const feedIds = [
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
+    ] as const;
 
+    it('calls and parses a multicall', async () => {
       init(
         allowPartial<stateModule.State>({
           signedApiStore: {
@@ -106,13 +109,18 @@ describe('checks whether feeds should be updated or not', () => {
         ],
       });
 
+      const encodeFunctionDataMock = jest.fn();
+      encodeFunctionDataMock.mockReturnValueOnce('0xfirst');
+      encodeFunctionDataMock.mockReturnValueOnce('0xsecond');
+      encodeFunctionDataMock.mockReturnValueOnce('0xthird');
+
       const mockContract = {
         connect: jest.fn().mockReturnValue({
           callStatic: {
             tryMulticall: tryMulticallMock,
           },
         }),
-        interface: { encodeFunctionData: jest.fn().mockReturnValue('does not matter') },
+        interface: { encodeFunctionData: encodeFunctionDataMock },
       };
 
       jest.spyOn(contractUtils, 'getApi3ServerV1').mockReturnValue(mockContract as any);
@@ -132,7 +140,81 @@ describe('checks whether feeds should be updated or not', () => {
           },
         },
       ]);
-      expect(tryMulticallMock).toHaveBeenCalledWith(['does not matter', 'does not matter', 'does not matter']);
+      expect(tryMulticallMock).toHaveBeenCalledWith(['0xfirst', '0xsecond', '0xthird']);
+    });
+
+    it('returns an updatable feed', async () => {
+      init();
+
+      jest.useFakeTimers().setSystemTime(90);
+
+      const mockSignedDataStore = allowPartial<Record<string, SignedData>>({
+        '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
+          timestamp: '101',
+          encodedValue: ethers.BigNumber.from(200).toHexString(),
+        },
+        '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
+          timestamp: '150',
+          encodedValue: ethers.BigNumber.from(250).toHexString(),
+        },
+        '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
+          timestamp: '200',
+          encodedValue: ethers.BigNumber.from(300).toHexString(),
+        },
+      });
+
+      const getStoreDataPointSpy = jest.spyOn(signedDataStore, 'getStoreDataPoint');
+      getStoreDataPointSpy.mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
+
+      // None of the feeds failed to update
+      jest.spyOn(checkFeeds, 'callAndParseMulticall').mockResolvedValue([]);
+
+      const batch = allowPartial<ReturnType<typeof shallowCheckFeeds>>([
+        {
+          updateParameters: { deviationThresholdInPercentage: 2 },
+          dataFeedValue: {
+            value: ethers.BigNumber.from(1000),
+            timestamp: Number.parseInt('95', 10),
+          },
+          decodedDataFeed: {
+            dataFeedId: '0x000',
+            beacons: [{ dataFeedId: feedIds[0] }, { dataFeedId: feedIds[1] }, { dataFeedId: feedIds[2] }],
+          },
+          dapiName: 'test',
+        },
+      ]);
+
+      jest.spyOn(checkFeeds, 'shallowCheckFeeds').mockReturnValue(batch);
+
+      const promisedFeedsToUpdate = getFeedsToUpdate(batch, 'hardhat', '31337');
+
+      await expect(promisedFeedsToUpdate).resolves.toStrictEqual([
+        {
+          dapiName: 'test',
+          dataFeedValue: {
+            timestamp: 95,
+            value: ethers.BigNumber.from('0x03e8'),
+          },
+          decodedDataFeed: {
+            beacons: [
+              {
+                dataFeedId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+              },
+              {
+                dataFeedId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
+              },
+              {
+                dataFeedId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
+              },
+            ],
+            dataFeedId: '0x000',
+          },
+          shouldUpdate: true,
+          updateParameters: {
+            deviationThresholdInPercentage: 2,
+          },
+        },
+      ]);
     });
   });
 });
