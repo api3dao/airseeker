@@ -187,7 +187,11 @@ export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]): Updateable
     })
     .filter((updateableDapi): updateableDapi is UpdateableDapi => updateableDapi !== null);
 
-export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerName: ProviderName, chainId: string) => {
+export const processBatch = async (
+  batch: ReadDapiWithIndexResponse[],
+  providerName: ProviderName,
+  chainId: ChainId
+) => {
   logger.debug('Processing batch of active dAPIs', { batch });
   const {
     config: { sponsorWalletMnemonic, chains },
@@ -221,13 +225,13 @@ export const processBatch = async (batch: ReadDapiWithIndexResponse[], providerN
 
   // Clear last update timestamps for feeds that don't need an update
   for (const feed of batch) {
-    if (dapiNamesToUpdate.has(feed.dapiName)) continue;
-
-    clearSponsorLastUpdateTimestampMs(
-      chainId,
-      providerName,
-      getDerivedSponsorWallet(sponsorWalletMnemonic, feed.dapiName).address
-    );
+    if (!dapiNamesToUpdate.has(feed.dapiName)) {
+      clearSponsorLastUpdateTimestampMs(
+        chainId,
+        providerName,
+        getDerivedSponsorWallet(sponsorWalletMnemonic, feed.dapiName).address
+      );
+    }
   }
 
   const updatedFeeds = await updateFeeds(
