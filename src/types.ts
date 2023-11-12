@@ -9,6 +9,7 @@ export type PrivateKey = string;
 export type DataFeedId = EvmId;
 export type ChainId = string;
 export type ProviderName = string;
+export type SignedApiUrl = string;
 
 // Taken from https://github.com/api3dao/signed-api/blob/main/packages/api/src/schema.ts
 export const signedDataSchema = z.object({

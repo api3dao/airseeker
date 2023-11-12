@@ -44,7 +44,7 @@ export const decodeDataFeed = (dataFeed: string): DecodedDataFeed => {
     return { beaconId, airnodeAddress, templateId };
   });
 
-  const dataFeedId = deriveBeaconSetId(beacons.map((df) => df.beaconId))!;
+  const dataFeedId = deriveBeaconSetId(beacons.map((b) => b.beaconId))!;
 
   return { dataFeedId, beacons };
 };
