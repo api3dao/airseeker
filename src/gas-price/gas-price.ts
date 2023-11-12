@@ -11,7 +11,7 @@ export const initializeGasStore = (chainId: string, providerName: string) =>
     }
 
     if (!draft.gasPriceStore[chainId]![providerName]) {
-      draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
+      draft.gasPriceStore[chainId]![providerName] = { gasPrices: [], sponsorLastUpdateTimestampMs: {} };
     }
   });
 
@@ -47,6 +47,7 @@ export const clearExpiredStoreGasPrices = (chainId: string, providerName: string
  * @param providerName
  * @param sponsorWalletAddress
  */
+// TODO: Why is this unused?
 export const setSponsorLastUpdateTimestampMs = (
   chainId: string,
   providerName: string,
@@ -171,6 +172,7 @@ export const getAirseekerRecommendedGasPrice = async (
     scalingWindow,
     maxScalingMultiplier,
   } = gasSettings;
+  initializeGasStore(chainId, providerName); // TODO: This could be moved to a better place to avoid calling it multiple times (in different functions).
   const state = getState();
   const { gasPrices, sponsorLastUpdateTimestampMs } = state.gasPriceStore[chainId]![providerName]!;
 

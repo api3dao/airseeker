@@ -1,7 +1,7 @@
 import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { ethers } from 'ethers';
 
-import type { DapiDataRegistry } from '../../typechain-types';
+import type { DapiDataRegistry } from '../../src/typechain-types';
 import { type DeepPartial, encodeBeaconFeed } from '../utils';
 
 export const generateReadDapiWithIndexResponse = () => ({

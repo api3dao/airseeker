@@ -10,7 +10,7 @@ import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
-import { isFulfilled, sleep } from '../utils';
+import { deriveSponsorWallet, isFulfilled, sleep } from '../utils';
 
 import { getApi3ServerV1 } from './api3-server-v1';
 import {
@@ -20,7 +20,7 @@ import {
   verifyMulticallResponse,
   type ReadDapiWithIndexResponse,
 } from './dapi-data-registry';
-import { type UpdateableDapi, getDerivedSponsorWallet, updateFeeds } from './update-transactions';
+import { type UpdateableDapi, updateFeeds } from './update-transactions';
 
 export const startUpdateFeedLoops = async () => {
   const state = getState();
@@ -40,6 +40,9 @@ export const startUpdateFeedLoops = async () => {
 
       for (const providerName of Object.keys(providers)) {
         logger.debug(`Starting update feed loop`, { chainId, providerName });
+        // Run the update feed loop manually for the first time, because setInterval first waits for the given period of
+        // time.
+        void runUpdateFeed(providerName, chain, chainId);
         setInterval(async () => runUpdateFeed(providerName, chain, chainId), dataFeedUpdateInterval * 1000);
 
         await sleep(staggerTime);
@@ -192,7 +195,7 @@ export const processBatch = async (
   providerName: ProviderName,
   chainId: ChainId
 ) => {
-  logger.debug('Processing batch of active dAPIs', { batch });
+  logger.debug('Processing batch of active dAPIs', { dapiNames: batch.map((dapi) => dapi.dapiName) });
   const {
     config: { sponsorWalletMnemonic, chains },
   } = getState();
@@ -201,17 +204,18 @@ export const processBatch = async (
 
   updateState((draft) => {
     for (const dapi of batch) {
-      const receivedUrls = dapi.signedApiUrls.flatMap((url) =>
-        dapi.decodedDataFeed.beacons.flatMap((dataFeed) => `${url}/${dataFeed.airnodeAddress}`)
-      );
-
-      draft.signedApiUrlStore = {
-        ...draft.signedApiUrlStore,
-        [chainId]: { ...draft.signedApiUrlStore[chainId], [providerName]: receivedUrls.flat() },
-      };
+      const receivedUrls = zip(dapi.signedApiUrls, dapi.decodedDataFeed.beacons).map(([url, beacon]) => ({
+        url: `${url}/${beacon!.airnodeAddress}`,
+        airnodeAddress: beacon!.airnodeAddress,
+      }));
+      if (!draft.signedApiUrlStore) draft.signedApiUrlStore = {};
+      if (!draft.signedApiUrlStore[chainId]) draft.signedApiUrlStore[chainId] = {};
+      if (!draft.signedApiUrlStore[chainId]![providerName]) draft.signedApiUrlStore[chainId]![providerName] = {};
+      for (const { airnodeAddress, url } of receivedUrls) {
+        draft.signedApiUrlStore[chainId]![providerName]![airnodeAddress] = url;
+      }
 
       const cachedDapiResponse = draft.dapis[dapi.dapiName];
-
       draft.dapis[dapi.dapiName] = {
         dataFeed: cachedDapiResponse?.dataFeed ?? dapi.decodedDataFeed,
         dataFeedValues: { ...cachedDapiResponse?.dataFeedValues, [chainId]: dapi.dataFeedValue },
@@ -229,7 +233,7 @@ export const processBatch = async (
       clearSponsorLastUpdateTimestampMs(
         chainId,
         providerName,
-        getDerivedSponsorWallet(sponsorWalletMnemonic, feed.dapiName).address
+        deriveSponsorWallet(sponsorWalletMnemonic, feed.dapiName).address
       );
     }
   }
