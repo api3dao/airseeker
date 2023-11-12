@@ -28,7 +28,7 @@ export const generateTestConfig = (): Config => ({
       dataFeedUpdateInterval: 60,
     },
   },
-  fetchInterval: 10,
+  signedDataFetchInterval: 10,
   deviationThresholdCoefficient: 1,
 });
 

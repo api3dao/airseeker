@@ -8,8 +8,8 @@ export type DapiName = string;
 export type PrivateKey = string;
 export type DataFeedId = EvmId;
 export type ChainId = string;
-export type DApiName = string;
-export type Provider = string;
+export type ProviderName = string;
+export type SignedApiUrl = string;
 
 // Taken from https://github.com/api3dao/signed-api/blob/main/packages/api/src/schema.ts
 export const signedDataSchema = z.object({
@@ -30,7 +30,7 @@ export const signedApiResponseSchema = z.object({
 export interface Beacon {
   airnodeAddress: AirnodeAddress;
   templateId: TemplateId;
-  dataFeedId: string;
+  beaconId: string;
 }
 
 export interface DecodedDataFeed {

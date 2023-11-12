@@ -1,15 +1,9 @@
 import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { ethers } from 'ethers';
 
-import { init } from '../../test/fixtures/mock-config';
 import { generateMockApi3ServerV1 } from '../../test/fixtures/mock-contract';
-import { getState, updateState } from '../state';
 
-import {
-  deriveSponsorWallet,
-  deriveWalletPathFromSponsorAddress,
-  estimateMulticallGasLimit,
-} from './update-transactions';
+import { estimateMulticallGasLimit } from './update-transactions';
 
 describe(estimateMulticallGasLimit.name, () => {
   it('estimates the gas limit for a multicall', async () => {
@@ -57,46 +51,5 @@ describe(estimateMulticallGasLimit.name, () => {
     );
 
     expect(gasLimit).toStrictEqual(ethers.BigNumber.from(2_000_000));
-  });
-});
-
-describe(deriveSponsorWallet.name, () => {
-  it('derives sponsor wallets for a dAPI', () => {
-    init();
-
-    const btcEthDapiName = ethers.utils.formatBytes32String('BTC/ETH');
-    const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
-
-    const btcEthSponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, btcEthDapiName);
-
-    expect(btcEthSponsorWallet.address).toBe('0xDa8b0388F435F609C8cdA6cf73C890D90205c863');
-
-    expect(getState().derivedSponsorWallets).toStrictEqual({
-      '0x4254432f45544800000000000000000000000000000000000000000000000000':
-        '0xb69b0c7c2623257b72b020d13044f86eb2a4a1f41c994cfd5198c95bb2f7de7c',
-    });
-
-    const usdEthDapiName = ethers.utils.formatBytes32String('USD/ETH');
-    updateState((draft) => {
-      draft.derivedSponsorWallets[usdEthDapiName] =
-        '0xbc4a90108f885d06e7b72b713f9c02890b363795b63cd21d4561aeba3379205c';
-    });
-
-    const otherSponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, usdEthDapiName);
-
-    expect(otherSponsorWallet._signingKey().privateKey).toBe(
-      '0xbc4a90108f885d06e7b72b713f9c02890b363795b63cd21d4561aeba3379205c'
-    );
-  });
-});
-
-describe(deriveWalletPathFromSponsorAddress.name, () => {
-  it('derives the correct wallet path from the sponsor address', () => {
-    expect(deriveWalletPathFromSponsorAddress('0xE2c582D05126E09734cAFABea8A0E56E9B827629')).toBe(
-      '5/461534761/1363266269/1395387130/154600633/743976197/28'
-    );
-    expect(deriveWalletPathFromSponsorAddress('0x86D3763039cA6BABe616755Ceb58e19f3388D9AB')).toBe(
-      '5/864606635/1454490430/408540531/1314086239/1832346371/16'
-    );
   });
 });

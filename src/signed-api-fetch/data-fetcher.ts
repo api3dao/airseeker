@@ -32,7 +32,6 @@ const callSignedDataApi = async (url: string): Promise<SignedData[]> => {
         url,
         headers: {
           Accept: 'application/json',
-          // TODO add API key?
         },
       }),
     {
@@ -53,12 +52,16 @@ const callSignedDataApi = async (url: string): Promise<SignedData[]> => {
 
 export const runDataFetcher = async () => {
   const state = getState();
-  const { config, signedApiUrlStore, dataFetcherInterval } = state;
+  const {
+    config: { signedDataFetchInterval },
+    signedApiUrlStore,
+    dataFetcherInterval,
+  } = state;
 
-  const fetchInterval = config.fetchInterval * 1000;
+  const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
 
   if (!dataFetcherInterval) {
-    const dataFetcherInterval = setInterval(runDataFetcher, fetchInterval);
+    const dataFetcherInterval = setInterval(runDataFetcher, signedDataFetchIntervalMs);
     updateState((draft) => {
       draft.dataFetcherInterval = dataFetcherInterval;
     });
@@ -82,8 +85,8 @@ export const runDataFetcher = async () => {
         },
         {
           retries: 0,
-          totalTimeoutMs: fetchInterval + HTTP_SIGNED_DATA_API_HEADROOM,
-          attemptTimeoutMs: fetchInterval + HTTP_SIGNED_DATA_API_HEADROOM - 100,
+          totalTimeoutMs: signedDataFetchIntervalMs + HTTP_SIGNED_DATA_API_HEADROOM,
+          attemptTimeoutMs: signedDataFetchIntervalMs + HTTP_SIGNED_DATA_API_HEADROOM - 100,
         }
       )
     )

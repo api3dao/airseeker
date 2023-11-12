@@ -1,12 +1,12 @@
 import { ethers } from 'ethers';
 import { omit } from 'lodash';
 
-import { initializeGasStore } from '../../src/gas-price/gas-price';
+import { initializeGasStore } from '../../src/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
 import { runUpdateFeed } from '../../src/update-feeds';
 import { decodeDataFeed } from '../../src/update-feeds/dapi-data-registry';
-import { deriveSponsorWallet, updateFeeds } from '../../src/update-feeds/update-transactions';
+import { updateFeeds } from '../../src/update-feeds/update-transactions';
 import { init } from '../fixtures/mock-config';
 import { deployAndUpdate } from '../setup/contract';
 import { allowPartial, generateSignedData } from '../utils';
@@ -38,8 +38,7 @@ it('updates blockchain data', async () => {
     binanceBtcBeacon,
     krakenAirnodeWallet,
     binanceAirnodeWallet,
-    airseekerSponsorWallet,
-    walletFunder,
+    airseekerWallet,
   } = await deployAndUpdate();
   init({ config });
   initializeGasStore(chainId, providerName);
@@ -60,16 +59,11 @@ it('updates blockchain data', async () => {
     krakenBtcBeacon.templateId,
     (currentBlockTimestamp + 2).toString()
   );
-  const btcDapiSponsorWallet = deriveSponsorWallet(airseekerSponsorWallet.mnemonic.phrase, btcDapi.dapiName);
-  await walletFunder.sendTransaction({
-    to: btcDapiSponsorWallet.address,
-    value: ethers.utils.parseEther('1'),
-  });
   jest.spyOn(logger, 'debug');
   jest
     .spyOn(stateModule, 'getState')
     .mockReturnValue(
-      allowPartial<stateModule.State>({ config: { sponsorWalletMnemonic: airseekerSponsorWallet.mnemonic.phrase } })
+      allowPartial<stateModule.State>({ config: { sponsorWalletMnemonic: airseekerWallet.mnemonic.phrase } })
     );
 
   await updateFeeds(chainId, providerName, provider, api3ServerV1, [
@@ -88,7 +82,9 @@ it('updates blockchain data', async () => {
     },
   ]);
 
+  expect(logger.debug).toHaveBeenCalledTimes(4);
   expect(logger.debug).toHaveBeenNthCalledWith(1, 'Estimating gas limit');
-  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Deriving sponsor wallet');
-  expect(logger.debug).toHaveBeenNthCalledWith(5, 'Successfully updated dAPI');
+  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Getting derived sponsor wallet');
+  expect(logger.debug).toHaveBeenNthCalledWith(3, 'Derived new sponsor wallet', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(4, 'Updating dAPI', expect.anything());
 });

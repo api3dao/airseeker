@@ -1,12 +1,12 @@
 import { ethers } from 'ethers';
 
 // NOTE: The contract is not yet published, so we generate the Typechain artifacts locally and import it from there.
-import { type DapiDataRegistry, DapiDataRegistry__factory } from '../../typechain-types';
+import { type DapiDataRegistry, DapiDataRegistry__factory as DapiDataRegistryFactory } from '../../typechain-types';
 import type { DecodedDataFeed } from '../types';
 import { deriveBeaconId, deriveBeaconSetId } from '../utils';
 
 export const getDapiDataRegistry = (address: string, provider: ethers.providers.StaticJsonRpcProvider) =>
-  DapiDataRegistry__factory.connect(address, provider);
+  DapiDataRegistryFactory.connect(address, provider);
 
 export const verifyMulticallResponse = (
   response: Awaited<ReturnType<DapiDataRegistry['callStatic']['tryMulticall']>>
@@ -32,21 +32,21 @@ export const decodeDataFeed = (dataFeed: string): DecodedDataFeed => {
 
     const dataFeedId = deriveBeaconId(airnodeAddress, templateId)!;
 
-    return { dataFeedId, beacons: [{ dataFeedId, airnodeAddress, templateId }] };
+    return { dataFeedId, beacons: [{ beaconId: dataFeedId, airnodeAddress, templateId }] };
   }
 
   const [airnodeAddresses, templateIds] = ethers.utils.defaultAbiCoder.decode(['address[]', 'bytes32[]'], dataFeed);
 
-  const dataFeeds = (airnodeAddresses as string[]).map((airnodeAddress: string, idx: number) => {
+  const beacons = (airnodeAddresses as string[]).map((airnodeAddress: string, idx: number) => {
     const templateId = templateIds[idx] as string;
-    const dataFeedId = deriveBeaconId(airnodeAddress, templateId)!;
+    const beaconId = deriveBeaconId(airnodeAddress, templateId)!;
 
-    return { dataFeedId, airnodeAddress, templateId };
+    return { beaconId, airnodeAddress, templateId };
   });
 
-  const dataFeedId = deriveBeaconSetId(dataFeeds.map((df) => df.dataFeedId))!;
+  const dataFeedId = deriveBeaconSetId(beacons.map((b) => b.beaconId))!;
 
-  return { dataFeedId, beacons: dataFeeds };
+  return { dataFeedId, beacons };
 };
 
 export const decodeReadDapiWithIndexResponse = (
