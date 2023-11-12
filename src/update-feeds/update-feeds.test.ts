@@ -4,10 +4,10 @@ import { omit } from 'lodash';
 import { generateTestConfig } from '../../test/fixtures/mock-config';
 import { generateMockDapiDataRegistry, generateReadDapiWithIndexResponse } from '../../test/fixtures/mock-contract';
 import { allowPartial } from '../../test/utils';
-import type { DapiDataRegistry } from '../../typechain-types';
 import type { Chain } from '../config/schema';
 import { logger } from '../logger';
 import * as stateModule from '../state';
+import type { DapiDataRegistry } from '../typechain-types';
 import * as utilsModule from '../utils';
 
 import * as dapiDataRegistryModule from './dapi-data-registry';
@@ -33,6 +33,7 @@ describe(updateFeedsModule.startUpdateFeedLoops.name, () => {
         },
       })
     );
+    jest.spyOn(updateFeedsModule, 'runUpdateFeed').mockImplementation();
     const intervalCalls = [] as number[];
     jest.spyOn(global, 'setInterval').mockImplementation((() => {
       intervalCalls.push(Date.now());
@@ -83,6 +84,7 @@ describe(updateFeedsModule.startUpdateFeedLoops.name, () => {
         },
       })
     );
+    jest.spyOn(updateFeedsModule, 'runUpdateFeed').mockImplementation();
     const intervalCalls = [] as number[];
     jest.spyOn(global, 'setInterval').mockImplementation((() => {
       intervalCalls.push(Date.now());
@@ -173,7 +175,9 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrlStore: { '31337': { 'some-test-provider': ['url-one'] } },
+        signedApiUrlStore: {
+          '31337': { 'some-test-provider': { '0xC04575A2773Da9Cd23853A69694e02111b2c4182': 'url-one' } },
+        },
         signedApiStore: {},
         gasPriceStore: {
           '31337': {

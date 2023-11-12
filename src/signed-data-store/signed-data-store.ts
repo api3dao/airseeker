@@ -71,7 +71,7 @@ export const setStoreDataPoint = (signedData: SignedData) => {
 
   const existingValue = state.signedApiStore[dataFeedId];
   if (existingValue && existingValue.timestamp >= timestamp) {
-    logger.debug('Skipping store update. The existing store value is fresher.');
+    logger.debug('Skipping store update. The signed data value is not fresher than the stored value.');
     return;
   }
 

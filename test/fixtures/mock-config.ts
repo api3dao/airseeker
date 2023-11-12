@@ -32,6 +32,7 @@ export const generateTestConfig = (): Config => ({
   deviationThresholdCoefficient: 1,
 });
 
+// TODO: Do we need this function? Can't we use the one from production code?
 export const init = (stateOverride?: Partial<State>) => {
   const config = getConfig();
   setState({

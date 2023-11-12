@@ -1,0 +1,28 @@
+# NOTE: Keep in sync with .gitignore.
+#
+# From: https://shisho.dev/blog/posts/how-to-use-dockerignore/
+#
+# In .gitignore, the file or directory name is ignored in any hierarchy below the .gitignore file, but in .dockerignore,
+# all paths must be relative to the way where .dockerignore is located. However, in .dockerignore, all paths must be
+# listed relative to the path.
+**/.build
+**/.env
+**/.idea
+**/.log
+**/.tsbuildinfo
+**/.vscode
+**/build
+**/dist
+**/node_modules
+**/coverage
+**/.DS_Store
+**/airseeker.json
+**/secrets.env
+**/.eslintcache
+
+# Hardhat files
+**/cache
+**/artifacts
+**/coverage.json
+**/typechain
+**/typechain-types

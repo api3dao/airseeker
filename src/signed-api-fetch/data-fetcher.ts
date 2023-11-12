@@ -5,6 +5,7 @@ import axios from 'axios';
 import { uniq } from 'lodash';
 
 import { HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT, HTTP_SIGNED_DATA_API_HEADROOM } from '../constants';
+import { logger } from '../logger';
 import * as localDataStore from '../signed-data-store';
 import { getState, updateState } from '../state';
 import { signedApiResponseSchema, type SignedData } from '../types';
@@ -41,6 +42,7 @@ const callSignedDataApi = async (url: string): Promise<SignedData[]> => {
     }
   );
 
+  // TODO: Pass the response error body (if available). See OEV repo for details.
   if (!result.success) {
     throw new Error([`HTTP call failed: `, url, result.error].join('\n'));
   }
@@ -51,6 +53,8 @@ const callSignedDataApi = async (url: string): Promise<SignedData[]> => {
 };
 
 export const runDataFetcher = async () => {
+  // TODO: Consider adding "Coordinator ID"
+  logger.debug('Running data fetcher');
   const state = getState();
   const {
     config: { signedDataFetchInterval },
@@ -70,12 +74,14 @@ export const runDataFetcher = async () => {
   const urls = uniq(
     Object.values(signedApiUrlStore)
       .flatMap((urlsPerProvider) => Object.values(urlsPerProvider))
+      .flatMap((urlsPerAirnode) => Object.values(urlsPerAirnode))
       .flat()
   );
 
-  return Promise.allSettled(
-    urls.map(async (url) =>
-      go(
+  logger.debug('Fetching data from signed APIs', { urls });
+  return Promise.all(
+    urls.map(async (url) => {
+      const goSignedApiCall = await go(
         async () => {
           const payload = await callSignedDataApi(url);
 
@@ -83,12 +89,17 @@ export const runDataFetcher = async () => {
             localDataStore.setStoreDataPoint(element);
           }
         },
+        // TODO: What to do about timeout and retries? This is the only place that does some handling.
         {
           retries: 0,
           totalTimeoutMs: signedDataFetchIntervalMs + HTTP_SIGNED_DATA_API_HEADROOM,
           attemptTimeoutMs: signedDataFetchIntervalMs + HTTP_SIGNED_DATA_API_HEADROOM - 100,
         }
-      )
-    )
+      );
+
+      if (!goSignedApiCall.success) {
+        logger.warn(`Failed to fetch data from signed API`, { error: goSignedApiCall.error });
+      }
+    })
   );
 };

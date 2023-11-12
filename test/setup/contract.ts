@@ -9,11 +9,11 @@ import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import type { Signer, Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 
-import { deriveBeaconId, deriveSponsorWallet } from '../../src/utils';
 import {
   DapiDataRegistry__factory as DapiDataRegistryFactory,
   HashRegistry__factory as HashRegistryFactory,
-} from '../../typechain-types';
+} from '../../src/typechain-types';
+import { deriveBeaconId, deriveSponsorWallet } from '../../src/utils';
 import { generateTestConfig } from '../fixtures/mock-config';
 import { signData } from '../utils';
 
