@@ -1,0 +1,14 @@
+{
+  "endpoints": [
+    {
+      "urlPath": "/default",
+      "delaySeconds": 0
+    }
+  ],
+  "allowedAirnodes": ["0xaC0653E412acAE526Da3a33af0135205A34E21AF"],
+  "maxBatchSize": 10,
+  "port": 8090,
+  "cache": {
+    "maxAgeSeconds": 300
+  }
+}

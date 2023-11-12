@@ -1,0 +1,100 @@
+{
+  "templates": {
+    "0xa5419706d8edb3bbafad83fe2b4e7dc851de5e4cd9529f9f27bb393016c81ae5": {
+      "endpointId": "0x3528e42b017a5fbf9d2993a2df04efc3ed474357575065a111b054ddf9de2acc",
+      "parameters": [{ "type": "string32", "name": "name", "value": "NEAR/USD" }]
+    },
+    "0x8f255387c5fdb03117d82372b8fa5c7813881fd9a8202b7cc373f1a5868496b2": {
+      "endpointId": "0x3528e42b017a5fbf9d2993a2df04efc3ed474357575065a111b054ddf9de2acc",
+      "parameters": [{ "type": "string32", "name": "name", "value": "AAVE/USD" }]
+    },
+    "0x89bbdb4e2d7510abf1ca0ed53295e31c00a6939fc12e77d67bf3a4cb3c31f61c": {
+      "endpointId": "0x3528e42b017a5fbf9d2993a2df04efc3ed474357575065a111b054ddf9de2acc",
+      "parameters": [{ "type": "string32", "name": "name", "value": "MATIC/USD" }]
+    }
+  },
+  "endpoints": {
+    "0x3528e42b017a5fbf9d2993a2df04efc3ed474357575065a111b054ddf9de2acc": {
+      "endpointName": "feed",
+      "oisTitle": "Nodary"
+    }
+  },
+  "triggers": {
+    "signedApiUpdates": [
+      {
+        "signedApiName": "localhost",
+        "templateIds": [
+          "0xa5419706d8edb3bbafad83fe2b4e7dc851de5e4cd9529f9f27bb393016c81ae5",
+          "0x8f255387c5fdb03117d82372b8fa5c7813881fd9a8202b7cc373f1a5868496b2",
+          "0x89bbdb4e2d7510abf1ca0ed53295e31c00a6939fc12e77d67bf3a4cb3c31f61c"
+        ],
+        "fetchInterval": 20,
+        "updateDelay": 60
+      }
+    ]
+  },
+  "signedApis": [
+    {
+      "name": "localhost",
+      "url": "http://${LOCALHOST_IP}:4002"
+    }
+  ],
+  "ois": [
+    {
+      "oisFormat": "2.2.0",
+      "title": "Nodary",
+      "version": "0.2.0",
+      "apiSpecifications": {
+        "components": {
+          "securitySchemes": {
+            "NodarySecurityScheme1ApiKey": { "in": "header", "name": "x-nodary-api-key", "type": "apiKey" }
+          }
+        },
+        "paths": {
+          "/feed/latest": { "get": { "parameters": [{ "in": "query", "name": "name" }] } },
+          "/feed/latestV2": { "get": { "parameters": [{ "in": "query", "name": "names" }] } }
+        },
+        "servers": [{ "url": "https://api.nodary.io" }],
+        "security": { "NodarySecurityScheme1ApiKey": [] }
+      },
+      "endpoints": [
+        {
+          "fixedOperationParameters": [],
+          "name": "feed",
+          "operation": { "method": "get", "path": "/feed/latestV2" },
+          "parameters": [{ "name": "name", "operationParameter": { "in": "query", "name": "names" } }],
+          "reservedParameters": [
+            { "name": "_type", "fixed": "int256" },
+            { "name": "_times", "fixed": "1000000000000000000" }
+          ],
+          "preProcessingSpecifications": [
+            {
+              "environment": "Node",
+              "value": "const output = {};",
+              "timeoutMs": 5000
+            }
+          ],
+          "postProcessingSpecifications": [
+            {
+              "environment": "Node",
+              "value": "const output = input[endpointParameters.name].value;",
+              "timeoutMs": 5000
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "apiCredentials": [
+    {
+      "oisTitle": "Nodary",
+      "securitySchemeName": "NodarySecurityScheme1ApiKey",
+      "securitySchemeValue": "${NODARY_API_KEY}"
+    }
+  ],
+  "nodeSettings": {
+    "nodeVersion": "0.1.0",
+    "airnodeWalletMnemonic": "${AIRNODE_WALLET_MNEMONIC}",
+    "stage": "local-example"
+  }
+}
