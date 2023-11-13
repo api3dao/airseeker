@@ -210,8 +210,8 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
 
     // Expect the contract to fetch the batches to be called with the correct stagger time.
     expect(utilsModule.sleep).toHaveBeenCalledTimes(3);
-    expect(sleepCalls[0]).toBeGreaterThanOrEqual(30); // Reserving 20ms as the buffer for computing stagger time.
-    expect(sleepCalls[1]).toBeGreaterThanOrEqual(0);
+    expect(sleepCalls[0]).toBeGreaterThan(0); // The first stagger time is computed dynamically (the execution time is subtracted from the interval time) which is slow on CI, so we just check it's non-zero.
+    expect(sleepCalls[1]).toBe(0);
     expect(sleepCalls[2]).toBe(49.999_999_999_999_99); // Stagger time is actually 150 / 3 = 50, but there is a rounding error.
 
     // Expect the logs to be called with the correct context.
