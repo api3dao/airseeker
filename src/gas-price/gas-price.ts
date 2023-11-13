@@ -1,8 +1,9 @@
-import { ethers } from 'ethers';
+import type { ethers } from 'ethers';
 import { remove } from 'lodash';
 
 import type { GasSettings } from '../config/schema';
 import { getState, updateState } from '../state';
+import { multiplyBigNumber } from '../utils';
 
 export const initializeGasStore = (chainId: string, providerName: string) =>
   updateState((draft) => {
@@ -87,9 +88,6 @@ export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => 
   const index = Math.ceil(array.length * (percentile / 100)) - 1;
   return array[index];
 };
-
-export const multiplyGasPrice = (gasPrice: ethers.BigNumber, gasPriceMultiplier: number) =>
-  gasPrice.mul(ethers.BigNumber.from(Math.round(gasPriceMultiplier * 100))).div(ethers.BigNumber.from(100));
 
 /**
  * Calculates the multiplier to use for pending transactions.
@@ -193,7 +191,7 @@ export const getAirseekerRecommendedGasPrice = async (
       scalingWindow
     );
 
-    return multiplyGasPrice(gasPrice, multiplier);
+    return multiplyBigNumber(gasPrice, multiplier);
   }
 
   // Check that there are enough entries in the stored gas prices to determine whether to use sanitization or not
@@ -209,5 +207,5 @@ export const getAirseekerRecommendedGasPrice = async (
       ? percentileGasPrice
       : gasPrice;
 
-  return multiplyGasPrice(sanitizedGasPrice, recommendedGasPriceMultiplier);
+  return multiplyBigNumber(sanitizedGasPrice, recommendedGasPriceMultiplier);
 };

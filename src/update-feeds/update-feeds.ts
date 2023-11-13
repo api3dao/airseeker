@@ -3,14 +3,14 @@ import { ethers } from 'ethers';
 import { range, size, zip } from 'lodash';
 
 import { calculateMedian, checkUpdateConditions } from '../condition-check';
-import type { Chain } from '../config/schema';
+import type { Chain, DeviationThresholdCoefficient } from '../config/schema';
 import { INT224_MAX, INT224_MIN } from '../constants';
 import { clearSponsorLastUpdateTimestampMs } from '../gas-price';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
-import { isFulfilled, sleep } from '../utils';
+import { isFulfilled, sleep, multiplyBigNumber } from '../utils';
 
 import { getApi3ServerV1 } from './api3-server-v1';
 import {
@@ -146,7 +146,10 @@ export const decodeBeaconValue = (encodedBeaconValue: string) => {
   return decodedBeaconValue;
 };
 
-export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]): UpdateableDapi[] =>
+export const getFeedsToUpdate = (
+  batch: ReadDapiWithIndexResponse[],
+  deviationThresholdCoefficient: DeviationThresholdCoefficient
+): UpdateableDapi[] =>
   batch
     .map((dapiInfo): UpdateableDapi | null => {
       const beaconsSignedData = dapiInfo.decodedDataFeed.beacons.map((beacon) => getStoreDataPoint(beacon.beaconId));
@@ -163,7 +166,10 @@ export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]): Updateable
       const newBeaconSetTimestamp = calculateMedian(
         beaconsSignedData.map((signedData) => ethers.BigNumber.from(signedData!.timestamp))
       )!.toNumber();
-      const deviationThreshold = dapiInfo.updateParameters.deviationThresholdInPercentage;
+      const adjustedDeviationThresholdCoefficient = multiplyBigNumber(
+        dapiInfo.updateParameters.deviationThresholdInPercentage,
+        deviationThresholdCoefficient
+      );
       if (
         !checkUpdateConditions(
           dapiInfo.dataFeedValue.value,
@@ -171,7 +177,7 @@ export const getFeedsToUpdate = (batch: ReadDapiWithIndexResponse[]): Updateable
           newBeaconSetValue,
           newBeaconSetTimestamp,
           dapiInfo.updateParameters.heartbeatInterval,
-          deviationThreshold
+          adjustedDeviationThresholdCoefficient
         )
       ) {
         return null;
@@ -194,7 +200,7 @@ export const processBatch = async (
 ) => {
   logger.debug('Processing batch of active dAPIs', { batch });
   const {
-    config: { sponsorWalletMnemonic, chains },
+    config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient },
   } = getState();
   const { contracts, providers } = chains[chainId]!;
   const provider = new ethers.providers.StaticJsonRpcProvider(providers[providerName]);
@@ -220,7 +226,7 @@ export const processBatch = async (
     }
   });
 
-  const feedsToUpdate = getFeedsToUpdate(batch);
+  const feedsToUpdate = getFeedsToUpdate(batch, deviationThresholdCoefficient);
   const dapiNamesToUpdate = new Set(feedsToUpdate.map((feed) => feed.dapiInfo.dapiName));
 
   // Clear last update timestamps for feeds that don't need an update

@@ -2,10 +2,10 @@ import { ethers } from 'ethers';
 
 import { init } from '../../test/fixtures/mock-config';
 import { getState, updateState } from '../state';
+import { multiplyBigNumber } from '../utils';
 
 import {
   getAirseekerRecommendedGasPrice,
-  multiplyGasPrice,
   setSponsorLastUpdateTimestampMs,
   setStoreGasPrices,
   updateGasPriceStore,
@@ -229,7 +229,7 @@ describe('gas price', () => {
         sponsorWalletAddress
       );
 
-      expect(gasPrice).toStrictEqual(multiplyGasPrice(gasPriceMock, gasSettings.recommendedGasPriceMultiplier));
+      expect(gasPrice).toStrictEqual(multiplyBigNumber(gasPriceMock, gasSettings.recommendedGasPriceMultiplier));
       expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestampMs: timestampMock },
       ]);
@@ -257,7 +257,7 @@ describe('gas price', () => {
       );
 
       expect(gasPrice).toStrictEqual(
-        multiplyGasPrice(ethers.utils.parseUnits('8', 'gwei'), gasSettings.recommendedGasPriceMultiplier)
+        multiplyBigNumber(ethers.utils.parseUnits('8', 'gwei'), gasSettings.recommendedGasPriceMultiplier)
       );
       expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestampMs: timestampMock },
@@ -287,7 +287,7 @@ describe('gas price', () => {
         sponsorWalletAddress
       );
 
-      expect(gasPrice).toStrictEqual(multiplyGasPrice(gasPriceMock, gasSettings.recommendedGasPriceMultiplier));
+      expect(gasPrice).toStrictEqual(multiplyBigNumber(gasPriceMock, gasSettings.recommendedGasPriceMultiplier));
       expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestampMs: timestampMock },
         oldGasPriceMock,
@@ -316,7 +316,9 @@ describe('gas price', () => {
         sponsorWalletAddress
       );
 
-      expect(gasPrice).toStrictEqual(multiplyGasPrice(oldGasPriceValueMock, gasSettings.recommendedGasPriceMultiplier));
+      expect(gasPrice).toStrictEqual(
+        multiplyBigNumber(oldGasPriceValueMock, gasSettings.recommendedGasPriceMultiplier)
+      );
       expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestampMs: timestampMock },
         oldGasPriceMock,
@@ -347,7 +349,7 @@ describe('gas price', () => {
         sponsorWalletAddress
       );
 
-      expect(gasPrice).toStrictEqual(multiplyGasPrice(gasPriceMock, gasSettings.maxScalingMultiplier));
+      expect(gasPrice).toStrictEqual(multiplyBigNumber(gasPriceMock, gasSettings.maxScalingMultiplier));
       expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
         { price: gasPriceMock, timestampMs: timestampMock },
         oldGasPriceMock,

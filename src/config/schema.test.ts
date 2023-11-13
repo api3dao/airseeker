@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import dotenv from 'dotenv';
 import { ZodError } from 'zod';
 
-import { chainsSchema, configSchema } from './schema';
+import { chainsSchema, configSchema, deviationThresholdCoefficientSchema } from './schema';
 import { interpolateSecrets } from './utils';
 
 const gasSettings = {
@@ -183,6 +183,18 @@ describe('chains schema', () => {
           code: 'custom',
           message: 'Missing provider. At least one provider is required.',
           path: ['chains', '31337', 'providers'],
+        },
+      ])
+    );
+  });
+
+  it('throws on deviationThresholdCoefficient with too many decimals', () => {
+    expect(() => deviationThresholdCoefficientSchema.parse(1.234)).toThrow(
+      new ZodError([
+        {
+          code: 'custom',
+          message: 'Invalid deviationThresholdCoefficient. A maximum of 2 decimals are supported.',
+          path: ['deviationThresholdCoefficient'],
         },
       ])
     );
