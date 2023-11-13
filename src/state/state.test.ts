@@ -1,13 +1,13 @@
 import { BigNumber } from 'ethers';
 
-import { getConfig } from '../../test/fixtures/mock-config';
+import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
 import { deriveBeaconId } from '../utils';
 
-import { updateState, getState, setState } from './state';
+import { updateState, getState } from './state';
 
 const timestampMock = 1_696_930_907_351;
 const stateMock = {
-  config: getConfig(),
+  config: generateTestConfig(),
 
   gasPriceStore: {
     '31337': {
@@ -42,9 +42,13 @@ const stateMock = {
   dapis: {},
 };
 
+beforeAll(() => {
+  initializeState();
+});
+
 describe('state', () => {
   beforeEach(() => {
-    setState(stateMock);
+    updateState(() => stateMock);
   });
 
   const beaconId = deriveBeaconId(

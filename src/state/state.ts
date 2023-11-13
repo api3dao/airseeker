@@ -58,10 +58,6 @@ export const getState = (): State => {
   return state;
 };
 
-export const setState = (newState: State) => {
-  state = newState;
-};
-
 export const setInitialState = (config: Config) => {
   state = {
     config,
@@ -74,5 +70,5 @@ export const setInitialState = (config: Config) => {
 };
 
 export const updateState = (updater: StateUpdater) => {
-  setState(produce(getState(), updater));
+  state = produce(getState(), updater);
 };

@@ -4,7 +4,7 @@ import { ethers, network } from 'hardhat';
 import { getAirseekerRecommendedGasPrice, initializeGasStore, clearExpiredStoreGasPrices } from '../../src/gas-price';
 import { getState, updateState } from '../../src/state';
 import { multiplyBigNumber } from '../../src/utils';
-import { init } from '../fixtures/mock-config';
+import { initializeState } from '../fixtures/mock-config';
 
 const chainId = '31337';
 const providerName = 'localhost';
@@ -32,7 +32,7 @@ const sendTransaction = async (gasPriceOverride?: BigNumber) => {
 
 describe(getAirseekerRecommendedGasPrice.name, () => {
   beforeAll(() => {
-    init();
+    initializeState();
   });
 
   beforeEach(async () => {

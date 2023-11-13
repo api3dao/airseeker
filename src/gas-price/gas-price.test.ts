@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-import { init } from '../../test/fixtures/mock-config';
+import { initializeState } from '../../test/fixtures/mock-config';
 import { getState, updateState } from '../state';
 import { multiplyBigNumber } from '../utils';
 
@@ -36,7 +36,7 @@ const sponsorWalletAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
 describe('gas price', () => {
   beforeAll(() => {
-    init();
+    initializeState();
   });
 
   describe(calculateScalingMultiplier.name, () => {

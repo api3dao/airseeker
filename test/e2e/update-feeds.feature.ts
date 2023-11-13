@@ -7,7 +7,7 @@ import * as stateModule from '../../src/state';
 import { runUpdateFeed } from '../../src/update-feeds';
 import { decodeDataFeed } from '../../src/update-feeds/dapi-data-registry';
 import { updateFeeds } from '../../src/update-feeds/update-transactions';
-import { init } from '../fixtures/mock-config';
+import { initializeState } from '../fixtures/mock-config';
 import { deployAndUpdate } from '../setup/contract';
 import { allowPartial, generateSignedData } from '../utils';
 
@@ -22,7 +22,7 @@ it('reads blockchain data', async () => {
   const providerName = Object.keys(chain.providers)[0]!;
   jest.spyOn(logger, 'debug').mockImplementation();
 
-  init({ config });
+  initializeState(config);
 
   await runUpdateFeed(providerName, chain, chainId);
 
@@ -40,7 +40,7 @@ it('updates blockchain data', async () => {
     binanceAirnodeWallet,
     airseekerWallet,
   } = await deployAndUpdate();
-  init({ config });
+  initializeState(config);
   initializeGasStore(chainId, providerName);
   const btcDapi = await dapiDataRegistry.readDapiWithIndex(0);
 
