@@ -89,7 +89,6 @@ export const runDataFetcher = async () => {
             localDataStore.setStoreDataPoint(element);
           }
         },
-        // TODO: What to do about timeout and retries? This is the only place that does some handling.
         {
           retries: 0,
           totalTimeoutMs: signedDataFetchIntervalMs + HTTP_SIGNED_DATA_API_HEADROOM,
