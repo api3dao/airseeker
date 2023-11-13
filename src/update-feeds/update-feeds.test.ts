@@ -47,17 +47,25 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
     expect(intervalCalls[1]! - intervalCalls[0]!).toBeGreaterThanOrEqual(40); // Reserving 10ms as the buffer for computing stagger time.
 
     // Expect the logs to be called with the correct context.
-    expect(logger.debug).toHaveBeenCalledTimes(3);
-    expect(logger.debug).toHaveBeenCalledWith('Starting update loops for chain', {
+    expect(logger.debug).toHaveBeenCalledTimes(5);
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Starting update loops for chain', {
       chainId: '123',
       staggerTime: 50,
       providerNames: ['first-provider', 'second-provider'],
     });
-    expect(logger.debug).toHaveBeenCalledWith('Starting update feed loop', {
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas store', {
       chainId: '123',
       providerName: 'first-provider',
     });
-    expect(logger.debug).toHaveBeenCalledWith('Starting update feed loop', {
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update feed loop', {
+      chainId: '123',
+      providerName: 'first-provider',
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Initializing gas store', {
+      chainId: '123',
+      providerName: 'second-provider',
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Starting update feed loop', {
       chainId: '123',
       providerName: 'second-provider',
     });
@@ -98,22 +106,30 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
     expect(intervalCalls[1]! - intervalCalls[0]!).toBeLessThan(50); // Ensures that the loops are run in parallel.
 
     // Expect the logs to be called with the correct context.
-    expect(logger.debug).toHaveBeenCalledTimes(4);
+    expect(logger.debug).toHaveBeenCalledTimes(6);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Starting update loops for chain', {
       chainId: '123',
       staggerTime: 100,
       providerNames: ['first-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Starting update feed loop', {
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas store', {
       chainId: '123',
       providerName: 'first-provider',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update loops for chain', {
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update feed loop', {
+      chainId: '123',
+      providerName: 'first-provider',
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Starting update loops for chain', {
       chainId: '456',
       staggerTime: 100,
       providerNames: ['another-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Starting update feed loop', {
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Initializing gas store', {
+      chainId: '456',
+      providerName: 'another-provider',
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Starting update feed loop', {
       chainId: '456',
       providerName: 'another-provider',
     });

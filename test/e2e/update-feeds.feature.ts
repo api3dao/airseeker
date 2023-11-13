@@ -9,7 +9,7 @@ import { decodeDataFeed } from '../../src/update-feeds/dapi-data-registry';
 import { updateFeeds } from '../../src/update-feeds/update-transactions';
 import { initializeState } from '../fixtures/mock-config';
 import { deployAndUpdate } from '../setup/contract';
-import { allowPartial, generateSignedData } from '../utils';
+import { generateSignedData } from '../utils';
 
 const chainId = '31337';
 const providerName = 'localhost';
@@ -23,6 +23,7 @@ it('reads blockchain data', async () => {
   jest.spyOn(logger, 'debug').mockImplementation();
 
   initializeState(config);
+  initializeGasStore(chainId, providerName);
 
   await runUpdateFeeds(providerName, chain, chainId);
 
@@ -41,6 +42,9 @@ it('updates blockchain data', async () => {
     airseekerWallet,
   } = await deployAndUpdate();
   initializeState(config);
+  stateModule.updateState((draft) => {
+    draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic.phrase;
+  });
   initializeGasStore(chainId, providerName);
   const btcDapi = await dapiDataRegistry.readDapiWithIndex(0);
 
@@ -60,11 +64,6 @@ it('updates blockchain data', async () => {
     (currentBlockTimestamp + 2).toString()
   );
   jest.spyOn(logger, 'debug');
-  jest
-    .spyOn(stateModule, 'getState')
-    .mockReturnValue(
-      allowPartial<stateModule.State>({ config: { sponsorWalletMnemonic: airseekerWallet.mnemonic.phrase } })
-    );
 
   await updateFeeds(chainId, providerName, provider, api3ServerV1, [
     {

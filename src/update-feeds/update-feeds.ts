@@ -5,7 +5,7 @@ import { range, size, zip } from 'lodash';
 import { calculateMedian, checkUpdateConditions } from '../condition-check';
 import type { Chain, DeviationThresholdCoefficient } from '../config/schema';
 import { INT224_MAX, INT224_MIN } from '../constants';
-import { clearSponsorLastUpdateTimestampMs } from '../gas-price';
+import { clearSponsorLastUpdateTimestampMs, initializeGasStore } from '../gas-price';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, updateState } from '../state';
@@ -39,6 +39,9 @@ export const startUpdateFeedsLoops = async () => {
       logger.debug(`Starting update loops for chain`, { chainId, staggerTime, providerNames: Object.keys(providers) });
 
       for (const providerName of Object.keys(providers)) {
+        logger.debug(`Initializing gas store`, { chainId, providerName });
+        initializeGasStore(chainId, providerName);
+
         logger.debug(`Starting update feed loop`, { chainId, providerName });
         // Run the update feed loop manually for the first time, because setInterval first waits for the given period of
         // time.

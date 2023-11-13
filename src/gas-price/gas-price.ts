@@ -11,9 +11,7 @@ export const initializeGasStore = (chainId: string, providerName: string) =>
       draft.gasPriceStore[chainId] = {};
     }
 
-    if (!draft.gasPriceStore[chainId]![providerName]) {
-      draft.gasPriceStore[chainId]![providerName] = { gasPrices: [], sponsorLastUpdateTimestampMs: {} };
-    }
+    draft.gasPriceStore[chainId]![providerName] = { gasPrices: [], sponsorLastUpdateTimestampMs: {} };
   });
 
 /**
@@ -54,7 +52,6 @@ export const setSponsorLastUpdateTimestampMs = (
   providerName: string,
   sponsorWalletAddress: string
 ) => {
-  initializeGasStore(chainId, providerName);
   updateState((draft) => {
     draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] = Date.now();
   });
@@ -130,24 +127,6 @@ export const updateGasPriceStore = async (
 };
 
 /**
- * Fetches the provider recommended gas price, saves it in the store and clears out expired gas prices.
- * @param chainId
- * @param providerName
- * @param provider
- */
-export const gasPriceCollector = async (
-  chainId: string,
-  providerName: string,
-  provider: ethers.providers.StaticJsonRpcProvider,
-  sanitizationSamplingWindow: number
-) => {
-  // Initialize the gas store for the chain if not already present
-  initializeGasStore(chainId, providerName);
-  clearExpiredStoreGasPrices(chainId, providerName, sanitizationSamplingWindow);
-  await updateGasPriceStore(chainId, providerName, provider);
-};
-
-/**
  *  Calculates the gas price to be used in a transaction based on sanitization and scaling settings.
  * @param chainId
  * @param providerName
@@ -170,7 +149,6 @@ export const getAirseekerRecommendedGasPrice = async (
     scalingWindow,
     maxScalingMultiplier,
   } = gasSettings;
-  initializeGasStore(chainId, providerName); // TODO: This could be moved to a better place to avoid calling it multiple times (in different functions).
   const state = getState();
   const { gasPrices, sponsorLastUpdateTimestampMs } = state.gasPriceStore[chainId]![providerName]!;
 

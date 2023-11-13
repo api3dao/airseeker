@@ -31,18 +31,11 @@ const sendTransaction = async (gasPriceOverride?: BigNumber) => {
 };
 
 describe(getAirseekerRecommendedGasPrice.name, () => {
-  beforeAll(() => {
-    initializeState();
-  });
-
   beforeEach(async () => {
+    initializeState();
+    initializeGasStore(chainId, providerName);
     // Reset the local hardhat network state for each test to prevent issues with other test contracts
     await network.provider.send('hardhat_reset');
-    initializeGasStore(chainId, providerName);
-    // Reset the gasPriceStore
-    updateState((draft) => {
-      draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
-    });
   });
 
   it('gets, sets and returns provider recommended gas prices', async () => {
