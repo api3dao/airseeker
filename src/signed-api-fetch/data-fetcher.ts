@@ -88,9 +88,9 @@ export const runDataFetcher = async () => {
         async () => {
           const payload = await callSignedDataApi(url);
 
-          const beaconsForActiveDApis = payload.filter((record) =>
+          const beaconsForActiveDApis = payload.filter((signedData) =>
             activeBeacons.find(
-              (beacon) => record.airnode === beacon.airnodeAddress && record.templateId === beacon.templateId
+              (beacon) => beacon.airnodeAddress === signedData.airnode && beacon.templateId === signedData.templateId
             )
           );
 
