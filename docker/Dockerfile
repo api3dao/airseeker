@@ -3,10 +3,10 @@ ENV name="airseeker-v2"
 LABEL application="airseeker-v2" description="Airseeker V2 container"
 WORKDIR /app
 
-# Install pnpm globally (needs root privilidges).
+# Install pnpm globally (needs root privileges).
 RUN npm install -g pnpm
 
-# Create a new user and group to run the application with reduced priviledges.
+# Create a new user and group to run the application with reduced privileges.
 RUN addgroup -S airseeker && \
     adduser -h /app -s /bin/false -S -D -H -G airseeker airseeker && \
     chown -R airseeker /app
