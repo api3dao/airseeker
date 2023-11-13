@@ -4,7 +4,7 @@ import { omit } from 'lodash';
 import { initializeGasStore } from '../../src/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
-import { runUpdateFeed } from '../../src/update-feeds';
+import { runUpdateFeeds } from '../../src/update-feeds';
 import { decodeDataFeed } from '../../src/update-feeds/dapi-data-registry';
 import { updateFeeds } from '../../src/update-feeds/update-transactions';
 import { initializeState } from '../fixtures/mock-config';
@@ -24,7 +24,7 @@ it('reads blockchain data', async () => {
 
   initializeState(config);
 
-  await runUpdateFeed(providerName, chain, chainId);
+  await runUpdateFeeds(providerName, chain, chainId);
 
   expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs', expect.anything());
 });

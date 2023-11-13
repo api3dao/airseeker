@@ -53,52 +53,53 @@ const callSignedDataApi = async (url: string): Promise<SignedData[]> => {
 };
 
 export const runDataFetcher = async () => {
-  // TODO: Consider adding "Coordinator ID"
-  logger.debug('Running data fetcher');
-  const state = getState();
-  const {
-    config: { signedDataFetchInterval },
-    signedApiUrlStore,
-    dataFetcherInterval,
-  } = state;
+  return logger.runWithContext({ dataFetcherCoordinatorId: Date.now().toString() }, async () => {
+    logger.debug('Running data fetcher');
+    const state = getState();
+    const {
+      config: { signedDataFetchInterval },
+      signedApiUrlStore,
+      dataFetcherInterval,
+    } = state;
 
-  const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
+    const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
 
-  if (!dataFetcherInterval) {
-    const dataFetcherInterval = setInterval(runDataFetcher, signedDataFetchIntervalMs);
-    updateState((draft) => {
-      draft.dataFetcherInterval = dataFetcherInterval;
-    });
-  }
+    if (!dataFetcherInterval) {
+      const dataFetcherInterval = setInterval(runDataFetcher, signedDataFetchIntervalMs);
+      updateState((draft) => {
+        draft.dataFetcherInterval = dataFetcherInterval;
+      });
+    }
 
-  const urls = uniq(
-    Object.values(signedApiUrlStore)
-      .flatMap((urlsPerProvider) => Object.values(urlsPerProvider))
-      .flatMap((urlsPerAirnode) => Object.values(urlsPerAirnode))
-      .flat()
-  );
+    const urls = uniq(
+      Object.values(signedApiUrlStore)
+        .flatMap((urlsPerProvider) => Object.values(urlsPerProvider))
+        .flatMap((urlsPerAirnode) => Object.values(urlsPerAirnode))
+        .flat()
+    );
 
-  logger.debug('Fetching data from signed APIs', { urls });
-  return Promise.all(
-    urls.map(async (url) => {
-      const goSignedApiCall = await go(
-        async () => {
-          const payload = await callSignedDataApi(url);
+    logger.debug('Fetching data from signed APIs', { urls });
+    return Promise.all(
+      urls.map(async (url) => {
+        const goSignedApiCall = await go(
+          async () => {
+            const payload = await callSignedDataApi(url);
 
-          for (const element of payload) {
-            localDataStore.setStoreDataPoint(element);
+            for (const element of payload) {
+              localDataStore.setStoreDataPoint(element);
+            }
+          },
+          {
+            retries: 0,
+            totalTimeoutMs: signedDataFetchIntervalMs + HTTP_SIGNED_DATA_API_HEADROOM,
+            attemptTimeoutMs: signedDataFetchIntervalMs + HTTP_SIGNED_DATA_API_HEADROOM - 100,
           }
-        },
-        {
-          retries: 0,
-          totalTimeoutMs: signedDataFetchIntervalMs + HTTP_SIGNED_DATA_API_HEADROOM,
-          attemptTimeoutMs: signedDataFetchIntervalMs + HTTP_SIGNED_DATA_API_HEADROOM - 100,
-        }
-      );
+        );
 
-      if (!goSignedApiCall.success) {
-        logger.warn(`Failed to fetch data from signed API`, { error: goSignedApiCall.error });
-      }
-    })
-  );
+        if (!goSignedApiCall.success) {
+          logger.warn(`Failed to fetch data from signed API`, { error: goSignedApiCall.error });
+        }
+      })
+    );
+  });
 };

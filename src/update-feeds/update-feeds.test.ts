@@ -16,7 +16,7 @@ import * as updateTransactionModule from './update-transactions';
 
 jest.mock('../state');
 
-describe(updateFeedsModule.startUpdateFeedLoops.name, () => {
+describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
   it('starts staggered update loops for a chain', async () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
@@ -33,14 +33,14 @@ describe(updateFeedsModule.startUpdateFeedLoops.name, () => {
         },
       })
     );
-    jest.spyOn(updateFeedsModule, 'runUpdateFeed').mockImplementation();
+    jest.spyOn(updateFeedsModule, 'runUpdateFeeds').mockImplementation();
     const intervalCalls = [] as number[];
     jest.spyOn(global, 'setInterval').mockImplementation((() => {
       intervalCalls.push(Date.now());
     }) as any);
     jest.spyOn(logger, 'debug');
 
-    await updateFeedsModule.startUpdateFeedLoops();
+    await updateFeedsModule.startUpdateFeedsLoops();
 
     // Expect the intervals to be called with the correct stagger time.
     expect(setInterval).toHaveBeenCalledTimes(2);
@@ -84,14 +84,14 @@ describe(updateFeedsModule.startUpdateFeedLoops.name, () => {
         },
       })
     );
-    jest.spyOn(updateFeedsModule, 'runUpdateFeed').mockImplementation();
+    jest.spyOn(updateFeedsModule, 'runUpdateFeeds').mockImplementation();
     const intervalCalls = [] as number[];
     jest.spyOn(global, 'setInterval').mockImplementation((() => {
       intervalCalls.push(Date.now());
     }) as any);
     jest.spyOn(logger, 'debug');
 
-    await updateFeedsModule.startUpdateFeedLoops();
+    await updateFeedsModule.startUpdateFeedsLoops();
 
     // Expect the intervals to be called with the correct stagger time.
     expect(setInterval).toHaveBeenCalledTimes(2);
@@ -120,7 +120,7 @@ describe(updateFeedsModule.startUpdateFeedLoops.name, () => {
   });
 });
 
-describe(updateFeedsModule.runUpdateFeed.name, () => {
+describe(updateFeedsModule.runUpdateFeeds.name, () => {
   it('aborts when fetching first dAPIs batch fails', async () => {
     const dapiDataRegistry = generateMockDapiDataRegistry();
     jest
@@ -129,7 +129,7 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
     dapiDataRegistry.callStatic.tryMulticall.mockRejectedValueOnce(new Error('provider-error'));
     jest.spyOn(logger, 'error');
 
-    await updateFeedsModule.runUpdateFeed(
+    await updateFeedsModule.runUpdateFeeds(
       'provider-name',
       allowPartial<Chain>({
         dataFeedBatchSize: 2,
@@ -199,7 +199,7 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
       ]);
     jest.spyOn(updateTransactionModule, 'updateFeeds').mockResolvedValue([null, null]);
 
-    await updateFeedsModule.runUpdateFeed(
+    await updateFeedsModule.runUpdateFeeds(
       'provider-name',
       allowPartial<Chain>({
         dataFeedBatchSize: 1,

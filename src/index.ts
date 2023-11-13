@@ -2,7 +2,7 @@ import { loadConfig } from './config';
 import { logger } from './logger';
 import { runDataFetcher } from './signed-api-fetch';
 import { setInitialState } from './state';
-import { startUpdateFeedLoops } from './update-feeds';
+import { startUpdateFeedsLoops } from './update-feeds';
 
 function main() {
   logger.info('Loading configuration and setting initial state');
@@ -11,7 +11,7 @@ function main() {
 
   logger.info('Starting Airseeker loops');
   void runDataFetcher();
-  void startUpdateFeedLoops();
+  void startUpdateFeedsLoops();
 }
 
 main();

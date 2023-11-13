@@ -22,7 +22,7 @@ import {
 } from './dapi-data-registry';
 import { type UpdateableDapi, updateFeeds } from './update-transactions';
 
-export const startUpdateFeedLoops = async () => {
+export const startUpdateFeedsLoops = async () => {
   const state = getState();
   const {
     config: { chains },
@@ -42,8 +42,8 @@ export const startUpdateFeedLoops = async () => {
         logger.debug(`Starting update feed loop`, { chainId, providerName });
         // Run the update feed loop manually for the first time, because setInterval first waits for the given period of
         // time.
-        void runUpdateFeed(providerName, chain, chainId);
-        setInterval(async () => runUpdateFeed(providerName, chain, chainId), dataFeedUpdateInterval * 1000);
+        void runUpdateFeeds(providerName, chain, chainId);
+        setInterval(async () => runUpdateFeeds(providerName, chain, chainId), dataFeedUpdateInterval * 1000);
 
         await sleep(staggerTime);
       }
@@ -51,8 +51,8 @@ export const startUpdateFeedLoops = async () => {
   );
 };
 
-export const runUpdateFeed = async (providerName: ProviderName, chain: Chain, chainId: ChainId) => {
-  await logger.runWithContext({ chainId, providerName, coordinatorTimestampMs: Date.now().toString() }, async () => {
+export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, chainId: ChainId) => {
+  await logger.runWithContext({ chainId, providerName, updateFeedsCoordinatorId: Date.now().toString() }, async () => {
     const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
 
     // Create a provider and connect it to the DapiDataRegistry contract.
