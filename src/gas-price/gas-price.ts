@@ -46,7 +46,6 @@ export const clearExpiredStoreGasPrices = (chainId: string, providerName: string
  * @param providerName
  * @param sponsorWalletAddress
  */
-// TODO: Why is this unused?
 export const setSponsorLastUpdateTimestampMs = (
   chainId: string,
   providerName: string,
@@ -93,7 +92,6 @@ export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => 
  * @param maxScalingMultiplier
  * @param lag
  * @param scalingWindow
- * @returns
  */
 export const calculateScalingMultiplier = (
   recommendedGasPriceMultiplier: number,
@@ -111,7 +109,6 @@ export const calculateScalingMultiplier = (
  * @param chainId
  * @param providerName
  * @param provider
- * @returns {ethers.BigNumber}
  */
 export const updateGasPriceStore = async (
   chainId: string,
@@ -127,13 +124,21 @@ export const updateGasPriceStore = async (
 };
 
 /**
+ * Checks if a sponsor wallet has a pending transaction.
+ */
+export const hasPendingTransaction = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
+  const { sponsorLastUpdateTimestampMs } = getState().gasPriceStore[chainId]![providerName]!;
+
+  return !!sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+};
+
+/**
  *  Calculates the gas price to be used in a transaction based on sanitization and scaling settings.
  * @param chainId
  * @param providerName
  * @param provider
  * @param gasSettings
  * @param sponsorWalletAddress
- * @returns {ethers.BigNumber}
  */
 export const getAirseekerRecommendedGasPrice = async (
   chainId: string,

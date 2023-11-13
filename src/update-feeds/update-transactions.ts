@@ -2,7 +2,7 @@ import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
-import { getAirseekerRecommendedGasPrice } from '../gas-price';
+import { getAirseekerRecommendedGasPrice, hasPendingTransaction, setSponsorLastUpdateTimestampMs } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { SignedData, ChainId, ProviderName } from '../types';
@@ -88,6 +88,16 @@ export const updateFeeds = async (
           );
           if (!goGasPrice.success) {
             logger.error(`Failed to get gas price`, goGasPrice.error);
+            return;
+          }
+          const gasPrice = goGasPrice.data;
+
+          // We want to set the timestamp of the first update transaction. We can determine if the transaction is the
+          // original one if it is't not a retry of a pending transaction. That is, iff there is no timestamp for the
+          // particular sponsor wallet. This assumes that a single sponsor updates a single dAPI.
+          if (!hasPendingTransaction(chainId, providerName, sponsorWallet.address)) {
+            logger.debug('Setting timestamp of the original update transaction');
+            setSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWallet.address);
           }
 
           logger.debug('Updating dAPI', { gasPrice: goGasPrice.data, gasLimit });
@@ -96,7 +106,7 @@ export const updateFeeds = async (
               // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
               // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
               .connect(sponsorWallet.connect(api3ServerV1.provider))
-              .tryMulticall(dataFeedUpdateCalldatas, { gasPrice: goGasPrice.data!, gasLimit })
+              .tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit })
           );
         });
 

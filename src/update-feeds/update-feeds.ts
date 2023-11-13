@@ -5,7 +5,7 @@ import { range, size, zip } from 'lodash';
 import { calculateMedian, checkUpdateConditions } from '../condition-check';
 import type { Chain, DeviationThresholdCoefficient } from '../config/schema';
 import { INT224_MAX, INT224_MIN } from '../constants';
-import { clearSponsorLastUpdateTimestampMs, initializeGasStore } from '../gas-price';
+import { clearSponsorLastUpdateTimestampMs, initializeGasStore, hasPendingTransaction } from '../gas-price';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState, updateState } from '../state';
@@ -238,12 +238,23 @@ export const processBatch = async (
 
   // Clear last update timestamps for feeds that don't need an update
   for (const feed of batch) {
-    if (!dapiNamesToUpdate.has(feed.dapiName)) {
-      clearSponsorLastUpdateTimestampMs(
-        chainId,
-        providerName,
-        deriveSponsorWallet(sponsorWalletMnemonic, feed.dapiName).address
-      );
+    const { dapiName } = feed;
+
+    if (!dapiNamesToUpdate.has(dapiName)) {
+      const sponsorWalletAddress = deriveSponsorWallet(sponsorWalletMnemonic, dapiName).address;
+      const timestampNeedsClearing = hasPendingTransaction(chainId, providerName, sponsorWalletAddress);
+      if (timestampNeedsClearing) {
+        // NOTE: A dAPI may stop needing an update for two reasons:
+        //  1. It has been updated by a transaction. This could have been done by this Airseeker or some backup.
+        //  2. As a natural price shift in signed API data.
+        //
+        // We can't differentiate between these cases unless we check recent update transactions, which we don't want to
+        // do.
+        logger.debug(`Clearing dAPI update timestamp because it no longer needs an update`, {
+          dapiName,
+        });
+        clearSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWalletAddress);
+      }
     }
   }
 
