@@ -116,7 +116,7 @@ export const callAndParseMulticall = async (
 };
 
 export const getFeedsToUpdate = async (
-  batch: ReadDapiWithIndexResponse[], // ReturnType<typeof getFeedsToUpdate>,
+  batch: ReadDapiWithIndexResponse[],
   providerName: Provider,
   chainId: ChainId
 ) => {
