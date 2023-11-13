@@ -22,7 +22,7 @@ export type Provider = z.infer<typeof providerSchema>;
 export const optionalContractsSchema = z
   .object({
     Api3ServerV1: evmAddressSchema.optional(),
-    DapiDataRegistry: evmAddressSchema, // TODO: Make optional and load from "airnode-protocol-v1" or some other location and document it accordingly.
+    DapiDataRegistry: evmAddressSchema,
   })
   .strict();
 
@@ -116,12 +116,31 @@ export const chainsSchema = z
     );
   });
 
+export const deviationThresholdCoefficientSchema = z
+  .number()
+  .positive()
+  .optional() // Explicitly agreed to make this optional. See: https://github.com/api3dao/airseeker-v2/pull/20#issuecomment-1750856113.
+  .default(1)
+  .superRefine((coefficient, ctx) => {
+    // Check if the number has a maximum of two decimals
+    const decimalCount = coefficient.toString().split('.')[1]?.length;
+    if (decimalCount && decimalCount > 2) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Invalid deviationThresholdCoefficient. A maximum of 2 decimals are supported.',
+        path: ['deviationThresholdCoefficient'],
+      });
+    }
+  });
+
+export type DeviationThresholdCoefficient = z.infer<typeof deviationThresholdCoefficientSchema>;
+
 export const configSchema = z
   .object({
     sponsorWalletMnemonic: z.string().refine((mnemonic) => ethers.utils.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
     chains: chainsSchema,
-    fetchInterval: z.number().positive(), // TODO: Rename to signedDataFetchInterval
-    deviationThresholdCoefficient: z.number().positive().optional().default(1), // Explicitly agreed to make this optional. See: https://github.com/api3dao/airseeker-v2/pull/20#issuecomment-1750856113.
+    signedDataFetchInterval: z.number().positive(),
+    deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
   })
   .strict();
 

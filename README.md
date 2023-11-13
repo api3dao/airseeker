@@ -181,7 +181,7 @@ The interval specifying how often to run the data feed update loop. In seconds.
 
 The batch size of active dAPIs that are to be fetched in a single RPC call.
 
-#### `fetchInterval`
+#### `signedDataFetchInterval`
 
 The fetch interval in seconds between retrievals of signed API data.
 

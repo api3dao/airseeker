@@ -23,5 +23,5 @@
     }
   },
   "deviationThresholdCoefficient": 1,
-  "fetchInterval": 10000
+  "signedDataFetchInterval": 10000
 }

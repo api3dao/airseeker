@@ -2,11 +2,11 @@ import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
-import { AIRSEEKER_PROTOCOL_ID } from '../constants';
-import { getAirseekerRecommendedGasPrice } from '../gas-price/gas-price';
+import { getAirseekerRecommendedGasPrice } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { SignedData, ChainId, Provider } from '../types';
+import type { SignedData, ChainId, ProviderName } from '../types';
+import { deriveSponsorWallet } from '../utils';
 
 import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
 
@@ -22,7 +22,7 @@ export interface UpdateableDapi {
 
 export const updateFeeds = async (
   chainId: ChainId,
-  providerName: Provider,
+  providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
   api3ServerV1: Api3ServerV1,
   updateableDapis: UpdateableDapi[]
@@ -33,7 +33,7 @@ export const updateFeeds = async (
   } = state;
 
   // Update all of the dAPIs in parallel.
-  await Promise.all(
+  return Promise.all(
     updateableDapis.map(async (dapi) => {
       const { dapiInfo, updateableBeacons } = dapi;
       const {
@@ -41,7 +41,7 @@ export const updateFeeds = async (
         decodedDataFeed: { dataFeedId },
       } = dapiInfo;
 
-      await logger.runWithContext({ dapiName, dataFeedId }, async () => {
+      return logger.runWithContext({ dapiName, dataFeedId }, async () => {
         const goUpdate = await go(async () => {
           // Create calldata for all beacons of the particular data feed the dAPI points to.
           const beaconUpdateCalls = updateableBeacons.map((beacon) => {
@@ -74,9 +74,8 @@ export const updateFeeds = async (
             updateableBeacons.map((beacon) => beacon.beaconId)
           );
 
-          logger.debug('Deriving sponsor wallet');
-          // TODO: These wallets could be persisted as a performance optimization.
-          const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
+          logger.debug('Getting derived sponsor wallet');
+          const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
 
           const goGasPrice = await go(async () =>
             getAirseekerRecommendedGasPrice(
@@ -92,17 +91,21 @@ export const updateFeeds = async (
           }
 
           logger.debug('Updating dAPI', { gasPrice: goGasPrice.data, gasLimit });
-          await api3ServerV1
-            // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
-            // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
-            .connect(sponsorWallet.connect(api3ServerV1.provider))
-            .tryMulticall(dataFeedUpdateCalldatas, { gasPrice: goGasPrice.data!, gasLimit });
-          logger.debug('Successfully updated dAPI');
+          return (
+            api3ServerV1
+              // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
+              // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
+              .connect(sponsorWallet.connect(api3ServerV1.provider))
+              .tryMulticall(dataFeedUpdateCalldatas, { gasPrice: goGasPrice.data!, gasLimit })
+          );
         });
 
         if (!goUpdate.success) {
           logger.error(`Failed to update a dAPI`, goUpdate.error);
+          return null;
         }
+
+        return goUpdate.data;
       });
     })
   );
@@ -142,7 +145,7 @@ export const estimateMulticallGasLimit = async (
   return ethers.BigNumber.from(2_000_000);
 };
 
-export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: string) => {
+export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiName: string) => {
   const { derivedSponsorWallets } = getState();
 
   const privateKey = derivedSponsorWallets?.[dapiName];
@@ -150,13 +153,8 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: str
     return new ethers.Wallet(privateKey);
   }
 
-  // Take first 20 bytes of dapiName as sponsor address together with the "0x" prefix.
-  const sponsorAddress = ethers.utils.getAddress(dapiName.slice(0, 42));
-  const sponsorWallet = ethers.Wallet.fromMnemonic(
-    sponsorWalletMnemonic,
-    `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
-  );
-  logger.debug('Derived sponsor wallet', { sponsorAddress, sponsorWalletAddress: sponsorWallet.address });
+  const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
+  logger.debug('Derived new sponsor wallet', { dapiName, sponsorWalletAddress: sponsorWallet.address });
 
   updateState((draft) => {
     draft.derivedSponsorWallets = {
@@ -167,16 +165,6 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: str
 
   return sponsorWallet;
 };
-
-export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
-  const sponsorAddressBN = ethers.BigNumber.from(sponsorAddress);
-  const paths = [];
-  for (let i = 0; i < 6; i++) {
-    const shiftedSponsorAddressBN = sponsorAddressBN.shr(31 * i);
-    paths.push(shiftedSponsorAddressBN.mask(31).toString());
-  }
-  return `${AIRSEEKER_PROTOCOL_ID}/${paths.join('/')}`;
-}
 
 export const createDummyBeaconUpdateData = async (dummyAirnode: ethers.Wallet = ethers.Wallet.createRandom()) => {
   const dummyBeaconTemplateId = ethers.utils.hexlify(ethers.utils.randomBytes(32));

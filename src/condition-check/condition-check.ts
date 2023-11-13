@@ -14,6 +14,7 @@ export const calculateUpdateInPercentage = (initialValue: ethers.BigNumber, upda
 };
 
 export const calculateMedian = (arr: ethers.BigNumber[]) => {
+  if (arr.length === 0) throw new Error('Cannot calculate median of empty array');
   const mid = Math.floor(arr.length / 2);
 
   const nums = [...arr].sort((a, b) => {
@@ -22,7 +23,7 @@ export const calculateMedian = (arr: ethers.BigNumber[]) => {
     else return 0;
   });
 
-  return arr.length % 2 === 0 ? nums[mid - 1]!.add(nums[mid]!).div(2) : nums[mid];
+  return arr.length % 2 === 0 ? nums[mid - 1]!.add(nums[mid]!).div(2) : nums[mid]!;
 };
 
 /**
