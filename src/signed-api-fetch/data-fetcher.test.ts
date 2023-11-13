@@ -2,8 +2,9 @@ import axios from 'axios';
 import { produce } from 'immer';
 
 import { init } from '../../test/fixtures/mock-config';
+import { allowPartial } from '../../test/utils';
 import * as localDataStore from '../signed-data-store';
-import { getState, setState } from '../state';
+import { type DapiState, getState, setState } from '../state';
 
 import { runDataFetcher, stopDataFetcher } from './data-fetcher';
 
@@ -23,6 +24,19 @@ describe('data fetcher', () => {
                 'http://127.0.0.1:8090/0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
             },
           },
+        };
+
+        draft.dapis = {
+          dapione: allowPartial<DapiState>({
+            dataFeed: {
+              beacons: [
+                {
+                  templateId: '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183',
+                  airnodeAddress: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+                },
+              ],
+            },
+          }),
         };
       })
     );
@@ -73,6 +87,6 @@ describe('data fetcher', () => {
     stopDataFetcher();
 
     expect(mockedAxios).toHaveBeenCalledTimes(1);
-    expect(setStoreDataPointSpy).toHaveBeenCalledTimes(3);
+    expect(setStoreDataPointSpy).toHaveBeenCalledTimes(1);
   });
 });

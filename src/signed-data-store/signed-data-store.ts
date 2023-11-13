@@ -2,7 +2,7 @@ import { goSync } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
 import { logger } from '../logger';
-import { getState, updateState } from '../state';
+import { getBeaconsForActiveDapis, getState, updateState } from '../state';
 import type { SignedData, AirnodeAddress, TemplateId, DataFeedId } from '../types';
 import { deriveBeaconId } from '../utils';
 
@@ -95,5 +95,21 @@ export const getStoreDataPoint = (dataFeedId: DataFeedId) => getState().signedAp
 export const clear = () => {
   updateState((draft) => {
     draft.signedApiStore = {};
+  });
+};
+
+export const purgeInactiveDataPoints = () => {
+  updateState((draft) => {
+    const { signedApiStore } = draft;
+
+    const activeBeacons = getBeaconsForActiveDapis();
+
+    draft.signedApiStore = Object.fromEntries(
+      Object.entries(signedApiStore).filter(([_dataFeedId, signedData]) =>
+        activeBeacons.find(
+          (beacon) => beacon.airnodeAddress === signedData.airnode && beacon.templateId === signedData.templateId
+        )
+      )
+    );
   });
 };

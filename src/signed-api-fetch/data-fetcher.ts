@@ -7,7 +7,8 @@ import { uniq } from 'lodash';
 import { HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT, HTTP_SIGNED_DATA_API_HEADROOM } from '../constants';
 import { logger } from '../logger';
 import * as localDataStore from '../signed-data-store';
-import { getState, updateState } from '../state';
+import { purgeInactiveDataPoints } from '../signed-data-store';
+import { getBeaconsForActiveDapis, getState, updateState } from '../state';
 import { signedApiResponseSchema, type SignedData } from '../types';
 
 // Express handler/endpoint path: https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/server.ts#L33
@@ -78,14 +79,22 @@ export const runDataFetcher = async () => {
       .flat()
   );
 
+  const activeBeacons = getBeaconsForActiveDapis();
+
   logger.debug('Fetching data from signed APIs', { urls });
-  return Promise.all(
+  const fetcherPromise = await Promise.all(
     urls.map(async (url) => {
       const goSignedApiCall = await go(
         async () => {
           const payload = await callSignedDataApi(url);
 
-          for (const element of payload) {
+          const beaconsForActiveDApis = payload.filter((record) =>
+            activeBeacons.find(
+              (beacon) => record.airnode === beacon.airnodeAddress && record.templateId === beacon.templateId
+            )
+          );
+
+          for (const element of beaconsForActiveDApis) {
             localDataStore.setStoreDataPoint(element);
           }
         },
@@ -102,4 +111,8 @@ export const runDataFetcher = async () => {
       }
     })
   );
+
+  purgeInactiveDataPoints();
+
+  return fetcherPromise;
 };

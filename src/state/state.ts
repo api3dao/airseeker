@@ -1,5 +1,6 @@
 import type { BigNumber } from 'ethers';
 import { produce, type Draft } from 'immer';
+import { uniq } from 'lodash';
 
 import type { Config } from '../config/schema';
 import type {
@@ -76,3 +77,6 @@ export const setInitialState = (config: Config) => {
 export const updateState = (updater: StateUpdater) => {
   setState(produce(getState(), updater));
 };
+
+export const getBeaconsForActiveDapis = () =>
+  uniq(Object.values(getState().dapis).flatMap((dapi) => dapi.dataFeed.beacons));
