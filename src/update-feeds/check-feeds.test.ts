@@ -78,24 +78,29 @@ describe('checks whether feeds should be updated or not', () => {
     ] as const;
 
     it('calls and parses a multicall', async () => {
+      const signedApiStore = {
+        [feedIds[0]]: { timestamp: '100', encodedValue: ethers.BigNumber.from(200).toHexString() },
+        [feedIds[1]]: { timestamp: '150', encodedValue: ethers.BigNumber.from(250).toHexString() },
+        [feedIds[2]]: { timestamp: '200', encodedValue: ethers.BigNumber.from(300).toHexString() },
+      };
+
       init(
         allowPartial<stateModule.State>({
-          signedApiStore: {
-            [feedIds[0]]: { timestamp: '100', encodedValue: ethers.BigNumber.from(200).toHexString() },
-            [feedIds[1]]: { timestamp: '150', encodedValue: ethers.BigNumber.from(250).toHexString() },
-            [feedIds[2]]: { timestamp: '200', encodedValue: ethers.BigNumber.from(300).toHexString() },
-          },
+          signedApiStore,
         })
       );
 
-      const batch = allowPartial<ReadDapiWithIndexResponse[]>([
+      const decodedDataFeed = {
+        dataFeedId: '0x000',
+        beacons: [{ dataFeedId: feedIds[0] }, { dataFeedId: feedIds[1] }, { dataFeedId: feedIds[2] }],
+      };
+
+      const batch = allowPartial<ReturnType<typeof shallowCheckFeeds>>([
         {
           updateParameters: { deviationThresholdInPercentage: 2 },
           dataFeedValue: { value: ethers.BigNumber.from(1), timestamp: 1 },
-          decodedDataFeed: {
-            dataFeedId: '0x000',
-            beacons: [{ dataFeedId: feedIds[0] }, { dataFeedId: feedIds[1] }, { dataFeedId: feedIds[2] }],
-          },
+          decodedDataFeed,
+          signedData: decodedDataFeed.beacons.map(({ dataFeedId }) => signedApiStore[dataFeedId]),
           dapiName: 'test',
         },
       ]);
@@ -125,11 +130,7 @@ describe('checks whether feeds should be updated or not', () => {
 
       jest.spyOn(contractUtils, 'getApi3ServerV1').mockReturnValue(mockContract as any);
 
-      const shallowFeedsToUpdate = shallowCheckFeeds(batch);
-
-      expect(shallowFeedsToUpdate).toHaveLength(1);
-
-      const callAndParseMulticallPromise = callAndParseMulticall(shallowFeedsToUpdate, 'hardhat', '31337');
+      const callAndParseMulticallPromise = callAndParseMulticall(batch, 'hardhat', '31337');
 
       await expect(callAndParseMulticallPromise).resolves.toStrictEqual([
         {
