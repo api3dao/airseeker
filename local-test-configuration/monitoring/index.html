@@ -1,0 +1,1602 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Airseeker monitoring</title>
+  </head>
+
+  <body>
+    <h1>Airseeker monitoring</h1>
+    <p>
+      Uses a fixed (static) configuration to fetch on-chain values of active dAPIs and signed API data and computes the
+      deviation treshold.
+    </p>
+
+    <h2>Active dAPIs</h2>
+    <p>Number of active dAPIs: <span id="activeDapisCount"></span></p>
+    <pre id="activeDapis"></pre>
+  </body>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"
+    integrity="sha512-FDcVY+g7vc5CXANbrTSg1K5qLyriCsGDYCE02Li1tXEYdNQPvLPHNE+rT2Mjei8N7fZbe0WLhw27j2SrGRpdMg=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
+  <script>
+    const api3ServerV1Abi = [
+      {
+        anonymous: false,
+        inputs: [
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'dapiName',
+            type: 'bytes32',
+          },
+          {
+            indexed: false,
+            internalType: 'address',
+            name: 'sender',
+            type: 'address',
+          },
+        ],
+        name: 'SetDapiName',
+        type: 'event',
+      },
+      {
+        anonymous: false,
+        inputs: [
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'beaconSetId',
+            type: 'bytes32',
+          },
+          {
+            indexed: false,
+            internalType: 'int224',
+            name: 'value',
+            type: 'int224',
+          },
+          {
+            indexed: false,
+            internalType: 'uint32',
+            name: 'timestamp',
+            type: 'uint32',
+          },
+        ],
+        name: 'UpdatedBeaconSetWithBeacons',
+        type: 'event',
+      },
+      {
+        anonymous: false,
+        inputs: [
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'beaconId',
+            type: 'bytes32',
+          },
+          {
+            indexed: false,
+            internalType: 'int224',
+            name: 'value',
+            type: 'int224',
+          },
+          {
+            indexed: false,
+            internalType: 'uint32',
+            name: 'timestamp',
+            type: 'uint32',
+          },
+        ],
+        name: 'UpdatedBeaconWithSignedData',
+        type: 'event',
+      },
+      {
+        anonymous: false,
+        inputs: [
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'beaconSetId',
+            type: 'bytes32',
+          },
+          {
+            indexed: true,
+            internalType: 'address',
+            name: 'proxy',
+            type: 'address',
+          },
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'updateId',
+            type: 'bytes32',
+          },
+          {
+            indexed: false,
+            internalType: 'int224',
+            name: 'value',
+            type: 'int224',
+          },
+          {
+            indexed: false,
+            internalType: 'uint32',
+            name: 'timestamp',
+            type: 'uint32',
+          },
+        ],
+        name: 'UpdatedOevProxyBeaconSetWithSignedData',
+        type: 'event',
+      },
+      {
+        anonymous: false,
+        inputs: [
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'beaconId',
+            type: 'bytes32',
+          },
+          {
+            indexed: true,
+            internalType: 'address',
+            name: 'proxy',
+            type: 'address',
+          },
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'updateId',
+            type: 'bytes32',
+          },
+          {
+            indexed: false,
+            internalType: 'int224',
+            name: 'value',
+            type: 'int224',
+          },
+          {
+            indexed: false,
+            internalType: 'uint32',
+            name: 'timestamp',
+            type: 'uint32',
+          },
+        ],
+        name: 'UpdatedOevProxyBeaconWithSignedData',
+        type: 'event',
+      },
+      {
+        anonymous: false,
+        inputs: [
+          {
+            indexed: true,
+            internalType: 'address',
+            name: 'oevProxy',
+            type: 'address',
+          },
+          {
+            indexed: false,
+            internalType: 'address',
+            name: 'oevBeneficiary',
+            type: 'address',
+          },
+          {
+            indexed: false,
+            internalType: 'uint256',
+            name: 'amount',
+            type: 'uint256',
+          },
+        ],
+        name: 'Withdrew',
+        type: 'event',
+      },
+      {
+        inputs: [],
+        name: 'DAPI_NAME_SETTER_ROLE_DESCRIPTION',
+        outputs: [
+          {
+            internalType: 'string',
+            name: '',
+            type: 'string',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'accessControlRegistry',
+        outputs: [
+          {
+            internalType: 'address',
+            name: '',
+            type: 'address',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'adminRole',
+        outputs: [
+          {
+            internalType: 'bytes32',
+            name: '',
+            type: 'bytes32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'adminRoleDescription',
+        outputs: [
+          {
+            internalType: 'string',
+            name: '',
+            type: 'string',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'address',
+            name: 'account',
+            type: 'address',
+          },
+        ],
+        name: 'containsBytecode',
+        outputs: [
+          {
+            internalType: 'bool',
+            name: '',
+            type: 'bool',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dapiNameHash',
+            type: 'bytes32',
+          },
+        ],
+        name: 'dapiNameHashToDataFeedId',
+        outputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'dapiNameSetterRole',
+        outputs: [
+          {
+            internalType: 'bytes32',
+            name: '',
+            type: 'bytes32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dapiName',
+            type: 'bytes32',
+          },
+        ],
+        name: 'dapiNameToDataFeedId',
+        outputs: [
+          {
+            internalType: 'bytes32',
+            name: '',
+            type: 'bytes32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+        ],
+        name: 'dataFeeds',
+        outputs: [
+          {
+            internalType: 'int224',
+            name: 'value',
+            type: 'int224',
+          },
+          {
+            internalType: 'uint32',
+            name: 'timestamp',
+            type: 'uint32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'address',
+            name: 'account',
+            type: 'address',
+          },
+        ],
+        name: 'getBalance',
+        outputs: [
+          {
+            internalType: 'uint256',
+            name: '',
+            type: 'uint256',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'getBlockBasefee',
+        outputs: [
+          {
+            internalType: 'uint256',
+            name: '',
+            type: 'uint256',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'getBlockNumber',
+        outputs: [
+          {
+            internalType: 'uint256',
+            name: '',
+            type: 'uint256',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'getBlockTimestamp',
+        outputs: [
+          {
+            internalType: 'uint256',
+            name: '',
+            type: 'uint256',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'getChainId',
+        outputs: [
+          {
+            internalType: 'uint256',
+            name: '',
+            type: 'uint256',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'manager',
+        outputs: [
+          {
+            internalType: 'address',
+            name: '',
+            type: 'address',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes[]',
+            name: 'data',
+            type: 'bytes[]',
+          },
+        ],
+        name: 'multicall',
+        outputs: [
+          {
+            internalType: 'bytes[]',
+            name: 'returndata',
+            type: 'bytes[]',
+          },
+        ],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'address',
+            name: 'oevProxy',
+            type: 'address',
+          },
+        ],
+        name: 'oevProxyToBalance',
+        outputs: [
+          {
+            internalType: 'uint256',
+            name: 'balance',
+            type: 'uint256',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'address',
+            name: 'proxy',
+            type: 'address',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+        ],
+        name: 'oevProxyToIdToDataFeed',
+        outputs: [
+          {
+            internalType: 'int224',
+            name: 'value',
+            type: 'int224',
+          },
+          {
+            internalType: 'uint32',
+            name: 'timestamp',
+            type: 'uint32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dapiNameHash',
+            type: 'bytes32',
+          },
+        ],
+        name: 'readDataFeedWithDapiNameHash',
+        outputs: [
+          {
+            internalType: 'int224',
+            name: 'value',
+            type: 'int224',
+          },
+          {
+            internalType: 'uint32',
+            name: 'timestamp',
+            type: 'uint32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dapiNameHash',
+            type: 'bytes32',
+          },
+        ],
+        name: 'readDataFeedWithDapiNameHashAsOevProxy',
+        outputs: [
+          {
+            internalType: 'int224',
+            name: 'value',
+            type: 'int224',
+          },
+          {
+            internalType: 'uint32',
+            name: 'timestamp',
+            type: 'uint32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+        ],
+        name: 'readDataFeedWithId',
+        outputs: [
+          {
+            internalType: 'int224',
+            name: 'value',
+            type: 'int224',
+          },
+          {
+            internalType: 'uint32',
+            name: 'timestamp',
+            type: 'uint32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+        ],
+        name: 'readDataFeedWithIdAsOevProxy',
+        outputs: [
+          {
+            internalType: 'int224',
+            name: 'value',
+            type: 'int224',
+          },
+          {
+            internalType: 'uint32',
+            name: 'timestamp',
+            type: 'uint32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dapiName',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+        ],
+        name: 'setDapiName',
+        outputs: [],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes[]',
+            name: 'data',
+            type: 'bytes[]',
+          },
+        ],
+        name: 'tryMulticall',
+        outputs: [
+          {
+            internalType: 'bool[]',
+            name: 'successes',
+            type: 'bool[]',
+          },
+          {
+            internalType: 'bytes[]',
+            name: 'returndata',
+            type: 'bytes[]',
+          },
+        ],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32[]',
+            name: 'beaconIds',
+            type: 'bytes32[]',
+          },
+        ],
+        name: 'updateBeaconSetWithBeacons',
+        outputs: [
+          {
+            internalType: 'bytes32',
+            name: 'beaconSetId',
+            type: 'bytes32',
+          },
+        ],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'address',
+            name: 'airnode',
+            type: 'address',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'templateId',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'uint256',
+            name: 'timestamp',
+            type: 'uint256',
+          },
+          {
+            internalType: 'bytes',
+            name: 'data',
+            type: 'bytes',
+          },
+          {
+            internalType: 'bytes',
+            name: 'signature',
+            type: 'bytes',
+          },
+        ],
+        name: 'updateBeaconWithSignedData',
+        outputs: [
+          {
+            internalType: 'bytes32',
+            name: 'beaconId',
+            type: 'bytes32',
+          },
+        ],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'address',
+            name: 'oevProxy',
+            type: 'address',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'updateId',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'uint256',
+            name: 'timestamp',
+            type: 'uint256',
+          },
+          {
+            internalType: 'bytes',
+            name: 'data',
+            type: 'bytes',
+          },
+          {
+            internalType: 'bytes[]',
+            name: 'packedOevUpdateSignatures',
+            type: 'bytes[]',
+          },
+        ],
+        name: 'updateOevProxyDataFeedWithSignedData',
+        outputs: [],
+        stateMutability: 'payable',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'address',
+            name: 'oevProxy',
+            type: 'address',
+          },
+        ],
+        name: 'withdraw',
+        outputs: [],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+    ];
+    const dapiDataRegistryAbi = [
+      {
+        inputs: [
+          {
+            internalType: 'address',
+            name: '_accessControlRegistry',
+            type: 'address',
+          },
+          {
+            internalType: 'string',
+            name: '_adminRoleDescription',
+            type: 'string',
+          },
+          {
+            internalType: 'address',
+            name: '_manager',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: '_hashRegistry',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: '_api3ServerV1',
+            type: 'address',
+          },
+        ],
+        stateMutability: 'nonpayable',
+        type: 'constructor',
+      },
+      {
+        anonymous: false,
+        inputs: [
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'dapiName',
+            type: 'bytes32',
+          },
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+          {
+            indexed: false,
+            internalType: 'address',
+            name: 'sponsorWallet',
+            type: 'address',
+          },
+          {
+            indexed: false,
+            internalType: 'uint256',
+            name: 'deviationThresholdInPercentage',
+            type: 'uint256',
+          },
+          {
+            indexed: false,
+            internalType: 'int224',
+            name: 'deviationReference',
+            type: 'int224',
+          },
+          {
+            indexed: false,
+            internalType: 'uint32',
+            name: 'heartbeatInterval',
+            type: 'uint32',
+          },
+        ],
+        name: 'AddedDapi',
+        type: 'event',
+      },
+      {
+        anonymous: false,
+        inputs: [
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+          {
+            indexed: false,
+            internalType: 'bytes',
+            name: 'dataFeedData',
+            type: 'bytes',
+          },
+        ],
+        name: 'RegisteredDataFeed',
+        type: 'event',
+      },
+      {
+        anonymous: false,
+        inputs: [
+          {
+            indexed: true,
+            internalType: 'address',
+            name: 'airnode',
+            type: 'address',
+          },
+          {
+            indexed: false,
+            internalType: 'string',
+            name: 'url',
+            type: 'string',
+          },
+        ],
+        name: 'RegisteredSignedApiUrl',
+        type: 'event',
+      },
+      {
+        anonymous: false,
+        inputs: [
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'dapiName',
+            type: 'bytes32',
+          },
+          {
+            indexed: false,
+            internalType: 'address',
+            name: 'sender',
+            type: 'address',
+          },
+        ],
+        name: 'RemovedDapi',
+        type: 'event',
+      },
+      {
+        anonymous: false,
+        inputs: [
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'dapiName',
+            type: 'bytes32',
+          },
+          {
+            indexed: true,
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+          {
+            indexed: false,
+            internalType: 'address',
+            name: 'sponsorWallet',
+            type: 'address',
+          },
+          {
+            indexed: false,
+            internalType: 'address',
+            name: 'sender',
+            type: 'address',
+          },
+        ],
+        name: 'UpdatedDapiDataFeedId',
+        type: 'event',
+      },
+      {
+        inputs: [],
+        name: 'DAPI_ADDER_ROLE_DESCRIPTION',
+        outputs: [
+          {
+            internalType: 'string',
+            name: '',
+            type: 'string',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'DAPI_REMOVER_ROLE_DESCRIPTION',
+        outputs: [
+          {
+            internalType: 'string',
+            name: '',
+            type: 'string',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'HUNDRED_PERCENT',
+        outputs: [
+          {
+            internalType: 'uint256',
+            name: '',
+            type: 'uint256',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'accessControlRegistry',
+        outputs: [
+          {
+            internalType: 'address',
+            name: '',
+            type: 'address',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dapiName',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'address',
+            name: 'sponsorWallet',
+            type: 'address',
+          },
+          {
+            internalType: 'uint256',
+            name: 'deviationThresholdInPercentage',
+            type: 'uint256',
+          },
+          {
+            internalType: 'int224',
+            name: 'deviationReference',
+            type: 'int224',
+          },
+          {
+            internalType: 'uint32',
+            name: 'heartbeatInterval',
+            type: 'uint32',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'root',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bytes32[]',
+            name: 'proof',
+            type: 'bytes32[]',
+          },
+        ],
+        name: 'addDapi',
+        outputs: [],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'adminRole',
+        outputs: [
+          {
+            internalType: 'bytes32',
+            name: '',
+            type: 'bytes32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'adminRoleDescription',
+        outputs: [
+          {
+            internalType: 'string',
+            name: '',
+            type: 'string',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'address',
+            name: '',
+            type: 'address',
+          },
+        ],
+        name: 'airnodeToSignedApiUrl',
+        outputs: [
+          {
+            internalType: 'string',
+            name: '',
+            type: 'string',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'api3ServerV1',
+        outputs: [
+          {
+            internalType: 'address',
+            name: '',
+            type: 'address',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'dapiAdderRole',
+        outputs: [
+          {
+            internalType: 'bytes32',
+            name: '',
+            type: 'bytes32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: '',
+            type: 'bytes32',
+          },
+        ],
+        name: 'dapiNameToUpdateParameters',
+        outputs: [
+          {
+            internalType: 'uint256',
+            name: 'deviationThresholdInPercentage',
+            type: 'uint256',
+          },
+          {
+            internalType: 'int224',
+            name: 'deviationReference',
+            type: 'int224',
+          },
+          {
+            internalType: 'uint32',
+            name: 'heartbeatInterval',
+            type: 'uint32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'dapiRemoverRole',
+        outputs: [
+          {
+            internalType: 'bytes32',
+            name: '',
+            type: 'bytes32',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'dapisCount',
+        outputs: [
+          {
+            internalType: 'uint256',
+            name: 'count',
+            type: 'uint256',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: '',
+            type: 'bytes32',
+          },
+        ],
+        name: 'dataFeeds',
+        outputs: [
+          {
+            internalType: 'bytes',
+            name: '',
+            type: 'bytes',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'hashRegistry',
+        outputs: [
+          {
+            internalType: 'address',
+            name: '',
+            type: 'address',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'manager',
+        outputs: [
+          {
+            internalType: 'address',
+            name: '',
+            type: 'address',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes[]',
+            name: 'data',
+            type: 'bytes[]',
+          },
+        ],
+        name: 'multicall',
+        outputs: [
+          {
+            internalType: 'bytes[]',
+            name: 'returndata',
+            type: 'bytes[]',
+          },
+        ],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'uint256',
+            name: 'index',
+            type: 'uint256',
+          },
+        ],
+        name: 'readDapiWithIndex',
+        outputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dapiName',
+            type: 'bytes32',
+          },
+          {
+            components: [
+              {
+                internalType: 'uint256',
+                name: 'deviationThresholdInPercentage',
+                type: 'uint256',
+              },
+              {
+                internalType: 'int224',
+                name: 'deviationReference',
+                type: 'int224',
+              },
+              {
+                internalType: 'uint32',
+                name: 'heartbeatInterval',
+                type: 'uint32',
+              },
+            ],
+            internalType: 'struct IDapiDataRegistry.UpdateParameters',
+            name: 'updateParameters',
+            type: 'tuple',
+          },
+          {
+            components: [
+              {
+                internalType: 'int224',
+                name: 'value',
+                type: 'int224',
+              },
+              {
+                internalType: 'uint32',
+                name: 'timestamp',
+                type: 'uint32',
+              },
+            ],
+            internalType: 'struct IDapiDataRegistry.DataFeedValue',
+            name: 'dataFeedValue',
+            type: 'tuple',
+          },
+          {
+            internalType: 'bytes',
+            name: 'dataFeed',
+            type: 'bytes',
+          },
+          {
+            internalType: 'string[]',
+            name: 'signedApiUrls',
+            type: 'string[]',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dapiName',
+            type: 'bytes32',
+          },
+        ],
+        name: 'readDapiWithName',
+        outputs: [
+          {
+            components: [
+              {
+                internalType: 'uint256',
+                name: 'deviationThresholdInPercentage',
+                type: 'uint256',
+              },
+              {
+                internalType: 'int224',
+                name: 'deviationReference',
+                type: 'int224',
+              },
+              {
+                internalType: 'uint32',
+                name: 'heartbeatInterval',
+                type: 'uint32',
+              },
+            ],
+            internalType: 'struct IDapiDataRegistry.UpdateParameters',
+            name: 'updateParameters',
+            type: 'tuple',
+          },
+          {
+            components: [
+              {
+                internalType: 'int224',
+                name: 'value',
+                type: 'int224',
+              },
+              {
+                internalType: 'uint32',
+                name: 'timestamp',
+                type: 'uint32',
+              },
+            ],
+            internalType: 'struct IDapiDataRegistry.DataFeedValue',
+            name: 'dataFeedValue',
+            type: 'tuple',
+          },
+          {
+            internalType: 'bytes',
+            name: 'dataFeed',
+            type: 'bytes',
+          },
+          {
+            internalType: 'string[]',
+            name: 'signedApiUrls',
+            type: 'string[]',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'address',
+            name: 'airnode',
+            type: 'address',
+          },
+          {
+            internalType: 'string',
+            name: 'url',
+            type: 'string',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'root',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bytes32[]',
+            name: 'proof',
+            type: 'bytes32[]',
+          },
+        ],
+        name: 'registerAirnodeSignedApiUrl',
+        outputs: [],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes',
+            name: 'dataFeed',
+            type: 'bytes',
+          },
+        ],
+        name: 'registerDataFeed',
+        outputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+        ],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dapiName',
+            type: 'bytes32',
+          },
+        ],
+        name: 'removeDapi',
+        outputs: [],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes[]',
+            name: 'data',
+            type: 'bytes[]',
+          },
+        ],
+        name: 'tryMulticall',
+        outputs: [
+          {
+            internalType: 'bool[]',
+            name: 'successes',
+            type: 'bool[]',
+          },
+          {
+            internalType: 'bytes[]',
+            name: 'returndata',
+            type: 'bytes[]',
+          },
+        ],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'bytes32',
+            name: 'dapiName',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'dataFeedId',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'address',
+            name: 'sponsorWallet',
+            type: 'address',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'root',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bytes32[]',
+            name: 'proof',
+            type: 'bytes32[]',
+          },
+        ],
+        name: 'updateDapiDataFeedId',
+        outputs: [],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+    ];
+
+    // Configuration
+    const urlParams = new URLSearchParams(window.location.search);
+    const rpcUrl = 'http://127.0.0.1:8545',
+      api3ServerV1Address = urlParams.get('api3ServerV1Address'),
+      dapiDataRegistryAddress = urlParams.get('dapiDataRegistryAddress');
+
+    if (!api3ServerV1Address) throw new Error('api3ServerV1Address must be provided as URL parameter');
+    if (!dapiDataRegistryAddress) throw new Error('dapiDataRegistryAddress must be provided as URL parameter');
+
+    function deriveBeaconId(airnodeAddress, templateId) {
+      return ethers.utils.solidityKeccak256(['address', 'bytes32'], [airnodeAddress, templateId]);
+    }
+
+    function deriveBeaconSetId(beaconIds) {
+      return ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['bytes32[]'], [beaconIds]));
+    }
+
+    const decodeDataFeed = (dataFeed) => {
+      if (dataFeed.length === 130) {
+        // (64 [actual bytes] * 2[hex encoding] ) + 2 [for the '0x' preamble]
+        // This is a hex encoded string, the contract works with bytes directly
+        const [airnodeAddress, templateId] = ethers.utils.defaultAbiCoder.decode(['address', 'bytes32'], dataFeed);
+
+        const dataFeedId = deriveBeaconId(airnodeAddress, templateId);
+
+        return { dataFeedId, beacons: [{ beaconId: dataFeedId, airnodeAddress, templateId }] };
+      }
+
+      const [airnodeAddresses, templateIds] = ethers.utils.defaultAbiCoder.decode(['address[]', 'bytes32[]'], dataFeed);
+
+      const beacons = airnodeAddresses.map((airnodeAddress, idx) => {
+        const templateId = templateIds[idx];
+        const beaconId = deriveBeaconId(airnodeAddress, templateId);
+
+        return { beaconId, airnodeAddress, templateId };
+      });
+
+      const dataFeedId = deriveBeaconSetId(beacons.map((b) => b.beaconId));
+
+      return { dataFeedId, beacons };
+    };
+
+    const calculateMedian = (arr) => {
+      if (arr.length === 0) throw new Error('Cannot calculate median of empty array');
+      const mid = Math.floor(arr.length / 2);
+
+      const nums = [...arr].sort((a, b) => {
+        if (a.lt(b)) return -1;
+        else if (a.gt(b)) return 1;
+        else return 0;
+      });
+
+      return arr.length % 2 === 0 ? nums[mid - 1].add(nums[mid]).div(2) : nums[mid];
+    };
+
+    const decodeBeaconValue = (encodedBeaconValue) => {
+      // Solidity type(int224).min
+      const INT224_MIN = ethers.BigNumber.from(2).pow(ethers.BigNumber.from(223)).mul(ethers.BigNumber.from(-1));
+      // Solidity type(int224).max
+      const INT224_MAX = ethers.BigNumber.from(2).pow(ethers.BigNumber.from(223)).sub(ethers.BigNumber.from(1));
+
+      const decodedBeaconValue = ethers.BigNumber.from(
+        ethers.utils.defaultAbiCoder.decode(['int256'], encodedBeaconValue)[0]
+      );
+      if (decodedBeaconValue.gt(INT224_MAX) || decodedBeaconValue.lt(INT224_MIN)) {
+        return null;
+      }
+
+      return decodedBeaconValue;
+    };
+
+    const calculateUpdateInPercentage = (initialValue, updatedValue) => {
+      const delta = updatedValue.sub(initialValue);
+      const absoluteDelta = delta.abs();
+
+      // Avoid division by 0
+      const absoluteInitialValue = initialValue.isZero() ? ethers.BigNumber.from(1) : initialValue.abs();
+
+      return absoluteDelta.mul(ethers.BigNumber.from(1e8)).div(absoluteInitialValue);
+    };
+
+    const checkDeviationThresholdExceeded = (onChainValue, deviationThreshold, apiValue) => {
+      const updateInPercentage = calculateUpdateInPercentage(onChainValue, apiValue);
+
+      return updateInPercentage.gt(deviationThreshold);
+    };
+
+    setInterval(async () => {
+      const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+      const dapiDataRegistry = new ethers.Contract(dapiDataRegistryAddress, dapiDataRegistryAbi, provider);
+      const activeDapisCount = await dapiDataRegistry.dapisCount();
+
+      document.getElementById('activeDapisCount').innerHTML = activeDapisCount;
+      let newActiveDapisHtml = '';
+      for (let i = 0; i < activeDapisCount; i++) {
+        const { dapiName, updateParameters, dataFeedValue, dataFeed, signedApiUrls } =
+          await dapiDataRegistry.readDapiWithIndex(i);
+        const { deviationReference, deviationThresholdInPercentage, heartbeatInterval } = updateParameters;
+        const { value, timestamp } = dataFeedValue;
+        const dapi = {
+          dapiName,
+          updateParameters: {
+            deviationReference: deviationReference.toString(),
+            deviationThresholdInPercentage: deviationThresholdInPercentage.toString(),
+            heartbeatInterval: heartbeatInterval,
+          },
+          dataFeedValue: { value: value.toString(), timestamp },
+          decodedDataFeed: decodeDataFeed(dataFeed),
+          signedApiUrls,
+        };
+        console.log('Dapi', dapi); // For debugging purposes.
+
+        let signedDatas = [];
+        for (let i = 0; i < signedApiUrls.length; i++) {
+          const url = signedApiUrls[i];
+          const airnode = dapi.decodedDataFeed.beacons[i].airnodeAddress;
+          const signedApiResponse = await fetch(`${url.replace('host.docker.internal', 'localhost')}/${airnode}`).then(
+            (res) => res.json()
+          );
+          const signedData = signedApiResponse.data[dapi.decodedDataFeed.beacons[i].beaconId];
+          signedDatas.push({ ...signedData, value: decodeBeaconValue(signedData.encodedValue).toString() });
+        }
+        console.log('Signed datas', signedDatas); // For debugging purposes.
+
+        const newBeaconSetValue = calculateMedian(
+          signedDatas.map((signedData) => ethers.BigNumber.from(signedData.value))
+        );
+        const newBeaconSetTimestamp = calculateMedian(
+          signedDatas.map((signedData) => ethers.BigNumber.from(signedData.timestamp))
+        ).toNumber();
+
+        const deviationPercentage = calculateUpdateInPercentage(value, newBeaconSetValue).toNumber() / 1e6;
+        const deviationThresholdPercentage = deviationThresholdInPercentage.toNumber() / 1e6;
+
+        const dapiInfo = {
+          dapiName: dapiName,
+          decodedDapiName: ethers.utils.parseBytes32String(dapiName),
+          dataFeedValue: dapi.dataFeedValue,
+          offChainValue: {
+            value: newBeaconSetValue.toString(),
+            timestamp: newBeaconSetTimestamp,
+          },
+          deviationPercentage:
+            deviationPercentage > deviationThresholdPercentage ? `<b>${deviationPercentage}</b>` : deviationPercentage,
+          deviationThresholdPercentage: deviationThresholdPercentage,
+        };
+
+        newActiveDapisHtml += JSON.stringify(dapiInfo, null, 2) + '\n\n';
+      }
+      document.getElementById('activeDapis').innerHTML = newActiveDapisHtml;
+    }, 1000);
+  </script>
+</html>

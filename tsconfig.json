@@ -29,6 +29,8 @@
     ".eslintrc.js",
     "hardhat.config.ts",
     "jest-e2e.config.js",
-    "jest-unit.config.js"
+    "jest-unit.config.js",
+
+    "./local-test-configuration/**/*"
   ]
 }
