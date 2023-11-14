@@ -1,16 +1,16 @@
 # Local Airseeker test
 
-The idea was to use the Docker images for Pusher, Signed API and Airseeker and run them locally. Specifically, I opted
-for the following setup:
+The idea is to use the Docker images for Pusher, Signed API and Airseeker and run them locally. Specifically, this is
+the setup:
 
-- Use 2 pushers with Nodary API and reasonable fetch limits. Each pusher has a different Airnode mnemonic to mimick a
+- Use 2 pushers with Nodary API and reasonable fetch limits. Each pusher has a different Airnode mnemonic to mimic a
   different API. One of the APIs is delayed so that the beacons have different values.
 - Use 2 signed APIs and each Pusher pushes to a separate Signed API.
 - We run Airseeker only on Hardhat network for setup simplicity. Initially, I wanted to have a Polygon testnet as well,
   but gave up on that idea for now.
 
-All configurations are based on the example files, but have been slightly modified. I had to also choose a more volatile
-assets from Nodary API to see Airseeker updates.
+All configurations are based on the example files, but have been slightly modified. I had to also choose more volatile
+assets from the Nodary API to see Airseeker updates.
 
 ## Instructions
 
@@ -60,8 +60,8 @@ pnpm run dev:eth-node
 pnpm ts-node -T ./local-test-configuration/scripts/initialize-chain.ts
 ```
 
-This command gives you the addresses of the deployed contracts. These need to be put to Airseeker secrets and are
-required also for the monitoring page.
+This command gives you the addresses of the deployed contracts. These need to be put into the Airseeker secrets and are
+also required for the monitoring page.
 
 - Open the monitoring page located in `local-test-configuration/monitoring/index.html` in a browser with the following
   query parameters appended
@@ -83,4 +83,4 @@ docker run -it --init --volume $(pwd)/local-test-configuration/airseeker:/app/co
 
 - Monitor the logs of each service, pay attention to errors, warnings and possible improvements.
 - Use the monitoring page to see if the feeds update when they should.
-- I also tried changing the batch size in Airseeker to 1 and Airseeker worked as expected (but was more chattier).
+- You can play with the batch size (e.g. set it to 1) to see the difference in execution.
