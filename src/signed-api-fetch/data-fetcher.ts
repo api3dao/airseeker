@@ -36,10 +36,10 @@ export const stopDataFetcher = () => {
 };
 
 /**
- * Calls a remote signed data URL and inserts the result into the datastore
+ * Calls a remote signed data URL.
  * @param url
  */
-const callSignedDataApi = async (url: string): Promise<SignedData[] | null> => {
+export const callSignedDataApi = async (url: string): Promise<SignedData[] | null> => {
   const goAxiosCall = await go<Promise<AxiosResponse>, AxiosError>(
     async () =>
       axios({
@@ -72,7 +72,7 @@ export const runDataFetcher = async () => {
     logger.debug('Running data fetcher');
     const state = getState();
     const {
-      config: { signedDataFetchInterval },
+      config: { signedDataFetchInterval, signedApiUrls },
       signedApiUrlStore,
       dataFetcherInterval,
     } = state;
@@ -86,12 +86,13 @@ export const runDataFetcher = async () => {
       });
     }
 
-    const urls = uniq(
-      Object.values(signedApiUrlStore)
+    const urls = uniq([
+      ...Object.values(signedApiUrlStore)
         .flatMap((urlsPerProvider) => Object.values(urlsPerProvider))
         .flatMap((urlsPerAirnode) => Object.values(urlsPerAirnode))
-        .flat()
-    );
+        .flat(),
+      ...signedApiUrls,
+    ]);
 
     logger.debug('Fetching data from signed APIs', { urls });
     return Promise.all(
