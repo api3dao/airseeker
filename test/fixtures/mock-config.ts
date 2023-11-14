@@ -25,6 +25,7 @@ export const generateTestConfig = (): Config => ({
   },
   signedDataFetchInterval: 10,
   deviationThresholdCoefficient: 1,
+  signedApiUrls: [],
 });
 
 export const initializeState = (config: Config = generateTestConfig()) => setInitialState(config);

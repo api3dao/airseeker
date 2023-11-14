@@ -141,6 +141,7 @@ export const configSchema = z
     chains: chainsSchema,
     signedDataFetchInterval: z.number().positive(),
     deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
+    signedApiUrls: z.array(z.string().url()),
   })
   .strict();
 

@@ -185,6 +185,10 @@ The batch size of active dAPIs that are to be fetched in a single RPC call.
 
 The fetch interval in seconds between retrievals of signed API data.
 
+#### `signedApiUrls`
+
+A list of signed API URLs to call along with URLs fetched from the chain.
+
 ## Docker
 
 ### Build

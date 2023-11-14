@@ -23,5 +23,6 @@
     }
   },
   "deviationThresholdCoefficient": 1,
-  "signedDataFetchInterval": 10
+  "signedDataFetchInterval": 10,
+  "signedApiUrls": []
 }
