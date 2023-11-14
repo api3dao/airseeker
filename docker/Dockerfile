@@ -1,66 +1,28 @@
-ARG build=local
+FROM node:18-alpine
+ENV name="airseeker-v2"
+LABEL application="airseeker-v2" description="Airseeker V2 container"
+WORKDIR /app
 
-FROM node:18.14.0-alpine3.17 AS environment
-
-ENV name="airseekerv2" \
-    appDir="/app" \
-    buildDir="/build"   
-ENV packageDir="${buildDir}/package"
-
-# Build preparation
-FROM environment AS preparation
-
-WORKDIR ${buildDir}
-
-RUN apk add --update --no-cache git
-
-# Install pnpm
+# Install pnpm globally (needs root privileges).
 RUN npm install -g pnpm
 
-# Source preparation - local
-FROM preparation as sourcelocal
+# Create a new user and group to run the application with reduced privileges.
+RUN addgroup -S airseeker && \
+    adduser -h /app -s /bin/false -S -D -H -G airseeker airseeker && \
+    chown -R airseeker /app
+USER airseeker
 
-COPY . ${buildDir}
+# Copy just the "pnpm-lock.yaml" file and use "pnpm fetch" to download all dependencies just from the lockfile. This
+# command is specifically designed to improve building a docker image because it only installs the dependencies if the
+# lockfile has changed (otherwise uses the cached value).
+COPY --chown=airseeker:airseeker pnpm-lock.yaml /app
+RUN pnpm fetch
+# Copies all of the contents (without files listed in .dockerignore) of the monorepo into the image.
+COPY --chown=airseeker:airseeker . /app
+# Ideally, we would use "--offline" option, but it seems pnpm has a bug. Fortunately, the instalation times are similar.
+# See: https://github.com/pnpm/pnpm/issues/6058 for details.
+RUN pnpm install --prefer-offline
+RUN pnpm run build
 
-# Source preparation - git
-FROM preparation as sourcegit
-
-ARG branch=main
-ARG repository=https://github.com/api3dao/airseeker-v2.git
-
-RUN git clone --single-branch --branch ${branch} ${repository} ${buildDir}
-
-# Production dependencies
-FROM source${build} AS deps
-
-RUN pnpm install --prod --no-optional --ignore-scripts
-
-# Production source code
-FROM source${build} AS build
-
-RUN pnpm install && \
-    pnpm build && \
-    pnpm pack && \
-    mkdir -p ${packageDir} && \
-    tar -xf *.tgz -C ${packageDir} --strip-components 1
-
-# Result image
-FROM environment
-
-WORKDIR ${appDir}
-
-LABEL application=${name} \
-    description="AirseekerV2 container"
-
-
-COPY --from=deps ${buildDir}/node_modules ./node_modules
-COPY --from=build ${packageDir} .
-
-# Create Airseeker user
-RUN addgroup -S ${name} && \
-    adduser -h ${appDir} -s /bin/false -S -D -H -G ${name} ${name} && \
-    chown -R ${name} ${appDir}
-
-USER ${name}
-
-CMD ["node", "dist/index.js"]
+# Start the Airseeker.
+ENTRYPOINT ["node", "dist/index.js"]

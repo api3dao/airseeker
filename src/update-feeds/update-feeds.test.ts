@@ -4,10 +4,10 @@ import { omit } from 'lodash';
 import { generateTestConfig } from '../../test/fixtures/mock-config';
 import { generateMockDapiDataRegistry, generateReadDapiWithIndexResponse } from '../../test/fixtures/mock-contract';
 import { allowPartial } from '../../test/utils';
-import type { DapiDataRegistry } from '../../typechain-types';
 import type { Chain } from '../config/schema';
 import { logger } from '../logger';
 import * as stateModule from '../state';
+import type { DapiDataRegistry } from '../typechain-types';
 import * as utilsModule from '../utils';
 
 import * as dapiDataRegistryModule from './dapi-data-registry';
@@ -16,7 +16,7 @@ import * as updateTransactionModule from './update-transactions';
 
 jest.mock('../state');
 
-describe(updateFeedsModule.startUpdateFeedLoops.name, () => {
+describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
   it('starts staggered update loops for a chain', async () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
@@ -33,30 +33,39 @@ describe(updateFeedsModule.startUpdateFeedLoops.name, () => {
         },
       })
     );
+    jest.spyOn(updateFeedsModule, 'runUpdateFeeds').mockImplementation();
     const intervalCalls = [] as number[];
     jest.spyOn(global, 'setInterval').mockImplementation((() => {
       intervalCalls.push(Date.now());
     }) as any);
     jest.spyOn(logger, 'debug');
 
-    await updateFeedsModule.startUpdateFeedLoops();
+    await updateFeedsModule.startUpdateFeedsLoops();
 
     // Expect the intervals to be called with the correct stagger time.
     expect(setInterval).toHaveBeenCalledTimes(2);
     expect(intervalCalls[1]! - intervalCalls[0]!).toBeGreaterThanOrEqual(40); // Reserving 10ms as the buffer for computing stagger time.
 
     // Expect the logs to be called with the correct context.
-    expect(logger.debug).toHaveBeenCalledTimes(3);
-    expect(logger.debug).toHaveBeenCalledWith('Starting update loops for chain', {
+    expect(logger.debug).toHaveBeenCalledTimes(5);
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Starting update loops for chain', {
       chainId: '123',
       staggerTime: 50,
       providerNames: ['first-provider', 'second-provider'],
     });
-    expect(logger.debug).toHaveBeenCalledWith('Starting update feed loop', {
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas store', {
       chainId: '123',
       providerName: 'first-provider',
     });
-    expect(logger.debug).toHaveBeenCalledWith('Starting update feed loop', {
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update feed loop', {
+      chainId: '123',
+      providerName: 'first-provider',
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Initializing gas store', {
+      chainId: '123',
+      providerName: 'second-provider',
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Starting update feed loop', {
       chainId: '123',
       providerName: 'second-provider',
     });
@@ -83,42 +92,51 @@ describe(updateFeedsModule.startUpdateFeedLoops.name, () => {
         },
       })
     );
+    jest.spyOn(updateFeedsModule, 'runUpdateFeeds').mockImplementation();
     const intervalCalls = [] as number[];
     jest.spyOn(global, 'setInterval').mockImplementation((() => {
       intervalCalls.push(Date.now());
     }) as any);
     jest.spyOn(logger, 'debug');
 
-    await updateFeedsModule.startUpdateFeedLoops();
+    await updateFeedsModule.startUpdateFeedsLoops();
 
     // Expect the intervals to be called with the correct stagger time.
     expect(setInterval).toHaveBeenCalledTimes(2);
     expect(intervalCalls[1]! - intervalCalls[0]!).toBeLessThan(50); // Ensures that the loops are run in parallel.
 
     // Expect the logs to be called with the correct context.
-    expect(logger.debug).toHaveBeenCalledTimes(4);
+    expect(logger.debug).toHaveBeenCalledTimes(6);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Starting update loops for chain', {
       chainId: '123',
       staggerTime: 100,
       providerNames: ['first-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Starting update feed loop', {
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas store', {
       chainId: '123',
       providerName: 'first-provider',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update loops for chain', {
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update feed loop', {
+      chainId: '123',
+      providerName: 'first-provider',
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Starting update loops for chain', {
       chainId: '456',
       staggerTime: 100,
       providerNames: ['another-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Starting update feed loop', {
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Initializing gas store', {
+      chainId: '456',
+      providerName: 'another-provider',
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Starting update feed loop', {
       chainId: '456',
       providerName: 'another-provider',
     });
   });
 });
 
-describe(updateFeedsModule.runUpdateFeed.name, () => {
+describe(updateFeedsModule.runUpdateFeeds.name, () => {
   it('aborts when fetching first dAPIs batch fails', async () => {
     const dapiDataRegistry = generateMockDapiDataRegistry();
     jest
@@ -127,7 +145,7 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
     dapiDataRegistry.callStatic.tryMulticall.mockRejectedValueOnce(new Error('provider-error'));
     jest.spyOn(logger, 'error');
 
-    await updateFeedsModule.runUpdateFeed(
+    await updateFeedsModule.runUpdateFeeds(
       'provider-name',
       allowPartial<Chain>({
         dataFeedBatchSize: 2,
@@ -173,7 +191,9 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrlStore: { '31337': { 'some-test-provider': ['url-one'] } },
+        signedApiUrlStore: {
+          '31337': { 'some-test-provider': { '0xC04575A2773Da9Cd23853A69694e02111b2c4182': 'url-one' } },
+        },
         signedApiStore: {},
         gasPriceStore: {
           '31337': {
@@ -195,7 +215,7 @@ describe(updateFeedsModule.runUpdateFeed.name, () => {
       ]);
     jest.spyOn(updateTransactionModule, 'updateFeeds').mockResolvedValue([null, null]);
 
-    await updateFeedsModule.runUpdateFeed(
+    await updateFeedsModule.runUpdateFeeds(
       'provider-name',
       allowPartial<Chain>({
         dataFeedBatchSize: 1,
@@ -252,7 +272,9 @@ describe(updateFeedsModule.getFeedsToUpdate.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrlStore: { '31337': { 'some-test-provider': ['url-one'] } },
+        signedApiUrlStore: {
+          '31337': { 'some-test-provider': { '0xC04575A2773Da9Cd23853A69694e02111b2c4182': 'url-one' } },
+        },
         signedApiStore: {
           '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
             airnode: '0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4',

@@ -11,6 +11,7 @@ import type {
   DataFeedId,
   ProviderName,
   SignedApiUrl,
+  AirnodeAddress,
 } from '../types';
 
 interface GasState {
@@ -38,10 +39,10 @@ export interface UpdateParameters {
 export interface State {
   config: Config;
   dataFetcherInterval?: NodeJS.Timeout;
-  gasPriceStore: Record<string, Record<string, GasState>>;
+  gasPriceStore: Record<ChainId, Record<ProviderName, GasState>>;
   derivedSponsorWallets: Record<DapiName, PrivateKey>;
   signedApiStore: Record<DataFeedId, SignedData>;
-  signedApiUrlStore: Record<ChainId, Record<ProviderName, SignedApiUrl[]>>;
+  signedApiUrlStore: Record<ChainId, Record<ProviderName, Record<AirnodeAddress, SignedApiUrl>>>;
   dapis: Record<DapiName, DapiState>;
 }
 
@@ -57,10 +58,17 @@ export const getState = (): State => {
   return state;
 };
 
-export const setState = (newState: State) => {
-  state = newState;
+export const setInitialState = (config: Config) => {
+  state = {
+    config,
+    gasPriceStore: {},
+    signedApiStore: {},
+    signedApiUrlStore: {},
+    derivedSponsorWallets: {},
+    dapis: {},
+  };
 };
 
 export const updateState = (updater: StateUpdater) => {
-  setState(produce(getState(), updater));
+  state = produce(getState(), updater);
 };

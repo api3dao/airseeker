@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-import { init } from '../../test/fixtures/mock-config';
+import { initializeState } from '../../test/fixtures/mock-config';
 import { generateRandomBytes32, signData } from '../../test/utils';
 import type { SignedData } from '../types';
 import { deriveBeaconId } from '../utils';
@@ -13,7 +13,7 @@ describe('datastore', () => {
   const signer = ethers.Wallet.fromMnemonic('test test test test test test test test test test test junk');
 
   beforeAll(async () => {
-    init();
+    initializeState();
     const templateId = generateRandomBytes32();
     const timestamp = Math.floor((Date.now() - 25 * 60 * 60 * 1000) / 1000).toString();
     const airnode = signer.address;

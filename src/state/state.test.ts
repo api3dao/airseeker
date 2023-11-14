@@ -1,13 +1,13 @@
 import { BigNumber } from 'ethers';
 
-import { getConfig } from '../../test/fixtures/mock-config';
+import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
 import { deriveBeaconId } from '../utils';
 
-import { updateState, getState, setState } from './state';
+import { updateState, getState } from './state';
 
 const timestampMock = 1_696_930_907_351;
 const stateMock = {
-  config: getConfig(),
+  config: generateTestConfig(),
 
   gasPriceStore: {
     '31337': {
@@ -32,19 +32,23 @@ const stateMock = {
   },
   signedApiUrlStore: {
     '31337': {
-      hardhat: [
-        'http://127.0.0.1:8090/0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
-        'https://pool.nodary.io/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4',
-      ],
+      hardhat: {
+        '0xC04575A2773Da9Cd23853A69694e02111b2c4182':
+          'http://127.0.0.1:8090/0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
+      },
     },
   },
   derivedSponsorWallets: {},
   dapis: {},
 };
 
+beforeAll(() => {
+  initializeState();
+});
+
 describe('state', () => {
   beforeEach(() => {
-    setState(stateMock);
+    updateState(() => stateMock);
   });
 
   const beaconId = deriveBeaconId(

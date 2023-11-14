@@ -1,9 +1,8 @@
 import axios from 'axios';
-import { produce } from 'immer';
 
-import { init } from '../../test/fixtures/mock-config';
+import { initializeState } from '../../test/fixtures/mock-config';
 import * as localDataStore from '../signed-data-store';
-import { getState, setState } from '../state';
+import { updateState } from '../state';
 
 import { runDataFetcher, stopDataFetcher } from './data-fetcher';
 
@@ -12,20 +11,18 @@ jest.mock('axios');
 
 describe('data fetcher', () => {
   beforeEach(() => {
-    init();
+    initializeState();
     localDataStore.clear();
-    setState(
-      produce(getState(), (draft) => {
-        draft.signedApiUrlStore = {
-          '31337': {
-            hardhat: [
+    updateState((draft) => {
+      draft.signedApiUrlStore = {
+        '31337': {
+          hardhat: {
+            '0xC04575A2773Da9Cd23853A69694e02111b2c4182':
               'http://127.0.0.1:8090/0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
-              'https://pool.nodary.io/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4',
-            ],
           },
-        };
-      })
-    );
+        },
+      };
+    });
   });
 
   it('retrieves signed data from urls', async () => {
@@ -72,7 +69,7 @@ describe('data fetcher', () => {
 
     stopDataFetcher();
 
-    expect(mockedAxios).toHaveBeenCalledTimes(2);
-    expect(setStoreDataPointSpy).toHaveBeenCalledTimes(6);
+    expect(mockedAxios).toHaveBeenCalledTimes(1);
+    expect(setStoreDataPointSpy).toHaveBeenCalledTimes(3);
   });
 });

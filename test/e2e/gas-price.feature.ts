@@ -4,7 +4,7 @@ import { ethers, network } from 'hardhat';
 import { getAirseekerRecommendedGasPrice, initializeGasStore, clearExpiredStoreGasPrices } from '../../src/gas-price';
 import { getState, updateState } from '../../src/state';
 import { multiplyBigNumber } from '../../src/utils';
-import { init } from '../fixtures/mock-config';
+import { initializeState } from '../fixtures/mock-config';
 
 const chainId = '31337';
 const providerName = 'localhost';
@@ -31,18 +31,11 @@ const sendTransaction = async (gasPriceOverride?: BigNumber) => {
 };
 
 describe(getAirseekerRecommendedGasPrice.name, () => {
-  beforeAll(() => {
-    init();
-  });
-
   beforeEach(async () => {
+    initializeState();
+    initializeGasStore(chainId, providerName);
     // Reset the local hardhat network state for each test to prevent issues with other test contracts
     await network.provider.send('hardhat_reset');
-    initializeGasStore(chainId, providerName);
-    // Reset the gasPriceStore
-    updateState((draft) => {
-      draft.gasPriceStore[chainId] = { [providerName]: { gasPrices: [], sponsorLastUpdateTimestampMs: {} } };
-    });
   });
 
   it('gets, sets and returns provider recommended gas prices', async () => {

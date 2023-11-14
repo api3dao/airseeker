@@ -4,12 +4,12 @@ import { omit } from 'lodash';
 import { initializeGasStore } from '../../src/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
-import { runUpdateFeed } from '../../src/update-feeds';
+import { runUpdateFeeds } from '../../src/update-feeds';
 import { decodeDataFeed } from '../../src/update-feeds/dapi-data-registry';
 import { updateFeeds } from '../../src/update-feeds/update-transactions';
-import { init } from '../fixtures/mock-config';
+import { initializeState } from '../fixtures/mock-config';
 import { deployAndUpdate } from '../setup/contract';
-import { allowPartial, generateSignedData } from '../utils';
+import { generateSignedData } from '../utils';
 
 const chainId = '31337';
 const providerName = 'localhost';
@@ -22,9 +22,10 @@ it('reads blockchain data', async () => {
   const providerName = Object.keys(chain.providers)[0]!;
   jest.spyOn(logger, 'debug').mockImplementation();
 
-  init({ config });
+  initializeState(config);
+  initializeGasStore(chainId, providerName);
 
-  await runUpdateFeed(providerName, chain, chainId);
+  await runUpdateFeeds(providerName, chain, chainId);
 
   expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs', expect.anything());
 });
@@ -40,7 +41,10 @@ it('updates blockchain data', async () => {
     binanceAirnodeWallet,
     airseekerWallet,
   } = await deployAndUpdate();
-  init({ config });
+  initializeState(config);
+  stateModule.updateState((draft) => {
+    draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic.phrase;
+  });
   initializeGasStore(chainId, providerName);
   const btcDapi = await dapiDataRegistry.readDapiWithIndex(0);
 
@@ -60,11 +64,6 @@ it('updates blockchain data', async () => {
     (currentBlockTimestamp + 2).toString()
   );
   jest.spyOn(logger, 'debug');
-  jest
-    .spyOn(stateModule, 'getState')
-    .mockReturnValue(
-      allowPartial<stateModule.State>({ config: { sponsorWalletMnemonic: airseekerWallet.mnemonic.phrase } })
-    );
 
   await updateFeeds(chainId, providerName, provider, api3ServerV1, [
     {
@@ -82,9 +81,10 @@ it('updates blockchain data', async () => {
     },
   ]);
 
-  expect(logger.debug).toHaveBeenCalledTimes(4);
+  expect(logger.debug).toHaveBeenCalledTimes(5);
   expect(logger.debug).toHaveBeenNthCalledWith(1, 'Estimating gas limit');
   expect(logger.debug).toHaveBeenNthCalledWith(2, 'Getting derived sponsor wallet');
   expect(logger.debug).toHaveBeenNthCalledWith(3, 'Derived new sponsor wallet', expect.anything());
-  expect(logger.debug).toHaveBeenNthCalledWith(4, 'Updating dAPI', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(4, 'Setting timestamp of the original update transaction');
+  expect(logger.debug).toHaveBeenNthCalledWith(5, 'Updating dAPI', expect.anything());
 });

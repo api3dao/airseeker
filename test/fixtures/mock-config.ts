@@ -1,10 +1,5 @@
 import type { Config } from '../../src/config/schema';
-import { setState, type State } from '../../src/state';
-
-/**
- * A stub to retrieve the latest config
- */
-export const getConfig = () => generateTestConfig();
+import { setInitialState } from '../../src/state';
 
 // This is not a secret
 // https://pool.nodary.io/0xC04575A2773Da9Cd23853A69694e02111b2c4182
@@ -32,15 +27,4 @@ export const generateTestConfig = (): Config => ({
   deviationThresholdCoefficient: 1,
 });
 
-export const init = (stateOverride?: Partial<State>) => {
-  const config = getConfig();
-  setState({
-    config,
-    gasPriceStore: {},
-    signedApiStore: {},
-    signedApiUrlStore: {},
-    derivedSponsorWallets: {},
-    dapis: {},
-    ...stateOverride,
-  });
-};
+export const initializeState = (config: Config = generateTestConfig()) => setInitialState(config);
