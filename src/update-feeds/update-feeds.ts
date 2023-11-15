@@ -2,18 +2,16 @@ import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 import { range, size, zip } from 'lodash';
 
-import { calculateMedian, checkUpdateConditions } from '../condition-check';
 import type { Chain, DeviationThresholdCoefficient } from '../config/schema';
 import { INT224_MAX, INT224_MIN } from '../constants';
 import { clearSponsorLastUpdateTimestampMs, initializeGasStore, hasPendingTransaction } from '../gas-price';
 import { logger } from '../logger';
-import { getStoreDataPoint } from '../signed-data-store';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
-import { isFulfilled, sleep, multiplyBigNumber, deriveSponsorWallet } from '../utils';
+import { isFulfilled, sleep, deriveSponsorWallet } from '../utils';
 
 import { getApi3ServerV1 } from './api3-server-v1';
-import { callAndParseMulticall } from './check-feeds';
+import { callAndParseMulticall, deeplyCheckDapis, shallowCheckFeeds } from './check-feeds';
 import {
   decodeDapisCountResponse,
   decodeReadDapiWithIndexResponse,
@@ -21,7 +19,7 @@ import {
   verifyMulticallResponse,
   type ReadDapiWithIndexResponse,
 } from './dapi-data-registry';
-import { type UpdateableDapi, updateFeeds } from './update-transactions';
+import { type UpdatableDapi, updateFeeds } from './update-transactions';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -153,135 +151,33 @@ export const decodeBeaconValue = (encodedBeaconValue: string) => {
   return decodedBeaconValue;
 };
 
+// https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
+export const encodeBeaconValue = (numericValue: string) => {
+  const numericValueAsBigNumber = ethers.BigNumber.from(numericValue);
+
+  return ethers.utils.defaultAbiCoder.encode(['int256'], [numericValueAsBigNumber]);
+};
+
 export const getFeedsToUpdate = async (
   batch: ReadDapiWithIndexResponse[],
   deviationThresholdCoefficient: DeviationThresholdCoefficient,
   providerName: ProviderName,
   chainId: ChainId
-): Promise<UpdateableDapi[]> => {
-  const shallowCheckedDapis = batch
-    .map((dapiInfo): UpdateableDapi | null => {
-      const beaconsSignedData = dapiInfo.decodedDataFeed.beacons.map((beacon) => getStoreDataPoint(beacon.beaconId));
-
-      // Only update data feed when we have signed data for all constituent beacons.
-      if (beaconsSignedData.some((signedData) => !signedData)) return null;
-
-      const beaconsDecodedValues = beaconsSignedData.map((signedData) => decodeBeaconValue(signedData!.encodedValue));
-      // Only update data feed when all beacon values are valid.
-      if (beaconsDecodedValues.includes(null)) return null;
-
-      // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L163
-      const newBeaconSetValue = calculateMedian(beaconsDecodedValues.map((decodedValue) => decodedValue!));
-      const newBeaconSetTimestamp = calculateMedian(
-        beaconsSignedData.map((signedData) => ethers.BigNumber.from(signedData!.timestamp))
-      )!.toNumber();
-      const adjustedDeviationThresholdCoefficient = multiplyBigNumber(
-        dapiInfo.updateParameters.deviationThresholdInPercentage,
-        deviationThresholdCoefficient
-      );
-      if (
-        !checkUpdateConditions(
-          dapiInfo.dataFeedValue.value,
-          dapiInfo.dataFeedValue.timestamp,
-          newBeaconSetValue,
-          newBeaconSetTimestamp,
-          dapiInfo.updateParameters.heartbeatInterval,
-          adjustedDeviationThresholdCoefficient
-        )
-      ) {
-        return null;
-      }
-
-      return {
-        dapiInfo,
-        updateableBeacons: zip(dapiInfo.decodedDataFeed.beacons, beaconsSignedData).map(([beacon, signedData]) => ({
-          signedData: signedData!,
-          beaconId: beacon!.beaconId,
-        })),
-      };
-    })
-    .filter((updateableDapi): updateableDapi is UpdateableDapi => updateableDapi !== null);
+): Promise<UpdatableDapi[]> => {
+  const shallowCheckedDapis = shallowCheckFeeds(batch, deviationThresholdCoefficient);
 
   const beaconIds = [
-    ...new Set(shallowCheckedDapis.flatMap((dapi) => dapi.updateableBeacons.flatMap((beacon) => beacon.beaconId))),
+    ...new Set(shallowCheckedDapis.flatMap((dapi) => dapi.UpdatableBeacons.flatMap((beacon) => beacon.beaconId))),
   ];
   const onChainValuesAttempt = await go(async () => callAndParseMulticall(beaconIds, providerName, chainId), {
     retries: 1,
   });
 
-  const deeplyCheckedDapis = shallowCheckedDapis
-    .map(({ dapiInfo, updateableBeacons }) => {
-      if (!onChainValuesAttempt.success) {
-        return true;
-      }
+  if (!onChainValuesAttempt.success) {
+    return shallowCheckedDapis;
+  }
 
-      const onChainValues = onChainValuesAttempt.data;
-
-      const beaconsWithBestValue = updateableBeacons.map(({ beaconId, signedData }) => {
-        const onChainValue = onChainValues.find((onChainValue) => onChainValue.beaconId === beaconId);
-        if (!onChainValue) {
-          return {
-            beaconId,
-            testValue: {
-              value: ethers.BigNumber.from(signedData.encodedValue),
-              timestamp: ethers.BigNumber.from(signedData.timestamp),
-            },
-            shouldUpdate: true,
-          };
-        }
-
-        const numericalSignedTimestamp = Number.parseInt(signedData.timestamp, 10);
-        const numericalOnChainTimestamp = onChainValue.onChainValue.timestamp.toNumber();
-
-        // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L121
-        if (
-          numericalSignedTimestamp < numericalOnChainTimestamp &&
-          numericalSignedTimestamp > Date.now() / 1000 + 60 * 60
-        ) {
-          return {
-            beaconId,
-            testValue: { value: onChainValue.onChainValue.value, timestamp: onChainValue.onChainValue.timestamp },
-            shouldUpdate: true,
-          };
-        }
-
-        return {
-          beaconId,
-          testValue: { value: onChainValue.onChainValue.value, timestamp: onChainValue.onChainValue.timestamp },
-          shouldUpdate: false,
-        };
-      });
-
-      const newMedianValue = calculateMedian(beaconsWithBestValue.map((val) => val.testValue.value));
-      const newMedianTimestamp = calculateMedian(beaconsWithBestValue.map((val) => val.testValue.timestamp));
-
-      const shouldUpdate = checkUpdateConditions(
-        dapiInfo.dataFeedValue.value,
-        dapiInfo.dataFeedValue.timestamp,
-        newMedianValue ?? ethers.BigNumber.from(0),
-        newMedianTimestamp?.toNumber() ?? 0,
-        dapiInfo.updateParameters.heartbeatInterval,
-        dapiInfo.updateParameters.deviationThresholdInPercentage
-      );
-
-      if (!shouldUpdate) {
-        return null;
-      }
-
-      const revisedUpdateableBeacons = updateableBeacons.filter(
-        (beacon) =>
-          beaconsWithBestValue.find((beaconWithBestValue) => beaconWithBestValue.beaconId === beacon.beaconId)
-            ?.shouldUpdate
-      );
-
-      return {
-        dapiInfo,
-        updateableBeacons: revisedUpdateableBeacons,
-      };
-    })
-    .filter((updateableBeacon): updateableBeacon is UpdateableDapi => updateableBeacon !== null);
-
-  return deeplyCheckedDapis;
+  return deeplyCheckDapis(shallowCheckedDapis, deviationThresholdCoefficient, onChainValuesAttempt.data);
 };
 
 export const processBatch = async (

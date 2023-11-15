@@ -13,19 +13,18 @@ import { multiplyBigNumber } from '../utils';
 import { getApi3ServerV1 } from './api3-server-v1';
 import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
 import { decodeBeaconValue } from './update-feeds';
-import type { UpdateableDapi } from './update-transactions';
+import type { UpdatableDapi } from './update-transactions';
 
 export const shallowCheckFeeds = (
   batch: ReadDapiWithIndexResponse[],
   deviationThresholdCoefficient: DeviationThresholdCoefficient
-): UpdateableDapi[] =>
+): UpdatableDapi[] =>
   batch
-    .map((dapiInfo): UpdateableDapi | null => {
+    .map((dapiInfo): UpdatableDapi | null => {
       const beaconsSignedData = dapiInfo.decodedDataFeed.beacons.map((beacon) => getStoreDataPoint(beacon.beaconId));
 
       // Only update data feed when we have signed data for all constituent beacons.
       if (beaconsSignedData.some((signedData) => !signedData)) return null;
-
       const beaconsDecodedValues = beaconsSignedData.map((signedData) => decodeBeaconValue(signedData!.encodedValue));
       // Only update data feed when all beacon values are valid.
       if (beaconsDecodedValues.includes(null)) return null;
@@ -54,13 +53,13 @@ export const shallowCheckFeeds = (
 
       return {
         dapiInfo,
-        updateableBeacons: zip(dapiInfo.decodedDataFeed.beacons, beaconsSignedData).map(([beacon, signedData]) => ({
+        UpdatableBeacons: zip(dapiInfo.decodedDataFeed.beacons, beaconsSignedData).map(([beacon, signedData]) => ({
           signedData: signedData!,
           beaconId: beacon!.beaconId,
         })),
       };
     })
-    .filter((updateableDapi): updateableDapi is UpdateableDapi => updateableDapi !== null);
+    .filter((UpdatableDapi): UpdatableDapi is UpdatableDapi => UpdatableDapi !== null);
 
 interface OnChainValue {
   beaconId: string;
@@ -95,7 +94,7 @@ export const callAndParseMulticall = async (
   );
 
   if (!multicallResult.success) {
-    logger.warn(`The multicall attempt to read potentially updateable feed values has failed.`, {
+    logger.warn(`The multicall attempt to read potentially Updatable feed values has failed.`, {
       error: multicallResult.error,
     });
     throw multicallResult.error;
@@ -120,4 +119,81 @@ export const callAndParseMulticall = async (
       return null;
     })
     .filter((onChainValue): onChainValue is OnChainValue => onChainValue !== null);
+};
+
+export const deeplyCheckDapis = (
+  batch: ReturnType<typeof shallowCheckFeeds>,
+  deviationThresholdCoefficient: DeviationThresholdCoefficient,
+  onChainValues: Awaited<ReturnType<typeof callAndParseMulticall>>
+): UpdatableDapi[] => {
+  return batch
+    .map(({ dapiInfo, UpdatableBeacons }) => {
+      const beaconsWithBestValue = UpdatableBeacons.map(({ beaconId, signedData }) => {
+        const onChainValue = onChainValues.find((onChainValue) => onChainValue.beaconId === beaconId);
+        if (!onChainValue) {
+          return {
+            beaconId,
+            testValue: {
+              value: ethers.BigNumber.from(signedData.encodedValue),
+              timestamp: ethers.BigNumber.from(signedData.timestamp),
+            },
+            shouldUpdate: true,
+          };
+        }
+
+        const numericalSignedTimestamp = Number.parseInt(signedData.timestamp, 10);
+        const numericalOnChainTimestamp = onChainValue.onChainValue.timestamp.toNumber();
+
+        // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L121
+        if (
+          numericalSignedTimestamp > numericalOnChainTimestamp &&
+          numericalSignedTimestamp < Date.now() / 1000 + 60 * 60
+        ) {
+          return {
+            beaconId,
+            testValue: { value: onChainValue.onChainValue.value, timestamp: onChainValue.onChainValue.timestamp },
+            shouldUpdate: true,
+          };
+        }
+
+        return {
+          beaconId,
+          testValue: { value: onChainValue.onChainValue.value, timestamp: onChainValue.onChainValue.timestamp },
+          shouldUpdate: false,
+        };
+      });
+
+      const newMedianValue = calculateMedian(beaconsWithBestValue.map((val) => val.testValue.value));
+      const newMedianTimestamp = calculateMedian(beaconsWithBestValue.map((val) => val.testValue.timestamp));
+
+      const adjustedDeviationThresholdCoefficient = multiplyBigNumber(
+        dapiInfo.updateParameters.deviationThresholdInPercentage,
+        deviationThresholdCoefficient
+      );
+
+      const shouldUpdate = checkUpdateConditions(
+        dapiInfo.dataFeedValue.value,
+        dapiInfo.dataFeedValue.timestamp,
+        newMedianValue ?? ethers.BigNumber.from(0),
+        newMedianTimestamp?.toNumber() ?? 0,
+        dapiInfo.updateParameters.heartbeatInterval,
+        adjustedDeviationThresholdCoefficient
+      );
+
+      if (!shouldUpdate) {
+        return null;
+      }
+
+      const revisedUpdatableBeacons = UpdatableBeacons.filter(
+        (beacon) =>
+          beaconsWithBestValue.find((beaconWithBestValue) => beaconWithBestValue.beaconId === beacon.beaconId)
+            ?.shouldUpdate
+      );
+
+      return {
+        dapiInfo,
+        UpdatableBeacons: revisedUpdatableBeacons,
+      };
+    })
+    .filter((UpdatableBeacon): UpdatableBeacon is UpdatableDapi => UpdatableBeacon !== null);
 };
