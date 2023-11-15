@@ -4,7 +4,7 @@ import { range, size, zip } from 'lodash';
 
 import { calculateMedian, checkUpdateConditions } from '../condition-check';
 import type { Chain, DeviationThresholdCoefficient } from '../config/schema';
-import { INT224_MAX, INT224_MIN } from '../constants';
+import { INT224_MAX, INT224_MIN, RPC_PROVIDER_TIMEOUT_MS } from '../constants';
 import { clearSponsorLastUpdateTimestampMs, initializeGasStore, hasPendingTransaction } from '../gas-price';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
@@ -32,10 +32,11 @@ export const startUpdateFeedsLoops = async () => {
   await Promise.all(
     Object.entries(chains).map(async ([chainId, chain]) => {
       const { dataFeedUpdateInterval, providers } = chain;
+      const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
       // Calculate the stagger time for each provider on the same chain to maximize transaction throughput and update
       // frequency.
-      const staggerTime = (dataFeedUpdateInterval / size(providers)) * 1000;
+      const staggerTime = dataFeedUpdateIntervalMs / size(providers);
       logger.debug(`Starting update loops for chain`, { chainId, staggerTime, providerNames: Object.keys(providers) });
 
       for (const providerName of Object.keys(providers)) {
@@ -46,7 +47,7 @@ export const startUpdateFeedsLoops = async () => {
         // Run the update feed loop manually for the first time, because setInterval first waits for the given period of
         // time.
         void runUpdateFeeds(providerName, chain, chainId);
-        setInterval(async () => runUpdateFeeds(providerName, chain, chainId), dataFeedUpdateInterval * 1000);
+        setInterval(async () => runUpdateFeeds(providerName, chain, chainId), dataFeedUpdateIntervalMs);
 
         await sleep(staggerTime);
       }
@@ -57,32 +58,39 @@ export const startUpdateFeedsLoops = async () => {
 export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, chainId: ChainId) => {
   await logger.runWithContext({ chainId, providerName, updateFeedsCoordinatorId: Date.now().toString() }, async () => {
     const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
+    const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
     // Create a provider and connect it to the DapiDataRegistry contract.
-    const provider = new ethers.providers.StaticJsonRpcProvider(providers[providerName]);
+    const provider = new ethers.providers.StaticJsonRpcProvider({
+      url: providers[providerName]!.url,
+      timeout: RPC_PROVIDER_TIMEOUT_MS,
+    });
     const dapiDataRegistry = getDapiDataRegistry(contracts.DapiDataRegistry, provider);
 
     logger.debug(`Fetching first batch of dAPIs batches`);
     const firstBatchStartTime = Date.now();
-    const goFirstBatch = await go(async () => {
-      const dapisCountCalldata = dapiDataRegistry.interface.encodeFunctionData('dapisCount');
-      const readDapiWithIndexCalldatas = range(0, dataFeedBatchSize).map((dapiIndex) =>
-        dapiDataRegistry.interface.encodeFunctionData('readDapiWithIndex', [dapiIndex])
-      );
-      const [dapisCountReturndata, ...readDapiWithIndexCallsReturndata] = verifyMulticallResponse(
-        await dapiDataRegistry.callStatic.tryMulticall([dapisCountCalldata, ...readDapiWithIndexCalldatas])
-      );
+    const goFirstBatch = await go(
+      async () => {
+        const dapisCountCalldata = dapiDataRegistry.interface.encodeFunctionData('dapisCount');
+        const readDapiWithIndexCalldatas = range(0, dataFeedBatchSize).map((dapiIndex) =>
+          dapiDataRegistry.interface.encodeFunctionData('readDapiWithIndex', [dapiIndex])
+        );
+        const [dapisCountReturndata, ...readDapiWithIndexCallsReturndata] = verifyMulticallResponse(
+          await dapiDataRegistry.callStatic.tryMulticall([dapisCountCalldata, ...readDapiWithIndexCalldatas])
+        );
 
-      const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata!);
-      const firstBatch = readDapiWithIndexCallsReturndata
-        // Because the dapisCount is not known during the multicall, we may ask for non-existent dAPIs. These should be filtered out.
-        .slice(0, dapisCount)
-        .map((dapiReturndata) => ({ ...decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata), chainId }));
-      return {
-        firstBatch,
-        dapisCount,
-      };
-    });
+        const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata!);
+        const firstBatch = readDapiWithIndexCallsReturndata
+          // Because the dapisCount is not known during the multicall, we may ask for non-existent dAPIs. These should be filtered out.
+          .slice(0, dapisCount)
+          .map((dapiReturndata) => ({ ...decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata), chainId }));
+        return {
+          firstBatch,
+          dapisCount,
+        };
+      },
+      { totalTimeoutMs: dataFeedUpdateIntervalMs, attemptTimeoutMs: dataFeedUpdateIntervalMs }
+    );
     if (!goFirstBatch.success) {
       logger.error(`Failed to get first active dAPIs batch`, goFirstBatch.error);
       return;
@@ -92,7 +100,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       logger.warn(`No active dAPIs found`);
       return;
     }
-    const processFirstBatchPromise = processBatch(firstBatch, providerName, chainId);
+    const processFirstBatchPromise = processBatch(firstBatch, providerName, provider, chainId);
 
     // Calculate the stagger time between the rest of the batches.
     const batchesCount = Math.ceil(dapisCount / dataFeedBatchSize);
@@ -129,7 +137,12 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
     const processOtherBatchesPromises = otherBatches
       .filter((result) => isFulfilled(result))
       .map(async (result) =>
-        processBatch((result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value, providerName, chainId)
+        processBatch(
+          (result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value,
+          providerName,
+          provider,
+          chainId
+        )
       );
 
     // Wait for all the batches to be processed and print stats from this run.
@@ -202,14 +215,14 @@ export const getFeedsToUpdate = (
 export const processBatch = async (
   batch: ReadDapiWithIndexResponse[],
   providerName: ProviderName,
+  provider: ethers.providers.StaticJsonRpcProvider,
   chainId: ChainId
 ) => {
   logger.debug('Processing batch of active dAPIs', { dapiNames: batch.map((dapi) => dapi.dapiName) });
   const {
     config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient },
   } = getState();
-  const { contracts, providers } = chains[chainId]!;
-  const provider = new ethers.providers.StaticJsonRpcProvider(providers[providerName]);
+  const { contracts } = chains[chainId]!;
 
   updateState((draft) => {
     for (const dapi of batch) {

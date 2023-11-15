@@ -86,6 +86,6 @@ describe('data fetcher', () => {
     dataFetcherModule.stopDataFetcher();
 
     expect(mockedAxios).toHaveBeenCalledTimes(2);
-    expect(dataFetcherModule.callSignedDataApi).toHaveBeenCalledWith(signedApiUrl);
+    expect(dataFetcherModule.callSignedDataApi).toHaveBeenCalledWith(signedApiUrl, 10_000);
   });
 });
