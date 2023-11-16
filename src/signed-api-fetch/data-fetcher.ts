@@ -4,7 +4,7 @@ import { go } from '@api3/promise-utils';
 import axios, { type AxiosResponse, type AxiosError } from 'axios';
 import { pick, uniq } from 'lodash';
 
-import { HTTP_SIGNED_DATA_API_HEADROOM_MULTIPLIER } from '../constants';
+import { HTTP_SIGNED_DATA_API_TIMEOUT_MULTIPLIER } from '../constants';
 import { logger } from '../logger';
 import * as localDataStore from '../signed-data-store';
 import { getState, updateState } from '../state';
@@ -47,7 +47,7 @@ export const callSignedDataApi = async (
   const goAxiosCall = await go<Promise<AxiosResponse>, AxiosError>(async () =>
     axios({
       method: 'get',
-      timeout: Math.ceil(signedDataFetchIntervalMs * HTTP_SIGNED_DATA_API_HEADROOM_MULTIPLIER),
+      timeout: Math.ceil(signedDataFetchIntervalMs * HTTP_SIGNED_DATA_API_TIMEOUT_MULTIPLIER),
       url,
       headers: {
         Accept: 'application/json',

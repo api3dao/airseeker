@@ -89,12 +89,17 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
           dapisCount,
         };
       },
-      { totalTimeoutMs: dataFeedUpdateIntervalMs, attemptTimeoutMs: dataFeedUpdateIntervalMs }
+      { totalTimeoutMs: dataFeedUpdateIntervalMs }
     );
     if (!goFirstBatch.success) {
       logger.error(`Failed to get first active dAPIs batch`, goFirstBatch.error);
       return;
     }
+    if (Date.now() >= firstBatchStartTime + dataFeedUpdateIntervalMs) {
+      logger.warn(`Fetching the first batch took the whole interval. Skipping updates.`);
+      return;
+    }
+
     const { firstBatch, dapisCount } = goFirstBatch.data;
     if (dapisCount === 0) {
       logger.warn(`No active dAPIs found`);

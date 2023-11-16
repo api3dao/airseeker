@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-export const HTTP_SIGNED_DATA_API_HEADROOM_MULTIPLIER = 0.9;
+export const HTTP_SIGNED_DATA_API_TIMEOUT_MULTIPLIER = 0.9;
 
 export const RPC_PROVIDER_TIMEOUT_MS = 120_000;
 
