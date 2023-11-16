@@ -106,7 +106,7 @@ export const clear = () => {
 export const isSignedDataFresh = (signedData: SignedData) =>
   BigNumber.from(signedData.timestamp).gt(Math.ceil(Date.now() / 1000 - 24 * 60 * 60));
 
-export const purgeInactiveDataPoints = () => {
+export const purgeOldSignedData = () => {
   updateState((draft) => {
     draft.signedApiStore = Object.fromEntries(
       Object.entries(draft.signedApiStore).filter(([_dataFeedId, signedData]) => isSignedDataFresh(signedData))

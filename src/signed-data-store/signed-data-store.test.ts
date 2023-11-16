@@ -6,7 +6,7 @@ import { getState, updateState } from '../state';
 import type { SignedData } from '../types';
 import { deriveBeaconId } from '../utils';
 
-import { purgeInactiveDataPoints, verifySignedDataIntegrity } from './signed-data-store';
+import { purgeOldSignedData, verifySignedDataIntegrity } from './signed-data-store';
 import * as localDataStore from './signed-data-store';
 
 describe('datastore', () => {
@@ -92,7 +92,7 @@ describe('datastore', () => {
       });
     });
 
-    purgeInactiveDataPoints();
+    purgeOldSignedData();
 
     expect(Object.values(getState().signedApiStore)).toStrictEqual([
       {
