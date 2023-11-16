@@ -68,11 +68,7 @@ export const updateFeeds = async (
               : beaconUpdateCalls;
 
           logger.debug('Estimating gas limit');
-          const gasLimit = await estimateMulticallGasLimit(
-            api3ServerV1,
-            dataFeedUpdateCalldatas,
-            updatableBeacons.map((beacon) => beacon.beaconId)
-          );
+          const gasLimit = await estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas);
 
           logger.debug('Getting derived sponsor wallet');
           const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
@@ -121,36 +117,13 @@ export const updateFeeds = async (
   );
 };
 
-export const estimateMulticallGasLimit = async (
-  api3ServerV1: Api3ServerV1,
-  calldatas: string[],
-  beaconIds: string[]
-) => {
+export const estimateMulticallGasLimit = async (api3ServerV1: Api3ServerV1, calldatas: string[]) => {
   const goEstimateGas = await go(async () => api3ServerV1.estimateGas.multicall(calldatas));
   if (goEstimateGas.success) {
     // Adding a extra 10% because multicall consumes less gas than tryMulticall
     return goEstimateGas.data.mul(ethers.BigNumber.from(Math.round(1.1 * 100))).div(ethers.BigNumber.from(100));
   }
   logger.warn(`Unable to estimate gas for multicall`, goEstimateGas.error);
-
-  const goEstimateDummyBeaconUpdateGas = await go(async () => {
-    const { dummyAirnode, dummyBeaconTemplateId, dummyBeaconTimestamp, dummyBeaconData, dummyBeaconSignature } =
-      await createDummyBeaconUpdateData();
-    return [
-      await api3ServerV1.estimateGas.updateBeaconWithSignedData(
-        dummyAirnode.address,
-        dummyBeaconTemplateId,
-        dummyBeaconTimestamp,
-        dummyBeaconData,
-        dummyBeaconSignature
-      ),
-      await api3ServerV1.estimateGas.updateBeaconSetWithBeacons(beaconIds),
-    ] as const;
-  });
-  if (goEstimateDummyBeaconUpdateGas.success) {
-    const [updateBeaconWithSignedDataGas, updateBeaconSetWithBeaconsGas] = goEstimateDummyBeaconUpdateGas.data;
-    return updateBeaconWithSignedDataGas.mul(beaconIds.length).add(updateBeaconSetWithBeaconsGas);
-  }
 
   return ethers.BigNumber.from(2_000_000);
 };
