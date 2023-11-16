@@ -125,8 +125,8 @@ export const deeplyCheckDapis = (
   batch: ReturnType<typeof shallowCheckFeeds>,
   deviationThresholdCoefficient: DeviationThresholdCoefficient,
   onChainValues: Awaited<ReturnType<typeof callAndParseMulticall>>
-): UpdatableDapi[] => {
-  return batch
+): UpdatableDapi[] =>
+  batch
     .map(({ dapiInfo, UpdatableBeacons }) => {
       const beaconsWithBestValue = UpdatableBeacons.map(({ beaconId, signedData }) => {
         const onChainValue = onChainValues.find((onChainValue) => onChainValue.beaconId === beaconId);
@@ -196,4 +196,3 @@ export const deeplyCheckDapis = (
       };
     })
     .filter((UpdatableBeacon): UpdatableBeacon is UpdatableDapi => UpdatableBeacon !== null);
-};

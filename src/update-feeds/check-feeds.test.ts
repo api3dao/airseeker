@@ -117,22 +117,22 @@ describe('feed update checks', () => {
         {
           beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
           onChainValue: {
-            timestamp: ethers.BigNumber.from('0x69'),
-            value: ethers.BigNumber.from('0x64'),
+            timestamp: ethers.BigNumber.from(105),
+            value: ethers.BigNumber.from(100),
           },
         },
         {
           beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
           onChainValue: {
-            timestamp: ethers.BigNumber.from('0x6a'),
-            value: ethers.BigNumber.from('0x65'),
+            timestamp: ethers.BigNumber.from(106),
+            value: ethers.BigNumber.from(101),
           },
         },
         {
           beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
           onChainValue: {
-            timestamp: ethers.BigNumber.from('0x6b'),
-            value: ethers.BigNumber.from('0x66'),
+            timestamp: ethers.BigNumber.from(107),
+            value: ethers.BigNumber.from(102),
           },
         },
       ]);
@@ -194,7 +194,7 @@ describe('feed update checks', () => {
             updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1) },
             dataFeedValue: {
               value: ethers.BigNumber.from(10),
-              timestamp: Number.parseInt('95', 10),
+              timestamp: 95,
             },
             decodedDataFeed: {
               dataFeedId: '0x000',
@@ -238,7 +238,7 @@ describe('feed update checks', () => {
             dapiName: 'test',
             dataFeedValue: {
               timestamp: 95,
-              value: ethers.BigNumber.from('0x0a'),
+              value: ethers.BigNumber.from('10'),
             },
             decodedDataFeed: {
               beacons: [
