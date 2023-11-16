@@ -209,7 +209,7 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
       })
     );
     jest
-      .spyOn(checkFeedsModule, 'checkFeeds')
+      .spyOn(checkFeedsModule, 'getUpdatableFeeds')
       .mockResolvedValue([
         allowPartial<updateTransactionModule.UpdatableDapi>({ dapiInfo: firstDapi }),
         allowPartial<updateTransactionModule.UpdatableDapi>({ dapiInfo: thirdDapi }),
@@ -263,7 +263,7 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
   });
 });
 
-describe('tODO', () => {
+describe(updateFeedsModule.processBatch.name, () => {
   it('applies deviationThresholdCoefficient from config', async () => {
     const dapi = generateReadDapiWithIndexResponse();
     const decodedDataFeed = dapiDataRegistryModule.decodeDataFeed(dapi.dataFeed);
@@ -334,9 +334,9 @@ describe('tODO', () => {
         },
       },
     ];
-    jest.spyOn(checkFeedsModule, 'callAndParseMulticall').mockResolvedValue(multicallResult);
+    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue(multicallResult);
 
-    const feeds = checkFeedsModule.checkFeeds([decodedDapi], 2, 'hardhat', '31337');
+    const feeds = checkFeedsModule.getUpdatableFeeds([decodedDapi], 2, 'hardhat', '31337');
 
     expect(logger.warn).not.toHaveBeenCalledWith(`Off-chain sample's timestamp is older than on-chain timestamp.`);
     expect(logger.warn).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);

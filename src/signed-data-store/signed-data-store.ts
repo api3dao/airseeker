@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { SignedData, AirnodeAddress, TemplateId, DataFeedId } from '../types';
+import type { SignedData, AirnodeAddress, TemplateId, BeaconId } from '../types';
 import { deriveBeaconId } from '../utils';
 
 export const verifySignedData = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
@@ -90,7 +90,7 @@ export const setStoreDataPoint = (signedData: SignedData) => {
 export const getStoreDataPointByAirnodeAndTemplate = (airnode: AirnodeAddress, template: TemplateId) =>
   getState().signedApiStore[deriveBeaconId(airnode, template)!];
 
-export const getStoreDataPoint = (dataFeedId: DataFeedId) => getState().signedApiStore[dataFeedId];
+export const getStoreDataPoint = (dataFeedId: BeaconId) => getState().signedApiStore[dataFeedId];
 
 export const clear = () => {
   updateState((draft) => {

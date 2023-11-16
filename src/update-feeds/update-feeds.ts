@@ -11,7 +11,7 @@ import type { ChainId, ProviderName } from '../types';
 import { isFulfilled, sleep, deriveSponsorWallet } from '../utils';
 
 import { getApi3ServerV1 } from './api3-server-v1';
-import { checkFeeds } from './check-feeds';
+import { getUpdatableFeeds } from './check-feeds';
 import {
   decodeDapisCountResponse,
   decodeReadDapiWithIndexResponse,
@@ -185,7 +185,7 @@ export const processBatch = async (
     }
   });
 
-  const feedsToUpdate = await checkFeeds(batch, deviationThresholdCoefficient, providerName, chainId);
+  const feedsToUpdate = await getUpdatableFeeds(batch, deviationThresholdCoefficient, providerName, chainId);
   const dapiNamesToUpdate = new Set(feedsToUpdate.map((feed) => feed.dapiInfo.dapiName));
 
   // Clear last update timestamps for feeds that don't need an update

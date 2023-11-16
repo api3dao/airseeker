@@ -5,7 +5,7 @@ import { calculateMedian, checkUpdateConditions } from '../condition-check';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState } from '../state';
-import type { ChainId, ProviderName } from '../types';
+import type { BeaconId, ChainId, ProviderName } from '../types';
 import { multiplyBigNumber } from '../utils';
 
 import { getApi3ServerV1 } from './api3-server-v1';
@@ -13,7 +13,7 @@ import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
 import { decodeBeaconValue } from './update-feeds';
 import type { UpdatableDapi } from './update-transactions';
 
-export const checkFeeds = async (
+export const getUpdatableFeeds = async (
   batch: ReadDapiWithIndexResponse[],
   deviationThresholdCoefficient: number,
   providerName: ProviderName,
@@ -22,7 +22,7 @@ export const checkFeeds = async (
   const uniqueBeaconIds = [
     ...new Set(batch.flatMap((item) => item.decodedDataFeed.beacons.flatMap((beacon) => beacon.beaconId))),
   ];
-  const onChainFeedValues = await callAndParseMulticall(uniqueBeaconIds, providerName, chainId);
+  const onChainFeedValues = await multicallBeaconValues(uniqueBeaconIds, providerName, chainId);
 
   // Merge the latest values into the batch
   return (
@@ -49,7 +49,7 @@ export const checkFeeds = async (
               value: decodeBeaconValue(signedData.encodedValue)!,
             };
 
-            const localDataIsStale =
+            const localDataIsInvalid =
               signedData?.airnode === ethers.constants.AddressZero ||
               offChainValue.timestamp.lt(onChainValue.timestamp) ||
               offChainValue.timestamp.gt(Math.ceil(Date.now() / 1000 + 60 * 60));
@@ -58,7 +58,7 @@ export const checkFeeds = async (
             return {
               ...beacon,
               currentValue,
-              localDataIsStale,
+              localDataIsInvalid,
               signedData,
             };
           }),
@@ -90,16 +90,12 @@ export const checkFeeds = async (
       .map((dapiInfo) => ({
         dapiInfo,
         updatableBeacons: dapiInfo.decodedDataFeed.beacons
-          .filter(({ localDataIsStale }) => !localDataIsStale)
-          .map(({ beaconId, airnodeAddress, signedData, templateId }) => ({
+          .filter(({ localDataIsInvalid }) => !localDataIsInvalid)
+          .map(({ beaconId, signedData }) => ({
             beaconId,
-            airnodeAddress,
             signedData,
-            templateId,
           })),
       }))
-      // Finally, filter out dapis that cannot be updated (eg. if we don't have signed data)
-      .filter((dapi) => dapi.updatableBeacons.length > 0)
   );
 };
 
@@ -108,8 +104,8 @@ interface OnChainValue {
   onChainValue: { timestamp: ethers.BigNumber; value: ethers.BigNumber };
 }
 
-export const callAndParseMulticall = async (
-  batch: string[],
+export const multicallBeaconValues = async (
+  batch: BeaconId[],
   providerName: ProviderName,
   chainId: ChainId
 ): Promise<OnChainValue[]> => {

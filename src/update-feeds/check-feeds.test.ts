@@ -4,10 +4,10 @@ import { initializeState } from '../../test/fixtures/mock-config';
 import { allowPartial } from '../../test/utils';
 import * as signedDataStore from '../signed-data-store/signed-data-store';
 import { updateState } from '../state';
-import type { DataFeedId, SignedData } from '../types';
+import type { BeaconId, SignedData } from '../types';
 
 import * as contractUtils from './api3-server-v1';
-import { callAndParseMulticall, checkFeeds } from './check-feeds';
+import { multicallBeaconValues, getUpdatableFeeds } from './check-feeds';
 import * as checkFeedsModule from './check-feeds';
 import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
 
@@ -18,7 +18,7 @@ const encodeBeaconValue = (numericValue: string) => {
   return ethers.utils.defaultAbiCoder.encode(['int256'], [numericValueAsBigNumber]);
 };
 
-describe('checkFeeds', () => {
+describe('getUpdatableFeeds', () => {
   const feedIds = [
     '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
     '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
@@ -28,7 +28,7 @@ describe('checkFeeds', () => {
   beforeEach(() => {
     initializeState();
     updateState((draft) => {
-      draft.signedApiStore = allowPartial<Record<DataFeedId, SignedData>>({
+      draft.signedApiStore = allowPartial<Record<BeaconId, SignedData>>({
         '0x000a': { timestamp: '100', encodedValue: encodeBeaconValue('200') },
         '0x000b': { timestamp: '150', encodedValue: encodeBeaconValue('250') },
         '0x000c': { timestamp: '200', encodedValue: encodeBeaconValue('300') },
@@ -62,7 +62,7 @@ describe('checkFeeds', () => {
 
     jest.spyOn(contractUtils, 'getApi3ServerV1').mockReturnValue(mockContract as any);
 
-    const callAndParseMulticallPromise = callAndParseMulticall(feedIds as unknown as string[], 'hardhat', '31337');
+    const callAndParseMulticallPromise = multicallBeaconValues(feedIds as unknown as string[], 'hardhat', '31337');
 
     await expect(callAndParseMulticallPromise).resolves.toStrictEqual([
       {
@@ -137,7 +137,7 @@ describe('checkFeeds', () => {
     getStoreDataPointSpy.mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
 
     // None of the feeds failed to update
-    jest.spyOn(checkFeedsModule, 'callAndParseMulticall').mockResolvedValue(multicallResult);
+    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue(multicallResult);
 
     const batch = allowPartial<ReadDapiWithIndexResponse[]>([
       {
@@ -154,7 +154,7 @@ describe('checkFeeds', () => {
       },
     ]);
 
-    const checkFeedsResult = checkFeeds(batch, 1, 'hardhat', '31337');
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 'hardhat', '31337');
 
     await expect(checkFeedsResult).resolves.toStrictEqual([
       {

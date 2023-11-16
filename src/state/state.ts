@@ -8,7 +8,7 @@ import type {
   DecodedDataFeed,
   ChainId,
   SignedData,
-  DataFeedId,
+  BeaconId,
   ProviderName,
   SignedApiUrl,
   AirnodeAddress,
@@ -41,7 +41,7 @@ export interface State {
   dataFetcherInterval?: NodeJS.Timeout;
   gasPriceStore: Record<ChainId, Record<ProviderName, GasState>>;
   derivedSponsorWallets: Record<DapiName, PrivateKey>;
-  signedApiStore: Record<DataFeedId, SignedData>;
+  signedApiStore: Record<BeaconId, SignedData>;
   signedApiUrlStore: Record<ChainId, Record<ProviderName, Record<AirnodeAddress, SignedApiUrl>>>;
   dapis: Record<DapiName, DapiState>;
 }
