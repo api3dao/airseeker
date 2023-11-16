@@ -1,11 +1,12 @@
 import { ethers } from 'ethers';
 
 import { initializeState } from '../../test/fixtures/mock-config';
-import { generateRandomBytes32, signData } from '../../test/utils';
+import { allowPartial, generateRandomBytes32, signData } from '../../test/utils';
+import { getState, updateState } from '../state';
 import type { SignedData } from '../types';
 import { deriveBeaconId } from '../utils';
 
-import { verifySignedDataIntegrity } from './signed-data-store';
+import { purgeInactiveDataPoints, verifySignedDataIntegrity } from './signed-data-store';
 import * as localDataStore from './signed-data-store';
 
 describe('datastore', () => {
@@ -31,6 +32,7 @@ describe('datastore', () => {
   beforeEach(() => localDataStore.clear);
 
   it('stores and gets a data point', () => {
+    jest.spyOn(localDataStore, 'isSignedDataFresh').mockReturnValue(true);
     // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
     const promisedStorage = localDataStore.setStoreDataPoint(testDataPoint);
     expect(promisedStorage).toBeFalsy();
@@ -74,5 +76,28 @@ describe('datastore', () => {
     };
 
     expect(verifySignedDataIntegrity(badTestDataPoint)).toBeFalsy();
+  });
+
+  it('purges old data from the store', () => {
+    const baseTime = 1_700_126_230_000;
+    jest.useFakeTimers().setSystemTime(baseTime);
+
+    initializeState();
+    updateState((draft) => {
+      draft.signedApiStore['0x000'] = allowPartial<SignedData>({
+        timestamp: (baseTime / 1000 - 25 * 60 * 60).toString(),
+      });
+      draft.signedApiStore['0x001'] = allowPartial<SignedData>({
+        timestamp: (baseTime / 1000 - 23 * 60 * 60).toString(),
+      });
+    });
+
+    purgeInactiveDataPoints();
+
+    expect(Object.values(getState().signedApiStore)).toStrictEqual([
+      {
+        timestamp: '1700043430',
+      },
+    ]);
   });
 });

@@ -1,5 +1,5 @@
 import { goSync } from '@api3/promise-utils';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
@@ -75,6 +75,11 @@ export const setStoreDataPoint = (signedData: SignedData) => {
     return;
   }
 
+  if (!isSignedDataFresh(signedData)) {
+    logger.debug('Skipping store update. The signed data value is older than 24 hours.');
+    return;
+  }
+
   logger.debug(`Storing signed data`, {
     airnode,
     templateId,
@@ -95,5 +100,16 @@ export const getStoreDataPoint = (dataFeedId: DataFeedId) => getState().signedAp
 export const clear = () => {
   updateState((draft) => {
     draft.signedApiStore = {};
+  });
+};
+
+export const isSignedDataFresh = (signedData: SignedData) =>
+  BigNumber.from(signedData.timestamp).gt(Math.ceil(Date.now() / 1000 - 24 * 60 * 60));
+
+export const purgeInactiveDataPoints = () => {
+  updateState((draft) => {
+    draft.signedApiStore = Object.fromEntries(
+      Object.entries(draft.signedApiStore).filter(([_dataFeedId, signedData]) => isSignedDataFresh(signedData))
+    );
   });
 };
