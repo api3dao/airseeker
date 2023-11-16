@@ -11,7 +11,7 @@ import type { ChainId, ProviderName } from '../types';
 import { isFulfilled, sleep, deriveSponsorWallet } from '../utils';
 
 import { getApi3ServerV1 } from './api3-server-v1';
-import { callAndParseMulticall, deeplyCheckDapis, shallowCheckFeeds } from './check-feeds';
+import { checkFeeds } from './check-feeds';
 import {
   decodeDapisCountResponse,
   decodeReadDapiWithIndexResponse,
@@ -19,7 +19,7 @@ import {
   verifyMulticallResponse,
   type ReadDapiWithIndexResponse,
 } from './dapi-data-registry';
-import { type UpdatableDapi, updateFeeds } from './update-transactions';
+import { updateFeeds } from './update-transactions';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -151,28 +151,6 @@ export const decodeBeaconValue = (encodedBeaconValue: string) => {
   return decodedBeaconValue;
 };
 
-export const getFeedsToUpdate = async (
-  batch: ReadDapiWithIndexResponse[],
-  deviationThresholdCoefficient: number,
-  providerName: ProviderName,
-  chainId: ChainId
-): Promise<UpdatableDapi[]> => {
-  const shallowCheckedDapis = shallowCheckFeeds(batch, deviationThresholdCoefficient);
-
-  const beaconIds = [
-    ...new Set(shallowCheckedDapis.flatMap((dapi) => dapi.updatableBeacons.flatMap((beacon) => beacon.beaconId))),
-  ];
-  const onChainValuesAttempt = await go(async () => callAndParseMulticall(beaconIds, providerName, chainId), {
-    retries: 1,
-  });
-
-  if (!onChainValuesAttempt.success) {
-    return shallowCheckedDapis;
-  }
-
-  return deeplyCheckDapis(shallowCheckedDapis, deviationThresholdCoefficient, onChainValuesAttempt.data);
-};
-
 export const processBatch = async (
   batch: ReadDapiWithIndexResponse[],
   providerName: ProviderName,
@@ -207,7 +185,7 @@ export const processBatch = async (
     }
   });
 
-  const feedsToUpdate = await getFeedsToUpdate(batch, deviationThresholdCoefficient, providerName, chainId);
+  const feedsToUpdate = await checkFeeds(batch, deviationThresholdCoefficient, providerName, chainId);
   const dapiNamesToUpdate = new Set(feedsToUpdate.map((feed) => feed.dapiInfo.dapiName));
 
   // Clear last update timestamps for feeds that don't need an update

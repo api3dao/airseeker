@@ -1,9 +1,7 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
-import { zip } from 'lodash';
 
 import { calculateMedian, checkUpdateConditions } from '../condition-check';
-import type { DeviationThresholdCoefficient } from '../config/schema';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState } from '../state';
@@ -15,51 +13,88 @@ import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
 import { decodeBeaconValue } from './update-feeds';
 import type { UpdatableDapi } from './update-transactions';
 
-export const shallowCheckFeeds = (
+export const checkFeeds = async (
   batch: ReadDapiWithIndexResponse[],
-  deviationThresholdCoefficient: DeviationThresholdCoefficient
-): UpdatableDapi[] =>
-  batch
-    .map((dapiInfo): UpdatableDapi | null => {
-      const beaconsSignedData = dapiInfo.decodedDataFeed.beacons.map((beacon) => getStoreDataPoint(beacon.beaconId));
+  deviationThresholdCoefficient: number,
+  providerName: ProviderName,
+  chainId: ChainId
+): Promise<UpdatableDapi[]> => {
+  const uniqueBeaconIds = [
+    ...new Set(batch.flatMap((item) => item.decodedDataFeed.beacons.flatMap((beacon) => beacon.beaconId))),
+  ];
+  const onChainFeedValues = await callAndParseMulticall(uniqueBeaconIds, providerName, chainId);
 
-      // Only update data feed when we have signed data for all constituent beacons.
-      if (beaconsSignedData.some((signedData) => !signedData)) return null;
-      const beaconsDecodedValues = beaconsSignedData.map((signedData) => decodeBeaconValue(signedData!.encodedValue));
-      // Only update data feed when all beacon values are valid.
-      if (beaconsDecodedValues.includes(null)) return null;
+  // Merge the latest values into the batch
+  return (
+    batch
+      .map((dapi) => ({
+        ...dapi,
+        decodedDataFeed: {
+          ...dapi.decodedDataFeed,
+          beacons: dapi.decodedDataFeed.beacons.map((beacon) => {
+            const onChainValue = onChainFeedValues.find((onChainValue) => beacon.beaconId === onChainValue.beaconId)
+              ?.onChainValue ?? {
+              value: ethers.BigNumber.from(1),
+              timestamp: ethers.BigNumber.from(1),
+            };
+            const signedData = getStoreDataPoint(beacon.beaconId) ?? {
+              timestamp: '1',
+              airnode: ethers.constants.AddressZero,
+              encodedValue: ethers.constants.HashZero,
+              templateId: ethers.constants.HashZero,
+              signature: ethers.constants.HashZero,
+            };
+            const offChainValue = {
+              timestamp: ethers.BigNumber.from(signedData.timestamp),
+              value: decodeBeaconValue(signedData.encodedValue)!,
+            };
 
-      // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L163
-      const newBeaconSetValue = calculateMedian(beaconsDecodedValues.map((decodedValue) => decodedValue!));
-      const newBeaconSetTimestamp = calculateMedian(
-        beaconsSignedData.map((signedData) => ethers.BigNumber.from(signedData!.timestamp))
-      )!.toNumber();
-      const adjustedDeviationThresholdCoefficient = multiplyBigNumber(
-        dapiInfo.updateParameters.deviationThresholdInPercentage,
-        deviationThresholdCoefficient
-      );
-      if (
-        !checkUpdateConditions(
-          dapiInfo.dataFeedValue.value,
-          dapiInfo.dataFeedValue.timestamp,
+            const localDataIsStale =
+              signedData?.airnode === ethers.constants.AddressZero ||
+              offChainValue.timestamp.lt(onChainValue.timestamp) ||
+              offChainValue.timestamp.gt(Math.ceil(Date.now() / 1000 + 60 * 60));
+            const currentValue = offChainValue.timestamp.gt(onChainValue.timestamp) ? offChainValue : onChainValue;
+
+            return {
+              ...beacon,
+              currentValue,
+              localDataIsStale,
+              signedData,
+            };
+          }),
+        },
+      }))
+      // Filter out dapis that cannot be updated
+      .filter((dapi) => {
+        const newBeaconSetValue = calculateMedian(
+          dapi.decodedDataFeed.beacons.map((beacon) => beacon.currentValue.value)
+        );
+        const newBeaconSetTimestamp = calculateMedian(
+          dapi.decodedDataFeed.beacons.map((beacon) => beacon.currentValue.timestamp)
+        )!.toNumber();
+        const adjustedDeviationThresholdCoefficient = multiplyBigNumber(
+          dapi.updateParameters.deviationThresholdInPercentage,
+          deviationThresholdCoefficient
+        );
+
+        return checkUpdateConditions(
+          dapi.dataFeedValue.value,
+          dapi.dataFeedValue.timestamp,
           newBeaconSetValue,
           newBeaconSetTimestamp,
-          dapiInfo.updateParameters.heartbeatInterval,
+          dapi.updateParameters.heartbeatInterval,
           adjustedDeviationThresholdCoefficient
-        )
-      ) {
-        return null;
-      }
-
-      return {
-        dapiInfo,
-        updatableBeacons: zip(dapiInfo.decodedDataFeed.beacons, beaconsSignedData).map(([beacon, signedData]) => ({
-          signedData: signedData!,
-          beaconId: beacon!.beaconId,
-        })),
-      };
-    })
-    .filter((UpdatableDapi): UpdatableDapi is UpdatableDapi => UpdatableDapi !== null);
+        );
+      })
+      // Transform the batch and exclude beacons that cannot be updated
+      .map((dapi) => ({
+        dapiInfo: dapi,
+        updatableBeacons: dapi.decodedDataFeed.beacons.filter(({ localDataIsStale }) => !localDataIsStale),
+      }))
+      // Finally, filter out dapis that cannot be updated (eg. if we don't have signed data)
+      .filter((dapi) => dapi.updatableBeacons.length > 0)
+  );
+};
 
 interface OnChainValue {
   beaconId: string;
@@ -120,79 +155,3 @@ export const callAndParseMulticall = async (
     })
     .filter((onChainValue): onChainValue is OnChainValue => onChainValue !== null);
 };
-
-export const deeplyCheckDapis = (
-  batch: ReturnType<typeof shallowCheckFeeds>,
-  deviationThresholdCoefficient: DeviationThresholdCoefficient,
-  onChainValues: Awaited<ReturnType<typeof callAndParseMulticall>>
-): UpdatableDapi[] =>
-  batch
-    .map(({ dapiInfo, updatableBeacons }) => {
-      const beaconsWithBestValue = updatableBeacons.map(({ beaconId, signedData }) => {
-        const onChainValue = onChainValues.find((onChainValue) => onChainValue.beaconId === beaconId);
-        if (!onChainValue) {
-          return {
-            beaconId,
-            testValue: {
-              value: ethers.BigNumber.from(signedData.encodedValue),
-              timestamp: ethers.BigNumber.from(signedData.timestamp),
-            },
-            shouldUpdate: true,
-          };
-        }
-
-        const numericalSignedTimestamp = Number.parseInt(signedData.timestamp, 10);
-        const numericalOnChainTimestamp = onChainValue.onChainValue.timestamp.toNumber();
-
-        // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L121
-        if (
-          numericalSignedTimestamp > numericalOnChainTimestamp &&
-          numericalSignedTimestamp < Date.now() / 1000 + 60 * 60
-        ) {
-          return {
-            beaconId,
-            testValue: { value: onChainValue.onChainValue.value, timestamp: onChainValue.onChainValue.timestamp },
-            shouldUpdate: true,
-          };
-        }
-
-        return {
-          beaconId,
-          testValue: { value: onChainValue.onChainValue.value, timestamp: onChainValue.onChainValue.timestamp },
-          shouldUpdate: false,
-        };
-      });
-
-      const newMedianValue = calculateMedian(beaconsWithBestValue.map((val) => val.testValue.value));
-      const newMedianTimestamp = calculateMedian(beaconsWithBestValue.map((val) => val.testValue.timestamp));
-
-      const adjustedDeviationThresholdCoefficient = multiplyBigNumber(
-        dapiInfo.updateParameters.deviationThresholdInPercentage,
-        deviationThresholdCoefficient
-      );
-
-      const shouldUpdate = checkUpdateConditions(
-        dapiInfo.dataFeedValue.value,
-        dapiInfo.dataFeedValue.timestamp,
-        newMedianValue ?? ethers.BigNumber.from(0),
-        newMedianTimestamp?.toNumber() ?? 0,
-        dapiInfo.updateParameters.heartbeatInterval,
-        adjustedDeviationThresholdCoefficient
-      );
-
-      if (!shouldUpdate) {
-        return null;
-      }
-
-      const revisedUpdatableBeacons = updatableBeacons.filter(
-        (beacon) =>
-          beaconsWithBestValue.find((beaconWithBestValue) => beaconWithBestValue.beaconId === beacon.beaconId)
-            ?.shouldUpdate
-      );
-
-      return {
-        dapiInfo,
-        updatableBeacons: revisedUpdatableBeacons,
-      };
-    })
-    .filter((updatableBeacon): updatableBeacon is UpdatableDapi => updatableBeacon !== null);
