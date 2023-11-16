@@ -96,7 +96,7 @@ describe('datastore', () => {
 
     expect(Object.values(getState().signedApiStore)).toStrictEqual([
       {
-        timestamp: '1700043430',
+        timestamp: (baseTime / 1000 - 23 * 60 * 60).toString(),
       },
     ]);
   });
