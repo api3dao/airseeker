@@ -17,7 +17,7 @@ export interface UpdatableBeacon {
 
 export interface UpdatableDapi {
   dapiInfo: ReadDapiWithIndexResponse;
-  UpdatableBeacons: UpdatableBeacon[];
+  updatableBeacons: UpdatableBeacon[];
 }
 
 export const updateFeeds = async (
@@ -25,7 +25,7 @@ export const updateFeeds = async (
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
   api3ServerV1: Api3ServerV1,
-  UpdatableDapis: UpdatableDapi[]
+  updatableDapis: UpdatableDapi[]
 ) => {
   const state = getState();
   const {
@@ -34,8 +34,8 @@ export const updateFeeds = async (
 
   // Update all of the dAPIs in parallel.
   return Promise.all(
-    UpdatableDapis.map(async (dapi) => {
-      const { dapiInfo, UpdatableBeacons } = dapi;
+    updatableDapis.map(async (dapi) => {
+      const { dapiInfo, updatableBeacons } = dapi;
       const {
         dapiName,
         decodedDataFeed: { dataFeedId },
@@ -44,7 +44,7 @@ export const updateFeeds = async (
       return logger.runWithContext({ dapiName, dataFeedId }, async () => {
         const goUpdate = await go(async () => {
           // Create calldata for all beacons of the particular data feed the dAPI points to.
-          const beaconUpdateCalls = UpdatableBeacons.map((beacon) => {
+          const beaconUpdateCalls = updatableBeacons.map((beacon) => {
             const { signedData } = beacon;
 
             return api3ServerV1.interface.encodeFunctionData('updateBeaconWithSignedData', [
@@ -62,7 +62,7 @@ export const updateFeeds = async (
               ? [
                   ...beaconUpdateCalls,
                   api3ServerV1.interface.encodeFunctionData('updateBeaconSetWithBeacons', [
-                    UpdatableBeacons.map(({ beaconId }) => beaconId),
+                    updatableBeacons.map(({ beaconId }) => beaconId),
                   ]),
                 ]
               : beaconUpdateCalls;
@@ -71,7 +71,7 @@ export const updateFeeds = async (
           const gasLimit = await estimateMulticallGasLimit(
             api3ServerV1,
             dataFeedUpdateCalldatas,
-            UpdatableBeacons.map((beacon) => beacon.beaconId)
+            updatableBeacons.map((beacon) => beacon.beaconId)
           );
 
           logger.debug('Getting derived sponsor wallet');

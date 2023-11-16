@@ -53,7 +53,7 @@ export const shallowCheckFeeds = (
 
       return {
         dapiInfo,
-        UpdatableBeacons: zip(dapiInfo.decodedDataFeed.beacons, beaconsSignedData).map(([beacon, signedData]) => ({
+        updatableBeacons: zip(dapiInfo.decodedDataFeed.beacons, beaconsSignedData).map(([beacon, signedData]) => ({
           signedData: signedData!,
           beaconId: beacon!.beaconId,
         })),
@@ -127,8 +127,8 @@ export const deeplyCheckDapis = (
   onChainValues: Awaited<ReturnType<typeof callAndParseMulticall>>
 ): UpdatableDapi[] =>
   batch
-    .map(({ dapiInfo, UpdatableBeacons }) => {
-      const beaconsWithBestValue = UpdatableBeacons.map(({ beaconId, signedData }) => {
+    .map(({ dapiInfo, updatableBeacons }) => {
+      const beaconsWithBestValue = updatableBeacons.map(({ beaconId, signedData }) => {
         const onChainValue = onChainValues.find((onChainValue) => onChainValue.beaconId === beaconId);
         if (!onChainValue) {
           return {
@@ -184,7 +184,7 @@ export const deeplyCheckDapis = (
         return null;
       }
 
-      const revisedUpdatableBeacons = UpdatableBeacons.filter(
+      const revisedUpdatableBeacons = updatableBeacons.filter(
         (beacon) =>
           beaconsWithBestValue.find((beaconWithBestValue) => beaconWithBestValue.beaconId === beacon.beaconId)
             ?.shouldUpdate
@@ -192,7 +192,7 @@ export const deeplyCheckDapis = (
 
       return {
         dapiInfo,
-        UpdatableBeacons: revisedUpdatableBeacons,
+        updatableBeacons: revisedUpdatableBeacons,
       };
     })
-    .filter((UpdatableBeacon): UpdatableBeacon is UpdatableDapi => UpdatableBeacon !== null);
+    .filter((updatableBeacon): updatableBeacon is UpdatableDapi => updatableBeacon !== null);

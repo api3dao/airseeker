@@ -202,7 +202,7 @@ describe('feed update checks', () => {
             },
             dapiName: 'test',
           },
-          UpdatableBeacons: [
+          updatableBeacons: [
             {
               beaconId: feedIds[0],
               signedData: mockSignedDataStore[feedIds[0]]!,
@@ -225,7 +225,7 @@ describe('feed update checks', () => {
 
       expect(deepCheckResult).toStrictEqual([
         {
-          UpdatableBeacons: [
+          updatableBeacons: [
             {
               beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
               signedData: {

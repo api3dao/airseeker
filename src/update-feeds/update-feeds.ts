@@ -167,7 +167,7 @@ export const getFeedsToUpdate = async (
   const shallowCheckedDapis = shallowCheckFeeds(batch, deviationThresholdCoefficient);
 
   const beaconIds = [
-    ...new Set(shallowCheckedDapis.flatMap((dapi) => dapi.UpdatableBeacons.flatMap((beacon) => beacon.beaconId))),
+    ...new Set(shallowCheckedDapis.flatMap((dapi) => dapi.updatableBeacons.flatMap((beacon) => beacon.beaconId))),
   ];
   const onChainValuesAttempt = await go(async () => callAndParseMulticall(beaconIds, providerName, chainId), {
     retries: 1,
