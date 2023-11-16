@@ -117,6 +117,7 @@ describe('checkFeeds', () => {
       },
     ];
 
+    // Only the third feed will satisfy the timestamp check
     const mockSignedDataStore = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '101',
