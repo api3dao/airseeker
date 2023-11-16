@@ -89,7 +89,7 @@ export const updateFeeds = async (
                   chains[chainId]!.gasSettings,
                   sponsorWallet.address
                 ),
-              { totalTimeoutMs: dataFeedUpdateIntervalMs, attemptTimeoutMs: dataFeedUpdateIntervalMs }
+              { totalTimeoutMs: dataFeedUpdateIntervalMs }
             );
             if (!goGasPrice.success) {
               logger.error(`Failed to get gas price`, goGasPrice.error);
@@ -114,7 +114,7 @@ export const updateFeeds = async (
                 .tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit })
             );
           },
-          { totalTimeoutMs: dataFeedUpdateIntervalMs, attemptTimeoutMs: dataFeedUpdateIntervalMs }
+          { totalTimeoutMs: dataFeedUpdateIntervalMs }
         );
 
         if (!goUpdate.success) {
