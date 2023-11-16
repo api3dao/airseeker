@@ -10,7 +10,13 @@ import * as contractUtils from './api3-server-v1';
 import { callAndParseMulticall, deeplyCheckDapis, shallowCheckFeeds } from './check-feeds';
 import * as checkFeeds from './check-feeds';
 import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
-import { encodeBeaconValue } from './update-feeds';
+
+// https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
+const encodeBeaconValue = (numericValue: string) => {
+  const numericValueAsBigNumber = ethers.BigNumber.from(numericValue);
+
+  return ethers.utils.defaultAbiCoder.encode(['int256'], [numericValueAsBigNumber]);
+};
 
 describe('feed update checks', () => {
   describe('shallow checks', () => {
@@ -53,7 +59,7 @@ describe('feed update checks', () => {
       const batch = allowPartial<ReadDapiWithIndexResponse[]>([
         {
           updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(2) },
-          dataFeedValue: { value: ethers.BigNumber.from(150), timestamp: 150 },
+          dataFeedValue: { value: ethers.BigNumber.from(150), timestamp: 300 },
           decodedDataFeed: {
             dataFeedId: '0x000',
             beacons: [{ beaconId: '0x000a' }, { beaconId: '0x000b' }, { beaconId: '0x000c' }],

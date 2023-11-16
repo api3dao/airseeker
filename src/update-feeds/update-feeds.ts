@@ -2,7 +2,7 @@ import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 import { range, size, zip } from 'lodash';
 
-import type { Chain, DeviationThresholdCoefficient } from '../config/schema';
+import type { Chain } from '../config/schema';
 import { INT224_MAX, INT224_MIN } from '../constants';
 import { clearSponsorLastUpdateTimestampMs, initializeGasStore, hasPendingTransaction } from '../gas-price';
 import { logger } from '../logger';
@@ -151,16 +151,9 @@ export const decodeBeaconValue = (encodedBeaconValue: string) => {
   return decodedBeaconValue;
 };
 
-// https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
-export const encodeBeaconValue = (numericValue: string) => {
-  const numericValueAsBigNumber = ethers.BigNumber.from(numericValue);
-
-  return ethers.utils.defaultAbiCoder.encode(['int256'], [numericValueAsBigNumber]);
-};
-
 export const getFeedsToUpdate = async (
   batch: ReadDapiWithIndexResponse[],
-  deviationThresholdCoefficient: DeviationThresholdCoefficient,
+  deviationThresholdCoefficient: number,
   providerName: ProviderName,
   chainId: ChainId
 ): Promise<UpdatableDapi[]> => {
