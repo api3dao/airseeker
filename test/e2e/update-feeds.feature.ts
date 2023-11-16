@@ -68,7 +68,7 @@ it('updates blockchain data', async () => {
   await updateFeeds(chainId, providerName, provider, api3ServerV1, [
     {
       dapiInfo: decodedBtcDapi,
-      UpdatableBeacons: [
+      updatableBeacons: [
         {
           beaconId: binanceBtcBeacon.beaconId,
           signedData: binanceBtcSignedData,
