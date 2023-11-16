@@ -87,9 +87,16 @@ export const checkFeeds = async (
         );
       })
       // Transform the batch and exclude beacons that cannot be updated
-      .map((dapi) => ({
-        dapiInfo: dapi,
-        updatableBeacons: dapi.decodedDataFeed.beacons.filter(({ localDataIsStale }) => !localDataIsStale),
+      .map((dapiInfo) => ({
+        dapiInfo,
+        updatableBeacons: dapiInfo.decodedDataFeed.beacons
+          .filter(({ localDataIsStale }) => !localDataIsStale)
+          .map(({ beaconId, airnodeAddress, signedData, templateId }) => ({
+            beaconId,
+            airnodeAddress,
+            signedData,
+            templateId,
+          })),
       }))
       // Finally, filter out dapis that cannot be updated (eg. if we don't have signed data)
       .filter((dapi) => dapi.updatableBeacons.length > 0)

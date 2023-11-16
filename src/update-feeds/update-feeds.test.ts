@@ -311,6 +311,31 @@ describe('tODO', () => {
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'info');
 
+    const multicallResult = [
+      {
+        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+        onChainValue: {
+          timestamp: ethers.BigNumber.from(150),
+          value: ethers.BigNumber.from('400'),
+        },
+      },
+      {
+        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
+        onChainValue: {
+          timestamp: ethers.BigNumber.from(160),
+          value: ethers.BigNumber.from('500'),
+        },
+      },
+      {
+        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
+        onChainValue: {
+          timestamp: ethers.BigNumber.from(170),
+          value: ethers.BigNumber.from('600'),
+        },
+      },
+    ];
+    jest.spyOn(checkFeedsModule, 'callAndParseMulticall').mockResolvedValue(multicallResult);
+
     const feeds = checkFeedsModule.checkFeeds([decodedDapi], 2, 'hardhat', '31337');
 
     expect(logger.warn).not.toHaveBeenCalledWith(`Off-chain sample's timestamp is older than on-chain timestamp.`);

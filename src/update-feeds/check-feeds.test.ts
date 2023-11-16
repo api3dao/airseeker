@@ -158,13 +158,13 @@ describe('checkFeeds', () => {
     await expect(checkFeedsResult).resolves.toStrictEqual([
       {
         updatableBeacons: [
-          {
+          expect.objectContaining({
             beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
             signedData: {
               encodedValue: '0x000000000000000000000000000000000000000000000000000000000000012c',
               timestamp: '200',
             },
-          },
+          }),
         ],
         dapiInfo: {
           dapiName: 'test',
@@ -174,15 +174,15 @@ describe('checkFeeds', () => {
           },
           decodedDataFeed: {
             beacons: [
-              {
+              expect.objectContaining({
                 beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-              },
-              {
+              }),
+              expect.objectContaining({
                 beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
-              },
-              {
+              }),
+              expect.objectContaining({
                 beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-              },
+              }),
             ],
             dataFeedId: '0x000',
           },
