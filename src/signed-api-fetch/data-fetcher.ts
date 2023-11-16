@@ -47,7 +47,7 @@ export const callSignedDataApi = async (
   const goAxiosCall = await go<Promise<AxiosResponse>, AxiosError>(async () =>
     axios({
       method: 'get',
-      timeout: signedDataFetchIntervalMs * HTTP_SIGNED_DATA_API_HEADROOM_MULTIPLIER,
+      timeout: Math.ceil(signedDataFetchIntervalMs * HTTP_SIGNED_DATA_API_HEADROOM_MULTIPLIER),
       url,
       headers: {
         Accept: 'application/json',
