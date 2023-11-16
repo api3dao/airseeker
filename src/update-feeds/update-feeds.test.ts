@@ -10,6 +10,7 @@ import * as stateModule from '../state';
 import type { DapiDataRegistry } from '../typechain-types';
 import * as utilsModule from '../utils';
 
+import * as checkFeedsModule from './check-feeds';
 import * as dapiDataRegistryModule from './dapi-data-registry';
 import * as updateFeedsModule from './update-feeds';
 import * as updateTransactionModule from './update-transactions';
@@ -208,10 +209,10 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
       })
     );
     jest
-      .spyOn(updateFeedsModule, 'getFeedsToUpdate')
-      .mockImplementation(() => [
-        allowPartial<updateTransactionModule.UpdateableDapi>({ dapiInfo: firstDapi }),
-        allowPartial<updateTransactionModule.UpdateableDapi>({ dapiInfo: thirdDapi }),
+      .spyOn(checkFeedsModule, 'getUpdatableFeeds')
+      .mockResolvedValue([
+        allowPartial<updateTransactionModule.UpdatableDapi>({ dapiInfo: firstDapi }),
+        allowPartial<updateTransactionModule.UpdatableDapi>({ dapiInfo: thirdDapi }),
       ]);
     jest.spyOn(updateTransactionModule, 'updateFeeds').mockResolvedValue([null, null]);
 
@@ -262,8 +263,8 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
   });
 });
 
-describe(updateFeedsModule.getFeedsToUpdate.name, () => {
-  it('applies deviationThresholdCoefficient from config', () => {
+describe(updateFeedsModule.processBatch.name, () => {
+  it('applies deviationThresholdCoefficient from config', async () => {
     const dapi = generateReadDapiWithIndexResponse();
     const decodedDataFeed = dapiDataRegistryModule.decodeDataFeed(dapi.dataFeed);
     const decodedDapi = { ...omit(dapi, ['dataFeed']), decodedDataFeed };
@@ -310,11 +311,36 @@ describe(updateFeedsModule.getFeedsToUpdate.name, () => {
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'info');
 
-    const feeds = updateFeedsModule.getFeedsToUpdate([decodedDapi], 2);
+    const multicallResult = [
+      {
+        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+        onChainValue: {
+          timestamp: ethers.BigNumber.from(150),
+          value: ethers.BigNumber.from('400'),
+        },
+      },
+      {
+        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
+        onChainValue: {
+          timestamp: ethers.BigNumber.from(160),
+          value: ethers.BigNumber.from('500'),
+        },
+      },
+      {
+        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
+        onChainValue: {
+          timestamp: ethers.BigNumber.from(170),
+          value: ethers.BigNumber.from('600'),
+        },
+      },
+    ];
+    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue(multicallResult);
+
+    const feeds = checkFeedsModule.getUpdatableFeeds([decodedDapi], 2, 'hardhat', '31337');
 
     expect(logger.warn).not.toHaveBeenCalledWith(`Off-chain sample's timestamp is older than on-chain timestamp.`);
     expect(logger.warn).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
     expect(logger.info).not.toHaveBeenCalledWith(`Deviation exceeded.`);
-    expect(feeds).toStrictEqual([]);
+    await expect(feeds).resolves.toStrictEqual([]);
   });
 });
