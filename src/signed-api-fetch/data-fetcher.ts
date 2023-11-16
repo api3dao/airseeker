@@ -7,6 +7,7 @@ import { pick, uniq } from 'lodash';
 import { HTTP_SIGNED_DATA_API_ATTEMPT_TIMEOUT, HTTP_SIGNED_DATA_API_HEADROOM } from '../constants';
 import { logger } from '../logger';
 import * as localDataStore from '../signed-data-store';
+import { purgeOldSignedData } from '../signed-data-store';
 import { getState, updateState } from '../state';
 import { signedApiResponseSchema, type SignedData } from '../types';
 
@@ -95,7 +96,7 @@ export const runDataFetcher = async () => {
     ]);
 
     logger.debug('Fetching data from signed APIs', { urls });
-    return Promise.all(
+    const fetchResults = await Promise.all(
       urls.map(async (url) =>
         go(
           async () => {
@@ -114,5 +115,9 @@ export const runDataFetcher = async () => {
         )
       )
     );
+
+    purgeOldSignedData();
+
+    return fetchResults;
   });
 };
