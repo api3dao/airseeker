@@ -15,6 +15,13 @@ import * as dapiDataRegistryModule from './dapi-data-registry';
 import * as updateFeedsModule from './update-feeds';
 import * as updateTransactionModule from './update-transactions';
 
+const chainId = '31337';
+const rpcUrl = 'http://127.0.0.1:8545/';
+const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
+  chainId: Number.parseInt(chainId, 10),
+  name: chainId,
+});
+
 jest.mock('../state');
 
 describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
@@ -336,7 +343,7 @@ describe(updateFeedsModule.processBatch.name, () => {
     ];
     jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue(multicallResult);
 
-    const feeds = checkFeedsModule.getUpdatableFeeds([decodedDapi], 2, 'hardhat', '31337');
+    const feeds = checkFeedsModule.getUpdatableFeeds([decodedDapi], 2, 'hardhat', provider, '31337');
 
     expect(logger.warn).not.toHaveBeenCalledWith(`Off-chain sample's timestamp is older than on-chain timestamp.`);
     expect(logger.warn).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
