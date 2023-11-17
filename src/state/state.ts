@@ -5,7 +5,6 @@ import type { Config } from '../config/schema';
 import type {
   DapiName,
   PrivateKey,
-  DecodedDataFeed,
   ChainId,
   SignedData,
   BeaconId,
@@ -19,23 +18,6 @@ interface GasState {
   sponsorLastUpdateTimestampMs: Record<string, number>;
 }
 
-export interface DataFeedValue {
-  value: BigNumber;
-  timestamp: number;
-}
-
-export interface DapiState {
-  dataFeed: DecodedDataFeed;
-  dataFeedValues: Record<ChainId, DataFeedValue>;
-  updateParameters: Record<ChainId, UpdateParameters>;
-}
-
-export interface UpdateParameters {
-  deviationThresholdInPercentage: BigNumber;
-  deviationReference: BigNumber;
-  heartbeatInterval: number;
-}
-
 export interface State {
   config: Config;
   dataFetcherInterval?: NodeJS.Timeout;
@@ -43,7 +25,6 @@ export interface State {
   derivedSponsorWallets: Record<DapiName, PrivateKey>;
   signedApiStore: Record<BeaconId, SignedData>;
   signedApiUrlStore: Record<ChainId, Record<ProviderName, Record<AirnodeAddress, SignedApiUrl>>>;
-  dapis: Record<DapiName, DapiState>;
 }
 
 type StateUpdater = (draft: Draft<State>) => void;
@@ -65,7 +46,6 @@ export const setInitialState = (config: Config) => {
     signedApiStore: {},
     signedApiUrlStore: {},
     derivedSponsorWallets: {},
-    dapis: {},
   };
 };
 

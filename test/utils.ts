@@ -44,3 +44,23 @@ export const generateSignedData = async (
 
   return { airnode: airnodeWallet.address, templateId, timestamp: dataFeedTimestamp, encodedValue, signature };
 };
+
+export const createDummyBeaconUpdateData = async (dummyAirnode: ethers.Wallet = ethers.Wallet.createRandom()) => {
+  const dummyBeaconTemplateId = ethers.utils.hexlify(ethers.utils.randomBytes(32));
+  const dummyBeaconTimestamp = Math.floor(Date.now() / 1000);
+  const randomBytes = ethers.utils.randomBytes(Math.floor(Math.random() * 27) + 1);
+  const dummyBeaconData = ethers.utils.defaultAbiCoder.encode(
+    ['int224'],
+    // Any random number that fits into an int224
+    [ethers.BigNumber.from(randomBytes)]
+  );
+  const dummyBeaconSignature = await dummyAirnode.signMessage(
+    ethers.utils.arrayify(
+      ethers.utils.solidityKeccak256(
+        ['bytes32', 'uint256', 'bytes'],
+        [dummyBeaconTemplateId, dummyBeaconTimestamp, dummyBeaconData]
+      )
+    )
+  );
+  return { dummyAirnode, dummyBeaconTemplateId, dummyBeaconTimestamp, dummyBeaconData, dummyBeaconSignature };
+};

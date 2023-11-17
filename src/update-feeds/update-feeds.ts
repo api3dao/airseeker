@@ -193,13 +193,6 @@ export const processBatch = async (
       for (const { airnodeAddress, url } of receivedUrls) {
         draft.signedApiUrlStore[chainId]![providerName]![airnodeAddress] = url;
       }
-
-      const cachedDapiResponse = draft.dapis[dapi.dapiName];
-      draft.dapis[dapi.dapiName] = {
-        dataFeed: cachedDapiResponse?.dataFeed ?? dapi.decodedDataFeed,
-        dataFeedValues: { ...cachedDapiResponse?.dataFeedValues, [chainId]: dapi.dataFeedValue },
-        updateParameters: { ...cachedDapiResponse?.updateParameters, [chainId]: dapi.updateParameters },
-      };
     }
   });
 
