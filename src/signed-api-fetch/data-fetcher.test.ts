@@ -64,6 +64,8 @@ describe('data fetcher', () => {
       })
     );
 
+    jest.spyOn(localDataStore, 'isSignedDataFresh').mockReturnValue(true);
+
     const dataFetcherPromise = dataFetcherModule.runDataFetcher();
     await expect(dataFetcherPromise).resolves.toBeDefined();
     dataFetcherModule.stopDataFetcher();

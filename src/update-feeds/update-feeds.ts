@@ -2,17 +2,16 @@ import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 import { range, size, zip } from 'lodash';
 
-import { calculateMedian, checkUpdateConditions } from '../condition-check';
-import type { Chain, DeviationThresholdCoefficient } from '../config/schema';
+import type { Chain } from '../config/schema';
 import { INT224_MAX, INT224_MIN, RPC_PROVIDER_TIMEOUT_MS } from '../constants';
 import { clearSponsorLastUpdateTimestampMs, initializeGasStore, hasPendingTransaction } from '../gas-price';
 import { logger } from '../logger';
-import { getStoreDataPoint } from '../signed-data-store';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
-import { isFulfilled, sleep, multiplyBigNumber, deriveSponsorWallet } from '../utils';
+import { isFulfilled, sleep, deriveSponsorWallet } from '../utils';
 
 import { getApi3ServerV1 } from './api3-server-v1';
+import { getUpdatableFeeds } from './check-feeds';
 import {
   decodeDapisCountResponse,
   decodeReadDapiWithIndexResponse,
@@ -20,7 +19,7 @@ import {
   verifyMulticallResponse,
   type ReadDapiWithIndexResponse,
 } from './dapi-data-registry';
-import { type UpdateableDapi, updateFeeds } from './update-transactions';
+import { updateFeeds } from './update-transactions';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -170,53 +169,6 @@ export const decodeBeaconValue = (encodedBeaconValue: string) => {
   return decodedBeaconValue;
 };
 
-export const getFeedsToUpdate = (
-  batch: ReadDapiWithIndexResponse[],
-  deviationThresholdCoefficient: DeviationThresholdCoefficient
-): UpdateableDapi[] =>
-  batch
-    .map((dapiInfo): UpdateableDapi | null => {
-      const beaconsSignedData = dapiInfo.decodedDataFeed.beacons.map((beacon) => getStoreDataPoint(beacon.beaconId));
-
-      // Only update data feed when we have signed data for all constituent beacons.
-      if (beaconsSignedData.some((signedData) => !signedData)) return null;
-
-      const beaconsDecodedValues = beaconsSignedData.map((signedData) => decodeBeaconValue(signedData!.encodedValue));
-      // Only update data feed when all beacon values are valid.
-      if (beaconsDecodedValues.includes(null)) return null;
-
-      // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L163
-      const newBeaconSetValue = calculateMedian(beaconsDecodedValues.map((decodedValue) => decodedValue!));
-      const newBeaconSetTimestamp = calculateMedian(
-        beaconsSignedData.map((signedData) => ethers.BigNumber.from(signedData!.timestamp))
-      )!.toNumber();
-      const adjustedDeviationThresholdCoefficient = multiplyBigNumber(
-        dapiInfo.updateParameters.deviationThresholdInPercentage,
-        deviationThresholdCoefficient
-      );
-      if (
-        !checkUpdateConditions(
-          dapiInfo.dataFeedValue.value,
-          dapiInfo.dataFeedValue.timestamp,
-          newBeaconSetValue,
-          newBeaconSetTimestamp,
-          dapiInfo.updateParameters.heartbeatInterval,
-          adjustedDeviationThresholdCoefficient
-        )
-      ) {
-        return null;
-      }
-
-      return {
-        dapiInfo,
-        updateableBeacons: zip(dapiInfo.decodedDataFeed.beacons, beaconsSignedData).map(([beacon, signedData]) => ({
-          signedData: signedData!,
-          beaconId: beacon!.beaconId,
-        })),
-      };
-    })
-    .filter((updateableDapi): updateableDapi is UpdateableDapi => updateableDapi !== null);
-
 export const processBatch = async (
   batch: ReadDapiWithIndexResponse[],
   providerName: ProviderName,
@@ -251,7 +203,7 @@ export const processBatch = async (
     }
   });
 
-  const feedsToUpdate = getFeedsToUpdate(batch, deviationThresholdCoefficient);
+  const feedsToUpdate = await getUpdatableFeeds(batch, deviationThresholdCoefficient, providerName, chainId);
   const dapiNamesToUpdate = new Set(feedsToUpdate.map((feed) => feed.dapiInfo.dapiName));
 
   // Clear last update timestamps for feeds that don't need an update
