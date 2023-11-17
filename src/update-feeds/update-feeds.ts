@@ -203,7 +203,7 @@ export const processBatch = async (
     }
   });
 
-  const feedsToUpdate = await getUpdatableFeeds(batch, deviationThresholdCoefficient, providerName, chainId);
+  const feedsToUpdate = await getUpdatableFeeds(batch, deviationThresholdCoefficient, providerName, provider, chainId);
   const dapiNamesToUpdate = new Set(feedsToUpdate.map((feed) => feed.dapiInfo.dapiName));
 
   // Clear last update timestamps for feeds that don't need an update

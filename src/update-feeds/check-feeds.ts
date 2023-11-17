@@ -17,12 +17,13 @@ export const getUpdatableFeeds = async (
   batch: ReadDapiWithIndexResponse[],
   deviationThresholdCoefficient: number,
   providerName: ProviderName,
+  provider: ethers.providers.StaticJsonRpcProvider,
   chainId: ChainId
 ): Promise<UpdatableDapi[]> => {
   const uniqueBeaconIds = [
     ...new Set(batch.flatMap((item) => item.decodedDataFeed.beacons.flatMap((beacon) => beacon.beaconId))),
   ];
-  const onChainFeedValues = await multicallBeaconValues(uniqueBeaconIds, providerName, chainId);
+  const onChainFeedValues = await multicallBeaconValues(uniqueBeaconIds, providerName, provider, chainId);
 
   // Merge the latest values into the batch
   return (
@@ -107,13 +108,13 @@ interface OnChainValue {
 export const multicallBeaconValues = async (
   batch: BeaconId[],
   providerName: ProviderName,
+  provider: ethers.providers.StaticJsonRpcProvider,
   chainId: ChainId
 ): Promise<OnChainValue[]> => {
   const { config } = getState();
   const chain = config.chains[chainId]!;
-  const { providers, contracts } = chain;
+  const { contracts } = chain;
 
-  const provider = new ethers.providers.StaticJsonRpcProvider(providers[providerName]);
   const server = getApi3ServerV1(contracts.Api3ServerV1, provider);
   const voidSigner = new ethers.VoidSigner(ethers.constants.AddressZero, provider);
 
