@@ -40,71 +40,78 @@ export const updateFeeds = async (
         dapiName,
         decodedDataFeed: { dataFeedId },
       } = dapiInfo;
+      const { dataFeedUpdateInterval } = chains[chainId]!;
+      const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
       return logger.runWithContext({ dapiName, dataFeedId }, async () => {
-        const goUpdate = await go(async () => {
-          // Create calldata for all beacons of the particular data feed the dAPI points to.
-          const beaconUpdateCalls = updatableBeacons.map((beacon) => {
-            const { signedData } = beacon;
+        const goUpdate = await go(
+          async () => {
+            // Create calldata for all beacons of the particular data feed the dAPI points to.
+            const beaconUpdateCalls = updatableBeacons.map((beacon) => {
+              const { signedData } = beacon;
 
-            return api3ServerV1.interface.encodeFunctionData('updateBeaconWithSignedData', [
-              signedData.airnode,
-              signedData.templateId,
-              signedData.timestamp,
-              signedData.encodedValue,
-              signedData.signature,
-            ]);
-          });
+              return api3ServerV1.interface.encodeFunctionData('updateBeaconWithSignedData', [
+                signedData.airnode,
+                signedData.templateId,
+                signedData.timestamp,
+                signedData.encodedValue,
+                signedData.signature,
+              ]);
+            });
 
-          // If there are multiple beacons in the data feed it's a beacons set which we need to update as well.
-          const dataFeedUpdateCalldatas =
-            beaconUpdateCalls.length > 1
-              ? [
-                  ...beaconUpdateCalls,
-                  api3ServerV1.interface.encodeFunctionData('updateBeaconSetWithBeacons', [
-                    updatableBeacons.map(({ beaconId }) => beaconId),
-                  ]),
-                ]
-              : beaconUpdateCalls;
+            // If there are multiple beacons in the data feed it's a beacons set which we need to update as well.
+            const dataFeedUpdateCalldatas =
+              beaconUpdateCalls.length > 1
+                ? [
+                    ...beaconUpdateCalls,
+                    api3ServerV1.interface.encodeFunctionData('updateBeaconSetWithBeacons', [
+                      updatableBeacons.map(({ beaconId }) => beaconId),
+                    ]),
+                  ]
+                : beaconUpdateCalls;
 
-          logger.debug('Estimating gas limit');
-          const gasLimit = await estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas);
+            logger.debug('Estimating gas limit');
+            const gasLimit = await estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas);
 
-          logger.debug('Getting derived sponsor wallet');
-          const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
+            logger.debug('Getting derived sponsor wallet');
+            const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
 
-          const goGasPrice = await go(async () =>
-            getAirseekerRecommendedGasPrice(
-              chainId,
-              providerName,
-              provider,
-              chains[chainId]!.gasSettings,
-              sponsorWallet.address
-            )
-          );
-          if (!goGasPrice.success) {
-            logger.error(`Failed to get gas price`, goGasPrice.error);
-            return;
-          }
-          const gasPrice = goGasPrice.data;
+            const goGasPrice = await go(
+              async () =>
+                getAirseekerRecommendedGasPrice(
+                  chainId,
+                  providerName,
+                  provider,
+                  chains[chainId]!.gasSettings,
+                  sponsorWallet.address
+                ),
+              { totalTimeoutMs: dataFeedUpdateIntervalMs }
+            );
+            if (!goGasPrice.success) {
+              logger.error(`Failed to get gas price`, goGasPrice.error);
+              return;
+            }
+            const gasPrice = goGasPrice.data;
 
-          // We want to set the timestamp of the first update transaction. We can determine if the transaction is the
-          // original one if it is't not a retry of a pending transaction. That is, iff there is no timestamp for the
-          // particular sponsor wallet. This assumes that a single sponsor updates a single dAPI.
-          if (!hasPendingTransaction(chainId, providerName, sponsorWallet.address)) {
-            logger.debug('Setting timestamp of the original update transaction');
-            setSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWallet.address);
-          }
+            // We want to set the timestamp of the first update transaction. We can determine if the transaction is the
+            // original one if it is't not a retry of a pending transaction. That is, iff there is no timestamp for the
+            // particular sponsor wallet. This assumes that a single sponsor updates a single dAPI.
+            if (!hasPendingTransaction(chainId, providerName, sponsorWallet.address)) {
+              logger.debug('Setting timestamp of the original update transaction');
+              setSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWallet.address);
+            }
 
-          logger.debug('Updating dAPI', { gasPrice: goGasPrice.data, gasLimit });
-          return (
-            api3ServerV1
-              // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
-              // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
-              .connect(sponsorWallet.connect(api3ServerV1.provider))
-              .tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit })
-          );
-        });
+            logger.debug('Updating dAPI', { gasPrice: goGasPrice.data, gasLimit });
+            return (
+              api3ServerV1
+                // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
+                // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
+                .connect(sponsorWallet.connect(api3ServerV1.provider))
+                .tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit })
+            );
+          },
+          { totalTimeoutMs: dataFeedUpdateIntervalMs }
+        );
 
         if (!goUpdate.success) {
           logger.error(`Failed to update a dAPI`, goUpdate.error);
