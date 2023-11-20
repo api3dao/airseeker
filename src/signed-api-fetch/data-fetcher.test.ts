@@ -11,7 +11,6 @@ jest.mock('axios');
 
 describe('data fetcher', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
     initializeState();
     localDataStore.clear();
     updateState((draft) => {
