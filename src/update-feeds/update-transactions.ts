@@ -47,17 +47,15 @@ export const updateFeeds = async (
         const goUpdate = await go(
           async () => {
             // Create calldata for all beacons of the particular data feed the dAPI points to.
-            const beaconUpdateCalls = updatableBeacons.map((beacon) => {
-              const { signedData } = beacon;
-
-              return api3ServerV1.interface.encodeFunctionData('updateBeaconWithSignedData', [
+            const beaconUpdateCalls = updatableBeacons.map(({ signedData }) =>
+              api3ServerV1.interface.encodeFunctionData('updateBeaconWithSignedData', [
                 signedData.airnode,
                 signedData.templateId,
                 signedData.timestamp,
                 signedData.encodedValue,
                 signedData.signature,
-              ]);
-            });
+              ])
+            );
 
             // If there are multiple beacons in the data feed it's a beacons set which we need to update as well.
             const dataFeedUpdateCalldatas =
@@ -154,24 +152,4 @@ export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiName:
   });
 
   return sponsorWallet;
-};
-
-export const createDummyBeaconUpdateData = async (dummyAirnode: ethers.Wallet = ethers.Wallet.createRandom()) => {
-  const dummyBeaconTemplateId = ethers.utils.hexlify(ethers.utils.randomBytes(32));
-  const dummyBeaconTimestamp = Math.floor(Date.now() / 1000);
-  const randomBytes = ethers.utils.randomBytes(Math.floor(Math.random() * 27) + 1);
-  const dummyBeaconData = ethers.utils.defaultAbiCoder.encode(
-    ['int224'],
-    // Any random number that fits into an int224
-    [ethers.BigNumber.from(randomBytes)]
-  );
-  const dummyBeaconSignature = await dummyAirnode.signMessage(
-    ethers.utils.arrayify(
-      ethers.utils.solidityKeccak256(
-        ['bytes32', 'uint256', 'bytes'],
-        [dummyBeaconTemplateId, dummyBeaconTimestamp, dummyBeaconData]
-      )
-    )
-  );
-  return { dummyAirnode, dummyBeaconTemplateId, dummyBeaconTimestamp, dummyBeaconData, dummyBeaconSignature };
 };

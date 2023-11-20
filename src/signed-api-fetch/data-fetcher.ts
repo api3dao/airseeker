@@ -39,7 +39,7 @@ export const stopDataFetcher = () => {
 /**
  * Calls a remote signed data URL.
  * @param url
- * @param signedDataFetchInterval
+ * @param signedDataFetchIntervalMs
  */
 export const callSignedDataApi = async (
   url: string,
