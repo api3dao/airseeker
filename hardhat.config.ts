@@ -1,6 +1,7 @@
 import type { HardhatUserConfig } from 'hardhat/types';
 
 import '@nomicfoundation/hardhat-toolbox';
+import '@nomiclabs/hardhat-ethers';
 
 const config: HardhatUserConfig = {
   solidity: { version: '0.8.18' },
