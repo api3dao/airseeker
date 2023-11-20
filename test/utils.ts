@@ -31,7 +31,6 @@ export const encodeBeaconFeedSet = (dataFeed: Beacon[]) =>
     ['address[]', 'bytes32[]'],
     [dataFeed.map((item) => item.airnodeAddress), dataFeed.map((item) => item.templateId)]
   );
-export const getUnixTimestamp = (dateString: string) => Math.floor(Date.parse(dateString) / 1000);
 
 export const generateSignedData = async (
   airnodeWallet: Wallet,
@@ -43,24 +42,4 @@ export const generateSignedData = async (
   const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
 
   return { airnode: airnodeWallet.address, templateId, timestamp: dataFeedTimestamp, encodedValue, signature };
-};
-
-export const createDummyBeaconUpdateData = async (dummyAirnode: ethers.Wallet = ethers.Wallet.createRandom()) => {
-  const dummyBeaconTemplateId = ethers.utils.hexlify(ethers.utils.randomBytes(32));
-  const dummyBeaconTimestamp = Math.floor(Date.now() / 1000);
-  const randomBytes = ethers.utils.randomBytes(Math.floor(Math.random() * 27) + 1);
-  const dummyBeaconData = ethers.utils.defaultAbiCoder.encode(
-    ['int224'],
-    // Any random number that fits into an int224
-    [ethers.BigNumber.from(randomBytes)]
-  );
-  const dummyBeaconSignature = await dummyAirnode.signMessage(
-    ethers.utils.arrayify(
-      ethers.utils.solidityKeccak256(
-        ['bytes32', 'uint256', 'bytes'],
-        [dummyBeaconTemplateId, dummyBeaconTimestamp, dummyBeaconData]
-      )
-    )
-  );
-  return { dummyAirnode, dummyBeaconTemplateId, dummyBeaconTimestamp, dummyBeaconData, dummyBeaconSignature };
 };

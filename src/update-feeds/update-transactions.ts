@@ -47,17 +47,15 @@ export const updateFeeds = async (
         const goUpdate = await go(
           async () => {
             // Create calldata for all beacons of the particular data feed the dAPI points to.
-            const beaconUpdateCalls = updatableBeacons.map((beacon) => {
-              const { signedData } = beacon;
-
-              return api3ServerV1.interface.encodeFunctionData('updateBeaconWithSignedData', [
+            const beaconUpdateCalls = updatableBeacons.map(({ signedData }) =>
+              api3ServerV1.interface.encodeFunctionData('updateBeaconWithSignedData', [
                 signedData.airnode,
                 signedData.templateId,
                 signedData.timestamp,
                 signedData.encodedValue,
                 signedData.signature,
-              ]);
-            });
+              ])
+            );
 
             // If there are multiple beacons in the data feed it's a beacons set which we need to update as well.
             const dataFeedUpdateCalldatas =
