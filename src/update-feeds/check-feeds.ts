@@ -23,8 +23,7 @@ export const getUpdatableFeeds = async (
   const uniqueBeaconIds = [
     ...new Set(batch.flatMap((item) => item.decodedDataFeed.beacons.flatMap((beacon) => beacon.beaconId))),
   ];
-  const onChainFeedValues = await multicallBeaconValues(uniqueBeaconIds, providerName, provider, chainId);
-
+  const onChainFeedValues = await multicallBeaconValues(uniqueBeaconIds, provider, chainId);
   // Merge the latest values into the batch
   return (
     batch
@@ -107,7 +106,6 @@ interface OnChainValue {
 
 export const multicallBeaconValues = async (
   batch: BeaconId[],
-  providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
   chainId: ChainId
 ): Promise<OnChainValue[]> => {
