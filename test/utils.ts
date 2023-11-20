@@ -31,7 +31,6 @@ export const encodeBeaconFeedSet = (dataFeed: Beacon[]) =>
     ['address[]', 'bytes32[]'],
     [dataFeed.map((item) => item.airnodeAddress), dataFeed.map((item) => item.templateId)]
   );
-export const getUnixTimestamp = (dateString: string) => Math.floor(Date.parse(dateString) / 1000);
 
 export const generateSignedData = async (
   airnodeWallet: Wallet,
