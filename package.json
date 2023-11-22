@@ -12,7 +12,7 @@
     "*.js"
   ],
   "scripts": {
-    "build": "pnpm run contracts:compile && tsc --project tsconfig.build.json",
+    "build": "tsc --project tsconfig.build.json",
     "clean": "rm -rf coverage dist artifacts cache src/typechain-types",
     "contracts:compile:force": "hardhat compile --force",
     "contracts:compile": "hardhat compile",

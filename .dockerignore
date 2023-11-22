@@ -25,4 +25,4 @@
 **/artifacts
 **/coverage.json
 **/typechain
-**/typechain-types
+# **/typechain-types TODO: Re-enable
