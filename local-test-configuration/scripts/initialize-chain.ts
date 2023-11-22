@@ -50,6 +50,8 @@ export const deriveRole = (adminRole: string, roleDescription: string) => {
   );
 };
 
+// NOTE: This function is not used by the initialization script, but you can use it after finishing Airseeker test on a
+// public testnet to refund test ETH from sponsor wallets to the funder wallet.
 export const refundFunder = async (funderWallet: ethers.Wallet) => {
   const airseekerSecrets = dotenv.parse(readFileSync(join(__dirname, `/../airseeker`, 'secrets.env'), 'utf8'));
   const airseekerWalletMnemonic = airseekerSecrets.SPONSOR_WALLET_MNEMONIC;
@@ -59,13 +61,21 @@ export const refundFunder = async (funderWallet: ethers.Wallet) => {
   for (const beaconSetName of getBeaconSetNames()) {
     const dapiName = ethers.utils.formatBytes32String(beaconSetName);
 
-    const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName);
+    const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName).connect(funderWallet.provider);
     const sponsorWalletBalance = await funderWallet.provider.getBalance(sponsorWallet.address);
     console.info('Sponsor wallet balance:', ethers.utils.formatEther(sponsorWalletBalance.toString()));
 
+    const gasPrice = await sponsorWallet.provider.getGasPrice();
+    const gasFee = gasPrice.mul(ethers.BigNumber.from(21_000));
+    if (sponsorWalletBalance.sub(gasFee).lt(ethers.constants.Zero)) {
+      console.info('Sponsor wallet balance is too low, skipping refund');
+      continue;
+    }
     const tx = await sponsorWallet.sendTransaction({
       to: funderWallet.address,
-      value: sponsorWalletBalance,
+      gasPrice,
+      gasLimit: ethers.BigNumber.from(21_000),
+      value: sponsorWalletBalance.sub(gasFee),
     });
     await tx.wait();
 
