@@ -305,7 +305,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     tx = await dapiDataRegistry.connect(randomPerson).registerDataFeed(encodedBeaconSetData);
     await tx.wait();
     const HUNDRED_PERCENT = 1e8;
-    const deviationThresholdInPercentage = ethers.BigNumber.from(HUNDRED_PERCENT / 100); // 1%
+    const deviationThresholdInPercentage = ethers.BigNumber.from(HUNDRED_PERCENT / 100); // 1% TODO: revert
     const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
     const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
     const [dapiName, beaconSetId, sponsorWalletMnemonic] = dapiTreeValue;
