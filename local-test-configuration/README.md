@@ -7,7 +7,8 @@ the setup:
   different API. One of the APIs is delayed so that the beacons have different values.
 - Use 2 signed APIs and each Pusher pushes to a separate Signed API.
 - We run Airseeker only on Hardhat network for setup simplicity. Initially, I wanted to have a Polygon testnet as well,
-  but gave up on that idea for now.
+  but gave up on that idea for now. The setup can be easily extended to run on any chain, just by not starting Hardhat
+  network and using a different RPCs.
 
 All configurations are based on the example files, but have been slightly modified. I had to also choose more volatile
 assets from the Nodary API to see Airseeker updates.
@@ -25,13 +26,13 @@ assets from the Nodary API to see Airseeker updates.
 - Start Signed API 1 on port `4001` (in a separate terminal):
 
 ```sh
-docker run --publish 4001:8090 -it --init --volume $(pwd)/local-test-configuration/signed-api-1:/app/config --env-file ./local-test-configuration/signed-api-1/.env --rm --memory=256m api3/signed-api:latest
+docker run --publish 4001:80 -it --init --volume $(pwd)/local-test-configuration/signed-api-1:/app/config --env-file ./local-test-configuration/signed-api-1/.env --rm --memory=256m api3/signed-api:latest
 ```
 
 - Start Signed API 2 on port `4002` (in a separate terminal):
 
 ```sh
-docker run --publish 4002:8090 -it --init --volume $(pwd)/local-test-configuration/signed-api-2:/app/config --env-file ./local-test-configuration/signed-api-2/.env --rm --memory=256m api3/signed-api:latest
+docker run --publish 4002:80 -it --init --volume $(pwd)/local-test-configuration/signed-api-2:/app/config --env-file ./local-test-configuration/signed-api-2/.env --rm --memory=256m api3/signed-api:latest
 ```
 
 You can go to `http://localhost:4001/` and `http://localhost:4002/` to see the Signed API 1 and 2 respectively.
@@ -65,8 +66,11 @@ also required for the monitoring page.
 
 - Open the monitoring page located in `local-test-configuration/monitoring/index.html` in a browser with the following
   query parameters appended
-  `api3ServerV1Address=<DEPLOYED_API3_SERVER_V1_ADDRESS>&dapiDataRegistryAddress=<DEPLOYED_DAPI_DATA_REGISTRY_ADDRESS>`
+  `api3ServerV1Address=<DEPLOYED_API3_SERVER_V1_ADDRESS>&dapiDataRegistryAddress=<DEPLOYED_DAPI_DATA_REGISTRY_ADDRESS>&rpcUrl=<RPC_URL>&airseekerMnemonic=<AIRSEEKER_MNEMONIC>`
   and open console.
+
+The `AIRSEEKER_MNEMONIC` needs to be URI encoded via `encodeURIComponent` in JS. For example,
+`test%20test%20test%20test%20test%20test%20test%20test%20test%20test%20test%20junk`.
 
 Initially, you should see errors because the beacons are not initialized. After you run Airseeker, it will do the
 updates and the errors should be gone. The page constantly polls the chain and respective signed APIs and compares the

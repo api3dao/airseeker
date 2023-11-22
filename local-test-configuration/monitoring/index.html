@@ -1449,9 +1449,10 @@
 
     // Configuration
     const urlParams = new URLSearchParams(window.location.search);
-    const rpcUrl = 'http://127.0.0.1:8545',
+    const rpcUrl = urlParams.get('rpcUrl'),
       api3ServerV1Address = urlParams.get('api3ServerV1Address'),
-      dapiDataRegistryAddress = urlParams.get('dapiDataRegistryAddress');
+      dapiDataRegistryAddress = urlParams.get('dapiDataRegistryAddress'),
+      airseekerMnemonic = decodeURIComponent(urlParams.get('airseekerMnemonic'));
 
     if (!api3ServerV1Address) throw new Error('api3ServerV1Address must be provided as URL parameter');
     if (!dapiDataRegistryAddress) throw new Error('dapiDataRegistryAddress must be provided as URL parameter');
@@ -1534,6 +1535,28 @@
       return updateInPercentage.gt(deviationThreshold);
     };
 
+    function deriveWalletPathFromSponsorAddress(sponsorAddress) {
+      const sponsorAddressBN = ethers.BigNumber.from(sponsorAddress);
+      const paths = [];
+      for (let i = 0; i < 6; i++) {
+        const shiftedSponsorAddressBN = sponsorAddressBN.shr(31 * i);
+        paths.push(shiftedSponsorAddressBN.mask(31).toString());
+      }
+      const AIRSEEKER_PROTOCOL_ID = '5'; // From: https://github.com/api3dao/airnode/blob/ef16c54f33d455a1794e7886242567fc47ee14ef/packages/airnode-protocol/src/index.ts#L46
+      return `${AIRSEEKER_PROTOCOL_ID}/${paths.join('/')}`;
+    }
+
+    const deriveSponsorWallet = (sponsorWalletMnemonic, dapiName) => {
+      // Take first 20 bytes of dapiName as sponsor address together with the "0x" prefix.
+      const sponsorAddress = ethers.utils.getAddress(dapiName.slice(0, 42));
+      const sponsorWallet = ethers.Wallet.fromMnemonic(
+        sponsorWalletMnemonic,
+        `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
+      );
+
+      return sponsorWallet;
+    };
+
     setInterval(async () => {
       const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
       const dapiDataRegistry = new ethers.Contract(dapiDataRegistryAddress, dapiDataRegistryAbi, provider);
@@ -1580,7 +1603,7 @@
 
         const deviationPercentage = calculateUpdateInPercentage(value, newBeaconSetValue).toNumber() / 1e6;
         const deviationThresholdPercentage = deviationThresholdInPercentage.toNumber() / 1e6;
-
+        const sponsorWallet = deriveSponsorWallet(airseekerMnemonic, dapiName);
         const dapiInfo = {
           dapiName: dapiName,
           decodedDapiName: ethers.utils.parseBytes32String(dapiName),
@@ -1592,11 +1615,13 @@
           deviationPercentage:
             deviationPercentage > deviationThresholdPercentage ? `<b>${deviationPercentage}</b>` : deviationPercentage,
           deviationThresholdPercentage: deviationThresholdPercentage,
+          sponsorWalletAddress: sponsorWallet.address,
+          sponsorWalletBalance: ethers.utils.formatEther(await provider.getBalance(sponsorWallet.address)),
         };
 
         newActiveDapisHtml += JSON.stringify(dapiInfo, null, 2) + '\n\n';
       }
       document.getElementById('activeDapis').innerHTML = newActiveDapisHtml;
-    }, 1000);
+    }, 3000);
   </script>
 </html>
