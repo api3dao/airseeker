@@ -21,6 +21,26 @@ Link to the
 2. `cp config/airseeker.example.json config/airseeker.json` - To create the configuration file.
 3. `cp config/secrets.example.env config/secrets.env` - To create the secrets file.
 
+## Versioning and release
+
+Airseeker uses [semantic versioning](https://semver.org/). The version is specified in the `package.json` file. The
+package is not published to NPM, but instead dockerized and published to Docker Hub.
+
+To release a new version:
+
+1. `git checkout main` - Always version from `main` branch. Also, ensure that the working directory is clean (has no
+   uncommitted changes).
+2. `contracts:compile:force` - Build the latest Typechain artifacts.
+3. `pnpm version [major|minor|patch]` - Choose the right version bump. This will bump the version, create a git tag and
+   commit it.
+4. Build the docker image with tag `api3/signed-api:latest`. If running on Linux, use `pnpm run docker:build` otherwise
+   use `pnpm run docker:build:amd64`.
+5. `docker tag api3/signed-api:latest api3/signed-api:<MAJOR.MINOR.PATCH>` - Tag the image with the version. Replace the
+   `<MAJOR.MINOR.PATCH>` with the version you just bumped (copy it from `package.json`).
+6. `docker push api3/signed-api:latest && docker push api3/signed-api:<MAJOR.MINOR.PATCH>` - Push the image upstream.
+   Both the latest and the versioned tag should be published.
+7. `git push --follow-tags` - Push the tagged commit upstream.
+
 ## Configuration
 
 Airseeker can be configured via a combination of [environment variables](#environment-variables) and
@@ -208,10 +228,11 @@ A list of signed API URLs to call along with URLs fetched from the chain.
 
 ### Build
 
-The docker image can be built by running the following command from the root directory:
+The docker image can be built by running the following commands from the root directory:
 
 ```sh
-yarn docker:build
+pnpm run contracts:compile # The Typechain artifacts are copied over to the Docker image.
+pnpm run docker:build
 ```
 
 ### Run
@@ -219,5 +240,5 @@ yarn docker:build
 The docker image can be run locally with:
 
 ```sh
-yarn docker:run
+pnpm run docker:run
 ```
