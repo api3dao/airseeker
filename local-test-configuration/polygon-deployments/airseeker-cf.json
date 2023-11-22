@@ -1,0 +1,211 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "A CloudFormation template for deploying the Airseeker v2 on AWS",
+  "Parameters": {
+    "sponsorWalletMnemonic": {
+      "Type": "String",
+      "MinLength": 10,
+      "Description": "Mnemonic phrase of your Airseeker used to derive sponsor wallets"
+    }
+  },
+  "Resources": {
+    "CloudWatchLogsGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "AirseekerLogGroup",
+        "RetentionInDays": 7
+      }
+    },
+    "AppDefinition": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "NetworkMode": "awsvpc",
+        "Cpu": 256,
+        "Memory": 512,
+        "ExecutionRoleArn": {
+          "Ref": "ECSTaskRole"
+        },
+        "RequiresCompatibilities": ["FARGATE"],
+        "ContainerDefinitions": [
+          {
+            "Name": "Airseeker-a1369a2f2e8fe6af191b667478fcac1112672b35",
+            "Image": "siegrift/api3-airseeker-v2:a1369a2f2e8fe6af191b667478fcac1112672b35",
+            "Environment": [
+              {
+                "Name": "SECRETS_ENV",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "SPONSOR_WALLET_MNEMONIC",
+                      "=",
+                      { "Ref": "sponsorWalletMnemonic" },
+                      "\\n",
+                      "API3_SERVER_V1_ADDRESS",
+                      "=",
+                      "0x9A0F9f6dE89BE3D155483A469a5feB2eE875fB5F",
+                      "\\n",
+                      "DAPI_DATA_REGISTRY_ADDRESS",
+                      "=",
+                      "0xb062aE0e1bBf6E2D1a9eA6e5750357979eA8A3f6"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "LOG_LEVEL",
+                "Value": "debug"
+              }
+            ],
+            "EntryPoint": [
+              "/bin/sh",
+              "-c",
+              "echo -e $SECRETS_ENV >> ./config/secrets.env && wget -O - https://raw.githubusercontent.com/api3dao/airseeker-v2/polygon-aws/local-test-configuration/airseeker/airseeker.example.json >> ./config/airseeker.json && node dist/index.js"
+            ],
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "CloudWatchLogsGroup"
+                },
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                },
+                "awslogs-stream-prefix": "siegrift-airseeker-1700482577"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "AppCluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "ClusterName": "AirseekerCluster-1700482577"
+      }
+    },
+    "AppService": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Ref": "AppCluster"
+        },
+        "ServiceName": "AirseekerService",
+        "DesiredCount": 1,
+        "LaunchType": "FARGATE",
+        "TaskDefinition": {
+          "Ref": "AppDefinition"
+        },
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "ENABLED",
+            "Subnets": [
+              {
+                "Ref": "InstanceSubnet"
+              }
+            ]
+          }
+        },
+        "DeploymentConfiguration": {
+          "MinimumHealthyPercent": 100,
+          "MaximumPercent": 200
+        }
+      }
+    },
+    "InstanceVPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsSupport": true,
+        "EnableDnsHostnames": true
+      }
+    },
+    "InstanceInternetGateway": {
+      "Type": "AWS::EC2::InternetGateway"
+    },
+    "InstanceVPCGatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "InstanceVPC"
+        },
+        "InternetGatewayId": {
+          "Ref": "InstanceInternetGateway"
+        }
+      }
+    },
+    "InstancePublicRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "InstanceVPC"
+        }
+      }
+    },
+    "InstancePublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "InstanceVPCGatewayAttachment",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "InstancePublicRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InstanceInternetGateway"
+        }
+      }
+    },
+    "InstanceSubnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/24",
+        "VpcId": {
+          "Ref": "InstanceVPC"
+        },
+        "MapPublicIpOnLaunch": true
+      }
+    },
+    "InstancePublicSubnet1RouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "InstancePublicRouteTable"
+        },
+        "SubnetId": {
+          "Ref": "InstanceSubnet"
+        }
+      }
+    },
+    "ECSTaskRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": ["ecs-tasks.amazonaws.com"]
+            },
+            "Action": ["sts:AssumeRole"]
+          }
+        },
+        "Policies": [
+          {
+            "PolicyName": "ECSTaskExecutionRolePolicy",
+            "PolicyDocument": {
+              "Statement": {
+                "Effect": "Allow",
+                "Action": [
+                  "logs:CreateLogGroup",
+                  "logs:CreateLogStream",
+                  "logs:DescribeLogStreams",
+                  "logs:PutLogEvents"
+                ],
+                "Resource": "*"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
