@@ -50,6 +50,36 @@ export const deriveRole = (adminRole: string, roleDescription: string) => {
   );
 };
 
+export const refundFunder = async (funderWallet: ethers.Wallet) => {
+  const airseekerSecrets = dotenv.parse(readFileSync(join(__dirname, `/../airseeker`, 'secrets.env'), 'utf8'));
+  const airseekerWalletMnemonic = airseekerSecrets.SPONSOR_WALLET_MNEMONIC;
+  if (!airseekerWalletMnemonic) throw new Error('SPONSOR_WALLET_MNEMONIC not found in Airseeker secrets');
+
+  // Initialize sponsor wallets
+  for (const beaconSetName of getBeaconSetNames()) {
+    const dapiName = ethers.utils.formatBytes32String(beaconSetName);
+
+    const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName);
+    const sponsorWalletBalance = await funderWallet.provider.getBalance(sponsorWallet.address);
+    console.info('Sponsor wallet balance:', ethers.utils.formatEther(sponsorWalletBalance.toString()));
+
+    const tx = await sponsorWallet.sendTransaction({
+      to: funderWallet.address,
+      value: sponsorWalletBalance,
+    });
+    await tx.wait();
+
+    console.info(`Refunding funder wallet from sponsor wallet`, {
+      dapiName,
+      sponsorWalletAddress: sponsorWallet.address,
+    });
+  }
+};
+
+const joinUrl = (url: string, path: string) => {
+  return new URL(path, url).href;
+};
+
 const loadPusherConfig = (pusherDir: 'pusher-1' | 'pusher-2') => {
   const configPath = join(__dirname, `/../`, pusherDir);
   const rawConfig = JSON.parse(readFileSync(join(configPath, 'pusher.json'), 'utf8'));
@@ -190,8 +220,8 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   // Register merkle tree hashes
   const timestamp = Math.floor(Date.now() / 1000);
   const apiTreeValues = [
-    [pusher1Wallet.address, `${pusher1.signedApis[0].url}/default`], // NOTE: Pusher pushes to the "/" of the signed API, but we need to query it additional path.
-    [pusher2Wallet.address, `${pusher2.signedApis[0].url}/default`], // NOTE: Pusher pushes to the "/" of the signed API, but we need to query it additional path.
+    [pusher1Wallet.address, joinUrl(pusher1.signedApis[0].url, 'default')], // NOTE: Pusher pushes to the "/" of the signed API, but we need to query it additional path.
+    [pusher2Wallet.address, joinUrl(pusher2.signedApis[0].url, 'default')], // NOTE: Pusher pushes to the "/" of the signed API, but we need to query it additional path.
   ] as const;
   const apiTree = StandardMerkleTree.of(apiTreeValues as any, ['address', 'string']);
   const apiHashType = ethers.utils.solidityKeccak256(['string'], ['Signed API URL Merkle tree root']);
@@ -215,11 +245,12 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   const airseekerWalletMnemonic = airseekerSecrets.SPONSOR_WALLET_MNEMONIC;
   if (!airseekerWalletMnemonic) throw new Error('SPONSOR_WALLET_MNEMONIC not found in Airseeker secrets');
   const dapiNamesInfo = zip(beaconSetNames, beaconSetIds).map(([beaconSetName, beaconSetId]) => {
-    const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, beaconSetName!);
-    return [beaconSetName!, beaconSetId!, sponsorWallet.address] as const;
+    const dapiName = ethers.utils.formatBytes32String(beaconSetName!);
+    const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName);
+    return [dapiName, beaconSetId!, sponsorWallet.address] as const;
   });
   const dapiTreeValues = dapiNamesInfo.map(([dapiName, beaconSetId, sponsorWalletAddress]) => {
-    return [ethers.utils.formatBytes32String(dapiName), beaconSetId, sponsorWalletAddress];
+    return [dapiName, beaconSetId, sponsorWalletAddress];
   });
   const dapiTree = StandardMerkleTree.of(dapiTreeValues, ['bytes32', 'bytes32', 'address']);
   const dapiTreeRoot = dapiTree.root;
