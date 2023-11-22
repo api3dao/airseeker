@@ -17,7 +17,7 @@
     "CloudWatchLogsGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "PusherLogGroup",
+        "LogGroupName": "PusherLogGroup-1700662735",
         "RetentionInDays": 7
       }
     },

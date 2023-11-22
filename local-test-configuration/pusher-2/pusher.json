@@ -36,7 +36,7 @@
   "signedApis": [
     {
       "name": "signed-api-2",
-      "url": "signed-api-elb-id-2-711433081.us-east-1.elb.amazonaws.com"
+      "url": "http://signed-api-elb-id-2-711433081.us-east-1.elb.amazonaws.com"
     }
   ],
   "ois": [
