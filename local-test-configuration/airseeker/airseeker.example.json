@@ -7,8 +7,8 @@
         "DapiDataRegistry": "${DAPI_DATA_REGISTRY_ADDRESS}"
       },
       "providers": {
-        "hardhat": {
-          "url": "http://${LOCALHOST_IP}:8545"
+        "polygon-testnet": {
+          "url": "https://polygon-mumbai-bor.publicnode.com"
         }
       },
       "gasSettings": {

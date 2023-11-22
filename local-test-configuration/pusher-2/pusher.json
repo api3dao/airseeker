@@ -22,7 +22,7 @@
   "triggers": {
     "signedApiUpdates": [
       {
-        "signedApiName": "localhost",
+        "signedApiName": "signed-api-2",
         "templateIds": [
           "0xa5419706d8edb3bbafad83fe2b4e7dc851de5e4cd9529f9f27bb393016c81ae5",
           "0x8f255387c5fdb03117d82372b8fa5c7813881fd9a8202b7cc373f1a5868496b2",
@@ -35,8 +35,8 @@
   },
   "signedApis": [
     {
-      "name": "localhost",
-      "url": "http://${LOCALHOST_IP}:4002"
+      "name": "signed-api-2",
+      "url": "signed-api-elb-id-2-711433081.us-east-1.elb.amazonaws.com"
     }
   ],
   "ois": [
@@ -94,7 +94,7 @@
   ],
   "nodeSettings": {
     "nodeVersion": "0.1.0",
-    "airnodeWalletMnemonic": "${AIRNODE_WALLET_MNEMONIC}",
+    "airnodeWalletMnemonic": "${WALLET_MNEMONIC}",
     "stage": "local-example"
   }
 }
