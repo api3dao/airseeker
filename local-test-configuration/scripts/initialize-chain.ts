@@ -102,8 +102,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     registryOwner = funderWallet,
     api3MarketContract = funderWallet,
     rootSigner1 = funderWallet,
-    randomPerson = funderWallet,
-    walletFunder = funderWallet;
+    randomPerson = funderWallet;
 
   // Deploy contracts
   const accessControlRegistryFactory = new AccessControlRegistryFactory(deployer as Signer);
@@ -170,14 +169,6 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     .grantRole(await api3ServerV1.dapiNameSetterRole(), dapiDataRegistry.address);
   await tx.wait();
 
-  // Initialize special wallet for contract initialization
-  const airseekerInitializationWallet = ethers.Wallet.createRandom().connect(provider);
-  tx = await walletFunder.sendTransaction({
-    to: airseekerInitializationWallet.address,
-    value: ethers.utils.parseEther('1'),
-  });
-  await tx.wait();
-
   // Create templates
   const pusher1 = loadPusherConfig('pusher-1');
   const pusher2 = loadPusherConfig('pusher-2');
@@ -220,9 +211,13 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   await tx.wait();
 
   // Add dAPIs hashes
-  const dapiNamesInfo = zip(beaconSetNames, beaconSetIds).map(
-    ([beaconSetName, beaconSetId]) => [beaconSetName!, beaconSetId!, airseekerInitializationWallet.address] as const
-  );
+  const airseekerSecrets = dotenv.parse(readFileSync(join(__dirname, `/../airseeker`, 'secrets.env'), 'utf8'));
+  const airseekerWalletMnemonic = airseekerSecrets.SPONSOR_WALLET_MNEMONIC;
+  if (!airseekerWalletMnemonic) throw new Error('SPONSOR_WALLET_MNEMONIC not found in Airseeker secrets');
+  const dapiNamesInfo = zip(beaconSetNames, beaconSetIds).map(([beaconSetName, beaconSetId]) => {
+    const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, beaconSetName!);
+    return [beaconSetName!, beaconSetId!, sponsorWallet.address] as const;
+  });
   const dapiTreeValues = dapiNamesInfo.map(([dapiName, beaconSetId, sponsorWalletAddress]) => {
     return [ethers.utils.formatBytes32String(dapiName), beaconSetId, sponsorWalletAddress];
   });
