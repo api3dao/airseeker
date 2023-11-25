@@ -8,7 +8,7 @@ import {
 } from '@api3/airnode-protocol-v1';
 import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import dotenv from 'dotenv';
-import type { Signer } from 'ethers';
+import type { ContractTransaction, Signer } from 'ethers';
 import { ethers } from 'ethers';
 import { zip } from 'lodash';
 
@@ -50,6 +50,46 @@ export const deriveRole = (adminRole: string, roleDescription: string) => {
   );
 };
 
+// NOTE: This function is not used by the initialization script, but you can use it after finishing Airseeker test on a
+// public testnet to refund test ETH from sponsor wallets to the funder wallet.
+export const refundFunder = async (funderWallet: ethers.Wallet) => {
+  const airseekerSecrets = dotenv.parse(readFileSync(join(__dirname, `/../airseeker`, 'secrets.env'), 'utf8'));
+  const airseekerWalletMnemonic = airseekerSecrets.SPONSOR_WALLET_MNEMONIC;
+  if (!airseekerWalletMnemonic) throw new Error('SPONSOR_WALLET_MNEMONIC not found in Airseeker secrets');
+
+  // Initialize sponsor wallets
+  for (const beaconSetName of getBeaconSetNames()) {
+    const dapiName = ethers.utils.formatBytes32String(beaconSetName);
+
+    const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName).connect(funderWallet.provider);
+    const sponsorWalletBalance = await funderWallet.provider.getBalance(sponsorWallet.address);
+    console.info('Sponsor wallet balance:', ethers.utils.formatEther(sponsorWalletBalance.toString()));
+
+    const gasPrice = await sponsorWallet.provider.getGasPrice();
+    const gasFee = gasPrice.mul(ethers.BigNumber.from(21_000));
+    if (sponsorWalletBalance.sub(gasFee).lt(ethers.constants.Zero)) {
+      console.info('Sponsor wallet balance is too low, skipping refund');
+      continue;
+    }
+    const tx = await sponsorWallet.sendTransaction({
+      to: funderWallet.address,
+      gasPrice,
+      gasLimit: ethers.BigNumber.from(21_000),
+      value: sponsorWalletBalance.sub(gasFee),
+    });
+    await tx.wait();
+
+    console.info(`Refunding funder wallet from sponsor wallet`, {
+      dapiName,
+      sponsorWalletAddress: sponsorWallet.address,
+    });
+  }
+};
+
+const joinUrl = (url: string, path: string) => {
+  return new URL(path, url).href;
+};
+
 const loadPusherConfig = (pusherDir: 'pusher-1' | 'pusher-2') => {
   const configPath = join(__dirname, `/../`, pusherDir);
   const rawConfig = JSON.parse(readFileSync(join(configPath, 'pusher.json'), 'utf8'));
@@ -59,27 +99,38 @@ const loadPusherConfig = (pusherDir: 'pusher-1' | 'pusher-2') => {
   return interpolateSecrets(rawConfig, secrets);
 };
 
-export const fundAirseekerSponsorWallet = async (
-  funderWallet: ethers.Wallet,
-  { beaconSetNames }: { beaconSetNames: string[] }
-) => {
+const getBeaconSetNames = () => {
+  const pusher = loadPusherConfig('pusher-1');
+  const pusherWallet = ethers.Wallet.fromMnemonic(pusher.nodeSettings.airnodeWalletMnemonic);
+  const pusherBeacons = Object.values(pusher.templates).map((template: any) => {
+    return deriveBeaconData({ ...template, airnodeAddress: pusherWallet.address });
+  });
+
+  return pusherBeacons.map((beacon) => beacon.parameters[0]!.value);
+};
+
+export const fundAirseekerSponsorWallet = async (funderWallet: ethers.Wallet) => {
   const airseekerSecrets = dotenv.parse(readFileSync(join(__dirname, `/../airseeker`, 'secrets.env'), 'utf8'));
   const airseekerWalletMnemonic = airseekerSecrets.SPONSOR_WALLET_MNEMONIC;
   if (!airseekerWalletMnemonic) throw new Error('SPONSOR_WALLET_MNEMONIC not found in Airseeker secrets');
 
   // Initialize sponsor wallets
-  for (const beaconSetName of beaconSetNames) {
+  for (const beaconSetName of getBeaconSetNames()) {
     const dapiName = ethers.utils.formatBytes32String(beaconSetName);
 
-    const sponsor1Wallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName);
-    await funderWallet.sendTransaction({
-      to: sponsor1Wallet.address,
+    const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName);
+    const sponsorWalletBalance = await funderWallet.provider.getBalance(sponsorWallet.address);
+    console.info('Sponsor wallet balance:', ethers.utils.formatEther(sponsorWalletBalance.toString()));
+
+    const tx = await funderWallet.sendTransaction({
+      to: sponsorWallet.address,
       value: ethers.utils.parseEther('1'),
     });
+    await tx.wait();
 
     console.info(`Funding sponsor wallets`, {
       dapiName,
-      sponsor1WalletAddress: sponsor1Wallet.address,
+      sponsorWalletAddress: sponsorWallet.address,
     });
   }
 };
@@ -91,12 +142,12 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     registryOwner = funderWallet,
     api3MarketContract = funderWallet,
     rootSigner1 = funderWallet,
-    randomPerson = funderWallet,
-    walletFunder = funderWallet;
+    randomPerson = funderWallet;
 
   // Deploy contracts
   const accessControlRegistryFactory = new AccessControlRegistryFactory(deployer as Signer);
   const accessControlRegistry = await accessControlRegistryFactory.deploy();
+  await accessControlRegistry.deployTransaction.wait();
   const api3ServerV1Factory = new Api3ServerV1Factory(deployer as Signer);
   const api3ServerV1AdminRoleDescription = 'Api3ServerV1 admin';
   const api3ServerV1 = await api3ServerV1Factory.deploy(
@@ -104,9 +155,12 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     api3ServerV1AdminRoleDescription,
     manager.address
   );
+  await api3ServerV1.deployTransaction.wait();
   const hashRegistryFactory = new HashRegistryFactory(deployer as Signer);
   const hashRegistry = await hashRegistryFactory.deploy();
-  await hashRegistry.connect(deployer).transferOwnership(registryOwner.address);
+  await hashRegistry.deployTransaction.wait();
+  const transferOwnershipTx = await hashRegistry.connect(deployer).transferOwnership(registryOwner.address);
+  await transferOwnershipTx.wait();
   const dapiDataRegistryFactory = new DapiDataRegistryFactory(deployer as Signer);
   const dapiDataRegistryAdminRoleDescription = 'DapiDataRegistry admin';
   const dapiDataRegistry = await dapiDataRegistryFactory.deploy(
@@ -116,6 +170,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     hashRegistry.address,
     api3ServerV1.address
   );
+  await dapiDataRegistry.deployTransaction.wait();
 
   // Set up roles
   const rootRole = deriveRootRole(manager.address);
@@ -123,35 +178,36 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   const dapiAdderRoleDescription = await dapiDataRegistry.DAPI_ADDER_ROLE_DESCRIPTION();
   const dapiAdderRole = deriveRole(dapiDataRegistryAdminRole, dapiAdderRoleDescription);
   const dapiRemoverRoleDescription = await dapiDataRegistry.DAPI_REMOVER_ROLE_DESCRIPTION();
-  await accessControlRegistry
+  let tx: ContractTransaction;
+  tx = await accessControlRegistry
     .connect(manager)
     .initializeRoleAndGrantToSender(rootRole, dapiDataRegistryAdminRoleDescription);
-  await accessControlRegistry
+  await tx.wait();
+  tx = await accessControlRegistry
     .connect(manager)
     .initializeRoleAndGrantToSender(dapiDataRegistryAdminRole, dapiAdderRoleDescription);
-  await accessControlRegistry
+  await tx.wait();
+  tx = await accessControlRegistry
     .connect(manager)
     .initializeRoleAndGrantToSender(dapiDataRegistryAdminRole, dapiRemoverRoleDescription);
-  await accessControlRegistry.connect(manager).grantRole(dapiAdderRole, api3MarketContract.address);
-  await accessControlRegistry
+  await tx.wait();
+  tx = await accessControlRegistry.connect(manager).grantRole(dapiAdderRole, api3MarketContract.address);
+  await tx.wait();
+  tx = await accessControlRegistry
     .connect(manager)
     .initializeRoleAndGrantToSender(rootRole, api3ServerV1AdminRoleDescription);
-  await accessControlRegistry
+  await tx.wait();
+  tx = await accessControlRegistry
     .connect(manager)
     .initializeRoleAndGrantToSender(
       await api3ServerV1.adminRole(),
       await api3ServerV1.DAPI_NAME_SETTER_ROLE_DESCRIPTION()
     );
-  await accessControlRegistry
+  await tx.wait();
+  tx = await accessControlRegistry
     .connect(manager)
     .grantRole(await api3ServerV1.dapiNameSetterRole(), dapiDataRegistry.address);
-
-  // Initialize special wallet for contract initialization
-  const airseekerInitializationWallet = ethers.Wallet.createRandom().connect(provider);
-  await walletFunder.sendTransaction({
-    to: airseekerInitializationWallet.address,
-    value: ethers.utils.parseEther('1'),
-  });
+  await tx.wait();
 
   // Create templates
   const pusher1 = loadPusherConfig('pusher-1');
@@ -174,8 +230,8 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   // Register merkle tree hashes
   const timestamp = Math.floor(Date.now() / 1000);
   const apiTreeValues = [
-    [pusher1Wallet.address, `${pusher1.signedApis[0].url}/default`], // NOTE: Pusher pushes to the "/" of the signed API, but we need to query it additional path.
-    [pusher2Wallet.address, `${pusher2.signedApis[0].url}/default`], // NOTE: Pusher pushes to the "/" of the signed API, but we need to query it additional path.
+    [pusher1Wallet.address, joinUrl(pusher1.signedApis[0].url, 'default')], // NOTE: Pusher pushes to the "/" of the signed API, but we need to query it additional path.
+    [pusher2Wallet.address, joinUrl(pusher2.signedApis[0].url, 'default')], // NOTE: Pusher pushes to the "/" of the signed API, but we need to query it additional path.
   ] as const;
   const apiTree = StandardMerkleTree.of(apiTreeValues as any, ['address', 'string']);
   const apiHashType = ethers.utils.solidityKeccak256(['string'], ['Signed API URL Merkle tree root']);
@@ -186,18 +242,25 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   const apiTreeRootSignatures = await Promise.all(
     rootSigners.map(async (rootSigner) => rootSigner.signMessage(apiMessages))
   );
-  await hashRegistry.connect(registryOwner).setupSigners(
+  tx = await hashRegistry.connect(registryOwner).setupSigners(
     apiHashType,
     rootSigners.map((rootSigner) => rootSigner.address)
   );
-  await hashRegistry.registerHash(apiHashType, apiTree.root, timestamp, apiTreeRootSignatures);
+  await tx.wait();
+  tx = await hashRegistry.registerHash(apiHashType, apiTree.root, timestamp, apiTreeRootSignatures);
+  await tx.wait();
 
   // Add dAPIs hashes
-  const dapiNamesInfo = zip(beaconSetNames, beaconSetIds).map(
-    ([beaconSetName, beaconSetId]) => [beaconSetName!, beaconSetId!, airseekerInitializationWallet.address] as const
-  );
+  const airseekerSecrets = dotenv.parse(readFileSync(join(__dirname, `/../airseeker`, 'secrets.env'), 'utf8'));
+  const airseekerWalletMnemonic = airseekerSecrets.SPONSOR_WALLET_MNEMONIC;
+  if (!airseekerWalletMnemonic) throw new Error('SPONSOR_WALLET_MNEMONIC not found in Airseeker secrets');
+  const dapiNamesInfo = zip(beaconSetNames, beaconSetIds).map(([beaconSetName, beaconSetId]) => {
+    const dapiName = ethers.utils.formatBytes32String(beaconSetName!);
+    const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName);
+    return [dapiName, beaconSetId!, sponsorWallet.address] as const;
+  });
   const dapiTreeValues = dapiNamesInfo.map(([dapiName, beaconSetId, sponsorWalletAddress]) => {
-    return [ethers.utils.formatBytes32String(dapiName), beaconSetId, sponsorWalletAddress];
+    return [dapiName, beaconSetId, sponsorWalletAddress];
   });
   const dapiTree = StandardMerkleTree.of(dapiTreeValues, ['bytes32', 'bytes32', 'address']);
   const dapiTreeRoot = dapiTree.root;
@@ -208,19 +271,22 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   const dapiTreeRootSignatures = await Promise.all(
     rootSigners.map(async (rootSigner) => rootSigner.signMessage(dapiMessages))
   );
-  await hashRegistry.connect(registryOwner).setupSigners(
+  tx = await hashRegistry.connect(registryOwner).setupSigners(
     dapiHashType,
     rootSigners.map((rootSigner) => rootSigner.address)
   );
-  await hashRegistry.registerHash(dapiHashType, dapiTreeRoot, timestamp, dapiTreeRootSignatures);
+  await tx.wait();
+  tx = await hashRegistry.registerHash(dapiHashType, dapiTreeRoot, timestamp, dapiTreeRootSignatures);
+  await tx.wait();
 
   // Set active dAPIs
   const apiTreeRoot = apiTree.root;
   for (const [airnode, url] of apiTreeValues) {
     const apiTreeProof = apiTree.getProof([airnode, url]);
-    await dapiDataRegistry
+    tx = await dapiDataRegistry
       .connect(api3MarketContract)
       .registerAirnodeSignedApiUrl(airnode, url, apiTreeRoot, apiTreeProof);
+    await tx.wait();
   }
   const dapiInfos = zip(pusher1Beacons, pusher2Beacons).map(([pusher1Beacon, pusher2Beacon], i) => {
     return {
@@ -236,13 +302,14 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
       ['address[]', 'bytes32[]'],
       [airnodes, templateIds]
     );
-    await dapiDataRegistry.connect(randomPerson).registerDataFeed(encodedBeaconSetData);
+    tx = await dapiDataRegistry.connect(randomPerson).registerDataFeed(encodedBeaconSetData);
+    await tx.wait();
     const HUNDRED_PERCENT = 1e8;
-    const deviationThresholdInPercentage = ethers.BigNumber.from(HUNDRED_PERCENT / 1000); // 0.1%
+    const deviationThresholdInPercentage = ethers.BigNumber.from(HUNDRED_PERCENT / 100); // 1%
     const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
     const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
     const [dapiName, beaconSetId, sponsorWalletMnemonic] = dapiTreeValue;
-    await dapiDataRegistry
+    tx = await dapiDataRegistry
       .connect(api3MarketContract)
       .addDapi(
         dapiName!,
@@ -254,6 +321,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
         dapiTree.root,
         dapiTree.getProof(dapiTreeValue)
       );
+    await tx.wait();
   }
 
   return {
@@ -282,12 +350,12 @@ async function main() {
   console.info('Funder balance:', ethers.utils.formatEther(balance.toString()));
   console.info();
 
-  const { beaconSetNames, api3ServerV1, dapiDataRegistry } = await deploy(funderWallet, provider);
+  const { api3ServerV1, dapiDataRegistry } = await deploy(funderWallet, provider);
   console.info('Api3ServerV1 deployed at:', api3ServerV1.address);
   console.info('DapiDataRegistry deployed at:', dapiDataRegistry.address);
   console.info();
 
-  await fundAirseekerSponsorWallet(funderWallet, { beaconSetNames });
+  await fundAirseekerSponsorWallet(funderWallet);
 }
 
 void main();
