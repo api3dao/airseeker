@@ -119,8 +119,7 @@ export const chainsSchema = z
 export const deviationThresholdCoefficientSchema = z
   .number()
   .positive()
-  .optional() // Explicitly agreed to make this optional. See: https://github.com/api3dao/airseeker-v2/pull/20#issuecomment-1750856113.
-  .default(1)
+  .default(1) // Explicitly agreed to make this optional. See: https://github.com/api3dao/airseeker-v2/pull/20#issuecomment-1750856113.
   .superRefine((coefficient, ctx) => {
     // Check if the number has a maximum of two decimals
     const decimalCount = coefficient.toString().split('.')[1]?.length;
