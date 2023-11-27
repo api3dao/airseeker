@@ -28,6 +28,8 @@ Airseeker can be configured via a combination of [environment variables](#enviro
 
 ### Environment variables
 
+All of the environment variables are optional and or set with default values for convenience.
+
 For example:
 
 ```sh
@@ -48,14 +50,16 @@ LOG_FORMAT=json
 LOG_LEVEL=info
 ```
 
-#### `LOGGER_ENABLED`
+#### `LOGGER_ENABLED` _(optional)_
 
 Enables or disables logging. Options:
 
 - `true` - Enables logging.
 - `false` - Disables logging.
 
-#### `LOG_FORMAT`
+Default: `true`.
+
+#### `LOG_FORMAT` _(optional)_
 
 The format of the log output. Options:
 
@@ -63,7 +67,9 @@ The format of the log output. Options:
 - `pretty` - Logs are formatted in a human-friendly "pretty" way. Ideal, when running the service locally and in
   development.
 
-#### `LOG_COLORIZE`
+Default: `json`.
+
+#### `LOG_COLORIZE` _(optional)_
 
 Enables or disables colors in the log output. Options:
 
@@ -71,7 +77,9 @@ Enables or disables colors in the log output. Options:
   Recommended when running locally and in development.
 - `false` - Disables colors in the log output. Recommended for production.
 
-#### `LOG_LEVEL`
+Default: `false`.
+
+#### `LOG_LEVEL` _(optional)_
 
 Defines the minimum level of logs. Logs with smaller level (severity) will be silenced. Options:
 
@@ -79,6 +87,8 @@ Defines the minimum level of logs. Logs with smaller level (severity) will be si
 - `info` - Enables logs with level `info`, `warn` and `error`.
 - `warn` - Enables logs with level `warn` and `error`.
 - `error` - Enables logs with level `error`.
+
+Default: `info`.
 
 ### Configuration files
 
