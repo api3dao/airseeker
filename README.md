@@ -173,7 +173,7 @@ The number of minutes used to calculate the scaling multiplier if a pending tran
 
 The maximum scaling multiplier used when the pending transaction lag exceeds the `scalingWindow`.
 
-#### `deviationThresholdCoefficient` _(optional)_
+##### `deviationThresholdCoefficient` _(optional)_
 
 The global coefficient applied to all deviation checks. Used to differentiate alternate deployments. For example:
 
@@ -183,13 +183,18 @@ The global coefficient applied to all deviation checks. Used to differentiate al
 
 Defaults to `1`.
 
-#### `dataFeedUpdateInterval`
+##### `dataFeedUpdateInterval`
 
 The interval specifying how often to run the data feed update loop. In seconds.
 
-#### `dataFeedBatchSize`
+##### `dataFeedBatchSize`
 
 The batch size of active dAPIs that are to be fetched in a single RPC call.
+
+##### `fallbackGasLimit` _(optional)_
+
+The fallback gas limit used when the estimated gas limit using the RPC provider fails. If not specified, Airseeker will
+only rely on RPC provider for gas limit estimation and will skip an update if this fails.
 
 #### `signedDataFetchInterval`
 

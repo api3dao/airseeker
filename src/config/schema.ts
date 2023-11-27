@@ -51,6 +51,7 @@ export const optionalChainSchema = z
     gasSettings: gasSettingsSchema,
     dataFeedUpdateInterval: z.number().positive(),
     dataFeedBatchSize: z.number().positive(),
+    fallbackGasLimit: z.number().positive().optional(),
   })
   .strict();
 
