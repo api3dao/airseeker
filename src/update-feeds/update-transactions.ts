@@ -63,6 +63,8 @@ export const updateFeeds = async (
                 ? [
                     ...beaconUpdateCalls,
                     api3ServerV1.interface.encodeFunctionData('updateBeaconSetWithBeacons', [
+                      // TODO: This needs all beacons in the data feed, not just the updatable ones. Write a test for
+                      // this.
                       updatableBeacons.map(({ beaconId }) => beaconId),
                     ]),
                   ]

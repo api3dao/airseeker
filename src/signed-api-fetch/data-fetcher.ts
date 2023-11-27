@@ -105,11 +105,7 @@ export const runDataFetcher = async () => {
               localDataStore.setStoreDataPoint(signedData);
             }
           },
-          {
-            retries: 0,
-            totalTimeoutMs: signedDataFetchIntervalMs,
-            attemptTimeoutMs: signedDataFetchIntervalMs,
-          }
+          { totalTimeoutMs: signedDataFetchIntervalMs }
         )
       )
     );

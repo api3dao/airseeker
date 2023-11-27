@@ -65,29 +65,20 @@ describe(multicallBeaconValues.name, () => {
 
     const callAndParseMulticallPromise = await multicallBeaconValues(feedIds as unknown as string[], provider, '31337');
 
-    expect(callAndParseMulticallPromise).toStrictEqual([
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(105),
-          value: ethers.BigNumber.from(100),
-        },
+    expect(callAndParseMulticallPromise).toStrictEqual({
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
+        timestamp: ethers.BigNumber.from(105),
+        value: ethers.BigNumber.from(100),
       },
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(106),
-          value: ethers.BigNumber.from(101),
-        },
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
+        timestamp: ethers.BigNumber.from(106),
+        value: ethers.BigNumber.from(101),
       },
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(107),
-          value: ethers.BigNumber.from(102),
-        },
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
+        timestamp: ethers.BigNumber.from(107),
+        value: ethers.BigNumber.from(102),
       },
-    ]);
+    });
     expect(tryMulticallMock).toHaveBeenCalledWith(['0xfirst', '0xsecond', '0xthird']);
   });
 });
@@ -107,30 +98,6 @@ describe(getUpdatableFeeds.name, () => {
   it('returns updatable feeds when value exceeds the threshold', async () => {
     jest.useFakeTimers().setSystemTime(90);
 
-    const multicallResult = [
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(150),
-          value: ethers.BigNumber.from('400'),
-        },
-      },
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(160),
-          value: ethers.BigNumber.from('500'),
-        },
-      },
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(170),
-          value: ethers.BigNumber.from('600'),
-        },
-      },
-    ];
-
     // Only the third feed will satisfy the timestamp check
     const mockSignedDataStore = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
@@ -146,12 +113,25 @@ describe(getUpdatableFeeds.name, () => {
         encodedValue: encodeBeaconValue('300'),
       },
     });
-
-    const getStoreDataPointSpy = jest.spyOn(signedDataStore, 'getStoreDataPoint');
-    getStoreDataPointSpy.mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
+    jest
+      .spyOn(signedDataStore, 'getStoreDataPoint')
+      .mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
 
     // None of the feeds failed to update
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue(multicallResult);
+    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
+        timestamp: ethers.BigNumber.from(150),
+        value: ethers.BigNumber.from('400'),
+      },
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
+        timestamp: ethers.BigNumber.from(160),
+        value: ethers.BigNumber.from('500'),
+      },
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
+        timestamp: ethers.BigNumber.from(170),
+        value: ethers.BigNumber.from('600'),
+      },
+    });
     jest.spyOn(logger, 'info');
 
     const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
@@ -169,7 +149,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = await getUpdatableFeeds(batch, 1, 'hardhat', provider, '31337');
+    const checkFeedsResult = await getUpdatableFeeds(batch, 1, provider, '31337');
 
     expect(logger.info).toHaveBeenCalledWith(`Deviation exceeded.`);
     expect(checkFeedsResult).toStrictEqual([
@@ -215,30 +195,6 @@ describe(getUpdatableFeeds.name, () => {
   it('returns updatable feeds when on chain timestamp is older than heartbeat and value is within the deviation', async () => {
     jest.useFakeTimers().setSystemTime(500_000);
 
-    const multicallResult = [
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(150),
-          value: ethers.BigNumber.from('400'),
-        },
-      },
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(160),
-          value: ethers.BigNumber.from('400'),
-        },
-      },
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(170),
-          value: ethers.BigNumber.from('400'),
-        },
-      },
-    ];
-
     // Only the third feed will satisfy the timestamp check
     const mockSignedDataStore = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
@@ -254,13 +210,26 @@ describe(getUpdatableFeeds.name, () => {
         encodedValue: encodeBeaconValue('400'),
       },
     });
-
-    const getStoreDataPointSpy = jest.spyOn(signedDataStore, 'getStoreDataPoint');
-    getStoreDataPointSpy.mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
+    jest
+      .spyOn(signedDataStore, 'getStoreDataPoint')
+      .mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
 
     // None of the feeds failed to update
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue(multicallResult);
-    jest.spyOn(logger, 'info');
+    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
+        timestamp: ethers.BigNumber.from(150),
+        value: ethers.BigNumber.from('400'),
+      },
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
+        timestamp: ethers.BigNumber.from(160),
+        value: ethers.BigNumber.from('400'),
+      },
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
+        timestamp: ethers.BigNumber.from(170),
+        value: ethers.BigNumber.from('400'),
+      },
+    });
+    jest.spyOn(logger, 'debug');
 
     const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
       {
@@ -277,9 +246,9 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = await getUpdatableFeeds(batch, 1, 'hardhat', provider, '31337');
+    const checkFeedsResult = await getUpdatableFeeds(batch, 1, provider, '31337');
 
-    expect(logger.info).toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
+    expect(logger.debug).toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
     expect(checkFeedsResult).toStrictEqual([
       {
         updatableBeacons: [
@@ -323,31 +292,6 @@ describe(getUpdatableFeeds.name, () => {
   it('returns an empty array for old fulfillment data', async () => {
     jest.useFakeTimers().setSystemTime(150);
 
-    // Ensure on-chain values don't trigger an update
-    const multicallResult = [
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(150),
-          value: ethers.BigNumber.from('200'),
-        },
-      },
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(160),
-          value: ethers.BigNumber.from('200'),
-        },
-      },
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(170),
-          value: ethers.BigNumber.from('200'),
-        },
-      },
-    ];
-
     // Mock signed data store to have stale data
     const mockSignedDataStore = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
@@ -363,9 +307,9 @@ describe(getUpdatableFeeds.name, () => {
         encodedValue: encodeBeaconValue('200'),
       },
     });
-
-    const getStoreDataPointSpy = jest.spyOn(signedDataStore, 'getStoreDataPoint');
-    getStoreDataPointSpy.mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
+    jest
+      .spyOn(signedDataStore, 'getStoreDataPoint')
+      .mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
 
     // Set up batch with on-chain values that don't trigger an update
     const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
@@ -383,10 +327,24 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue(multicallResult);
+    // Ensure on-chain values don't trigger an update
+    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
+        timestamp: ethers.BigNumber.from(150),
+        value: ethers.BigNumber.from('200'),
+      },
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
+        timestamp: ethers.BigNumber.from(160),
+        value: ethers.BigNumber.from('200'),
+      },
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
+        timestamp: ethers.BigNumber.from(170),
+        value: ethers.BigNumber.from('200'),
+      },
+    });
     jest.spyOn(logger, 'warn');
 
-    const checkFeedsResult = await getUpdatableFeeds(batch, 1, 'hardhat', provider, '31337');
+    const checkFeedsResult = await getUpdatableFeeds(batch, 1, provider, '31337');
 
     expect(logger.warn).toHaveBeenCalledWith(`Off-chain sample's timestamp is older than on-chain timestamp.`);
     expect(checkFeedsResult).toStrictEqual([]);
@@ -394,30 +352,6 @@ describe(getUpdatableFeeds.name, () => {
 
   it('returns an empty array for on chain data newer than heartbeat and value within the threshold', async () => {
     jest.useFakeTimers().setSystemTime(90);
-
-    const multicallResult = [
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(150),
-          value: ethers.BigNumber.from('400'),
-        },
-      },
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(160),
-          value: ethers.BigNumber.from('400'),
-        },
-      },
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(170),
-          value: ethers.BigNumber.from('400'),
-        },
-      },
-    ];
 
     // Only the third feed will satisfy the timestamp check
     const mockSignedDataStore = allowPartial<Record<string, SignedData>>({
@@ -434,12 +368,25 @@ describe(getUpdatableFeeds.name, () => {
         encodedValue: encodeBeaconValue('400'),
       },
     });
-
-    const getStoreDataPointSpy = jest.spyOn(signedDataStore, 'getStoreDataPoint');
-    getStoreDataPointSpy.mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
+    jest
+      .spyOn(signedDataStore, 'getStoreDataPoint')
+      .mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
 
     // None of the feeds failed to update
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue(multicallResult);
+    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
+        timestamp: ethers.BigNumber.from(150),
+        value: ethers.BigNumber.from('400'),
+      },
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
+        timestamp: ethers.BigNumber.from(160),
+        value: ethers.BigNumber.from('400'),
+      },
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
+        timestamp: ethers.BigNumber.from(170),
+        value: ethers.BigNumber.from('400'),
+      },
+    });
     jest.spyOn(logger, 'info');
 
     const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
@@ -457,7 +404,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = await getUpdatableFeeds(batch, 1, 'hardhat', provider, '31337');
+    const checkFeedsResult = await getUpdatableFeeds(batch, 1, provider, '31337');
 
     expect(logger.info).not.toHaveBeenCalledWith(`Deviation exceeded.`);
     expect(logger.info).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
