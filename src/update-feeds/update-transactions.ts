@@ -8,7 +8,7 @@ import { getState, updateState } from '../state';
 import type { SignedData, ChainId, ProviderName } from '../types';
 import { deriveSponsorWallet } from '../utils';
 
-import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
+import type { DecodedReadDapiWithIndexResponse } from './dapi-data-registry';
 
 export interface UpdatableBeacon {
   beaconId: string;
@@ -16,7 +16,7 @@ export interface UpdatableBeacon {
 }
 
 export interface UpdatableDapi {
-  dapiInfo: ReadDapiWithIndexResponse;
+  dapiInfo: DecodedReadDapiWithIndexResponse;
   updatableBeacons: UpdatableBeacon[];
 }
 

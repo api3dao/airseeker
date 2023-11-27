@@ -17,7 +17,7 @@ import {
   decodeReadDapiWithIndexResponse,
   getDapiDataRegistry,
   verifyMulticallResponse,
-  type ReadDapiWithIndexResponse,
+  type DecodedReadDapiWithIndexResponse,
 } from './dapi-data-registry';
 import { updateFeeds } from './update-transactions';
 
@@ -142,7 +142,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       .filter((result) => isFulfilled(result))
       .map(async (result) =>
         processBatch(
-          (result as PromiseFulfilledResult<ReadDapiWithIndexResponse[]>).value,
+          (result as PromiseFulfilledResult<DecodedReadDapiWithIndexResponse[]>).value,
           providerName,
           provider,
           chainId
@@ -170,7 +170,7 @@ export const decodeBeaconValue = (encodedBeaconValue: string) => {
 };
 
 export const processBatch = async (
-  batch: ReadDapiWithIndexResponse[],
+  batch: DecodedReadDapiWithIndexResponse[],
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
   chainId: ChainId
