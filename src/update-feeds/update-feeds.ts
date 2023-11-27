@@ -1,6 +1,6 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
-import { range, size, zip } from 'lodash';
+import { isError, range, size, zip } from 'lodash';
 
 import type { Chain } from '../config/schema';
 import { INT224_MAX, INT224_MIN, RPC_PROVIDER_TIMEOUT_MS } from '../constants';
@@ -110,7 +110,15 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
         logger.warn(`No active dAPIs found`);
         return;
       }
-      const processFirstBatchPromise = processBatch(firstBatch, providerName, provider, chainId);
+      // NOTE: We need to explicitly handle the .catch here because it's possible that the promise settles before it's
+      // awaited, causing unhandled promise rejection. We do not expect this function to throw, but we want the promise
+      // chain to be handled correctly in case there is some unhandled error.
+      const processFirstBatchPromise: Promise<Error> | ReturnType<typeof processBatch> = processBatch(
+        firstBatch,
+        providerName,
+        provider,
+        chainId
+      ).catch((error) => error);
 
       // Calculate the stagger time between the rest of the batches.
       const batchesCount = Math.ceil(dapisCount / dataFeedBatchSize);
@@ -156,13 +164,22 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
         );
 
       // Wait for all the batches to be processed and print stats from this run.
-      const processingResult = await Promise.all([processFirstBatchPromise, ...processOtherBatchesPromises]);
+      const processingResult = await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        new Promise<Awaited<ReturnType<typeof processBatch>>>((resolve, reject) => {
+          return processFirstBatchPromise.then((result) => {
+            // eslint-disable-next-line promise/always-return
+            if (isError(result)) reject(result);
+            else resolve(result);
+          });
+        }),
+        ...processOtherBatchesPromises,
+      ]);
       const successCount = processingResult.reduce((acc, { successCount }) => acc + successCount, 0);
       const errorCount = processingResult.reduce((acc, { errorCount }) => acc + errorCount, 0);
       logger.debug(`Finished processing batches of active dAPIs`, { batchesCount, successCount, errorCount });
     });
 
-    // TODO: Write a test for this.
     if (!goRunUpdateFeeds.success) {
       logger.error(`Unexpected error when updating data feeds feeds`, goRunUpdateFeeds.error);
     }
