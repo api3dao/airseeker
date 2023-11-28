@@ -36,7 +36,7 @@ export const clearExpiredStoreGasPrices = (chainId: string, providerName: string
     // Remove gasPrices older than the sanitizationSamplingWindow
     remove(
       draft.gasPriceStore[chainId]![providerName]!.gasPrices,
-      (gasPrice) => gasPrice.timestampMs < Date.now() - sanitizationSamplingWindow * 60 * 1000
+      (gasPrice) => gasPrice.timestampMs < Date.now() - sanitizationSamplingWindow * 1000
     );
   });
 
@@ -168,11 +168,11 @@ export const getAirseekerRecommendedGasPrice = async (
   const lastUpdateTimestampMs = sponsorLastUpdateTimestampMs[sponsorWalletAddress];
 
   // Check if the next update is a retry of a pending transaction and if it has been pending longer than scalingWindow
-  if (lastUpdateTimestampMs && lastUpdateTimestampMs < Date.now() - scalingWindow * 60 * 1000) {
+  if (lastUpdateTimestampMs && lastUpdateTimestampMs < Date.now() - scalingWindow * 1000) {
     const multiplier = calculateScalingMultiplier(
       recommendedGasPriceMultiplier,
       maxScalingMultiplier,
-      (Date.now() - lastUpdateTimestampMs) / (60 * 1000),
+      (Date.now() - lastUpdateTimestampMs) / 1000,
       scalingWindow
     );
 
@@ -181,7 +181,7 @@ export const getAirseekerRecommendedGasPrice = async (
 
   // Check that there are enough entries in the stored gas prices to determine whether to use sanitization or not
   // Calculate the minimum timestamp that should be within the 90% of the sanitizationSamplingWindow
-  const minTimestampMs = Date.now() - 0.9 * sanitizationSamplingWindow * 60 * 1000;
+  const minTimestampMs = Date.now() - 0.9 * sanitizationSamplingWindow * 1000;
 
   // Check if there are entries with a timestamp older than at least 90% of the sanitizationSamplingWindow
   const hasSufficientSanitizationData = gasPrices.some((gasPrice) => gasPrice.timestampMs <= minTimestampMs);

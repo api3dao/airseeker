@@ -15,9 +15,9 @@ export const generateTestConfig = (): Config => ({
       gasSettings: {
         recommendedGasPriceMultiplier: 1.5,
         sanitizationPercentile: 80,
-        sanitizationSamplingWindow: 15,
+        sanitizationSamplingWindow: 900,
         maxScalingMultiplier: 2,
-        scalingWindow: 5,
+        scalingWindow: 300,
       },
       dataFeedBatchSize: 10,
       dataFeedUpdateInterval: 60,

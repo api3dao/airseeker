@@ -11,9 +11,9 @@ const providerName = 'localhost';
 const rpcUrl = 'http://127.0.0.1:8545/';
 const gasSettings = {
   recommendedGasPriceMultiplier: 1.5,
-  sanitizationSamplingWindow: 15,
+  sanitizationSamplingWindow: 900,
   sanitizationPercentile: 80,
-  scalingWindow: 2,
+  scalingWindow: 120,
   maxScalingMultiplier: 2,
 };
 const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl);
@@ -62,7 +62,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
   it('clears expired gas prices from the store', async () => {
     const oldGasPriceMock = {
       price: ethers.utils.parseUnits('5', 'gwei'),
-      timestampMs: timestampMock - gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
+      timestampMs: timestampMock - gasSettings.sanitizationSamplingWindow * 1000 - 1,
     };
     jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
     await sendTransaction();
@@ -128,7 +128,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     const oldGasPriceValueMock = providerRecommendedGasprice.sub(ethers.utils.parseUnits('1', 'gwei'));
     const oldGasPriceMock = {
       price: oldGasPriceValueMock,
-      timestampMs: timestampMock - 0.9 * gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
+      timestampMs: timestampMock - 0.9 * gasSettings.sanitizationSamplingWindow * 1000 - 1,
     };
 
     updateState((draft) => {
@@ -157,7 +157,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
 
     updateState((draft) => {
       draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
-        timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1;
+        timestampMock - gasSettings.scalingWindow * 1000 - 1;
     });
     const gasPrice = await getAirseekerRecommendedGasPrice(
       chainId,
