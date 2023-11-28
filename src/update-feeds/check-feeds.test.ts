@@ -6,6 +6,7 @@ import { logger } from '../logger';
 import * as signedDataStore from '../signed-data-store/signed-data-store';
 import { updateState } from '../state';
 import type { BeaconId, SignedData } from '../types';
+import { encodeDapiName } from '../utils';
 
 import * as contractUtils from './api3-server-v1';
 import { multicallBeaconValues, getUpdatableFeeds } from './check-feeds';
@@ -145,7 +146,7 @@ describe(getUpdatableFeeds.name, () => {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
         },
-        dapiName: 'test',
+        dapiName: encodeDapiName('test'),
       },
     ]);
 
@@ -164,7 +165,7 @@ describe(getUpdatableFeeds.name, () => {
           }),
         ],
         dapiInfo: {
-          dapiName: 'test',
+          dapiName: encodeDapiName('test'),
           dataFeedValue: {
             timestamp: 95,
             value: ethers.BigNumber.from('10'),
@@ -242,7 +243,7 @@ describe(getUpdatableFeeds.name, () => {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
         },
-        dapiName: 'test',
+        dapiName: encodeDapiName('test'),
       },
     ]);
 
@@ -261,7 +262,7 @@ describe(getUpdatableFeeds.name, () => {
           }),
         ],
         dapiInfo: {
-          dapiName: 'test',
+          dapiName: encodeDapiName('test'),
           dataFeedValue: {
             timestamp: 90,
             value: ethers.BigNumber.from('400'),
@@ -323,7 +324,7 @@ describe(getUpdatableFeeds.name, () => {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
         },
-        dapiName: 'test',
+        dapiName: encodeDapiName('test'),
       },
     ]);
 
@@ -400,7 +401,7 @@ describe(getUpdatableFeeds.name, () => {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
         },
-        dapiName: 'test',
+        dapiName: encodeDapiName('test'),
       },
     ]);
 
@@ -423,7 +424,8 @@ describe(getUpdatableFeeds.name, () => {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
         },
-        dapiName: 'test',
+        dapiName: encodeDapiName('test'),
+        decodedDapiName: 'test',
       },
     ]);
     jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockRejectedValueOnce(new Error('Multicall failed'));

@@ -321,7 +321,11 @@ describe(updateFeedsModule.processBatch.name, () => {
   it('applies deviationThresholdCoefficient from config', async () => {
     const dapi = generateReadDapiWithIndexResponse();
     const decodedDataFeed = dapiDataRegistryModule.decodeDataFeed(dapi.dataFeed);
-    const decodedDapi = { ...omit(dapi, ['dataFeed']), decodedDataFeed };
+    const decodedDapi = {
+      ...omit(dapi, ['dataFeed']),
+      decodedDataFeed,
+      decodedDapiName: utilsModule.decodeDapiName(dapi.dapiName),
+    };
     jest.spyOn(Date, 'now').mockReturnValue(dapi.dataFeedValue.timestamp);
     const testConfig = generateTestConfig();
     jest.spyOn(stateModule, 'getState').mockReturnValue(

@@ -13,6 +13,10 @@ export function deriveBeaconSetId(beaconIds: string[]) {
   return goSync(() => ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['bytes32[]'], [beaconIds]))).data;
 }
 
+export const encodeDapiName = (dapiName: string) => ethers.utils.formatBytes32String(dapiName);
+
+export const decodeDapiName = (dapiName: string) => ethers.utils.parseBytes32String(dapiName);
+
 export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
   const sponsorAddressBN = ethers.BigNumber.from(sponsorAddress);
   const paths = [];

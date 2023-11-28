@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 // NOTE: The contract is not yet published, so we generate the Typechain artifacts locally and import it from there.
 import { type DapiDataRegistry, DapiDataRegistry__factory as DapiDataRegistryFactory } from '../typechain-types';
 import type { DecodedDataFeed } from '../types';
-import { deriveBeaconId, deriveBeaconSetId } from '../utils';
+import { decodeDapiName, deriveBeaconId, deriveBeaconSetId } from '../utils';
 
 export const getDapiDataRegistry = (address: string, provider: ethers.providers.StaticJsonRpcProvider) =>
   DapiDataRegistryFactory.connect(address, provider);
@@ -67,8 +67,8 @@ export const decodeReadDapiWithIndexResponse = (
   const decodedDataFeed = decodeDataFeed(dataFeed);
 
   return {
-    dapiName,
-    // TODO: Add decoded dapiName to make it clear which one is encoded and which one is decoded
+    dapiName, // NOTE: Anywhere in the codebase the "dapiName" is the encoded version of the dAPI name.
+    decodedDapiName: decodeDapiName(dapiName),
     updateParameters: {
       deviationReference,
       deviationThresholdInPercentage,

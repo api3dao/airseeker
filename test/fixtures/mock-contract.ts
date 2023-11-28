@@ -2,10 +2,11 @@ import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { ethers } from 'ethers';
 
 import type { DapiDataRegistry } from '../../src/typechain-types';
+import { encodeDapiName } from '../../src/utils';
 import { type DeepPartial, encodeBeaconFeed } from '../utils';
 
 export const generateReadDapiWithIndexResponse = () => ({
-  dapiName: ethers.utils.formatBytes32String('MOCK_FEED'),
+  dapiName: encodeDapiName('MOCK_FEED'),
   updateParameters: {
     deviationThresholdInPercentage: ethers.BigNumber.from(0.5 * 1e8),
     deviationReference: ethers.BigNumber.from(0.5 * 1e8),

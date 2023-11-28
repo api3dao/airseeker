@@ -1,10 +1,8 @@
-import { ethers } from 'ethers';
-
-import { deriveSponsorWallet, deriveWalletPathFromSponsorAddress } from './utils';
+import { deriveSponsorWallet, deriveWalletPathFromSponsorAddress, encodeDapiName } from './utils';
 
 describe(deriveSponsorWallet.name, () => {
   it('derives sponsor wallets for a dAPI', () => {
-    const btcEthDapiName = ethers.utils.formatBytes32String('BTC/ETH');
+    const btcEthDapiName = encodeDapiName('BTC/ETH');
     const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
 
     const btcEthSponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, btcEthDapiName);

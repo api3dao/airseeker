@@ -32,7 +32,7 @@ export const getUpdatableFeeds = async (
     logger.error(
       `Multicalling on-chain data feed values has failed. Skipping update for all dAPIs in a batch`,
       goOnChainFeedValues.error,
-      { dapiNames: batch.map((dapi) => dapi.dapiName) }
+      { dapiNames: batch.map((dapi) => dapi.decodedDapiName) }
     );
     return [];
   }

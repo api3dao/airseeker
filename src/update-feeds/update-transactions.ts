@@ -61,12 +61,13 @@ export const updateFeed = async (
   const { dapiInfo } = updatableDapi;
   const {
     dapiName,
+    decodedDapiName,
     decodedDataFeed: { dataFeedId },
   } = dapiInfo;
   const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
   const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
-  return logger.runWithContext({ dapiName, dataFeedId }, async () => {
+  return logger.runWithContext({ dapiName: decodedDapiName, dataFeedId }, async () => {
     // NOTE: We use go mainly to set a timeout for the whole update process. We expect the function not to throw and
     // handle errors internally.
     const goUpdate = await go(

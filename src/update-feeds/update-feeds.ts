@@ -221,7 +221,7 @@ export const processBatch = async (
   provider: ethers.providers.StaticJsonRpcProvider,
   chainId: ChainId
 ) => {
-  logger.debug('Processing batch of active dAPIs', { dapiNames: batch.map((dapi) => dapi.dapiName) });
+  logger.debug('Processing batch of active dAPIs', { dapiNames: batch.map((dapi) => dapi.decodedDapiName) });
   const {
     config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient },
   } = getState();
@@ -247,7 +247,7 @@ export const processBatch = async (
 
   // Clear last update timestamps for feeds that don't need an update
   for (const feed of batch) {
-    const { dapiName } = feed;
+    const { dapiName, decodedDapiName } = feed;
 
     if (!dapiNamesToUpdate.has(dapiName)) {
       const sponsorWalletAddress = deriveSponsorWallet(sponsorWalletMnemonic, dapiName).address;
@@ -260,7 +260,7 @@ export const processBatch = async (
         // We can't differentiate between these cases unless we check recent update transactions, which we don't want to
         // do.
         logger.debug(`Clearing dAPI update timestamp because it no longer needs an update`, {
-          dapiName,
+          dapiName: decodedDapiName,
         });
         clearSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWalletAddress);
       }
