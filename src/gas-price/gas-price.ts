@@ -2,6 +2,7 @@ import type { ethers } from 'ethers';
 import { remove } from 'lodash';
 
 import type { GasSettings } from '../config/schema';
+import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import { multiplyBigNumber } from '../utils';
 
@@ -33,7 +34,7 @@ export const setStoreGasPrices = (chainId: string, providerName: string, gasPric
  */
 export const clearExpiredStoreGasPrices = (chainId: string, providerName: string, sanitizationSamplingWindow: number) =>
   updateState((draft) => {
-    // Remove gasPrices older than the sanitizationSamplingWindow
+    // Remove gasPrices older than the sanitizationSamplingWindow.
     remove(
       draft.gasPriceStore[chainId]![providerName]!.gasPrices,
       (gasPrice) => gasPrice.timestampMs < Date.now() - sanitizationSamplingWindow * 1000
@@ -163,6 +164,7 @@ export const getAirseekerRecommendedGasPrice = async (
     gasPrices.map((gasPrice) => gasPrice.price)
   );
 
+  logger.debug('Updating gas price store.');
   const gasPrice = await updateGasPriceStore(chainId, providerName, provider);
 
   const lastUpdateTimestampMs = sponsorLastUpdateTimestampMs[sponsorWalletAddress];
@@ -176,6 +178,7 @@ export const getAirseekerRecommendedGasPrice = async (
       scalingWindow
     );
 
+    logger.warn('Scaling gas price', { gasPrice: gasPrice.toString(), multiplier });
     return multiplyBigNumber(gasPrice, multiplier);
   }
 
@@ -187,10 +190,19 @@ export const getAirseekerRecommendedGasPrice = async (
   const hasSufficientSanitizationData = gasPrices.some((gasPrice) => gasPrice.timestampMs <= minTimestampMs);
 
   // Check if the multiplied gas price is within the percentile and return the smaller value
-  const sanitizedGasPrice =
-    hasSufficientSanitizationData && percentileGasPrice && gasPrice.gt(percentileGasPrice)
-      ? percentileGasPrice
-      : gasPrice;
+  if (!hasSufficientSanitizationData && percentileGasPrice && gasPrice.gt(percentileGasPrice)) {
+    logger.warn('Gas price could be sanitized but there is not enough historical data');
+  }
+  let gasPriceToUse: ethers.BigNumber;
+  if (hasSufficientSanitizationData && percentileGasPrice && gasPrice.gt(percentileGasPrice)) {
+    logger.warn('Sanitizing gas price', {
+      gasPrice: gasPrice.toString(),
+      percentileGasPrice: percentileGasPrice.toString(),
+    });
+    gasPriceToUse = percentileGasPrice;
+  } else {
+    gasPriceToUse = gasPrice;
+  }
 
-  return multiplyBigNumber(sanitizedGasPrice, recommendedGasPriceMultiplier);
+  return multiplyBigNumber(gasPriceToUse, recommendedGasPriceMultiplier);
 };
