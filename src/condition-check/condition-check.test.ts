@@ -5,18 +5,15 @@ import { HUNDRED_PERCENT } from '../constants';
 import {
   calculateMedian,
   calculateUpdateInPercentage,
-  checkFulfillmentDataTimestamp,
   checkOnchainDataFreshness,
   checkDeviationThresholdExceeded,
   checkUpdateConditions,
 } from './condition-check';
 
-const getUnixTimestamp = (dateString: string) => Math.floor(Date.parse(dateString) / 1000);
-
 const getDeviationThresholdAsBigNumber = (input: number) =>
   ethers.BigNumber.from(Math.trunc(input * HUNDRED_PERCENT)).div(ethers.BigNumber.from(100));
 
-describe('checkUpdateCondition', () => {
+describe(checkDeviationThresholdExceeded.name, () => {
   const onChainValue = ethers.BigNumber.from(500);
 
   it('returns true when api value is higher and deviation threshold is reached', () => {
@@ -82,29 +79,7 @@ describe('checkUpdateCondition', () => {
   });
 });
 
-describe('checkFulfillmentDataTimestamp', () => {
-  const onChainData = {
-    value: ethers.BigNumber.from(10),
-    timestamp: getUnixTimestamp('2019-4-28'),
-  };
-
-  it('returns true if fulfillment data is newer than on-chain record', () => {
-    const isFresh = checkFulfillmentDataTimestamp(onChainData.timestamp, getUnixTimestamp('2019-4-29'));
-    expect(isFresh).toBe(true);
-  });
-
-  it('returns false if fulfillment data is older than on-chain record', () => {
-    const isFresh = checkFulfillmentDataTimestamp(onChainData.timestamp, getUnixTimestamp('2019-4-27'));
-    expect(isFresh).toBe(false);
-  });
-
-  it('returns false if fulfillment data has same timestamp with on-chain record', () => {
-    const isFresh = checkFulfillmentDataTimestamp(onChainData.timestamp, onChainData.timestamp);
-    expect(isFresh).toBe(false);
-  });
-});
-
-describe('checkOnchainDataFreshness', () => {
+describe(checkOnchainDataFreshness.name, () => {
   it('returns true if on chain data timestamp is newer than heartbeat interval', () => {
     const isFresh = checkOnchainDataFreshness(Date.now() / 1000 - 100, 200);
 
@@ -118,7 +93,7 @@ describe('checkOnchainDataFreshness', () => {
   });
 });
 
-describe('calculateUpdateInPercentage', () => {
+describe(calculateUpdateInPercentage.name, () => {
   it('calculates zero change', () => {
     const updateInPercentage = calculateUpdateInPercentage(ethers.BigNumber.from(10), ethers.BigNumber.from(10));
     expect(updateInPercentage).toStrictEqual(ethers.BigNumber.from(0 * HUNDRED_PERCENT));
@@ -165,7 +140,7 @@ describe('calculateUpdateInPercentage', () => {
   });
 });
 
-describe('calculateMedian', () => {
+describe(calculateMedian.name, () => {
   describe('for array with odd number of elements', () => {
     it('calculates median for sorted array', () => {
       const arr = [

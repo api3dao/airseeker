@@ -44,15 +44,6 @@ export const checkDeviationThresholdExceeded = (
 };
 
 /**
- * Returns true when the fulfillment data timestamp is newer than the on chain data timestamp.
- *
- * Update transaction with stale data would revert on chain, draining the sponsor wallet. See:
- * https://github.com/api3dao/airnode-protocol-v1/blob/dev/contracts/dapis/DataFeedServer.sol#L121
- */
-export const checkFulfillmentDataTimestamp = (onChainDataTimestamp: number, fulfillmentDataTimestamp: number) =>
-  onChainDataTimestamp < fulfillmentDataTimestamp;
-
-/**
  * Returns true when the on chain data timestamp is newer than the heartbeat interval.
  */
 export const checkOnchainDataFreshness = (timestamp: number, heartbeatInterval: number) =>
@@ -66,10 +57,13 @@ export const checkUpdateConditions = (
   heartbeatInterval: number,
   deviationThreshold: BigNumber
 ): boolean => {
-  // Check that fulfillment data is newer than on chain data
-  const isFulfillmentDataFresh = checkFulfillmentDataTimestamp(onChainTimestamp, offChainTimestamp);
-  if (!isFulfillmentDataFresh) {
-    logger.warn(`Off-chain sample's timestamp is older than on-chain timestamp.`);
+  // Check that fulfillment data is newer than on chain data. Update transaction with stale data would revert on chain,
+  // draining the sponsor wallet. See:
+  // https://github.com/api3dao/airnode-protocol-v1/blob/dev/contracts/dapis/DataFeedServer.sol#L121
+  if (offChainTimestamp <= onChainTimestamp) {
+    if (offChainTimestamp < onChainTimestamp) {
+      logger.warn(`Off-chain sample's timestamp is older than on-chain timestamp.`);
+    }
     return false;
   }
 
