@@ -22,8 +22,6 @@ const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
   name: chainId,
 });
 
-jest.mock('../state');
-
 describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
   it('starts staggered update loops for a chain', async () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
@@ -41,6 +39,7 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
         },
       })
     );
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest.spyOn(updateFeedsModule, 'runUpdateFeeds').mockImplementation();
     const intervalCalls = [] as number[];
     jest.spyOn(global, 'setInterval').mockImplementation((() => {
@@ -100,6 +99,7 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
         },
       })
     );
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest.spyOn(updateFeedsModule, 'runUpdateFeeds').mockImplementation();
     const intervalCalls = [] as number[];
     jest.spyOn(global, 'setInterval').mockImplementation((() => {
@@ -171,7 +171,7 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
     expect(logger.error).toHaveBeenCalledWith('Failed to get first active dAPIs batch', new Error('provider-error'));
   });
 
-  it('fetches other batches in a staggered way and logs errors', async () => {
+  it('fetches and processes other batches in a staggered way and logs errors', async () => {
     // Prepare the mocked contract so it returns three batches (of size 1) of dAPIs and the second batch fails to load.
     const firstDapi = generateReadDapiWithIndexResponse();
     const thirdDapi = generateReadDapiWithIndexResponse();
@@ -206,13 +206,21 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
         gasPriceStore: {},
       })
     );
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest
       .spyOn(checkFeedsModule, 'getUpdatableFeeds')
-      .mockResolvedValue([
-        allowPartial<updateTransactionModule.UpdatableDapi>({ dapiInfo: firstDapi }),
-        allowPartial<updateTransactionModule.UpdatableDapi>({ dapiInfo: thirdDapi }),
-      ]);
+      .mockResolvedValueOnce([allowPartial<updateTransactionModule.UpdatableDapi>({ dapiInfo: firstDapi })])
+      .mockResolvedValueOnce([allowPartial<updateTransactionModule.UpdatableDapi>({ dapiInfo: thirdDapi })]);
     jest.spyOn(updateTransactionModule, 'updateFeeds').mockResolvedValue([null, null]);
+    const processBatchCalls = [] as number[];
+    // eslint-disable-next-line @typescript-eslint/require-await
+    const originalProcessBatch = updateFeedsModule.processBatch;
+    jest
+      .spyOn(updateFeedsModule, 'processBatch')
+      .mockImplementation(async (...args: Parameters<typeof originalProcessBatch>) => {
+        processBatchCalls.push(Date.now());
+        return originalProcessBatch(...args);
+      });
 
     await updateFeedsModule.runUpdateFeeds(
       'provider-name',
@@ -231,7 +239,11 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
     expect(utilsModule.sleep).toHaveBeenCalledTimes(3);
     expect(sleepCalls[0]).toBeGreaterThan(0); // The first stagger time is computed dynamically (the execution time is subtracted from the interval time) which is slow on CI, so we just check it's non-zero.
     expect(sleepCalls[1]).toBe(0);
-    expect(sleepCalls[2]).toBe(49.999_999_999_999_99); // Stagger time is actually 150 / 3 = 50, but there is a rounding error.
+    expect(sleepCalls[2]).toBe(50);
+
+    // Expect the call times of processBatch to be staggered as well.
+    expect(updateFeedsModule.processBatch).toHaveBeenCalledTimes(2);
+    expect(processBatchCalls[1]! - processBatchCalls[0]!).toBeGreaterThanOrEqual(100); // The stagger time is 50ms, but second batch fails to load which means the third second processBatch call needs to happen after we wait for 2 stagger times.
 
     // Expect the logs to be called with the correct context.
     expect(logger.error).toHaveBeenCalledTimes(1);
@@ -244,7 +256,7 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs', expect.anything());
     expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching batches of active dAPIs', {
       batchesCount: 3,
-      staggerTime: 49.999_999_999_999_99,
+      staggerTime: 50,
     });
     expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching batch of active dAPIs', {
       batchIndex: 1,
@@ -254,9 +266,9 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
     });
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Processing batch of active dAPIs', expect.anything());
     expect(logger.debug).toHaveBeenNthCalledWith(7, 'Finished processing batches of active dAPIs', {
-      batchesCount: 3,
-      errorCount: 4,
-      successCount: 0,
+      dapiUpdateFailures: 2,
+      dapiUpdates: 0,
+      skippedBatchesCount: 1,
     });
   });
 
@@ -280,6 +292,7 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
         gasPriceStore: {},
       })
     );
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest.spyOn(logger, 'error');
     jest.spyOn(checkFeedsModule, 'getUpdatableFeeds').mockRejectedValueOnce(new Error('unexpected-unhandled-error'));
 
@@ -362,5 +375,37 @@ describe(updateFeedsModule.processBatch.name, () => {
     expect(logger.warn).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
     expect(logger.info).not.toHaveBeenCalledWith(`Deviation exceeded.`);
     await expect(feeds).resolves.toStrictEqual([]);
+  });
+});
+
+describe(updateFeedsModule.calculateStaggerTime.name, () => {
+  it('calculates zero stagger time for specific edge cases', () => {
+    expect(updateFeedsModule.calculateStaggerTime(1, 10_000, 60_000)).toBe(0); // When there is only a single batch.
+    expect(updateFeedsModule.calculateStaggerTime(2, 25_000, 30_000)).toBe(0); // When there are just two batches and fetching the first batch takes too long.
+  });
+
+  it('uses remaining time to calculate stagger time when fetching batch takes too long', () => {
+    expect(updateFeedsModule.calculateStaggerTime(3, 15_000, 30_000)).toBe(7500);
+    expect(updateFeedsModule.calculateStaggerTime(10, 10_000, 50_000)).toBe(4444);
+    expect(updateFeedsModule.calculateStaggerTime(10, 20_000, 20_000)).toBe(0);
+  });
+
+  it('staggers the batches evenly', () => {
+    const firstBatchDuration = 10_000;
+    const batchCount = 11;
+    const staggerTime = updateFeedsModule.calculateStaggerTime(batchCount, firstBatchDuration, 50_000);
+
+    const fetchTimes = [0, firstBatchDuration];
+    for (let i = 1; i < batchCount - 1; i++) {
+      fetchTimes.push(fetchTimes[1]! + staggerTime * i);
+    }
+
+    expect(fetchTimes).toStrictEqual([
+      0, 10_000, 14_000, 18_000, 22_000, 26_000, 30_000, 34_000, 38_000, 42_000, 46_000,
+    ]);
+  });
+
+  it('returns zero if first batch takes more than the full update interval', () => {
+    expect(updateFeedsModule.calculateStaggerTime(3, 60_000, 30_000)).toBe(0);
   });
 });
