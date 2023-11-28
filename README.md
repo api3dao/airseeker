@@ -193,8 +193,8 @@ The batch size of active dAPIs that are to be fetched in a single RPC call.
 
 ##### `fallbackGasLimit` _(optional)_
 
-The fallback gas limit used when the estimated gas limit using the RPC provider fails. If not specified, Airseeker will
-only rely on RPC provider for gas limit estimation and will skip an update if this fails.
+The fallback gas limit used when the gas limit estimation using the RPC provider fails. If not specified, Airseeker will
+only rely on the RPC provider for gas limit estimation and will skip an update if this fails.
 
 #### `signedDataFetchInterval`
 
