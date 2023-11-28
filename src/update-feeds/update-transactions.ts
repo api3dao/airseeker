@@ -20,6 +20,32 @@ export interface UpdatableDapi {
   updatableBeacons: UpdatableBeacon[];
 }
 
+export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableDapi: UpdatableDapi) => {
+  const { dapiInfo, updatableBeacons } = updatableDapi;
+  const allBeacons = dapiInfo.decodedDataFeed.beacons;
+
+  // Create calldata for beacons that need to be updated.
+  const beaconUpdateCalls = updatableBeacons.map(({ signedData }) =>
+    api3ServerV1.interface.encodeFunctionData('updateBeaconWithSignedData', [
+      signedData.airnode,
+      signedData.templateId,
+      signedData.timestamp,
+      signedData.encodedValue,
+      signedData.signature,
+    ])
+  );
+
+  // If there are multiple beacons in the data feed it's a beacons set which we need to update as well.
+  return allBeacons.length > 1
+    ? [
+        ...beaconUpdateCalls,
+        api3ServerV1.interface.encodeFunctionData('updateBeaconSetWithBeacons', [
+          allBeacons.map(({ beaconId }) => beaconId),
+        ]),
+      ]
+    : beaconUpdateCalls;
+};
+
 export const updateFeeds = async (
   chainId: ChainId,
   providerName: ProviderName,
@@ -35,7 +61,7 @@ export const updateFeeds = async (
   // Update all of the dAPIs in parallel.
   return Promise.all(
     updatableDapis.map(async (dapi) => {
-      const { dapiInfo, updatableBeacons } = dapi;
+      const { dapiInfo } = dapi;
       const {
         dapiName,
         decodedDataFeed: { dataFeedId },
@@ -46,29 +72,8 @@ export const updateFeeds = async (
       return logger.runWithContext({ dapiName, dataFeedId }, async () => {
         const goUpdate = await go(
           async () => {
-            // Create calldata for all beacons of the particular data feed the dAPI points to.
-            const beaconUpdateCalls = updatableBeacons.map(({ signedData }) =>
-              api3ServerV1.interface.encodeFunctionData('updateBeaconWithSignedData', [
-                signedData.airnode,
-                signedData.templateId,
-                signedData.timestamp,
-                signedData.encodedValue,
-                signedData.signature,
-              ])
-            );
-
-            // If there are multiple beacons in the data feed it's a beacons set which we need to update as well.
-            const dataFeedUpdateCalldatas =
-              beaconUpdateCalls.length > 1
-                ? [
-                    ...beaconUpdateCalls,
-                    api3ServerV1.interface.encodeFunctionData('updateBeaconSetWithBeacons', [
-                      // TODO: This needs all beacons in the data feed, not just the updatable ones. Write a test for
-                      // this.
-                      updatableBeacons.map(({ beaconId }) => beaconId),
-                    ]),
-                  ]
-                : beaconUpdateCalls;
+            logger.debug('Creating calldatas');
+            const dataFeedUpdateCalldatas = createUpdateFeedCalldatas(api3ServerV1, dapi);
 
             logger.debug('Estimating gas limit');
             const goEstimateGasLimit = await go(async () =>
