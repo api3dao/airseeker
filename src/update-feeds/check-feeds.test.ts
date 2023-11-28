@@ -410,4 +410,32 @@ describe(getUpdatableFeeds.name, () => {
     expect(logger.info).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
     expect(checkFeedsResult).toStrictEqual([]);
   });
+
+  it('handles multicall failure', async () => {
+    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
+      {
+        updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
+        dataFeedValue: {
+          value: ethers.BigNumber.from(10),
+          timestamp: 95,
+        },
+        decodedDataFeed: {
+          dataFeedId: '0x000',
+          beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
+        },
+        dapiName: 'test',
+      },
+    ]);
+    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockRejectedValueOnce(new Error('Multicall failed'));
+    jest.spyOn(logger, 'error');
+
+    const checkFeedsResult = await getUpdatableFeeds(batch, 1, provider, '31337');
+
+    expect(logger.error).toHaveBeenCalledWith(
+      `Multicalling on-chain data feed values has failed. Skipping update for all dAPIs in a batch`,
+      new Error('Multicall failed'),
+      { dapiNames: ['test'] }
+    );
+    expect(checkFeedsResult).toStrictEqual([]);
+  });
 });

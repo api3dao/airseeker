@@ -27,7 +27,6 @@ export const getUpdatableFeeds = async (
   const uniqueBeaconIds = [
     ...new Set(batch.flatMap((item) => item.decodedDataFeed.beacons.flatMap((beacon) => beacon.beaconId))),
   ];
-  // TODO: Write a test for this (when multicall throws an error).
   const goOnChainFeedValues = await go(async () => multicallBeaconValues(uniqueBeaconIds, provider, chainId));
   if (!goOnChainFeedValues.success) {
     logger.error(
