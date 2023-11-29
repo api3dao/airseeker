@@ -1,7 +1,7 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
-import { calculateMedian, checkUpdateConditions } from '../condition-check';
+import { calculateMedian, isDataFeedUpdatable } from '../deviation-check';
 import { logger } from '../logger';
 import { getStoreDataPoint } from '../signed-data-store';
 import { getState } from '../state';
@@ -76,7 +76,7 @@ export const getUpdatableFeeds = async (
           deviationThresholdCoefficient
         );
 
-        return checkUpdateConditions(
+        return isDataFeedUpdatable(
           dataFeedValue.value,
           dataFeedValue.timestamp,
           newBeaconSetValue,

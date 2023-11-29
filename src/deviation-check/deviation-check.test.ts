@@ -4,20 +4,20 @@ import { HUNDRED_PERCENT } from '../constants';
 
 import {
   calculateMedian,
-  calculateUpdateInPercentage,
-  checkOnchainDataFreshness,
-  checkDeviationThresholdExceeded,
-  checkUpdateConditions,
-} from './condition-check';
+  calculateDeviationPercentage,
+  isOnChainDataFresh,
+  isDeviationThresholdExceeded,
+  isDataFeedUpdatable,
+} from './deviation-check';
 
 const getDeviationThresholdAsBigNumber = (input: number) =>
   ethers.BigNumber.from(Math.trunc(input * HUNDRED_PERCENT)).div(ethers.BigNumber.from(100));
 
-describe(checkDeviationThresholdExceeded.name, () => {
+describe(isDeviationThresholdExceeded.name, () => {
   const onChainValue = ethers.BigNumber.from(500);
 
   it('returns true when api value is higher and deviation threshold is reached', () => {
-    const shouldUpdate = checkDeviationThresholdExceeded(
+    const shouldUpdate = isDeviationThresholdExceeded(
       onChainValue,
       getDeviationThresholdAsBigNumber(10),
       ethers.BigNumber.from(560)
@@ -27,7 +27,7 @@ describe(checkDeviationThresholdExceeded.name, () => {
   });
 
   it('returns true when api value is lower and deviation threshold is reached', () => {
-    const shouldUpdate = checkDeviationThresholdExceeded(
+    const shouldUpdate = isDeviationThresholdExceeded(
       onChainValue,
       getDeviationThresholdAsBigNumber(10),
       ethers.BigNumber.from(440)
@@ -37,7 +37,7 @@ describe(checkDeviationThresholdExceeded.name, () => {
   });
 
   it('returns false when deviation threshold is not reached', () => {
-    const shouldUpdate = checkDeviationThresholdExceeded(
+    const shouldUpdate = isDeviationThresholdExceeded(
       onChainValue,
       getDeviationThresholdAsBigNumber(10),
       ethers.BigNumber.from(480)
@@ -48,12 +48,12 @@ describe(checkDeviationThresholdExceeded.name, () => {
 
   it('handles correctly bad JS math', () => {
     expect(() =>
-      checkDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigNumber(0.14), ethers.BigNumber.from(560))
+      isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigNumber(0.14), ethers.BigNumber.from(560))
     ).not.toThrow();
   });
 
   it('checks all update conditions | heartbeat exceeded', () => {
-    const result = checkUpdateConditions(
+    const result = isDataFeedUpdatable(
       ethers.BigNumber.from(10),
       Date.now() / 1000 - 60 * 60 * 24,
       ethers.BigNumber.from(10),
@@ -66,7 +66,7 @@ describe(checkDeviationThresholdExceeded.name, () => {
   });
 
   it('checks all update conditions | no update', () => {
-    const result = checkUpdateConditions(
+    const result = isDataFeedUpdatable(
       ethers.BigNumber.from(10),
       Date.now() / 1000,
       ethers.BigNumber.from(10),
@@ -79,63 +79,63 @@ describe(checkDeviationThresholdExceeded.name, () => {
   });
 });
 
-describe(checkOnchainDataFreshness.name, () => {
+describe(isOnChainDataFresh.name, () => {
   it('returns true if on chain data timestamp is newer than heartbeat interval', () => {
-    const isFresh = checkOnchainDataFreshness(Date.now() / 1000 - 100, 200);
+    const isFresh = isOnChainDataFresh(Date.now() / 1000 - 100, 200);
 
     expect(isFresh).toBe(true);
   });
 
   it('returns false if on chain data timestamp is older than heartbeat interval', () => {
-    const isFresh = checkOnchainDataFreshness(Date.now() / 1000 - 300, 200);
+    const isFresh = isOnChainDataFresh(Date.now() / 1000 - 300, 200);
 
     expect(isFresh).toBe(false);
   });
 });
 
-describe(calculateUpdateInPercentage.name, () => {
+describe(calculateDeviationPercentage.name, () => {
   it('calculates zero change', () => {
-    const updateInPercentage = calculateUpdateInPercentage(ethers.BigNumber.from(10), ethers.BigNumber.from(10));
+    const updateInPercentage = calculateDeviationPercentage(ethers.BigNumber.from(10), ethers.BigNumber.from(10));
     expect(updateInPercentage).toStrictEqual(ethers.BigNumber.from(0 * HUNDRED_PERCENT));
   });
 
   it('calculates 100 percent change', () => {
-    const updateInPercentage = calculateUpdateInPercentage(ethers.BigNumber.from(10), ethers.BigNumber.from(20));
+    const updateInPercentage = calculateDeviationPercentage(ethers.BigNumber.from(10), ethers.BigNumber.from(20));
     expect(updateInPercentage).toStrictEqual(ethers.BigNumber.from(1 * HUNDRED_PERCENT));
   });
 
   it('calculates positive to negative change', () => {
-    const updateInPercentage = calculateUpdateInPercentage(ethers.BigNumber.from(10), ethers.BigNumber.from(-5));
+    const updateInPercentage = calculateDeviationPercentage(ethers.BigNumber.from(10), ethers.BigNumber.from(-5));
     expect(updateInPercentage).toStrictEqual(ethers.BigNumber.from(1.5 * HUNDRED_PERCENT));
   });
 
   it('calculates negative to positive change', () => {
-    const updateInPercentage = calculateUpdateInPercentage(ethers.BigNumber.from(-5), ethers.BigNumber.from(5));
+    const updateInPercentage = calculateDeviationPercentage(ethers.BigNumber.from(-5), ethers.BigNumber.from(5));
     expect(updateInPercentage).toStrictEqual(ethers.BigNumber.from(2 * HUNDRED_PERCENT));
   });
 
   it('calculates initial zero to positive change', () => {
-    const updateInPercentage = calculateUpdateInPercentage(ethers.BigNumber.from(0), ethers.BigNumber.from(5));
+    const updateInPercentage = calculateDeviationPercentage(ethers.BigNumber.from(0), ethers.BigNumber.from(5));
     expect(updateInPercentage).toStrictEqual(ethers.BigNumber.from(5 * HUNDRED_PERCENT));
   });
 
   it('calculates initial zero to negative change', () => {
-    const updateInPercentage = calculateUpdateInPercentage(ethers.BigNumber.from(0), ethers.BigNumber.from(-5));
+    const updateInPercentage = calculateDeviationPercentage(ethers.BigNumber.from(0), ethers.BigNumber.from(-5));
     expect(updateInPercentage).toStrictEqual(ethers.BigNumber.from(5 * HUNDRED_PERCENT));
   });
 
   it('calculates initial positive to zero change', () => {
-    const updateInPercentage = calculateUpdateInPercentage(ethers.BigNumber.from(5), ethers.BigNumber.from(0));
+    const updateInPercentage = calculateDeviationPercentage(ethers.BigNumber.from(5), ethers.BigNumber.from(0));
     expect(updateInPercentage).toStrictEqual(ethers.BigNumber.from(1 * HUNDRED_PERCENT));
   });
 
   it('calculates initial negative to zero change', () => {
-    const updateInPercentage = calculateUpdateInPercentage(ethers.BigNumber.from(-5), ethers.BigNumber.from(0));
+    const updateInPercentage = calculateDeviationPercentage(ethers.BigNumber.from(-5), ethers.BigNumber.from(0));
     expect(updateInPercentage).toStrictEqual(ethers.BigNumber.from(1 * HUNDRED_PERCENT));
   });
 
   it('calculates initial negative to negative change', () => {
-    const updateInPercentage = calculateUpdateInPercentage(ethers.BigNumber.from(-5), ethers.BigNumber.from(-1));
+    const updateInPercentage = calculateDeviationPercentage(ethers.BigNumber.from(-5), ethers.BigNumber.from(-1));
     expect(updateInPercentage).toStrictEqual(ethers.BigNumber.from(0.8 * HUNDRED_PERCENT));
   });
 });

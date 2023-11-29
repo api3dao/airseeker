@@ -3,7 +3,7 @@ import { type BigNumber, ethers } from 'ethers';
 import { HUNDRED_PERCENT } from '../constants';
 import { logger } from '../logger';
 
-export const calculateUpdateInPercentage = (initialValue: ethers.BigNumber, updatedValue: ethers.BigNumber) => {
+export const calculateDeviationPercentage = (initialValue: ethers.BigNumber, updatedValue: ethers.BigNumber) => {
   const delta = updatedValue.sub(initialValue);
   const absoluteDelta = delta.abs();
 
@@ -26,19 +26,12 @@ export const calculateMedian = (arr: ethers.BigNumber[]) => {
   return arr.length % 2 === 0 ? nums[mid - 1]!.add(nums[mid]!).div(2) : nums[mid]!;
 };
 
-/**
- * Checks if the deviation threshold has been exceeded.
- *
- * @param onChainValue
- * @param deviationThreshold Refer to getDeviationThresholdAsBigNumber()
- * @param apiValue
- */
-export const checkDeviationThresholdExceeded = (
+export const isDeviationThresholdExceeded = (
   onChainValue: ethers.BigNumber,
   deviationThreshold: ethers.BigNumber,
   apiValue: ethers.BigNumber
 ) => {
-  const updateInPercentage = calculateUpdateInPercentage(onChainValue, apiValue);
+  const updateInPercentage = calculateDeviationPercentage(onChainValue, apiValue);
 
   return updateInPercentage.gt(deviationThreshold);
 };
@@ -46,10 +39,10 @@ export const checkDeviationThresholdExceeded = (
 /**
  * Returns true when the on chain data timestamp is newer than the heartbeat interval.
  */
-export const checkOnchainDataFreshness = (timestamp: number, heartbeatInterval: number) =>
+export const isOnChainDataFresh = (timestamp: number, heartbeatInterval: number) =>
   timestamp > Date.now() / 1000 - heartbeatInterval;
 
-export const checkUpdateConditions = (
+export const isDataFeedUpdatable = (
   onChainValue: ethers.BigNumber,
   onChainTimestamp: number,
   offChainValue: ethers.BigNumber,
@@ -68,10 +61,10 @@ export const checkUpdateConditions = (
   }
 
   // Check that on chain data is newer than heartbeat interval
-  const isOnchainDataFresh = checkOnchainDataFreshness(onChainTimestamp, heartbeatInterval);
-  if (isOnchainDataFresh) {
+  const isFreshEnough = isOnChainDataFresh(onChainTimestamp, heartbeatInterval);
+  if (isFreshEnough) {
     // Check beacon condition
-    const shouldUpdate = checkDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue);
+    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue);
     if (shouldUpdate) {
       logger.info(`Deviation exceeded.`);
       return true;
