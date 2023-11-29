@@ -189,20 +189,19 @@ export const getAirseekerRecommendedGasPrice = async (
   // Check if there are entries with a timestamp older than at least 90% of the sanitizationSamplingWindow
   const hasSufficientSanitizationData = gasPrices.some((gasPrice) => gasPrice.timestampMs <= minTimestampMs);
 
-  // Check if the multiplied gas price is within the percentile and return the smaller value
+  // Log a warning if there is not enough historical data to sanitize the gas price but the price could be sanitized
   if (!hasSufficientSanitizationData && percentileGasPrice && gasPrice.gt(percentileGasPrice)) {
     logger.warn('Gas price could be sanitized but there is not enough historical data');
   }
-  let gasPriceToUse: ethers.BigNumber;
+
+  // If necessary, sanitize the gas price and log a warning because this should not happen under normal circumstances
   if (hasSufficientSanitizationData && percentileGasPrice && gasPrice.gt(percentileGasPrice)) {
     logger.warn('Sanitizing gas price', {
       gasPrice: gasPrice.toString(),
       percentileGasPrice: percentileGasPrice.toString(),
     });
-    gasPriceToUse = percentileGasPrice;
-  } else {
-    gasPriceToUse = gasPrice;
+    return multiplyBigNumber(percentileGasPrice, recommendedGasPriceMultiplier);
   }
 
-  return multiplyBigNumber(gasPriceToUse, recommendedGasPriceMultiplier);
+  return multiplyBigNumber(gasPrice, recommendedGasPriceMultiplier);
 };
