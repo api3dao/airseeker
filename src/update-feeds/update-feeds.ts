@@ -4,7 +4,7 @@ import { isError, range, size, zip } from 'lodash';
 
 import type { Chain } from '../config/schema';
 import { INT224_MAX, INT224_MIN, RPC_PROVIDER_TIMEOUT_MS } from '../constants';
-import { clearSponsorLastUpdateTimestampMs, initializeGasStore, hasPendingTransaction } from '../gas-price';
+import { clearSponsorLastUpdateTimestampMs, initializeGasStore } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
@@ -19,7 +19,7 @@ import {
   verifyMulticallResponse,
   type DecodedReadDapiWithIndexResponse,
 } from './dapi-data-registry';
-import { updateFeeds } from './update-transactions';
+import { sponsorHasPendingTransaction, updateFeeds } from './update-transactions';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -251,7 +251,7 @@ export const processBatch = async (
 
     if (!dapiNamesToUpdate.has(dapiName)) {
       const sponsorWalletAddress = deriveSponsorWallet(sponsorWalletMnemonic, dapiName).address;
-      const timestampNeedsClearing = hasPendingTransaction(chainId, providerName, sponsorWalletAddress);
+      const timestampNeedsClearing = sponsorHasPendingTransaction(chainId, providerName, sponsorWalletAddress);
       if (timestampNeedsClearing) {
         // NOTE: A dAPI may stop needing an update for two reasons:
         //  1. It has been updated by a transaction. This could have been done by this Airseeker or some backup.

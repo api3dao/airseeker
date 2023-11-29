@@ -305,8 +305,8 @@ describe(updateTransactionsModule.updateFeed.name, () => {
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'info');
     jest.spyOn(updateTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(ethers.BigNumber.from(500_000));
-    jest.spyOn(gasPriceModule, 'getAirseekerRecommendedGasPrice').mockResolvedValue(ethers.BigNumber.from(100_000_000));
-    jest.spyOn(gasPriceModule, 'hasPendingTransaction').mockReturnValue(false);
+    jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockResolvedValue(ethers.BigNumber.from(100_000_000));
+    jest.spyOn(updateTransactionsModule, 'sponsorHasPendingTransaction').mockReturnValue(false);
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
     jest.spyOn(api3ServerV1, 'tryMulticall');

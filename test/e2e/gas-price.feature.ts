@@ -1,7 +1,7 @@
 import type { BigNumber } from 'ethers';
 import { ethers, network } from 'hardhat';
 
-import { getAirseekerRecommendedGasPrice, initializeGasStore, clearExpiredStoreGasPrices } from '../../src/gas-price';
+import { getRecommendedGasPrice, initializeGasStore, removeOldGasPrices } from '../../src/gas-price';
 import { getState, updateState } from '../../src/state';
 import { multiplyBigNumber } from '../../src/utils';
 import { initializeState } from '../fixtures/mock-config';
@@ -30,7 +30,7 @@ const sendTransaction = async (gasPriceOverride?: BigNumber) => {
   });
 };
 
-describe(getAirseekerRecommendedGasPrice.name, () => {
+describe(getRecommendedGasPrice.name, () => {
   beforeEach(async () => {
     initializeState();
     initializeGasStore(chainId, providerName);
@@ -43,13 +43,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     await sendTransaction();
     const providerRecommendedGasprice = await provider.getGasPrice();
 
-    const gasPrice = await getAirseekerRecommendedGasPrice(
-      chainId,
-      providerName,
-      provider,
-      gasSettings,
-      sponsorWalletAddress
-    );
+    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(
       multiplyBigNumber(providerRecommendedGasprice, gasSettings.recommendedGasPriceMultiplier)
@@ -72,14 +66,8 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     });
     const providerRecommendedGasprice = await provider.getGasPrice();
 
-    clearExpiredStoreGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
-    const gasPrice = await getAirseekerRecommendedGasPrice(
-      chainId,
-      providerName,
-      provider,
-      gasSettings,
-      sponsorWalletAddress
-    );
+    removeOldGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
+    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(
       multiplyBigNumber(providerRecommendedGasprice, gasSettings.recommendedGasPriceMultiplier)
@@ -103,13 +91,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
       draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
     });
 
-    const gasPrice = await getAirseekerRecommendedGasPrice(
-      chainId,
-      providerName,
-      provider,
-      gasSettings,
-      sponsorWalletAddress
-    );
+    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(
       multiplyBigNumber(providerRecommendedGasprice, gasSettings.recommendedGasPriceMultiplier)
@@ -135,13 +117,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
       draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
     });
 
-    const gasPrice = await getAirseekerRecommendedGasPrice(
-      chainId,
-      providerName,
-      provider,
-      gasSettings,
-      sponsorWalletAddress
-    );
+    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(multiplyBigNumber(oldGasPriceValueMock, gasSettings.recommendedGasPriceMultiplier));
     expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
@@ -159,13 +135,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
       draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
         timestampMock - gasSettings.scalingWindow * 1000 - 1;
     });
-    const gasPrice = await getAirseekerRecommendedGasPrice(
-      chainId,
-      providerName,
-      provider,
-      gasSettings,
-      sponsorWalletAddress
-    );
+    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(multiplyBigNumber(providerRecommendedGasprice, gasSettings.maxScalingMultiplier));
     expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([

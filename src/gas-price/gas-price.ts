@@ -21,7 +21,7 @@ export const initializeGasStore = (chainId: string, providerName: string) =>
  * @param providerName
  * @param gasPrice
  */
-export const setStoreGasPrices = (chainId: string, providerName: string, gasPrice: ethers.BigNumber) =>
+export const saveGasPrice = (chainId: string, providerName: string, gasPrice: ethers.BigNumber) =>
   updateState((draft) => {
     draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift({ price: gasPrice, timestampMs: Date.now() });
   });
@@ -32,7 +32,8 @@ export const setStoreGasPrices = (chainId: string, providerName: string, gasPric
  * @param providerName
  * @param sanitizationSamplingWindow
  */
-export const clearExpiredStoreGasPrices = (chainId: string, providerName: string, sanitizationSamplingWindow: number) =>
+// TODO: This is unused
+export const removeOldGasPrices = (chainId: string, providerName: string, sanitizationSamplingWindow: number) =>
   updateState((draft) => {
     // Remove gasPrices older than the sanitizationSamplingWindow.
     remove(
@@ -111,6 +112,7 @@ export const calculateScalingMultiplier = (
  * @param providerName
  * @param provider
  */
+// TODO: Inline
 export const updateGasPriceStore = async (
   chainId: string,
   providerName: string,
@@ -119,18 +121,9 @@ export const updateGasPriceStore = async (
   // Get the provider recommended gas price
   const gasPrice = await provider.getGasPrice();
   // Save the new provider recommended gas price to the state
-  setStoreGasPrices(chainId, providerName, gasPrice);
+  saveGasPrice(chainId, providerName, gasPrice);
 
   return gasPrice;
-};
-
-/**
- * Checks if a sponsor wallet has a pending transaction.
- */
-export const hasPendingTransaction = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
-  const { sponsorLastUpdateTimestampMs } = getState().gasPriceStore[chainId]![providerName]!;
-
-  return !!sponsorLastUpdateTimestampMs[sponsorWalletAddress];
 };
 
 /**
@@ -141,7 +134,7 @@ export const hasPendingTransaction = (chainId: string, providerName: string, spo
  * @param gasSettings
  * @param sponsorWalletAddress
  */
-export const getAirseekerRecommendedGasPrice = async (
+export const getRecommendedGasPrice = async (
   chainId: string,
   providerName: string,
   provider: ethers.providers.StaticJsonRpcProvider,
