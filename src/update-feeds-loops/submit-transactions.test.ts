@@ -273,6 +273,36 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
     expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(1);
     expect(sponsorWallet.privateKey).toBe('0x5ce56599524b4368d002708b97259864dd9860fc6234f54f0992c9f5ef3cf7ce');
   });
+
+  it('logs a warning when there is a collision between the derived sponsor wallet and the existing one', () => {
+    const dapiName = utilsModule.encodeDapiName('Ethereum - Avalanche');
+    const otherDapiName = utilsModule.encodeDapiName('Ethereum - Avalanche (DEX)');
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        derivedSponsorWallets: {
+          [dapiName]: '0x5b597563b391fa9c4e646065af54776c99802439d348a1a70c9473733a693e99',
+        },
+      })
+    );
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
+    jest.spyOn(utilsModule, 'deriveSponsorWallet');
+    jest.spyOn(logger, 'warn');
+
+    submitTransactionsModule.getDerivedSponsorWallet(
+      'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+      otherDapiName
+    );
+
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith(
+      'There is a collision between the derived sponsor wallet and the existing one',
+      {
+        sponsorWalletAddress: '0xBf346edE0E2BdfCB8803e0b77C2918DC7D774B69',
+        existingDapiName: 'Ethereum - Avalanche',
+        dapiName: 'Ethereum - Avalanche (DEX)',
+      }
+    );
+  });
 });
 
 describe(submitTransactionsModule.submitTransactions.name, () => {
