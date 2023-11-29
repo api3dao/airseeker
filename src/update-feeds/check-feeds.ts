@@ -8,8 +8,7 @@ import { getState } from '../state';
 import type { BeaconId, ChainId } from '../types';
 import { multiplyBigNumber } from '../utils';
 
-import { getApi3ServerV1 } from './api3-server-v1';
-import type { DecodedReadDapiWithIndexResponse } from './dapi-data-registry';
+import { getApi3ServerV1, type DecodedReadDapiWithIndexResponse } from './contracts';
 import { decodeBeaconValue } from './update-feeds';
 import type { UpdatableDapi } from './update-transactions';
 

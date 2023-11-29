@@ -11,7 +11,7 @@ import type { DapiDataRegistry } from '../typechain-types';
 import * as utilsModule from '../utils';
 
 import * as checkFeedsModule from './check-feeds';
-import * as dapiDataRegistryModule from './dapi-data-registry';
+import * as dapiDataRegistryModule from './contracts';
 import * as updateFeedsModule from './update-feeds';
 import * as updateTransactionModule from './update-transactions';
 

@@ -5,7 +5,7 @@ import { initializeGasStore } from '../../src/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
 import { runUpdateFeeds } from '../../src/update-feeds';
-import { decodeDataFeed } from '../../src/update-feeds/dapi-data-registry';
+import { decodeDataFeed } from '../../src/update-feeds/contracts';
 import { updateFeeds } from '../../src/update-feeds/update-transactions';
 import { decodeDapiName } from '../../src/utils';
 import { initializeState } from '../fixtures/mock-config';

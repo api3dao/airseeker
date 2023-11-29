@@ -8,10 +8,9 @@ import { updateState } from '../state';
 import type { BeaconId, SignedData } from '../types';
 import { encodeDapiName } from '../utils';
 
-import * as contractUtils from './api3-server-v1';
 import { multicallBeaconValues, getUpdatableFeeds } from './check-feeds';
 import * as checkFeedsModule from './check-feeds';
-import type { DecodedReadDapiWithIndexResponse } from './dapi-data-registry';
+import * as contractsModule from './contracts';
 
 const chainId = '31337';
 const rpcUrl = 'http://127.0.0.1:8545/';
@@ -62,7 +61,7 @@ describe(multicallBeaconValues.name, () => {
       interface: { encodeFunctionData: encodeFunctionDataMock },
     };
 
-    jest.spyOn(contractUtils, 'getApi3ServerV1').mockReturnValue(mockContract as any);
+    jest.spyOn(contractsModule, 'getApi3ServerV1').mockReturnValue(mockContract as any);
 
     const callAndParseMulticallPromise = await multicallBeaconValues(feedIds as unknown as string[], provider, '31337');
 
@@ -135,7 +134,7 @@ describe(getUpdatableFeeds.name, () => {
     });
     jest.spyOn(logger, 'info');
 
-    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
         dataFeedValue: {
@@ -232,7 +231,7 @@ describe(getUpdatableFeeds.name, () => {
     });
     jest.spyOn(logger, 'debug');
 
-    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 1 },
         dataFeedValue: {
@@ -313,7 +312,7 @@ describe(getUpdatableFeeds.name, () => {
       .mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
 
     // Set up batch with on-chain values that don't trigger an update
-    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
         dataFeedValue: {
@@ -390,7 +389,7 @@ describe(getUpdatableFeeds.name, () => {
     });
     jest.spyOn(logger, 'info');
 
-    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
         dataFeedValue: {
@@ -413,7 +412,7 @@ describe(getUpdatableFeeds.name, () => {
   });
 
   it('handles multicall failure', async () => {
-    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
         dataFeedValue: {

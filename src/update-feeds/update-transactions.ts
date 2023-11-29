@@ -8,7 +8,7 @@ import { getState, updateState } from '../state';
 import type { SignedData, ChainId, ProviderName } from '../types';
 import { deriveSponsorWallet } from '../utils';
 
-import type { DecodedReadDapiWithIndexResponse } from './dapi-data-registry';
+import type { DecodedReadDapiWithIndexResponse } from './contracts';
 
 export interface UpdatableBeacon {
   beaconId: string;

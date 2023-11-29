@@ -1,6 +1,6 @@
 import { encodeBeaconFeed, encodeBeaconFeedSet } from '../../test/utils';
 
-import { decodeDataFeed } from './dapi-data-registry';
+import { decodeDataFeed } from './contracts';
 
 describe('helper functions', () => {
   it('decodes dataFeed bytes into objects', () => {

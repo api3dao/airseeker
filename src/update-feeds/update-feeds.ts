@@ -10,7 +10,6 @@ import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
 import { sleep, deriveSponsorWallet } from '../utils';
 
-import { getApi3ServerV1 } from './api3-server-v1';
 import { getUpdatableFeeds } from './check-feeds';
 import {
   decodeDapisCountResponse,
@@ -18,7 +17,8 @@ import {
   getDapiDataRegistry,
   verifyMulticallResponse,
   type DecodedReadDapiWithIndexResponse,
-} from './dapi-data-registry';
+  getApi3ServerV1,
+} from './contracts';
 import { sponsorHasPendingTransaction, updateFeeds } from './update-transactions';
 
 export const startUpdateFeedsLoops = async () => {
