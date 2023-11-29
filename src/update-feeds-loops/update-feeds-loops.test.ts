@@ -12,7 +12,7 @@ import * as utilsModule from '../utils';
 
 import * as dapiDataRegistryModule from './contracts';
 import * as checkFeedsModule from './updatable-feeds';
-import * as updateFeedsModule from './update-feeds';
+import * as updateFeedsModule from './update-feeds-loops';
 import * as updateTransactionModule from './update-transactions';
 
 const chainId = '31337';

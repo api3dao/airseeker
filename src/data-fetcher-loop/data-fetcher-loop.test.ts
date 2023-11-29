@@ -4,7 +4,7 @@ import { initializeState } from '../../test/fixtures/mock-config';
 import * as localDataStore from '../signed-data-store';
 import { updateState } from '../state';
 
-import * as dataFetcherModule from './data-fetcher';
+import * as dataFetcherModule from './data-fetcher-loop';
 
 const mockedAxios = axios as jest.MockedFunction<typeof axios>;
 jest.mock('axios');
