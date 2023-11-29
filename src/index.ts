@@ -1,6 +1,6 @@
 import { loadConfig } from './config';
+import { runDataFetcher } from './data-fetcher';
 import { logger } from './logger';
-import { runDataFetcher } from './signed-api-fetch';
 import { setInitialState } from './state';
 import { startUpdateFeedsLoops } from './update-feeds';
 

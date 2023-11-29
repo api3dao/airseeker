@@ -199,11 +199,11 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrlStore: {
+        signedApiUrls: {
           '31337': {},
         },
-        signedApiStore: {},
-        gasPriceStore: {},
+        signedDatas: {},
+        gasPrices: {},
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
@@ -286,9 +286,9 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrlStore: {},
-        signedApiStore: {},
-        gasPriceStore: {},
+        signedApiUrls: {},
+        signedDatas: {},
+        gasPrices: {},
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
@@ -331,8 +331,8 @@ describe(updateFeedsModule.processBatch.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrlStore: {},
-        signedApiStore: {
+        signedApiUrls: {},
+        signedDatas: {
           '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
             airnode: '0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4',
             templateId: '0x457a3b3da67e394a895ea49e534a4d91b2d009477bef15eab8cbed313925b010',
@@ -352,7 +352,7 @@ describe(updateFeedsModule.processBatch.name, () => {
             timestamp: (dapi.dataFeedValue.timestamp + 1).toString(),
           },
         },
-        gasPriceStore: {},
+        gasPrices: {},
       })
     );
     jest.spyOn(logger, 'warn');

@@ -68,7 +68,7 @@ describe('state', () => {
   it('should update the state correctly', () => {
     const stateBefore = getState();
     updateState((draft) => {
-      draft.signedApiStore[beaconId] = signedDataSample;
+      draft.signedDatas[beaconId] = signedDataSample;
     });
 
     const stateAfter = getState();
@@ -78,7 +78,7 @@ describe('state', () => {
     expect(stateAfter).toStrictEqual({
       ...stateBefore,
       signedApiStore: {
-        ...stateBefore.signedApiStore,
+        ...stateBefore.signedDatas,
         [beaconId]: signedDataSample,
       },
     });

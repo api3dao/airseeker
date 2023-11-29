@@ -88,7 +88,7 @@ describe(getUpdatableFeeds.name, () => {
   beforeEach(() => {
     initializeState();
     updateState((draft) => {
-      draft.signedApiStore = allowPartial<Record<BeaconId, SignedData>>({
+      draft.signedDatas = allowPartial<Record<BeaconId, SignedData>>({
         '0x000a': { timestamp: '100', encodedValue: encodeBeaconValue('200') },
         '0x000b': { timestamp: '150', encodedValue: encodeBeaconValue('250') },
         '0x000c': { timestamp: '200', encodedValue: encodeBeaconValue('300') },

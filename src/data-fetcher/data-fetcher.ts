@@ -62,7 +62,7 @@ export const runDataFetcher = async () => {
     const state = getState();
     const {
       config: { signedDataFetchInterval, signedApiUrls },
-      signedApiUrlStore,
+      signedApiUrls: signedApiUrlStore,
       dataFetcherInterval,
     } = state;
 

@@ -13,7 +13,7 @@ describe('data fetcher', () => {
   beforeEach(() => {
     initializeState();
     updateState((draft) => {
-      draft.signedApiUrlStore = {
+      draft.signedApiUrls = {
         '31337': {
           hardhat: {
             '0xC04575A2773Da9Cd23853A69694e02111b2c4182':

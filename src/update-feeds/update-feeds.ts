@@ -233,11 +233,11 @@ export const processBatch = async (
         url: `${url}/${beacon!.airnodeAddress}`,
         airnodeAddress: beacon!.airnodeAddress,
       }));
-      if (!draft.signedApiUrlStore) draft.signedApiUrlStore = {};
-      if (!draft.signedApiUrlStore[chainId]) draft.signedApiUrlStore[chainId] = {};
-      if (!draft.signedApiUrlStore[chainId]![providerName]) draft.signedApiUrlStore[chainId]![providerName] = {};
+      if (!draft.signedApiUrls) draft.signedApiUrls = {};
+      if (!draft.signedApiUrls[chainId]) draft.signedApiUrls[chainId] = {};
+      if (!draft.signedApiUrls[chainId]![providerName]) draft.signedApiUrls[chainId]![providerName] = {};
       for (const { airnodeAddress, url } of receivedUrls) {
-        draft.signedApiUrlStore[chainId]![providerName]![airnodeAddress] = url;
+        draft.signedApiUrls[chainId]![providerName]![airnodeAddress] = url;
       }
     }
   });

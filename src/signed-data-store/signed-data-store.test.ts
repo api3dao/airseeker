@@ -82,17 +82,17 @@ describe('datastore', () => {
 
     initializeState();
     updateState((draft) => {
-      draft.signedApiStore['0x000'] = allowPartial<SignedData>({
+      draft.signedDatas['0x000'] = allowPartial<SignedData>({
         timestamp: (baseTime / 1000 - 25 * 60 * 60).toString(),
       });
-      draft.signedApiStore['0x001'] = allowPartial<SignedData>({
+      draft.signedDatas['0x001'] = allowPartial<SignedData>({
         timestamp: (baseTime / 1000 - 23 * 60 * 60).toString(),
       });
     });
 
     purgeOldSignedData();
 
-    expect(Object.values(getState().signedApiStore)).toStrictEqual([
+    expect(Object.values(getState().signedDatas)).toStrictEqual([
       {
         timestamp: (baseTime / 1000 - 23 * 60 * 60).toString(),
       },

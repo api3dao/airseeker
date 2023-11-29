@@ -69,7 +69,7 @@ export const saveSignedData = (signedData: SignedData) => {
 
   const dataFeedId = deriveBeaconId(airnode, templateId)!;
 
-  const existingValue = state.signedApiStore[dataFeedId];
+  const existingValue = state.signedDatas[dataFeedId];
   if (existingValue && existingValue.timestamp >= timestamp) {
     logger.debug('Skipping store update. The signed data value is not fresher than the stored value.');
     return;
@@ -88,25 +88,25 @@ export const saveSignedData = (signedData: SignedData) => {
     encodedValue,
   });
   updateState((draft) => {
-    draft.signedApiStore[dataFeedId] = signedData;
+    draft.signedDatas[dataFeedId] = signedData;
   });
 };
 
-export const getSignedData = (dataFeedId: BeaconId) => getState().signedApiStore[dataFeedId];
+export const getSignedData = (dataFeedId: BeaconId) => getState().signedDatas[dataFeedId];
 
 export const isSignedDataFresh = (signedData: SignedData) =>
   BigNumber.from(signedData.timestamp).gt(Math.ceil(Date.now() / 1000 - 24 * 60 * 60));
 
 export const purgeOldSignedData = () => {
   const state = getState();
-  const oldSignedData = Object.values(state.signedApiStore).filter((signedData) => isSignedDataFresh(signedData));
+  const oldSignedData = Object.values(state.signedDatas).filter((signedData) => isSignedDataFresh(signedData));
   if (oldSignedData.length > 0) {
     logger.info(`Purging some old signed data.`, { oldSignedData });
   }
 
   updateState((draft) => {
-    draft.signedApiStore = Object.fromEntries(
-      Object.entries(draft.signedApiStore).filter(([_dataFeedId, signedData]) => isSignedDataFresh(signedData))
+    draft.signedDatas = Object.fromEntries(
+      Object.entries(draft.signedDatas).filter(([_dataFeedId, signedData]) => isSignedDataFresh(signedData))
     );
   });
 };

@@ -8,11 +8,11 @@ import { multiplyBigNumber } from '../utils';
 
 export const initializeGasStore = (chainId: string, providerName: string) =>
   updateState((draft) => {
-    if (!draft.gasPriceStore[chainId]) {
-      draft.gasPriceStore[chainId] = {};
+    if (!draft.gasPrices[chainId]) {
+      draft.gasPrices[chainId] = {};
     }
 
-    draft.gasPriceStore[chainId]![providerName] = { gasPrices: [], sponsorLastUpdateTimestampMs: {} };
+    draft.gasPrices[chainId]![providerName] = { gasPrices: [], sponsorLastUpdateTimestampMs: {} };
   });
 
 /**
@@ -23,7 +23,7 @@ export const initializeGasStore = (chainId: string, providerName: string) =>
  */
 export const saveGasPrice = (chainId: string, providerName: string, gasPrice: ethers.BigNumber) =>
   updateState((draft) => {
-    draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift({ price: gasPrice, timestampMs: Date.now() });
+    draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({ price: gasPrice, timestampMs: Date.now() });
   });
 
 /**
@@ -37,7 +37,7 @@ export const purgeOldGasPrices = (chainId: string, providerName: string, sanitiz
   updateState((draft) => {
     // Remove gasPrices older than the sanitizationSamplingWindow.
     remove(
-      draft.gasPriceStore[chainId]![providerName]!.gasPrices,
+      draft.gasPrices[chainId]![providerName]!.gasPrices,
       (gasPrice) => gasPrice.timestampMs < Date.now() - sanitizationSamplingWindow * 1000
     );
   });
@@ -54,7 +54,7 @@ export const setSponsorLastUpdateTimestampMs = (
   sponsorWalletAddress: string
 ) => {
   updateState((draft) => {
-    draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] = Date.now();
+    draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] = Date.now();
   });
 };
 
@@ -70,13 +70,13 @@ export const clearSponsorLastUpdateTimestampMs = (
   sponsorWalletAddress: string
 ) =>
   updateState((draft) => {
-    const gasPriceStorePerChain = draft?.gasPriceStore[chainId] ?? {};
+    const gasPriceStorePerChain = draft?.gasPrices[chainId] ?? {};
 
     const sponsorLastUpdateTimestampMs =
       gasPriceStorePerChain[providerName]?.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
 
     if (sponsorLastUpdateTimestampMs) {
-      delete draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+      delete draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
     }
   });
 
@@ -149,7 +149,7 @@ export const getRecommendedGasPrice = async (
     maxScalingMultiplier,
   } = gasSettings;
   const state = getState();
-  const { gasPrices, sponsorLastUpdateTimestampMs } = state.gasPriceStore[chainId]![providerName]!;
+  const { gasPrices, sponsorLastUpdateTimestampMs } = state.gasPrices[chainId]![providerName]!;
 
   // Get the configured percentile of historical gas prices before adding the new price
   const percentileGasPrice = getPercentile(

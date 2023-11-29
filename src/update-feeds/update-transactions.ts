@@ -47,7 +47,7 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
 };
 
 export const sponsorHasPendingTransaction = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
-  const { sponsorLastUpdateTimestampMs } = getState().gasPriceStore[chainId]![providerName]!;
+  const { sponsorLastUpdateTimestampMs } = getState().gasPrices[chainId]![providerName]!;
 
   return !!sponsorLastUpdateTimestampMs[sponsorWalletAddress];
 };

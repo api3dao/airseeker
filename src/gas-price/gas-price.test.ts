@@ -64,12 +64,12 @@ describe(purgeOldGasPrices.name, () => {
       .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
     updateState((draft) => {
-      draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
+      draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
     });
     purgeOldGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
     saveGasPrice(chainId, providerName, gasPriceMock);
 
-    expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: gasPriceMock, timestampMs: timestampMock },
     ]);
   });
@@ -84,7 +84,7 @@ describe(saveGasPrice.name, () => {
 
     saveGasPrice(chainId, providerName, gasPriceMock);
 
-    expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: gasPriceMock, timestampMs: timestampMock },
     ]);
   });
@@ -100,7 +100,7 @@ describe(updateGasPriceStore.name, () => {
     const gasPrice = await updateGasPriceStore(chainId, providerName, provider);
 
     expect(gasPrice).toStrictEqual(gasPriceMock);
-    expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: gasPriceMock, timestampMs: timestampMock },
     ]);
   });
@@ -116,13 +116,13 @@ describe(updateGasPriceStore.name, () => {
       .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
     updateState((draft) => {
-      draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
+      draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
     });
     purgeOldGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
     const gasPrice = await updateGasPriceStore(chainId, providerName, provider);
 
     expect(gasPrice).toStrictEqual(gasPriceMock);
-    expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: gasPriceMock, timestampMs: timestampMock },
     ]);
   });
@@ -134,7 +134,7 @@ describe(setSponsorLastUpdateTimestampMs.name, () => {
     setSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWalletAddress);
 
     expect(
-      getState().gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress]
+      getState().gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress]
     ).toStrictEqual(timestampMock);
   });
 });
@@ -146,7 +146,7 @@ describe(clearSponsorLastUpdateTimestampMs.name, () => {
     clearSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWalletAddress);
 
     expect(
-      getState().gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress]
+      getState().gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress]
     ).toBeUndefined();
   });
 });
@@ -161,7 +161,7 @@ describe(getRecommendedGasPrice.name, () => {
     const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(multiplyBigNumber(gasPriceMock, gasSettings.recommendedGasPriceMultiplier));
-    expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: gasPriceMock, timestampMs: timestampMock },
     ]);
   });
@@ -177,14 +177,14 @@ describe(getRecommendedGasPrice.name, () => {
       .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
     updateState((draft) => {
-      draft.gasPriceStore[chainId]![providerName]!.gasPrices = gasPricesMock;
+      draft.gasPrices[chainId]![providerName]!.gasPrices = gasPricesMock;
     });
     const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(
       multiplyBigNumber(ethers.utils.parseUnits('8', 'gwei'), gasSettings.recommendedGasPriceMultiplier)
     );
-    expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: gasPriceMock, timestampMs: timestampMock },
       ...gasPricesMock,
     ]);
@@ -202,12 +202,12 @@ describe(getRecommendedGasPrice.name, () => {
       .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
     updateState((draft) => {
-      draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
+      draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
     });
     const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(multiplyBigNumber(gasPriceMock, gasSettings.recommendedGasPriceMultiplier));
-    expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: gasPriceMock, timestampMs: timestampMock },
       oldGasPriceMock,
     ]);
@@ -225,12 +225,12 @@ describe(getRecommendedGasPrice.name, () => {
       .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
     updateState((draft) => {
-      draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
+      draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
     });
     const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(multiplyBigNumber(oldGasPriceValueMock, gasSettings.recommendedGasPriceMultiplier));
-    expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: gasPriceMock, timestampMs: timestampMock },
       oldGasPriceMock,
     ]);
@@ -248,14 +248,14 @@ describe(getRecommendedGasPrice.name, () => {
       .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
 
     updateState((draft) => {
-      draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
+      draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
+      draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
         timestampMock - gasSettings.scalingWindow * 1000 - 1;
     });
     const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(multiplyBigNumber(gasPriceMock, gasSettings.maxScalingMultiplier));
-    expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
+    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: gasPriceMock, timestampMs: timestampMock },
       oldGasPriceMock,
     ]);
