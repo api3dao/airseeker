@@ -9,9 +9,9 @@ import { interpolateSecrets } from './utils';
 
 const gasSettings = {
   recommendedGasPriceMultiplier: 1.5,
-  sanitizationSamplingWindow: 15,
+  sanitizationSamplingWindow: 900,
   sanitizationPercentile: 80,
-  scalingWindow: 2,
+  scalingWindow: 120,
   maxScalingMultiplier: 2,
 };
 

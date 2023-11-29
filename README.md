@@ -159,7 +159,7 @@ The multiplier used for the provider recommended gas price.
 
 ###### `sanitizationSamplingWindow`
 
-The number of minutes for which to keep historical gas prices.
+The number of seconds for which to keep historical gas prices.
 
 ###### `sanitizationPercentile`
 
@@ -167,7 +167,7 @@ The percentile of gas historical prices to use for sanitization.
 
 ###### `scalingWindow`
 
-The number of minutes used to calculate the scaling multiplier if a pending transaction is detected.
+The number of seconds used to calculate the scaling multiplier if a pending transaction is detected.
 
 ###### `maxScalingMultiplier`
 

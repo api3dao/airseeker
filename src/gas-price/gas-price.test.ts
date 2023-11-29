@@ -24,9 +24,9 @@ const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
 });
 const gasSettings = {
   recommendedGasPriceMultiplier: 1.5,
-  sanitizationSamplingWindow: 15,
+  sanitizationSamplingWindow: 900,
   sanitizationPercentile: 80,
-  scalingWindow: 2,
+  scalingWindow: 120,
   maxScalingMultiplier: 2,
 };
 const timestampMock = 1_696_930_907_351;
@@ -56,7 +56,7 @@ describe(clearExpiredStoreGasPrices.name, () => {
   it('clears expired gas prices from the store', () => {
     const oldGasPriceMock = {
       price: ethers.utils.parseUnits('5', 'gwei'),
-      timestampMs: timestampMock - gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
+      timestampMs: timestampMock - gasSettings.sanitizationSamplingWindow * 1000 - 1,
     };
     jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
     jest
@@ -108,7 +108,7 @@ describe(updateGasPriceStore.name, () => {
   it('clears expired gas prices from the store', async () => {
     const oldGasPriceMock = {
       price: ethers.utils.parseUnits('5', 'gwei'),
-      timestampMs: timestampMock - gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
+      timestampMs: timestampMock - gasSettings.sanitizationSamplingWindow * 1000 - 1,
     };
     jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
     jest
@@ -175,7 +175,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
   it('gets and uses the percentile price from the store', async () => {
     const gasPricesMock = Array.from(Array.from({ length: 10 }), (_, i) => ({
       price: ethers.utils.parseUnits(`${i + 1}`, 'gwei'),
-      timestampMs: timestampMock - 0.9 * gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
+      timestampMs: timestampMock - 0.9 * gasSettings.sanitizationSamplingWindow * 1000 - 1,
     }));
     jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
     jest
@@ -235,7 +235,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     const oldGasPriceValueMock = ethers.utils.parseUnits('5', 'gwei');
     const oldGasPriceMock = {
       price: oldGasPriceValueMock,
-      timestampMs: timestampMock - 0.9 * gasSettings.sanitizationSamplingWindow * 60 * 1000 - 1,
+      timestampMs: timestampMock - 0.9 * gasSettings.sanitizationSamplingWindow * 1000 - 1,
     };
     jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
     jest
@@ -274,7 +274,7 @@ describe(getAirseekerRecommendedGasPrice.name, () => {
     updateState((draft) => {
       draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
       draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
-        timestampMock - gasSettings.scalingWindow * 60 * 1000 - 1;
+        timestampMock - gasSettings.scalingWindow * 1000 - 1;
     });
     const gasPrice = await getAirseekerRecommendedGasPrice(
       chainId,
