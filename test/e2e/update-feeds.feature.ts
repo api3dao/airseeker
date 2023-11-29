@@ -86,13 +86,14 @@ it('updates blockchain data', async () => {
     },
   ]);
 
-  expect(logger.debug).toHaveBeenCalledTimes(8);
+  expect(logger.debug).toHaveBeenCalledTimes(9);
   expect(logger.debug).toHaveBeenNthCalledWith(1, 'Creating calldatas');
   expect(logger.debug).toHaveBeenNthCalledWith(2, 'Estimating gas limit');
   expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting derived sponsor wallet');
   expect(logger.debug).toHaveBeenNthCalledWith(4, 'Derived new sponsor wallet', expect.anything());
   expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting gas price');
-  expect(logger.debug).toHaveBeenNthCalledWith(6, 'Updating gas price store.');
-  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Setting timestamp of the original update transaction');
-  expect(logger.debug).toHaveBeenNthCalledWith(8, 'Updating dAPI', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(6, 'Fetching gas price and saving it to the state');
+  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Purging old gas prices');
+  expect(logger.debug).toHaveBeenNthCalledWith(8, 'Setting timestamp of the original update transaction');
+  expect(logger.debug).toHaveBeenNthCalledWith(9, 'Updating dAPI', expect.anything());
 });

@@ -32,7 +32,6 @@ export const saveGasPrice = (chainId: string, providerName: string, gasPrice: et
  * @param providerName
  * @param sanitizationSamplingWindow
  */
-// TODO: This is unused
 export const purgeOldGasPrices = (chainId: string, providerName: string, sanitizationSamplingWindow: number) =>
   updateState((draft) => {
     // Remove gasPrices older than the sanitizationSamplingWindow.
@@ -84,7 +83,7 @@ export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => 
   if (array.length === 0) return;
 
   array.sort((a, b) => (a.gt(b) ? 1 : -1));
-  const index = Math.ceil(array.length * (percentile / 100)) - 1;
+  const index = Math.max(0, Math.ceil(array.length * (percentile / 100)) - 1);
   return array[index];
 };
 
@@ -131,16 +130,13 @@ export const getRecommendedGasPrice = async (
   const state = getState();
   const { gasPrices, sponsorLastUpdateTimestampMs } = state.gasPrices[chainId]![providerName]!;
 
-  // Get the configured percentile of historical gas prices before adding the new price
-  const percentileGasPrice = getPercentile(
-    sanitizationPercentile,
-    gasPrices.map((gasPrice) => gasPrice.price)
-  );
-
   // Get the provider recommended gas price and save it to the state
   logger.debug('Fetching gas price and saving it to the state');
   const gasPrice = await provider.getGasPrice();
   saveGasPrice(chainId, providerName, gasPrice);
+
+  logger.debug('Purging old gas prices');
+  purgeOldGasPrices(chainId, providerName, sanitizationSamplingWindow);
 
   const lastUpdateTimestampMs = sponsorLastUpdateTimestampMs[sponsorWalletAddress];
 
@@ -164,13 +160,26 @@ export const getRecommendedGasPrice = async (
   // Check if there are entries with a timestamp older than at least 90% of the sanitizationSamplingWindow
   const hasSufficientSanitizationData = gasPrices.some((gasPrice) => gasPrice.timestampMs <= minTimestampMs);
 
+  // Get the configured percentile of historical gas prices
+  const percentileGasPrice = getPercentile(
+    sanitizationPercentile,
+    gasPrices.map((gasPrice) => gasPrice.price)
+  );
+  if (!percentileGasPrice) {
+    logger.debug('No historical gas prices to compute the percentile. Using the provider recommended gas price');
+    return multiplyBigNumber(gasPrice, recommendedGasPriceMultiplier);
+  }
+
   // Log a warning if there is not enough historical data to sanitize the gas price but the price could be sanitized
-  if (!hasSufficientSanitizationData && percentileGasPrice && gasPrice.gt(percentileGasPrice)) {
-    logger.warn('Gas price could be sanitized but there is not enough historical data');
+  if (!hasSufficientSanitizationData && gasPrice.gt(percentileGasPrice)) {
+    logger.warn('Gas price could be sanitized but there is not enough historical data', {
+      gasPrice: gasPrice.toString(),
+      percentileGasPrice: percentileGasPrice.toString(),
+    });
   }
 
   // If necessary, sanitize the gas price and log a warning because this should not happen under normal circumstances
-  if (hasSufficientSanitizationData && percentileGasPrice && gasPrice.gt(percentileGasPrice)) {
+  if (hasSufficientSanitizationData && gasPrice.gt(percentileGasPrice)) {
     logger.warn('Sanitizing gas price', {
       gasPrice: gasPrice.toString(),
       percentileGasPrice: percentileGasPrice.toString(),
