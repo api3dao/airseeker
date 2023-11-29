@@ -213,7 +213,6 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
       .mockResolvedValueOnce([allowPartial<updateTransactionModule.UpdatableDapi>({ dapiInfo: thirdDapi })]);
     jest.spyOn(updateTransactionModule, 'updateFeeds').mockResolvedValue([null, null]);
     const processBatchCalls = [] as number[];
-    // eslint-disable-next-line @typescript-eslint/require-await
     const originalProcessBatch = updateFeedsModule.processBatch;
     jest
       .spyOn(updateFeedsModule, 'processBatch')
