@@ -88,6 +88,7 @@ export const updateFeeds = async (
             logger.debug('Getting derived sponsor wallet');
             const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
 
+            logger.debug('Getting gas price');
             const goGasPrice = await go(
               async () =>
                 getAirseekerRecommendedGasPrice(
@@ -113,7 +114,7 @@ export const updateFeeds = async (
               setSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWallet.address);
             }
 
-            logger.debug('Updating dAPI', { gasPrice: goGasPrice.data, gasLimit });
+            logger.debug('Updating dAPI', { gasPrice: goGasPrice.data.toString(), gasLimit: gasLimit.toString() });
             return (
               api3ServerV1
                 // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
