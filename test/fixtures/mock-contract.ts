@@ -45,5 +45,8 @@ export const generateMockApi3ServerV1 = () => {
       updateBeaconWithSignedData: jest.fn(),
       updateBeaconSetWithBeacons: jest.fn(),
     },
+    interface: {
+      encodeFunctionData: jest.fn(),
+    },
   } satisfies DeepPartial<Api3ServerV1>;
 };

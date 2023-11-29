@@ -200,19 +200,10 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
       allowPartial<stateModule.State>({
         config: testConfig,
         signedApiUrlStore: {
-          '31337': { 'some-test-provider': { '0xC04575A2773Da9Cd23853A69694e02111b2c4182': 'url-one' } },
+          '31337': {},
         },
         signedApiStore: {},
-        gasPriceStore: {
-          '31337': {
-            'some-test-provider': {
-              gasPrices: [],
-              sponsorLastUpdateTimestampMs: {
-                '0xdatafeedId': 100,
-              },
-            },
-          },
-        },
+        gasPriceStore: {},
       })
     );
     jest
@@ -268,6 +259,50 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
       successCount: 0,
     });
   });
+
+  it('catches unhandled error', async () => {
+    const dapi = generateReadDapiWithIndexResponse();
+    const dapiDataRegistry = generateMockDapiDataRegistry();
+    jest
+      .spyOn(dapiDataRegistryModule, 'getDapiDataRegistry')
+      .mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
+    dapiDataRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
+    dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
+      successes: [true, true],
+      returndata: [[ethers.BigNumber.from(1)], dapi],
+    });
+    const testConfig = generateTestConfig();
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: testConfig,
+        signedApiUrlStore: {},
+        signedApiStore: {},
+        gasPriceStore: {},
+      })
+    );
+    jest.spyOn(logger, 'error');
+    jest.spyOn(checkFeedsModule, 'getUpdatableFeeds').mockRejectedValueOnce(new Error('unexpected-unhandled-error'));
+
+    await updateFeedsModule.runUpdateFeeds(
+      'provider-name',
+      allowPartial<Chain>({
+        dataFeedBatchSize: 1,
+        dataFeedUpdateInterval: 0.1,
+        providers: { ['provider-name']: { url: 'provider-url' } },
+        contracts: {
+          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+        },
+      }),
+      '31337'
+    );
+
+    // Expect the logs to be called with the correct context.
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(
+      'Unexpected error when updating data feeds feeds',
+      new Error('unexpected-unhandled-error')
+    );
+  });
 });
 
 describe(updateFeedsModule.processBatch.name, () => {
@@ -280,9 +315,7 @@ describe(updateFeedsModule.processBatch.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrlStore: {
-          '31337': { 'some-test-provider': { '0xC04575A2773Da9Cd23853A69694e02111b2c4182': 'url-one' } },
-        },
+        signedApiUrlStore: {},
         signedApiStore: {
           '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
             airnode: '0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4',
@@ -303,47 +336,27 @@ describe(updateFeedsModule.processBatch.name, () => {
             timestamp: (dapi.dataFeedValue.timestamp + 1).toString(),
           },
         },
-        gasPriceStore: {
-          '31337': {
-            'some-test-provider': {
-              gasPrices: [],
-              sponsorLastUpdateTimestampMs: {
-                '0xdatafeedId': 100,
-              },
-            },
-          },
-        },
+        gasPriceStore: {},
       })
     );
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'info');
+    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
+        timestamp: ethers.BigNumber.from(150),
+        value: ethers.BigNumber.from('400'),
+      },
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
+        timestamp: ethers.BigNumber.from(160),
+        value: ethers.BigNumber.from('500'),
+      },
+      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
+        timestamp: ethers.BigNumber.from(170),
+        value: ethers.BigNumber.from('600'),
+      },
+    });
 
-    const multicallResult = [
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(150),
-          value: ethers.BigNumber.from('400'),
-        },
-      },
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(160),
-          value: ethers.BigNumber.from('500'),
-        },
-      },
-      {
-        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-        onChainValue: {
-          timestamp: ethers.BigNumber.from(170),
-          value: ethers.BigNumber.from('600'),
-        },
-      },
-    ];
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue(multicallResult);
-
-    const feeds = checkFeedsModule.getUpdatableFeeds([decodedDapi], 2, 'hardhat', provider, '31337');
+    const feeds = checkFeedsModule.getUpdatableFeeds([decodedDapi], 2, provider, '31337');
 
     expect(logger.warn).not.toHaveBeenCalledWith(`Off-chain sample's timestamp is older than on-chain timestamp.`);
     expect(logger.warn).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);

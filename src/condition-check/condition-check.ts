@@ -48,7 +48,6 @@ export const checkDeviationThresholdExceeded = (
  *
  * Update transaction with stale data would revert on chain, draining the sponsor wallet. See:
  * https://github.com/api3dao/airnode-protocol-v1/blob/dev/contracts/dapis/DataFeedServer.sol#L121
- * This can happen if the gateway or Airseeker is down and Airkeeper does the updates instead.
  */
 export const checkFulfillmentDataTimestamp = (onChainDataTimestamp: number, fulfillmentDataTimestamp: number) =>
   onChainDataTimestamp < fulfillmentDataTimestamp;
@@ -71,7 +70,6 @@ export const checkUpdateConditions = (
   const isFulfillmentDataFresh = checkFulfillmentDataTimestamp(onChainTimestamp, offChainTimestamp);
   if (!isFulfillmentDataFresh) {
     logger.warn(`Off-chain sample's timestamp is older than on-chain timestamp.`);
-
     return false;
   }
 
@@ -82,12 +80,10 @@ export const checkUpdateConditions = (
     const shouldUpdate = checkDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue);
     if (shouldUpdate) {
       logger.info(`Deviation exceeded.`);
-
       return true;
     }
   } else {
-    logger.info(`On-chain timestamp is older than the heartbeat interval.`);
-
+    logger.debug(`On-chain timestamp is older than the heartbeat interval.`);
     return true;
   }
 
