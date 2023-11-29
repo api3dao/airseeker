@@ -5,10 +5,6 @@ import { AIRSEEKER_PROTOCOL_ID } from './constants';
 
 export const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export function isFulfilled<T>(item: PromiseSettledResult<T>): item is PromiseFulfilledResult<T> {
-  return item.status === 'fulfilled';
-}
-
 export function deriveBeaconId(airnodeAddress: string, templateId: string) {
   return goSync(() => ethers.utils.solidityKeccak256(['address', 'bytes32'], [airnodeAddress, templateId])).data;
 }
