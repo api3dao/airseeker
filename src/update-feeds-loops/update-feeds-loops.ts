@@ -18,8 +18,8 @@ import {
   type DecodedReadDapiWithIndexResponse,
   getApi3ServerV1,
 } from './contracts';
-import { getUpdatableFeeds } from './updatable-feeds';
-import { sponsorHasPendingTransaction, updateFeeds } from './update-transactions';
+import { getUpdatableFeeds } from './get-updatable-feeds';
+import { sponsorHasPendingTransaction, submitTransactions } from './submit-transactions';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -255,7 +255,7 @@ export const processBatch = async (
     }
   }
 
-  const updatedFeeds = await updateFeeds(
+  const updatedFeeds = await submitTransactions(
     chainId,
     providerName,
     provider,

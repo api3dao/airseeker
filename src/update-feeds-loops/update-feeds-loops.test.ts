@@ -11,9 +11,9 @@ import type { DapiDataRegistry } from '../typechain-types';
 import * as utilsModule from '../utils';
 
 import * as dapiDataRegistryModule from './contracts';
-import * as checkFeedsModule from './updatable-feeds';
+import * as checkFeedsModule from './get-updatable-feeds';
+import * as updateTransactionModule from './submit-transactions';
 import * as updateFeedsModule from './update-feeds-loops';
-import * as updateTransactionModule from './update-transactions';
 
 const chainId = '31337';
 const rpcUrl = 'http://127.0.0.1:8545/';
@@ -209,8 +209,8 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
     jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest
       .spyOn(checkFeedsModule, 'getUpdatableFeeds')
-      .mockResolvedValueOnce([allowPartial<updateTransactionModule.UpdatableDapi>({ dapiInfo: firstDapi })])
-      .mockResolvedValueOnce([allowPartial<updateTransactionModule.UpdatableDapi>({ dapiInfo: thirdDapi })]);
+      .mockResolvedValueOnce([allowPartial<checkFeedsModule.UpdatableDapi>({ dapiInfo: firstDapi })])
+      .mockResolvedValueOnce([allowPartial<checkFeedsModule.UpdatableDapi>({ dapiInfo: thirdDapi })]);
     jest.spyOn(updateTransactionModule, 'updateFeeds').mockResolvedValue([null, null]);
     const processBatchCalls = [] as number[];
     const originalProcessBatch = updateFeedsModule.processBatch;

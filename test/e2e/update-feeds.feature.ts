@@ -6,7 +6,7 @@ import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
 import { runUpdateFeeds } from '../../src/update-feeds-loops';
 import { decodeDataFeed } from '../../src/update-feeds-loops/contracts';
-import { updateFeeds } from '../../src/update-feeds-loops/update-transactions';
+import { submitTransactions } from '../../src/update-feeds-loops/submit-transactions';
 import { decodeDapiName } from '../../src/utils';
 import { initializeState } from '../fixtures/mock-config';
 import { deployAndUpdate } from '../setup/contract';
@@ -70,7 +70,7 @@ it('updates blockchain data', async () => {
   );
   jest.spyOn(logger, 'debug');
 
-  await updateFeeds(chainId, providerName, provider, api3ServerV1, [
+  await submitTransactions(chainId, providerName, provider, api3ServerV1, [
     {
       dapiInfo: decodedBtcDapi,
       updatableBeacons: [

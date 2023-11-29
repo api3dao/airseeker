@@ -5,20 +5,10 @@ import { ethers } from 'ethers';
 import { getRecommendedGasPrice, setSponsorLastUpdateTimestampMs } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { SignedData, ChainId, ProviderName } from '../types';
+import type { ChainId, ProviderName } from '../types';
 import { deriveSponsorWallet } from '../utils';
 
-import type { DecodedReadDapiWithIndexResponse } from './contracts';
-
-export interface UpdatableBeacon {
-  beaconId: string;
-  signedData: SignedData;
-}
-
-export interface UpdatableDapi {
-  dapiInfo: DecodedReadDapiWithIndexResponse;
-  updatableBeacons: UpdatableBeacon[];
-}
+import type { UpdatableDapi } from './get-updatable-feeds';
 
 export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableDapi: UpdatableDapi) => {
   const { dapiInfo, updatableBeacons } = updatableDapi;
@@ -52,7 +42,7 @@ export const sponsorHasPendingTransaction = (chainId: string, providerName: stri
   return !!sponsorLastUpdateTimestampMs[sponsorWalletAddress];
 };
 
-export const updateFeed = async (
+export const submitTransaction = async (
   chainId: ChainId,
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
@@ -149,13 +139,16 @@ export const updateFeed = async (
   });
 };
 
-export const updateFeeds = async (
+export const submitTransactions = async (
   chainId: ChainId,
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
   api3ServerV1: Api3ServerV1,
   updatableDapis: UpdatableDapi[]
-) => Promise.all(updatableDapis.map(async (dapi) => updateFeed(chainId, providerName, provider, api3ServerV1, dapi)));
+) =>
+  Promise.all(
+    updatableDapis.map(async (dapi) => submitTransaction(chainId, providerName, provider, api3ServerV1, dapi))
+  );
 
 export const estimateMulticallGasLimit = async (
   api3ServerV1: Api3ServerV1,

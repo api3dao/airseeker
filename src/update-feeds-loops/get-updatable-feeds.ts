@@ -5,15 +5,24 @@ import { calculateMedian, isDataFeedUpdatable } from '../deviation-check';
 import { logger } from '../logger';
 import { getSignedData } from '../signed-data-store';
 import { getState } from '../state';
-import type { BeaconId, ChainId } from '../types';
+import type { BeaconId, ChainId, SignedData } from '../types';
 import { decodeBeaconValue, multiplyBigNumber } from '../utils';
 
 import { getApi3ServerV1, type DecodedReadDapiWithIndexResponse } from './contracts';
-import type { UpdatableDapi } from './update-transactions';
 
 interface BeaconValue {
   timestamp: ethers.BigNumber;
   value: ethers.BigNumber;
+}
+
+export interface UpdatableBeacon {
+  beaconId: string;
+  signedData: SignedData;
+}
+
+export interface UpdatableDapi {
+  dapiInfo: DecodedReadDapiWithIndexResponse;
+  updatableBeacons: UpdatableBeacon[];
 }
 
 export const getUpdatableFeeds = async (

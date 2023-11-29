@@ -8,7 +8,8 @@ import { logger } from '../logger';
 import * as stateModule from '../state';
 import * as utilsModule from '../utils';
 
-import * as updateTransactionsModule from './update-transactions';
+import type { UpdatableDapi } from './get-updatable-feeds';
+import * as updateTransactionsModule from './submit-transactions';
 
 describe(updateTransactionsModule.estimateMulticallGasLimit.name, () => {
   it('estimates the gas limit for a multicall', async () => {
@@ -58,7 +59,7 @@ describe(updateTransactionsModule.createUpdateFeedCalldatas.name, () => {
 
     updateTransactionsModule.createUpdateFeedCalldatas(
       api3ServerV1 as unknown as Api3ServerV1,
-      allowPartial<updateTransactionsModule.UpdatableDapi>({
+      allowPartial<UpdatableDapi>({
         updatableBeacons: [
           {
             beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
@@ -99,7 +100,7 @@ describe(updateTransactionsModule.createUpdateFeedCalldatas.name, () => {
 
     updateTransactionsModule.createUpdateFeedCalldatas(
       api3ServerV1 as unknown as Api3ServerV1,
-      allowPartial<updateTransactionsModule.UpdatableDapi>({
+      allowPartial<UpdatableDapi>({
         updatableBeacons: [
           {
             beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
@@ -187,7 +188,7 @@ describe(updateTransactionsModule.createUpdateFeedCalldatas.name, () => {
 
     updateTransactionsModule.createUpdateFeedCalldatas(
       api3ServerV1 as unknown as Api3ServerV1,
-      allowPartial<updateTransactionsModule.UpdatableDapi>({
+      allowPartial<UpdatableDapi>({
         updatableBeacons: [
           {
             beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
@@ -274,30 +275,30 @@ describe(updateTransactionsModule.getDerivedSponsorWallet.name, () => {
   });
 });
 
-describe(updateTransactionsModule.updateFeeds.name, () => {
+describe(updateTransactionsModule.submitTransactions.name, () => {
   it('updates all feeds', async () => {
     jest.spyOn(updateTransactionsModule, 'updateFeed').mockImplementation();
 
-    await updateTransactionsModule.updateFeeds(
+    await updateTransactionsModule.submitTransactions(
       '31337',
       'evm-local',
       new ethers.providers.StaticJsonRpcProvider(),
       generateMockApi3ServerV1() as unknown as Api3ServerV1,
       [
-        allowPartial<updateTransactionsModule.UpdatableDapi>({
+        allowPartial<UpdatableDapi>({
           dapiInfo: { dapiName: utilsModule.encodeDapiName('ETH/USD') },
         }),
-        allowPartial<updateTransactionsModule.UpdatableDapi>({
+        allowPartial<UpdatableDapi>({
           dapiInfo: { dapiName: utilsModule.encodeDapiName('BTC/USD') },
         }),
       ]
     );
 
-    expect(updateTransactionsModule.updateFeed).toHaveBeenCalledTimes(2);
+    expect(updateTransactionsModule.submitTransaction).toHaveBeenCalledTimes(2);
   });
 });
 
-describe(updateTransactionsModule.updateFeed.name, () => {
+describe(updateTransactionsModule.submitTransaction.name, () => {
   const dapiName = utilsModule.encodeDapiName('ETH/USD');
 
   it('updates a dapi', async () => {
@@ -325,12 +326,12 @@ describe(updateTransactionsModule.updateFeed.name, () => {
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
 
-    await updateTransactionsModule.updateFeed(
+    await updateTransactionsModule.submitTransaction(
       '31337',
       'evm-local',
       new ethers.providers.StaticJsonRpcProvider(),
       api3ServerV1 as unknown as Api3ServerV1,
-      allowPartial<updateTransactionsModule.UpdatableDapi>({
+      allowPartial<UpdatableDapi>({
         dapiInfo: {
           dapiName,
           decodedDataFeed: {
