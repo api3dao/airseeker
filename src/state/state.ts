@@ -20,7 +20,6 @@ interface GasState {
 
 export interface State {
   config: Config;
-  dataFetcherInterval?: NodeJS.Timeout;
   gasPrices: Record<ChainId, Record<ProviderName, GasState>>;
   derivedSponsorWallets: Record<DapiName, PrivateKey>;
   signedDatas: Record<BeaconId, SignedData>;

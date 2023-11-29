@@ -44,7 +44,7 @@ export const startUpdateFeedsLoops = async () => {
 
         logger.debug(`Starting update feed loop`, { chainId, providerName });
         // Run the update feed loop manually for the first time, because setInterval first waits for the given period of
-        // time.
+        // time before calling the callback function.
         void runUpdateFeeds(providerName, chain, chainId);
         setInterval(async () => runUpdateFeeds(providerName, chain, chainId), dataFeedUpdateIntervalMs);
 

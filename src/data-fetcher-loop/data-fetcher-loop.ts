@@ -6,7 +6,7 @@ import { HTTP_SIGNED_DATA_API_TIMEOUT_MULTIPLIER } from '../constants';
 import { logger } from '../logger';
 import * as localDataStore from '../signed-data-store';
 import { purgeOldSignedData } from '../signed-data-store';
-import { getState, updateState } from '../state';
+import { getState } from '../state';
 import { signedApiResponseSchema, type SignedData } from '../types';
 
 // Inspired by: https://axios-http.com/docs/handling_errors.
@@ -24,6 +24,20 @@ const parseAxiosError = (error: AxiosError) => {
   return errorContext;
 };
 
+export const startDataFetcherLoop = () => {
+  const state = getState();
+  const {
+    config: { signedDataFetchInterval },
+  } = state;
+
+  const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
+
+  // Run the data fetcher loop manually for the first time, because setInterval first waits for the given period of
+  // time before calling the callback function.
+  void runDataFetcher();
+  setInterval(runDataFetcher, signedDataFetchIntervalMs);
+};
+
 /**
  * Calls a remote signed data URL.
  * - Express handler/endpoint path:
@@ -34,11 +48,11 @@ const parseAxiosError = (error: AxiosError) => {
  * @param url
  * @param signedDataFetchIntervalMs
  */
-export const callSignedApi = async (url: string, signedDataFetchIntervalMs: number): Promise<SignedData[] | null> => {
+export const callSignedApi = async (url: string, timeout: number): Promise<SignedData[] | null> => {
   const goAxiosCall = await go<Promise<AxiosResponse>, AxiosError>(async () =>
     axios({
       method: 'get',
-      timeout: Math.ceil(signedDataFetchIntervalMs * HTTP_SIGNED_DATA_API_TIMEOUT_MULTIPLIER),
+      timeout,
       url,
       headers: {
         Accept: 'application/json',
@@ -63,18 +77,9 @@ export const runDataFetcher = async () => {
     const {
       config: { signedDataFetchInterval, signedApiUrls },
       signedApiUrls: signedApiUrlStore,
-      dataFetcherInterval,
     } = state;
 
     const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
-
-    if (!dataFetcherInterval) {
-      // TODO: Implement similarly to how startUpdateFeedsLoops is implemented and have a similar naming.
-      const dataFetcherInterval = setInterval(runDataFetcher, signedDataFetchIntervalMs);
-      updateState((draft) => {
-        draft.dataFetcherInterval = dataFetcherInterval;
-      });
-    }
 
     const urls = uniq([
       ...Object.values(signedApiUrlStore)
@@ -89,7 +94,10 @@ export const runDataFetcher = async () => {
       urls.map(async (url) =>
         go(
           async () => {
-            const signedDataApiResponse = await callSignedApi(url, signedDataFetchIntervalMs);
+            const signedDataApiResponse = await callSignedApi(
+              url,
+              Math.ceil(signedDataFetchIntervalMs * HTTP_SIGNED_DATA_API_TIMEOUT_MULTIPLIER)
+            );
             if (!signedDataApiResponse) return;
 
             for (const signedData of signedDataApiResponse) {
