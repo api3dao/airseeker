@@ -107,26 +107,6 @@ export const calculateScalingMultiplier = (
   );
 
 /**
- * Fetches the provider recommended gas price and saves it in the store.
- * @param chainId
- * @param providerName
- * @param provider
- */
-// TODO: Inline
-export const updateGasPriceStore = async (
-  chainId: string,
-  providerName: string,
-  provider: ethers.providers.StaticJsonRpcProvider
-) => {
-  // Get the provider recommended gas price
-  const gasPrice = await provider.getGasPrice();
-  // Save the new provider recommended gas price to the state
-  saveGasPrice(chainId, providerName, gasPrice);
-
-  return gasPrice;
-};
-
-/**
  *  Calculates the gas price to be used in a transaction based on sanitization and scaling settings.
  * @param chainId
  * @param providerName
@@ -157,8 +137,10 @@ export const getRecommendedGasPrice = async (
     gasPrices.map((gasPrice) => gasPrice.price)
   );
 
-  logger.debug('Updating gas price store.');
-  const gasPrice = await updateGasPriceStore(chainId, providerName, provider);
+  // Get the provider recommended gas price and save it to the state
+  logger.debug('Fetching gas price and saving it to the state');
+  const gasPrice = await provider.getGasPrice();
+  saveGasPrice(chainId, providerName, gasPrice);
 
   const lastUpdateTimestampMs = sponsorLastUpdateTimestampMs[sponsorWalletAddress];
 

@@ -8,7 +8,6 @@ import {
   getRecommendedGasPrice,
   setSponsorLastUpdateTimestampMs,
   saveGasPrice,
-  updateGasPriceStore,
   clearSponsorLastUpdateTimestampMs,
   purgeOldGasPrices,
   initializeGasStore,
@@ -84,44 +83,6 @@ describe(saveGasPrice.name, () => {
 
     saveGasPrice(chainId, providerName, gasPriceMock);
 
-    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
-      { price: gasPriceMock, timestampMs: timestampMock },
-    ]);
-  });
-});
-
-describe(updateGasPriceStore.name, () => {
-  it('returns and updates store with price data', async () => {
-    jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
-    jest
-      .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
-      .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
-
-    const gasPrice = await updateGasPriceStore(chainId, providerName, provider);
-
-    expect(gasPrice).toStrictEqual(gasPriceMock);
-    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
-      { price: gasPriceMock, timestampMs: timestampMock },
-    ]);
-  });
-
-  it('clears expired gas prices from the store', async () => {
-    const oldGasPriceMock = {
-      price: ethers.utils.parseUnits('5', 'gwei'),
-      timestampMs: timestampMock - gasSettings.sanitizationSamplingWindow * 1000 - 1,
-    };
-    jest.spyOn(Date, 'now').mockReturnValue(timestampMock);
-    jest
-      .spyOn(ethers.providers.StaticJsonRpcProvider.prototype, 'getGasPrice')
-      .mockResolvedValueOnce(ethers.BigNumber.from(gasPriceMock));
-
-    updateState((draft) => {
-      draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-    });
-    purgeOldGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
-    const gasPrice = await updateGasPriceStore(chainId, providerName, provider);
-
-    expect(gasPrice).toStrictEqual(gasPriceMock);
     expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
       { price: gasPriceMock, timestampMs: timestampMock },
     ]);
