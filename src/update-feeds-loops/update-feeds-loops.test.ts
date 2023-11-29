@@ -211,7 +211,7 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
       .spyOn(checkFeedsModule, 'getUpdatableFeeds')
       .mockResolvedValueOnce([allowPartial<checkFeedsModule.UpdatableDapi>({ dapiInfo: firstDapi })])
       .mockResolvedValueOnce([allowPartial<checkFeedsModule.UpdatableDapi>({ dapiInfo: thirdDapi })]);
-    jest.spyOn(updateTransactionModule, 'updateFeeds').mockResolvedValue([null, null]);
+    jest.spyOn(updateTransactionModule, 'submitTransactions').mockResolvedValue([null, null]);
     const processBatchCalls = [] as number[];
     const originalProcessBatch = updateFeedsModule.processBatch;
     jest

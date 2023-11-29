@@ -277,7 +277,7 @@ describe(updateTransactionsModule.getDerivedSponsorWallet.name, () => {
 
 describe(updateTransactionsModule.submitTransactions.name, () => {
   it('updates all feeds', async () => {
-    jest.spyOn(updateTransactionsModule, 'updateFeed').mockImplementation();
+    jest.spyOn(updateTransactionsModule, 'submitTransaction').mockImplementation();
 
     await updateTransactionsModule.submitTransactions(
       '31337',
@@ -307,7 +307,7 @@ describe(updateTransactionsModule.submitTransaction.name, () => {
     jest.spyOn(logger, 'info');
     jest.spyOn(updateTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(ethers.BigNumber.from(500_000));
     jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockResolvedValue(ethers.BigNumber.from(100_000_000));
-    jest.spyOn(updateTransactionsModule, 'sponsorHasPendingTransaction').mockReturnValue(false);
+    jest.spyOn(updateTransactionsModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
     jest.spyOn(api3ServerV1, 'tryMulticall');
