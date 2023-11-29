@@ -10,8 +10,8 @@ import * as stateModule from '../state';
 import type { DapiDataRegistry } from '../typechain-types';
 import * as utilsModule from '../utils';
 
-import * as checkFeedsModule from './check-feeds';
 import * as dapiDataRegistryModule from './contracts';
+import * as checkFeedsModule from './updatable-feeds';
 import * as updateFeedsModule from './update-feeds';
 import * as updateTransactionModule from './update-transactions';
 

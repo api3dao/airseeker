@@ -8,9 +8,9 @@ import { updateState } from '../state';
 import type { BeaconId, SignedData } from '../types';
 import { encodeDapiName } from '../utils';
 
-import { multicallBeaconValues, getUpdatableFeeds } from './check-feeds';
-import * as checkFeedsModule from './check-feeds';
 import * as contractsModule from './contracts';
+import { multicallBeaconValues, getUpdatableFeeds } from './updatable-feeds';
+import * as checkFeedsModule from './updatable-feeds';
 
 const chainId = '31337';
 const rpcUrl = 'http://127.0.0.1:8545/';
