@@ -8,7 +8,7 @@ import { getState, updateState } from '../state';
 import type { SignedData, ChainId, ProviderName } from '../types';
 import { deriveSponsorWallet } from '../utils';
 
-import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
+import type { DecodedReadDapiWithIndexResponse } from './dapi-data-registry';
 
 export interface UpdatableBeacon {
   beaconId: string;
@@ -16,7 +16,7 @@ export interface UpdatableBeacon {
 }
 
 export interface UpdatableDapi {
-  dapiInfo: ReadDapiWithIndexResponse;
+  dapiInfo: DecodedReadDapiWithIndexResponse;
   updatableBeacons: UpdatableBeacon[];
 }
 
@@ -40,7 +40,7 @@ export const updateFeeds = async (
         dapiName,
         decodedDataFeed: { dataFeedId },
       } = dapiInfo;
-      const { dataFeedUpdateInterval } = chains[chainId]!;
+      const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
       const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
       return logger.runWithContext({ dapiName, dataFeedId }, async () => {
@@ -69,7 +69,14 @@ export const updateFeeds = async (
                 : beaconUpdateCalls;
 
             logger.debug('Estimating gas limit');
-            const gasLimit = await estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas);
+            const goEstimateGasLimit = await go(async () =>
+              estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas, fallbackGasLimit)
+            );
+            if (!goEstimateGasLimit.success) {
+              logger.error(`Skipping dAPI update because estimating gas limit failed`, goEstimateGasLimit.error);
+              return;
+            }
+            const gasLimit = goEstimateGasLimit.data;
 
             logger.debug('Getting derived sponsor wallet');
             const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
@@ -122,15 +129,23 @@ export const updateFeeds = async (
   );
 };
 
-export const estimateMulticallGasLimit = async (api3ServerV1: Api3ServerV1, calldatas: string[]) => {
+export const estimateMulticallGasLimit = async (
+  api3ServerV1: Api3ServerV1,
+  calldatas: string[],
+  fallbackGasLimit: number | undefined
+) => {
   const goEstimateGas = await go(async () => api3ServerV1.estimateGas.multicall(calldatas));
   if (goEstimateGas.success) {
     // Adding a extra 10% because multicall consumes less gas than tryMulticall
     return goEstimateGas.data.mul(ethers.BigNumber.from(Math.round(1.1 * 100))).div(ethers.BigNumber.from(100));
   }
-  logger.warn(`Unable to estimate gas for multicall`, goEstimateGas.error);
+  logger.warn(`Unable to estimate gas for multicall using provider`, goEstimateGas.error);
 
-  return ethers.BigNumber.from(2_000_000);
+  if (!fallbackGasLimit) {
+    throw new Error('Unable to estimate gas limit');
+  }
+
+  return fallbackGasLimit;
 };
 
 export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiName: string) => {

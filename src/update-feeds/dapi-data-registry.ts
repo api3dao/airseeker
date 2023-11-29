@@ -79,4 +79,4 @@ export const decodeReadDapiWithIndexResponse = (
   };
 };
 
-export type ReadDapiWithIndexResponse = ReturnType<typeof decodeReadDapiWithIndexResponse>;
+export type DecodedReadDapiWithIndexResponse = ReturnType<typeof decodeReadDapiWithIndexResponse>;

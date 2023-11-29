@@ -10,7 +10,7 @@ import type { BeaconId, SignedData } from '../types';
 import * as contractUtils from './api3-server-v1';
 import { multicallBeaconValues, getUpdatableFeeds } from './check-feeds';
 import * as checkFeedsModule from './check-feeds';
-import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
+import type { DecodedReadDapiWithIndexResponse } from './dapi-data-registry';
 
 const chainId = '31337';
 const rpcUrl = 'http://127.0.0.1:8545/';
@@ -26,22 +26,15 @@ const encodeBeaconValue = (numericValue: string) => {
   return ethers.utils.defaultAbiCoder.encode(['int256'], [numericValueAsBigNumber]);
 };
 
-describe('getUpdatableFeeds', () => {
-  const feedIds = [
-    '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-    '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
-    '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-  ] as const;
+const feedIds = [
+  '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+  '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
+  '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
+] as const;
 
+describe(multicallBeaconValues.name, () => {
   beforeEach(() => {
     initializeState();
-    updateState((draft) => {
-      draft.signedApiStore = allowPartial<Record<BeaconId, SignedData>>({
-        '0x000a': { timestamp: '100', encodedValue: encodeBeaconValue('200') },
-        '0x000b': { timestamp: '150', encodedValue: encodeBeaconValue('250') },
-        '0x000c': { timestamp: '200', encodedValue: encodeBeaconValue('300') },
-      });
-    });
   });
 
   it('calls and parses a multicall', async () => {
@@ -97,6 +90,19 @@ describe('getUpdatableFeeds', () => {
     ]);
     expect(tryMulticallMock).toHaveBeenCalledWith(['0xfirst', '0xsecond', '0xthird']);
   });
+});
+
+describe(getUpdatableFeeds.name, () => {
+  beforeEach(() => {
+    initializeState();
+    updateState((draft) => {
+      draft.signedApiStore = allowPartial<Record<BeaconId, SignedData>>({
+        '0x000a': { timestamp: '100', encodedValue: encodeBeaconValue('200') },
+        '0x000b': { timestamp: '150', encodedValue: encodeBeaconValue('250') },
+        '0x000c': { timestamp: '200', encodedValue: encodeBeaconValue('300') },
+      });
+    });
+  });
 
   it('returns updatable feeds when value exceeds the threshold', async () => {
     jest.useFakeTimers().setSystemTime(90);
@@ -148,7 +154,7 @@ describe('getUpdatableFeeds', () => {
     jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue(multicallResult);
     jest.spyOn(logger, 'info');
 
-    const batch = allowPartial<ReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
         dataFeedValue: {
@@ -256,7 +262,7 @@ describe('getUpdatableFeeds', () => {
     jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue(multicallResult);
     jest.spyOn(logger, 'info');
 
-    const batch = allowPartial<ReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 1 },
         dataFeedValue: {
@@ -362,7 +368,7 @@ describe('getUpdatableFeeds', () => {
     getStoreDataPointSpy.mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
 
     // Set up batch with on-chain values that don't trigger an update
-    const batch = allowPartial<ReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
         dataFeedValue: {
@@ -436,7 +442,7 @@ describe('getUpdatableFeeds', () => {
     jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue(multicallResult);
     jest.spyOn(logger, 'info');
 
-    const batch = allowPartial<ReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
         dataFeedValue: {

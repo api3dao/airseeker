@@ -19,7 +19,8 @@
         "maxScalingMultiplier": 2
       },
       "dataFeedUpdateInterval": 30,
-      "dataFeedBatchSize": 10
+      "dataFeedBatchSize": 10,
+      "fallbackGasLimit": 2000000
     }
   },
   "deviationThresholdCoefficient": 1,

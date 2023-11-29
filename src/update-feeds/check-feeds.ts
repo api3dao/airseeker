@@ -9,12 +9,12 @@ import type { BeaconId, ChainId, ProviderName } from '../types';
 import { multiplyBigNumber } from '../utils';
 
 import { getApi3ServerV1 } from './api3-server-v1';
-import type { ReadDapiWithIndexResponse } from './dapi-data-registry';
+import type { DecodedReadDapiWithIndexResponse } from './dapi-data-registry';
 import { decodeBeaconValue } from './update-feeds';
 import type { UpdatableDapi } from './update-transactions';
 
 export const getUpdatableFeeds = async (
-  batch: ReadDapiWithIndexResponse[],
+  batch: DecodedReadDapiWithIndexResponse[],
   deviationThresholdCoefficient: number,
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
