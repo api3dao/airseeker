@@ -6,10 +6,9 @@ import { logger } from '../logger';
 import { getSignedData } from '../signed-data-store';
 import { getState } from '../state';
 import type { BeaconId, ChainId } from '../types';
-import { multiplyBigNumber } from '../utils';
+import { decodeBeaconValue, multiplyBigNumber } from '../utils';
 
 import { getApi3ServerV1, type DecodedReadDapiWithIndexResponse } from './contracts';
-import { decodeBeaconValue } from './update-feeds';
 import type { UpdatableDapi } from './update-transactions';
 
 interface BeaconValue {

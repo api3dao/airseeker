@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import { isError, range, size, zip } from 'lodash';
 
 import type { Chain } from '../config/schema';
-import { INT224_MAX, INT224_MIN, RPC_PROVIDER_TIMEOUT_MS } from '../constants';
+import { RPC_PROVIDER_TIMEOUT_MS } from '../constants';
 import { clearSponsorLastUpdateTimestampMs, initializeGasStore } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
@@ -201,18 +201,6 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       logger.error(`Unexpected error when updating data feeds feeds`, goRunUpdateFeeds.error);
     }
   });
-};
-
-// https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
-export const decodeBeaconValue = (encodedBeaconValue: string) => {
-  const decodedBeaconValue = ethers.BigNumber.from(
-    ethers.utils.defaultAbiCoder.decode(['int256'], encodedBeaconValue)[0]
-  );
-  if (decodedBeaconValue.gt(INT224_MAX) || decodedBeaconValue.lt(INT224_MIN)) {
-    return null;
-  }
-
-  return decodedBeaconValue;
 };
 
 export const processBatch = async (
