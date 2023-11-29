@@ -19,7 +19,7 @@ import {
   getApi3ServerV1,
 } from './contracts';
 import { getUpdatableFeeds } from './get-updatable-feeds';
-import { sponsorHasPendingTransaction, submitTransactions } from './submit-transactions';
+import { hasSponsorPendingTransaction, submitTransactions } from './submit-transactions';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -239,7 +239,7 @@ export const processBatch = async (
 
     if (!dapiNamesToUpdate.has(dapiName)) {
       const sponsorWalletAddress = deriveSponsorWallet(sponsorWalletMnemonic, dapiName).address;
-      const timestampNeedsClearing = sponsorHasPendingTransaction(chainId, providerName, sponsorWalletAddress);
+      const timestampNeedsClearing = hasSponsorPendingTransaction(chainId, providerName, sponsorWalletAddress);
       if (timestampNeedsClearing) {
         // NOTE: A dAPI may stop needing an update for two reasons:
         //  1. It has been updated by a transaction. This could have been done by this Airseeker or some backup.

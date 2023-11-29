@@ -36,7 +36,7 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
     : beaconUpdateCalls;
 };
 
-export const sponsorHasPendingTransaction = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
+export const hasSponsorPendingTransaction = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
   const { sponsorLastUpdateTimestampMs } = getState().gasPrices[chainId]![providerName]!;
 
   return !!sponsorLastUpdateTimestampMs[sponsorWalletAddress];
@@ -105,7 +105,7 @@ export const submitTransaction = async (
         // We want to set the timestamp of the first update transaction. We can determine if the transaction is the
         // original one and that it isn't a retry of a pending transaction (if there is no timestamp for the
         // particular sponsor wallet). This assumes that a single sponsor updates a single dAPI.
-        if (!sponsorHasPendingTransaction(chainId, providerName, sponsorWallet.address)) {
+        if (!hasSponsorPendingTransaction(chainId, providerName, sponsorWallet.address)) {
           logger.debug('Setting timestamp of the original update transaction');
           setSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWallet.address);
         }
