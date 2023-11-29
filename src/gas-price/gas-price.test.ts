@@ -10,7 +10,7 @@ import {
   saveGasPrice,
   updateGasPriceStore,
   clearSponsorLastUpdateTimestampMs,
-  removeOldGasPrices,
+  purgeOldGasPrices,
   initializeGasStore,
   calculateScalingMultiplier,
 } from './gas-price';
@@ -52,7 +52,7 @@ describe(calculateScalingMultiplier.name, () => {
   });
 });
 
-describe(removeOldGasPrices.name, () => {
+describe(purgeOldGasPrices.name, () => {
   it('clears expired gas prices from the store', () => {
     const oldGasPriceMock = {
       price: ethers.utils.parseUnits('5', 'gwei'),
@@ -66,7 +66,7 @@ describe(removeOldGasPrices.name, () => {
     updateState((draft) => {
       draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
     });
-    removeOldGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
+    purgeOldGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
     saveGasPrice(chainId, providerName, gasPriceMock);
 
     expect(getState().gasPriceStore[chainId]![providerName]!.gasPrices).toStrictEqual([
@@ -118,7 +118,7 @@ describe(updateGasPriceStore.name, () => {
     updateState((draft) => {
       draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
     });
-    removeOldGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
+    purgeOldGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
     const gasPrice = await updateGasPriceStore(chainId, providerName, provider);
 
     expect(gasPrice).toStrictEqual(gasPriceMock);

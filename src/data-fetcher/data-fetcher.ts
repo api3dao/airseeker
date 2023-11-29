@@ -9,9 +9,6 @@ import { purgeOldSignedData } from '../signed-data-store';
 import { getState, updateState } from '../state';
 import { signedApiResponseSchema, type SignedData } from '../types';
 
-// Express handler/endpoint path: https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/server.ts#L33
-// Actual handler fn: https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/handlers.ts#L81
-
 // Inspired by: https://axios-http.com/docs/handling_errors.
 //
 // The implementation differs by only picking fields that are important for debugging purposes to avoid cluttering the
@@ -29,13 +26,15 @@ const parseAxiosError = (error: AxiosError) => {
 
 /**
  * Calls a remote signed data URL.
+ * - Express handler/endpoint path:
+ *    https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/server.ts#L33
+ * - Actual handler fn:
+ *   https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/handlers.ts#L81
+ *
  * @param url
  * @param signedDataFetchIntervalMs
  */
-export const callSignedDataApi = async (
-  url: string,
-  signedDataFetchIntervalMs: number
-): Promise<SignedData[] | null> => {
+export const callSignedApi = async (url: string, signedDataFetchIntervalMs: number): Promise<SignedData[] | null> => {
   const goAxiosCall = await go<Promise<AxiosResponse>, AxiosError>(async () =>
     axios({
       method: 'get',
@@ -70,6 +69,7 @@ export const runDataFetcher = async () => {
     const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
 
     if (!dataFetcherInterval) {
+      // TODO: Implement similarly to how startUpdateFeedsLoops is implemented and have a similar naming.
       const dataFetcherInterval = setInterval(runDataFetcher, signedDataFetchIntervalMs);
       updateState((draft) => {
         draft.dataFetcherInterval = dataFetcherInterval;
@@ -89,11 +89,11 @@ export const runDataFetcher = async () => {
       urls.map(async (url) =>
         go(
           async () => {
-            const signedDataApiResponse = await callSignedDataApi(url, signedDataFetchIntervalMs);
+            const signedDataApiResponse = await callSignedApi(url, signedDataFetchIntervalMs);
             if (!signedDataApiResponse) return;
 
             for (const signedData of signedDataApiResponse) {
-              localDataStore.setStoreDataPoint(signedData);
+              localDataStore.saveSignedData(signedData);
             }
           },
           { totalTimeoutMs: signedDataFetchIntervalMs }

@@ -12,7 +12,6 @@ jest.mock('axios');
 describe('data fetcher', () => {
   beforeEach(() => {
     initializeState();
-    localDataStore.clear();
     updateState((draft) => {
       draft.signedApiUrlStore = {
         '31337': {
@@ -26,7 +25,7 @@ describe('data fetcher', () => {
   });
 
   it('retrieves signed data from urls', async () => {
-    const setStoreDataPointSpy = jest.spyOn(localDataStore, 'setStoreDataPoint');
+    const saveSignedDataSpy = jest.spyOn(localDataStore, 'saveSignedData');
 
     mockedAxios.mockResolvedValue(
       Promise.resolve({
@@ -69,11 +68,11 @@ describe('data fetcher', () => {
     await expect(dataFetcherPromise).resolves.toBeDefined();
 
     expect(mockedAxios).toHaveBeenCalledTimes(1);
-    expect(setStoreDataPointSpy).toHaveBeenCalledTimes(3);
+    expect(saveSignedDataSpy).toHaveBeenCalledTimes(3);
   });
 
   it('calls signed api urls from config', async () => {
-    jest.spyOn(dataFetcherModule, 'callSignedDataApi');
+    jest.spyOn(dataFetcherModule, 'callSignedApi');
 
     const signedApiUrl = 'http://some.url/0xbF3137b0a7574563a23a8fC8badC6537F98197CC';
     updateState((draft) => {
@@ -85,6 +84,6 @@ describe('data fetcher', () => {
     await expect(dataFetcherPromise).resolves.toBeDefined();
 
     expect(mockedAxios).toHaveBeenCalledTimes(2);
-    expect(dataFetcherModule.callSignedDataApi).toHaveBeenCalledWith(signedApiUrl, 10_000);
+    expect(dataFetcherModule.callSignedApi).toHaveBeenCalledWith(signedApiUrl, 10_000);
   });
 });

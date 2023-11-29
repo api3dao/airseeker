@@ -115,7 +115,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     });
     jest
-      .spyOn(signedDataStore, 'getStoreDataPoint')
+      .spyOn(signedDataStore, 'getSignedData')
       .mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
 
     // None of the feeds failed to update
@@ -212,7 +212,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     });
     jest
-      .spyOn(signedDataStore, 'getStoreDataPoint')
+      .spyOn(signedDataStore, 'getSignedData')
       .mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
 
     // None of the feeds failed to update
@@ -309,7 +309,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     });
     jest
-      .spyOn(signedDataStore, 'getStoreDataPoint')
+      .spyOn(signedDataStore, 'getSignedData')
       .mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
 
     // Set up batch with on-chain values that don't trigger an update
@@ -370,7 +370,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     });
     jest
-      .spyOn(signedDataStore, 'getStoreDataPoint')
+      .spyOn(signedDataStore, 'getSignedData')
       .mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
 
     // None of the feeds failed to update

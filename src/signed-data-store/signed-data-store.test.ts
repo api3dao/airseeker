@@ -29,16 +29,14 @@ describe('datastore', () => {
     };
   });
 
-  beforeEach(() => localDataStore.clear);
-
   it('stores and gets a data point', () => {
     jest.spyOn(localDataStore, 'isSignedDataFresh').mockReturnValue(true);
     // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-    const promisedStorage = localDataStore.setStoreDataPoint(testDataPoint);
+    const promisedStorage = localDataStore.saveSignedData(testDataPoint);
     expect(promisedStorage).toBeFalsy();
 
     const dataFeedId = deriveBeaconId(testDataPoint.airnode, testDataPoint.templateId)!;
-    const datapoint = localDataStore.getStoreDataPoint(dataFeedId);
+    const datapoint = localDataStore.getSignedData(dataFeedId);
 
     expect(datapoint).toStrictEqual(testDataPoint);
   });

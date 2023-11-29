@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 
 import { calculateMedian, isDataFeedUpdatable } from '../deviation-check';
 import { logger } from '../logger';
-import { getStoreDataPoint } from '../signed-data-store';
+import { getSignedData } from '../signed-data-store';
 import { getState } from '../state';
 import type { BeaconId, ChainId } from '../types';
 import { multiplyBigNumber } from '../utils';
@@ -44,7 +44,7 @@ export const getUpdatableFeeds = async (
       .map((dapiInfo) => {
         const beaconsWithData = dapiInfo.decodedDataFeed.beacons.map(({ beaconId }) => {
           const onChainValue: BeaconValue = onChainFeedValues[beaconId]!;
-          const signedData = getStoreDataPoint(beaconId);
+          const signedData = getSignedData(beaconId);
           const offChainValue: BeaconValue | undefined = signedData
             ? {
                 timestamp: ethers.BigNumber.from(signedData.timestamp),

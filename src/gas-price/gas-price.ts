@@ -33,7 +33,7 @@ export const saveGasPrice = (chainId: string, providerName: string, gasPrice: et
  * @param sanitizationSamplingWindow
  */
 // TODO: This is unused
-export const removeOldGasPrices = (chainId: string, providerName: string, sanitizationSamplingWindow: number) =>
+export const purgeOldGasPrices = (chainId: string, providerName: string, sanitizationSamplingWindow: number) =>
   updateState((draft) => {
     // Remove gasPrices older than the sanitizationSamplingWindow.
     remove(

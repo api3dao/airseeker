@@ -58,7 +58,7 @@ export const verifySignedDataIntegrity = (signedData: SignedData) => {
   return verifyTimestamp(signedData) && verifySignedData(signedData);
 };
 
-export const setStoreDataPoint = (signedData: SignedData) => {
+export const saveSignedData = (signedData: SignedData) => {
   const { airnode, templateId, signature, timestamp, encodedValue } = signedData;
 
   if (!verifySignedDataIntegrity(signedData)) {
@@ -92,13 +92,7 @@ export const setStoreDataPoint = (signedData: SignedData) => {
   });
 };
 
-export const getStoreDataPoint = (dataFeedId: BeaconId) => getState().signedApiStore[dataFeedId];
-
-export const clear = () => {
-  updateState((draft) => {
-    draft.signedApiStore = {};
-  });
-};
+export const getSignedData = (dataFeedId: BeaconId) => getState().signedApiStore[dataFeedId];
 
 export const isSignedDataFresh = (signedData: SignedData) =>
   BigNumber.from(signedData.timestamp).gt(Math.ceil(Date.now() / 1000 - 24 * 60 * 60));

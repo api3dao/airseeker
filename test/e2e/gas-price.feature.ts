@@ -1,7 +1,7 @@
 import type { BigNumber } from 'ethers';
 import { ethers, network } from 'hardhat';
 
-import { getRecommendedGasPrice, initializeGasStore, removeOldGasPrices } from '../../src/gas-price';
+import { getRecommendedGasPrice, initializeGasStore, purgeOldGasPrices } from '../../src/gas-price';
 import { getState, updateState } from '../../src/state';
 import { multiplyBigNumber } from '../../src/utils';
 import { initializeState } from '../fixtures/mock-config';
@@ -66,7 +66,7 @@ describe(getRecommendedGasPrice.name, () => {
     });
     const providerRecommendedGasprice = await provider.getGasPrice();
 
-    removeOldGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
+    purgeOldGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
     const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(
