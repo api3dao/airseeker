@@ -334,7 +334,7 @@ describe(getUpdatableFeeds.name, () => {
         value: ethers.BigNumber.from('200'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: ethers.BigNumber.from(160),
+        timestamp: ethers.BigNumber.from(155),
         value: ethers.BigNumber.from('200'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
