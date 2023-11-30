@@ -12,7 +12,7 @@ export const initializeGasState = (chainId: string, providerName: string) =>
       draft.gasPrices[chainId] = {};
     }
 
-    draft.gasPrices[chainId]![providerName] = { gasPrices: [], sponsorLastUpdateTimestampMs: {} };
+    draft.gasPrices[chainId]![providerName] = { gasPrices: [], sponsorLastUpdateTimestamp: {} };
   });
 
 /**
@@ -23,7 +23,10 @@ export const initializeGasState = (chainId: string, providerName: string) =>
  */
 export const saveGasPrice = (chainId: string, providerName: string, gasPrice: ethers.BigNumber) =>
   updateState((draft) => {
-    draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({ price: gasPrice, timestampMs: Date.now() });
+    draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({
+      price: gasPrice,
+      timestamp: Math.floor(Date.now() / 1000),
+    });
   });
 
 /**
@@ -37,7 +40,7 @@ export const purgeOldGasPrices = (chainId: string, providerName: string, sanitiz
     // Remove gasPrices older than the sanitizationSamplingWindow.
     remove(
       draft.gasPrices[chainId]![providerName]!.gasPrices,
-      (gasPrice) => gasPrice.timestampMs < Date.now() - sanitizationSamplingWindow * 1000
+      (gasPrice) => gasPrice.timestamp < Math.floor(Date.now() / 1000) - sanitizationSamplingWindow
     );
   });
 
@@ -47,13 +50,11 @@ export const purgeOldGasPrices = (chainId: string, providerName: string, sanitiz
  * @param providerName
  * @param sponsorWalletAddress
  */
-export const setSponsorLastUpdateTimestampMs = (
-  chainId: string,
-  providerName: string,
-  sponsorWalletAddress: string
-) => {
+export const setSponsorLastUpdateTimestamp = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
   updateState((draft) => {
-    draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] = Date.now();
+    draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress] = Math.floor(
+      Date.now() / 1000
+    );
   });
 };
 
@@ -63,19 +64,15 @@ export const setSponsorLastUpdateTimestampMs = (
  * @param providerName
  * @param sponsorWalletAddress
  */
-export const clearSponsorLastUpdateTimestampMs = (
-  chainId: string,
-  providerName: string,
-  sponsorWalletAddress: string
-) =>
+export const clearSponsorLastUpdateTimestamp = (chainId: string, providerName: string, sponsorWalletAddress: string) =>
   updateState((draft) => {
     const gasPriceStatePerChain = draft?.gasPrices[chainId] ?? {};
 
-    const sponsorLastUpdateTimestampMs =
-      gasPriceStatePerChain[providerName]?.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+    const sponsorLastUpdateTimestamp =
+      gasPriceStatePerChain[providerName]?.sponsorLastUpdateTimestamp[sponsorWalletAddress];
 
-    if (sponsorLastUpdateTimestampMs) {
-      delete draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+    if (sponsorLastUpdateTimestamp) {
+      delete draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress];
     }
   });
 
@@ -128,7 +125,8 @@ export const getRecommendedGasPrice = async (
     maxScalingMultiplier,
   } = gasSettings;
   const state = getState();
-  const { gasPrices, sponsorLastUpdateTimestampMs } = state.gasPrices[chainId]![providerName]!;
+  const { gasPrices, sponsorLastUpdateTimestamp: sponsorLastUpdateTimestamp } =
+    state.gasPrices[chainId]![providerName]!;
 
   // Get the provider recommended gas price and save it to the state
   logger.debug('Fetching gas price and saving it to the state');
@@ -138,14 +136,14 @@ export const getRecommendedGasPrice = async (
   logger.debug('Purging old gas prices');
   purgeOldGasPrices(chainId, providerName, sanitizationSamplingWindow);
 
-  const lastUpdateTimestampMs = sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+  const lastUpdateTimestamp = sponsorLastUpdateTimestamp[sponsorWalletAddress];
 
   // Check if the next update is a retry of a pending transaction and if it has been pending longer than scalingWindow
-  if (lastUpdateTimestampMs && lastUpdateTimestampMs < Date.now() - scalingWindow * 1000) {
+  if (lastUpdateTimestamp && lastUpdateTimestamp < Math.floor(Date.now() / 1000) - scalingWindow) {
     const multiplier = calculateScalingMultiplier(
       recommendedGasPriceMultiplier,
       maxScalingMultiplier,
-      (Date.now() - lastUpdateTimestampMs) / 1000,
+      Math.floor(Date.now() / 1000) - lastUpdateTimestamp,
       scalingWindow
     );
 
@@ -155,10 +153,10 @@ export const getRecommendedGasPrice = async (
 
   // Check that there are enough entries in the stored gas prices to determine whether to use sanitization or not
   // Calculate the minimum timestamp that should be within the 90% of the sanitizationSamplingWindow
-  const minTimestampMs = Date.now() - 0.9 * sanitizationSamplingWindow * 1000;
+  const minTimestamp = Math.floor(Date.now() / 1000) - 0.9 * sanitizationSamplingWindow;
 
   // Check if there are entries with a timestamp older than at least 90% of the sanitizationSamplingWindow
-  const hasSufficientSanitizationData = gasPrices.some((gasPrice) => gasPrice.timestampMs <= minTimestampMs);
+  const hasSufficientSanitizationData = gasPrices.some((gasPrice) => gasPrice.timestamp <= minTimestamp);
 
   // Get the configured percentile of historical gas prices
   const percentileGasPrice = getPercentile(
