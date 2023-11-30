@@ -17,7 +17,7 @@ import {
   DapiDataRegistry__factory as DapiDataRegistryFactory,
   HashRegistry__factory as HashRegistryFactory,
 } from '../../src/typechain-types';
-import { deriveBeaconId, deriveSponsorWallet } from '../../src/utils';
+import { deriveBeaconId, deriveSponsorWallet, encodeDapiName } from '../../src/utils';
 
 interface RawBeaconData {
   airnodeAddress: string;
@@ -59,7 +59,7 @@ export const refundFunder = async (funderWallet: ethers.Wallet) => {
 
   // Initialize sponsor wallets
   for (const beaconSetName of getBeaconSetNames()) {
-    const dapiName = ethers.utils.formatBytes32String(beaconSetName);
+    const dapiName = encodeDapiName(beaconSetName);
 
     const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName).connect(funderWallet.provider);
     const sponsorWalletBalance = await funderWallet.provider.getBalance(sponsorWallet.address);
@@ -116,7 +116,7 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.Wallet) =>
 
   // Initialize sponsor wallets
   for (const beaconSetName of getBeaconSetNames()) {
-    const dapiName = ethers.utils.formatBytes32String(beaconSetName);
+    const dapiName = encodeDapiName(beaconSetName);
 
     const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName);
     const sponsorWalletBalance = await funderWallet.provider.getBalance(sponsorWallet.address);
@@ -255,7 +255,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   const airseekerWalletMnemonic = airseekerSecrets.SPONSOR_WALLET_MNEMONIC;
   if (!airseekerWalletMnemonic) throw new Error('SPONSOR_WALLET_MNEMONIC not found in Airseeker secrets');
   const dapiNamesInfo = zip(beaconSetNames, beaconSetIds).map(([beaconSetName, beaconSetId]) => {
-    const dapiName = ethers.utils.formatBytes32String(beaconSetName!);
+    const dapiName = encodeDapiName(beaconSetName!);
     const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName);
     return [dapiName, beaconSetId!, sponsorWallet.address] as const;
   });

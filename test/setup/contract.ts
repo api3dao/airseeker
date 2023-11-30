@@ -13,7 +13,7 @@ import {
   DapiDataRegistry__factory as DapiDataRegistryFactory,
   HashRegistry__factory as HashRegistryFactory,
 } from '../../src/typechain-types';
-import { deriveBeaconId, deriveSponsorWallet } from '../../src/utils';
+import { deriveBeaconId, deriveSponsorWallet, encodeDapiName } from '../../src/utils';
 import { generateTestConfig } from '../fixtures/mock-config';
 import { signData } from '../utils';
 
@@ -283,8 +283,8 @@ export const deployAndUpdate = async () => {
     ['BTC/USD', btcBeaconSetId, airseekerInitializationWallet.address],
     ['ETH/USD', ethBeaconSetId, airseekerInitializationWallet.address],
   ] as const;
-  const dapiTreeValues = dapiNamesInfo.map(([dapiName, beaconSetId, sponsorWalletAddress]) => {
-    return [ethers.utils.formatBytes32String(dapiName), beaconSetId, sponsorWalletAddress];
+  const dapiTreeValues = dapiNamesInfo.map(([decodedDapiName, beaconSetId, sponsorWalletAddress]) => {
+    return [encodeDapiName(decodedDapiName), beaconSetId, sponsorWalletAddress];
   });
   const dapiTree = StandardMerkleTree.of(dapiTreeValues, ['bytes32', 'bytes32', 'address']);
   const dapiTreeRoot = dapiTree.root;

@@ -7,6 +7,7 @@ import * as stateModule from '../../src/state';
 import { runUpdateFeeds } from '../../src/update-feeds';
 import { decodeDataFeed } from '../../src/update-feeds/dapi-data-registry';
 import { updateFeeds } from '../../src/update-feeds/update-transactions';
+import { decodeDapiName } from '../../src/utils';
 import { initializeState } from '../fixtures/mock-config';
 import { deployAndUpdate } from '../setup/contract';
 import { generateSignedData } from '../utils';
@@ -49,7 +50,11 @@ it('updates blockchain data', async () => {
   const btcDapi = await dapiDataRegistry.readDapiWithIndex(0);
 
   const decodedDataFeed = decodeDataFeed(btcDapi.dataFeed);
-  const decodedBtcDapi = { ...omit(btcDapi, ['dataFeed']), decodedDataFeed };
+  const decodedBtcDapi = {
+    ...omit(btcDapi, ['dataFeed']),
+    decodedDataFeed,
+    decodedDapiName: decodeDapiName(btcDapi.dapiName),
+  };
 
   const currentBlock = await dapiDataRegistry.provider.getBlock('latest');
   const currentBlockTimestamp = currentBlock.timestamp;

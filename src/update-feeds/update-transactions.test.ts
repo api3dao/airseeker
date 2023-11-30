@@ -237,7 +237,7 @@ describe(updateTransactionsModule.createUpdateFeedCalldatas.name, () => {
 });
 
 describe(updateTransactionsModule.getDerivedSponsorWallet.name, () => {
-  const dapiName = ethers.utils.formatBytes32String('ETH/USD');
+  const dapiName = utilsModule.encodeDapiName('ETH/USD');
 
   it('returns the derived sponsor wallet', () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
@@ -284,8 +284,12 @@ describe(updateTransactionsModule.updateFeeds.name, () => {
       new ethers.providers.StaticJsonRpcProvider(),
       generateMockApi3ServerV1() as unknown as Api3ServerV1,
       [
-        allowPartial<updateTransactionsModule.UpdatableDapi>({ dapiInfo: { dapiName: 'ETH/USD' } }),
-        allowPartial<updateTransactionsModule.UpdatableDapi>({ dapiInfo: { dapiName: 'BTC/USD' } }),
+        allowPartial<updateTransactionsModule.UpdatableDapi>({
+          dapiInfo: { dapiName: utilsModule.encodeDapiName('ETH/USD') },
+        }),
+        allowPartial<updateTransactionsModule.UpdatableDapi>({
+          dapiInfo: { dapiName: utilsModule.encodeDapiName('BTC/USD') },
+        }),
       ]
     );
 
@@ -294,7 +298,7 @@ describe(updateTransactionsModule.updateFeeds.name, () => {
 });
 
 describe(updateTransactionsModule.updateFeed.name, () => {
-  const dapiName = ethers.utils.formatBytes32String('ETH/USD');
+  const dapiName = utilsModule.encodeDapiName('ETH/USD');
 
   it('updates a dapi', async () => {
     jest.spyOn(updateTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
