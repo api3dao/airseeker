@@ -34,7 +34,7 @@ describe(updateTransactionsModule.estimateMulticallGasLimit.name, () => {
       2_000_000
     );
 
-    expect(gasLimit).toBe(2_000_000);
+    expect(gasLimit).toStrictEqual(ethers.BigNumber.from(2_000_000));
   });
 
   it('throws an error if no fallback is provided', async () => {
