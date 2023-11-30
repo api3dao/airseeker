@@ -1,9 +1,9 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
+import { getSignedData } from '../data-fetcher-loop/signed-data-state';
 import { calculateMedian, isDataFeedUpdatable } from '../deviation-check';
 import { logger } from '../logger';
-import { getSignedData } from '../signed-data-store';
 import { getState } from '../state';
 import type { BeaconId, ChainId, SignedData } from '../types';
 import { decodeBeaconValue, multiplyBigNumber } from '../utils';

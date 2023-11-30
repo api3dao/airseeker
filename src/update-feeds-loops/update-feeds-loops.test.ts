@@ -60,7 +60,7 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
       staggerTime: 50,
       providerNames: ['first-provider', 'second-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas store', {
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas state', {
       chainId: '123',
       providerName: 'first-provider',
     });
@@ -68,7 +68,7 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
       chainId: '123',
       providerName: 'first-provider',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Initializing gas store', {
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Initializing gas state', {
       chainId: '123',
       providerName: 'second-provider',
     });
@@ -120,7 +120,7 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
       staggerTime: 100,
       providerNames: ['first-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas store', {
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas state', {
       chainId: '123',
       providerName: 'first-provider',
     });
@@ -133,7 +133,7 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
       staggerTime: 100,
       providerNames: ['another-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Initializing gas store', {
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Initializing gas state', {
       chainId: '456',
       providerName: 'another-provider',
     });

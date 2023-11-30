@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { omit } from 'lodash';
 
-import { initializeGasStore } from '../../src/gas-price';
+import { initializeGasState } from '../../src/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
 import { runUpdateFeeds } from '../../src/update-feeds-loops';
@@ -24,7 +24,7 @@ it('reads blockchain data', async () => {
   jest.spyOn(logger, 'debug').mockImplementation();
 
   initializeState(config);
-  initializeGasStore(chainId, providerName);
+  initializeGasState(chainId, providerName);
 
   await runUpdateFeeds(providerName, chain, chainId);
 
@@ -46,7 +46,7 @@ it('updates blockchain data', async () => {
   stateModule.updateState((draft) => {
     draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic.phrase;
   });
-  initializeGasStore(chainId, providerName);
+  initializeGasState(chainId, providerName);
   const btcDapi = await dapiDataRegistry.readDapiWithIndex(0);
 
   const decodedDataFeed = decodeDataFeed(btcDapi.dataFeed);

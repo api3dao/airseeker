@@ -6,10 +6,10 @@ import { getState, updateState } from '../state';
 import type { SignedData } from '../types';
 import { deriveBeaconId } from '../utils';
 
-import { purgeOldSignedData, verifySignedDataIntegrity } from './signed-data-store';
-import * as localDataStore from './signed-data-store';
+import { purgeOldSignedData, verifySignedDataIntegrity } from './signed-data-state';
+import * as localDataStateModule from './signed-data-state';
 
-describe('datastore', () => {
+describe('signed data state', () => {
   let testDataPoint: SignedData;
   const signer = ethers.Wallet.fromMnemonic('test test test test test test test test test test test junk');
 
@@ -30,13 +30,13 @@ describe('datastore', () => {
   });
 
   it('stores and gets a data point', () => {
-    jest.spyOn(localDataStore, 'isSignedDataFresh').mockReturnValue(true);
+    jest.spyOn(localDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
     // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-    const promisedStorage = localDataStore.saveSignedData(testDataPoint);
+    const promisedStorage = localDataStateModule.saveSignedData(testDataPoint);
     expect(promisedStorage).toBeFalsy();
 
     const dataFeedId = deriveBeaconId(testDataPoint.airnode, testDataPoint.templateId)!;
-    const datapoint = localDataStore.getSignedData(dataFeedId);
+    const datapoint = localDataStateModule.getSignedData(dataFeedId);
 
     expect(datapoint).toStrictEqual(testDataPoint);
   });
@@ -76,7 +76,7 @@ describe('datastore', () => {
     expect(verifySignedDataIntegrity(badTestDataPoint)).toBeFalsy();
   });
 
-  it('purges old data from the store', () => {
+  it('purges old data from the state', () => {
     const baseTime = 1_700_126_230_000;
     jest.useFakeTimers().setSystemTime(baseTime);
 

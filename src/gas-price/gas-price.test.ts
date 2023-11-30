@@ -10,7 +10,7 @@ import {
   saveGasPrice,
   clearSponsorLastUpdateTimestampMs,
   purgeOldGasPrices,
-  initializeGasStore,
+  initializeGasState,
   calculateScalingMultiplier,
   getPercentile,
 } from './gas-price';
@@ -34,7 +34,7 @@ const sponsorWalletAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
 beforeEach(() => {
   initializeState();
-  initializeGasStore(chainId, providerName);
+  initializeGasState(chainId, providerName);
 });
 
 describe(calculateScalingMultiplier.name, () => {
@@ -52,7 +52,7 @@ describe(calculateScalingMultiplier.name, () => {
 });
 
 describe(purgeOldGasPrices.name, () => {
-  it('clears expired gas prices from the store', () => {
+  it('clears expired gas prices from the state', () => {
     const oldGasPriceMock = {
       price: ethers.utils.parseUnits('5', 'gwei'),
       timestampMs: timestampMsMock - gasSettings.sanitizationSamplingWindow * 1000 - 1,
@@ -69,7 +69,7 @@ describe(purgeOldGasPrices.name, () => {
 });
 
 describe(saveGasPrice.name, () => {
-  it('updates store with price data', () => {
+  it('updates state with price data', () => {
     jest.spyOn(Date, 'now').mockReturnValue(timestampMsMock);
 
     saveGasPrice(chainId, providerName, ethers.utils.parseUnits('10', 'gwei'));
@@ -164,7 +164,7 @@ describe(getRecommendedGasPrice.name, () => {
     );
   });
 
-  it('uses the sanitized percentile price from the store if the new price is above the percentile', async () => {
+  it('uses the sanitized percentile price from the state if the new price is above the percentile', async () => {
     const gasPricesMock = Array.from(Array.from({ length: 10 }), (_, i) => ({
       price: ethers.utils.parseUnits(`${i + 1}`, 'gwei'),
       timestampMs: timestampMsMock - 0.9 * gasSettings.sanitizationSamplingWindow * 1000 - 1,

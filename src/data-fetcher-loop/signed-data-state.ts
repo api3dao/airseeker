@@ -71,12 +71,12 @@ export const saveSignedData = (signedData: SignedData) => {
 
   const existingValue = state.signedDatas[dataFeedId];
   if (existingValue && existingValue.timestamp >= timestamp) {
-    logger.debug('Skipping store update. The signed data value is not fresher than the stored value.');
+    logger.debug('Skipping state update. The signed data value is not fresher than the stored value.');
     return;
   }
 
   if (!isSignedDataFresh(signedData)) {
-    logger.debug('Skipping store update. The signed data value is older than 24 hours.');
+    logger.debug('Skipping state update. The signed data value is older than 24 hours.');
     return;
   }
 

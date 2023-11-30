@@ -4,7 +4,7 @@ import { isError, range, size, zip } from 'lodash';
 
 import type { Chain } from '../config/schema';
 import { RPC_PROVIDER_TIMEOUT_MS } from '../constants';
-import { clearSponsorLastUpdateTimestampMs, initializeGasStore } from '../gas-price';
+import { clearSponsorLastUpdateTimestampMs, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
@@ -39,8 +39,8 @@ export const startUpdateFeedsLoops = async () => {
       logger.debug(`Starting update loops for chain`, { chainId, staggerTime, providerNames: Object.keys(providers) });
 
       for (const providerName of Object.keys(providers)) {
-        logger.debug(`Initializing gas store`, { chainId, providerName });
-        initializeGasStore(chainId, providerName);
+        logger.debug(`Initializing gas state`, { chainId, providerName });
+        initializeGasState(chainId, providerName);
 
         logger.debug(`Starting update feed loop`, { chainId, providerName });
         // Run the update feed loop manually for the first time, because setInterval first waits for the given period of

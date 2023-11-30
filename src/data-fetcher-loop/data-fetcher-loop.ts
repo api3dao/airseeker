@@ -4,10 +4,10 @@ import { pick, uniq } from 'lodash';
 
 import { HTTP_SIGNED_DATA_API_TIMEOUT_MULTIPLIER } from '../constants';
 import { logger } from '../logger';
-import * as localDataStore from '../signed-data-store';
-import { purgeOldSignedData } from '../signed-data-store';
 import { getState } from '../state';
 import { signedApiResponseSchema, type SignedData } from '../types';
+
+import { purgeOldSignedData, saveSignedData } from './signed-data-state';
 
 // Inspired by: https://axios-http.com/docs/handling_errors.
 //
@@ -76,13 +76,13 @@ export const runDataFetcher = async () => {
     const state = getState();
     const {
       config: { signedDataFetchInterval, signedApiUrls },
-      signedApiUrls: signedApiUrlStore,
+      signedApiUrls: signedApiUrlState,
     } = state;
 
     const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
 
     const urls = uniq([
-      ...Object.values(signedApiUrlStore)
+      ...Object.values(signedApiUrlState)
         .flatMap((urlsPerProvider) => Object.values(urlsPerProvider))
         .flatMap((urlsPerAirnode) => Object.values(urlsPerAirnode))
         .flat(),
@@ -101,7 +101,7 @@ export const runDataFetcher = async () => {
             if (!signedDataApiResponse) return;
 
             for (const signedData of signedDataApiResponse) {
-              localDataStore.saveSignedData(signedData);
+              saveSignedData(signedData);
             }
           },
           { totalTimeoutMs: signedDataFetchIntervalMs }

@@ -6,7 +6,7 @@ import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import { multiplyBigNumber } from '../utils';
 
-export const initializeGasStore = (chainId: string, providerName: string) =>
+export const initializeGasState = (chainId: string, providerName: string) =>
   updateState((draft) => {
     if (!draft.gasPrices[chainId]) {
       draft.gasPrices[chainId] = {};
@@ -16,7 +16,7 @@ export const initializeGasStore = (chainId: string, providerName: string) =>
   });
 
 /**
- * Saves a gas price into the store.
+ * Saves a gas price into the state.
  * @param chainId
  * @param providerName
  * @param gasPrice
@@ -27,7 +27,7 @@ export const saveGasPrice = (chainId: string, providerName: string, gasPrice: et
   });
 
 /**
- * Removes gas prices where the timestamp is older than sanitizationSamplingWindow from the store.
+ * Removes gas prices where the timestamp is older than sanitizationSamplingWindow from the state.
  * @param chainId
  * @param providerName
  * @param sanitizationSamplingWindow
@@ -42,7 +42,7 @@ export const purgeOldGasPrices = (chainId: string, providerName: string, sanitiz
   });
 
 /**
- * Saves a sponsor wallet's last update timestamp into the store.
+ * Saves a sponsor wallet's last update timestamp into the state.
  * @param chainId
  * @param providerName
  * @param sponsorWalletAddress
@@ -58,7 +58,7 @@ export const setSponsorLastUpdateTimestampMs = (
 };
 
 /**
- * Removes a sponsor wallet's last update timestamp from the store.
+ * Removes a sponsor wallet's last update timestamp from the state.
  * @param chainId
  * @param providerName
  * @param sponsorWalletAddress
@@ -69,10 +69,10 @@ export const clearSponsorLastUpdateTimestampMs = (
   sponsorWalletAddress: string
 ) =>
   updateState((draft) => {
-    const gasPriceStorePerChain = draft?.gasPrices[chainId] ?? {};
+    const gasPriceStatePerChain = draft?.gasPrices[chainId] ?? {};
 
     const sponsorLastUpdateTimestampMs =
-      gasPriceStorePerChain[providerName]?.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+      gasPriceStatePerChain[providerName]?.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
 
     if (sponsorLastUpdateTimestampMs) {
       delete draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress];

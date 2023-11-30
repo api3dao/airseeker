@@ -1,10 +1,10 @@
 import axios from 'axios';
 
 import { initializeState } from '../../test/fixtures/mock-config';
-import * as localDataStore from '../signed-data-store';
 import { updateState } from '../state';
 
 import * as dataFetcherModule from './data-fetcher-loop';
+import * as localDataStateModule from './signed-data-state';
 
 const mockedAxios = axios as jest.MockedFunction<typeof axios>;
 jest.mock('axios');
@@ -25,7 +25,7 @@ describe('data fetcher', () => {
   });
 
   it('retrieves signed data from urls', async () => {
-    const saveSignedDataSpy = jest.spyOn(localDataStore, 'saveSignedData');
+    const saveSignedDataSpy = jest.spyOn(localDataStateModule, 'saveSignedData');
 
     mockedAxios.mockResolvedValue(
       Promise.resolve({
@@ -62,7 +62,7 @@ describe('data fetcher', () => {
       })
     );
 
-    jest.spyOn(localDataStore, 'isSignedDataFresh').mockReturnValue(true);
+    jest.spyOn(localDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
 
     const dataFetcherPromise = dataFetcherModule.runDataFetcher();
     await expect(dataFetcherPromise).resolves.toBeDefined();
