@@ -1,5 +1,3 @@
-import { clearInterval } from 'node:timers';
-
 import { go } from '@api3/promise-utils';
 import axios, { type AxiosResponse, type AxiosError } from 'axios';
 import { pick, uniq } from 'lodash';
@@ -27,13 +25,6 @@ const parseAxiosError = (error: AxiosError) => {
   }
 
   return errorContext;
-};
-
-/**
- * Shuts down intervals
- */
-export const stopDataFetcher = () => {
-  clearInterval(getState().dataFetcherInterval);
 };
 
 /**

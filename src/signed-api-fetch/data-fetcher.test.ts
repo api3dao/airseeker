@@ -67,7 +67,6 @@ describe('data fetcher', () => {
 
     const dataFetcherPromise = dataFetcherModule.runDataFetcher();
     await expect(dataFetcherPromise).resolves.toBeDefined();
-    dataFetcherModule.stopDataFetcher();
 
     expect(mockedAxios).toHaveBeenCalledTimes(1);
     expect(setStoreDataPointSpy).toHaveBeenCalledTimes(3);
@@ -84,7 +83,6 @@ describe('data fetcher', () => {
     const dataFetcherPromise = dataFetcherModule.runDataFetcher();
 
     await expect(dataFetcherPromise).resolves.toBeDefined();
-    dataFetcherModule.stopDataFetcher();
 
     expect(mockedAxios).toHaveBeenCalledTimes(2);
     expect(dataFetcherModule.callSignedDataApi).toHaveBeenCalledWith(signedApiUrl, 10_000);
