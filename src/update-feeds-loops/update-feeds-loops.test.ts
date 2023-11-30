@@ -57,7 +57,7 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
     expect(logger.debug).toHaveBeenCalledTimes(5);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Starting update loops for chain', {
       chainId: '123',
-      staggerTime: 50,
+      staggerTimeMs: 50,
       providerNames: ['first-provider', 'second-provider'],
     });
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas state', {
@@ -117,7 +117,7 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
     expect(logger.debug).toHaveBeenCalledTimes(6);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Starting update loops for chain', {
       chainId: '123',
-      staggerTime: 100,
+      staggerTimeMs: 100,
       providerNames: ['first-provider'],
     });
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas state', {
@@ -130,7 +130,7 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
     });
     expect(logger.debug).toHaveBeenNthCalledWith(4, 'Starting update loops for chain', {
       chainId: '456',
-      staggerTime: 100,
+      staggerTimeMs: 100,
       providerNames: ['another-provider'],
     });
     expect(logger.debug).toHaveBeenNthCalledWith(5, 'Initializing gas state', {
@@ -251,7 +251,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs', expect.anything());
     expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching batches of active dAPIs', {
       batchesCount: 3,
-      staggerTime: 50,
+      staggerTimeMs: 50,
     });
     expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching batch of active dAPIs', {
       batchIndex: 1,
@@ -377,26 +377,26 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
   });
 });
 
-describe(updateFeedsLoopsModule.calculateStaggerTime.name, () => {
+describe(updateFeedsLoopsModule.calculateStaggerTimeMs.name, () => {
   it('calculates zero stagger time for specific edge cases', () => {
-    expect(updateFeedsLoopsModule.calculateStaggerTime(1, 10_000, 60_000)).toBe(0); // When there is only a single batch.
-    expect(updateFeedsLoopsModule.calculateStaggerTime(2, 25_000, 30_000)).toBe(0); // When there are just two batches and fetching the first batch takes too long.
+    expect(updateFeedsLoopsModule.calculateStaggerTimeMs(1, 10_000, 60_000)).toBe(0); // When there is only a single batch.
+    expect(updateFeedsLoopsModule.calculateStaggerTimeMs(2, 25_000, 30_000)).toBe(0); // When there are just two batches and fetching the first batch takes too long.
   });
 
   it('uses remaining time to calculate stagger time when fetching batch takes too long', () => {
-    expect(updateFeedsLoopsModule.calculateStaggerTime(3, 15_000, 30_000)).toBe(7500);
-    expect(updateFeedsLoopsModule.calculateStaggerTime(10, 10_000, 50_000)).toBe(4444);
-    expect(updateFeedsLoopsModule.calculateStaggerTime(10, 20_000, 20_000)).toBe(0);
+    expect(updateFeedsLoopsModule.calculateStaggerTimeMs(3, 15_000, 30_000)).toBe(7500);
+    expect(updateFeedsLoopsModule.calculateStaggerTimeMs(10, 10_000, 50_000)).toBe(4444);
+    expect(updateFeedsLoopsModule.calculateStaggerTimeMs(10, 20_000, 20_000)).toBe(0);
   });
 
   it('staggers the batches evenly', () => {
     const firstBatchDuration = 10_000;
     const batchCount = 11;
-    const staggerTime = updateFeedsLoopsModule.calculateStaggerTime(batchCount, firstBatchDuration, 50_000);
+    const staggerTimeMs = updateFeedsLoopsModule.calculateStaggerTimeMs(batchCount, firstBatchDuration, 50_000);
 
     const fetchTimes = [0, firstBatchDuration];
     for (let i = 1; i < batchCount - 1; i++) {
-      fetchTimes.push(fetchTimes[1]! + staggerTime * i);
+      fetchTimes.push(fetchTimes[1]! + staggerTimeMs * i);
     }
 
     expect(fetchTimes).toStrictEqual([
@@ -405,6 +405,6 @@ describe(updateFeedsLoopsModule.calculateStaggerTime.name, () => {
   });
 
   it('returns zero if first batch takes more than the full update interval', () => {
-    expect(updateFeedsLoopsModule.calculateStaggerTime(3, 60_000, 30_000)).toBe(0);
+    expect(updateFeedsLoopsModule.calculateStaggerTimeMs(3, 60_000, 30_000)).toBe(0);
   });
 });

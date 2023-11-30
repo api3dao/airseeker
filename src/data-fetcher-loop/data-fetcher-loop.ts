@@ -30,12 +30,10 @@ export const startDataFetcherLoop = () => {
     config: { signedDataFetchInterval },
   } = state;
 
-  const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
-
   // Run the data fetcher loop manually for the first time, because setInterval first waits for the given period of
   // time before calling the callback function.
   void runDataFetcher();
-  setInterval(runDataFetcher, signedDataFetchIntervalMs);
+  setInterval(runDataFetcher, signedDataFetchInterval * 1000);
 };
 
 /**
@@ -44,9 +42,6 @@ export const startDataFetcherLoop = () => {
  *    https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/server.ts#L33
  * - Actual handler fn:
  *   https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/handlers.ts#L81
- *
- * @param url
- * @param signedDataFetchIntervalMs
  */
 export const callSignedApi = async (url: string, timeout: number): Promise<SignedData[] | null> => {
   const goAxiosCall = await go<Promise<AxiosResponse>, AxiosError>(async () =>

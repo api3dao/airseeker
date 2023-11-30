@@ -2,7 +2,7 @@ import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
-import { getRecommendedGasPrice, setSponsorLastUpdateTimestampMs } from '../gas-price';
+import { getRecommendedGasPrice, setSponsorLastUpdateTimestamp } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
@@ -37,9 +37,9 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
 };
 
 export const hasSponsorPendingTransaction = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
-  const { sponsorLastUpdateTimestampMs } = getState().gasPrices[chainId]![providerName]!;
+  const { sponsorLastUpdateTimestamp } = getState().gasPrices[chainId]![providerName]!;
 
-  return !!sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+  return !!sponsorLastUpdateTimestamp[sponsorWalletAddress];
 };
 
 export const submitTransaction = async (
@@ -107,7 +107,7 @@ export const submitTransaction = async (
         // particular sponsor wallet). This assumes that a single sponsor updates a single dAPI.
         if (!hasSponsorPendingTransaction(chainId, providerName, sponsorWallet.address)) {
           logger.debug('Setting timestamp of the original update transaction');
-          setSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWallet.address);
+          setSponsorLastUpdateTimestamp(chainId, providerName, sponsorWallet.address);
         }
 
         logger.debug('Updating dAPI', { gasPrice: goGasPrice.data.toString(), gasLimit: gasLimit.toString() });

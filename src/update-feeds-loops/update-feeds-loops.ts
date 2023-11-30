@@ -4,7 +4,7 @@ import { isError, range, size, zip } from 'lodash';
 
 import type { Chain } from '../config/schema';
 import { RPC_PROVIDER_TIMEOUT_MS } from '../constants';
-import { clearSponsorLastUpdateTimestampMs, initializeGasState } from '../gas-price';
+import { clearSponsorLastUpdateTimestamp, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
@@ -35,8 +35,12 @@ export const startUpdateFeedsLoops = async () => {
 
       // Calculate the stagger time for each provider on the same chain to maximize transaction throughput and update
       // frequency.
-      const staggerTime = dataFeedUpdateIntervalMs / size(providers);
-      logger.debug(`Starting update loops for chain`, { chainId, staggerTime, providerNames: Object.keys(providers) });
+      const staggerTimeMs = dataFeedUpdateIntervalMs / size(providers);
+      logger.debug(`Starting update loops for chain`, {
+        chainId,
+        staggerTimeMs,
+        providerNames: Object.keys(providers),
+      });
 
       for (const providerName of Object.keys(providers)) {
         logger.debug(`Initializing gas state`, { chainId, providerName });
@@ -48,30 +52,30 @@ export const startUpdateFeedsLoops = async () => {
         void runUpdateFeeds(providerName, chain, chainId);
         setInterval(async () => runUpdateFeeds(providerName, chain, chainId), dataFeedUpdateIntervalMs);
 
-        await sleep(staggerTime);
+        await sleep(staggerTimeMs);
       }
     })
   );
 };
 
-export const calculateStaggerTime = (
+export const calculateStaggerTimeMs = (
   batchesCount: number,
-  firstBatchDuration: number,
+  firstBatchDurationMs: number,
   dataFeedUpdateIntervalMs: number
 ) => {
   // First batch duration should not be longer than the update interval because we have a timeout in place. However, it
   // may happen if the fetching resolves very close to the end of timeout and the duration ends up slightly larger. It's
   // arguably a bit better to let the function return 0 instead of throwing an error.
-  if (batchesCount <= 1 || firstBatchDuration >= dataFeedUpdateIntervalMs) return 0;
+  if (batchesCount <= 1 || firstBatchDurationMs >= dataFeedUpdateIntervalMs) return 0;
 
   // Calculate the optimal stagger time between the the batches.
-  const optimalStaggerTime = Math.round(dataFeedUpdateIntervalMs / batchesCount);
+  const optimalStaggerTimeMs = Math.round(dataFeedUpdateIntervalMs / batchesCount);
   // If the first batch took longer than the optimal stagger time, we use the remaining time to stagger the rest of
   // the batches.
-  if (firstBatchDuration > optimalStaggerTime) {
-    return batchesCount === 2 ? 0 : Math.round((dataFeedUpdateIntervalMs - firstBatchDuration) / (batchesCount - 1));
+  if (firstBatchDurationMs > optimalStaggerTimeMs) {
+    return batchesCount === 2 ? 0 : Math.round((dataFeedUpdateIntervalMs - firstBatchDurationMs) / (batchesCount - 1));
   }
-  return optimalStaggerTime;
+  return optimalStaggerTimeMs;
 };
 
 export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, chainId: ChainId) => {
@@ -90,7 +94,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       const dapiDataRegistry = getDapiDataRegistry(contracts.DapiDataRegistry, provider);
 
       logger.debug(`Fetching first batch of dAPIs batches`);
-      const firstBatchStartTime = Date.now();
+      const firstBatchStartTimeMs = Date.now();
       const goFirstBatch = await go(
         async () => {
           const dapisCountCalldata = dapiDataRegistry.interface.encodeFunctionData('dapisCount');
@@ -138,18 +142,18 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
 
       // Calculate the stagger time.
       const batchesCount = Math.ceil(dapisCount / dataFeedBatchSize);
-      const firstBatchDuration = Date.now() - firstBatchStartTime;
-      const staggerTime = calculateStaggerTime(batchesCount, firstBatchDuration, dataFeedUpdateIntervalMs);
+      const firstBatchDurationMs = Date.now() - firstBatchStartTimeMs;
+      const staggerTimeMs = calculateStaggerTimeMs(batchesCount, firstBatchDurationMs, dataFeedUpdateIntervalMs);
 
       // Wait the remaining stagger time required after fetching the first batch.
-      await sleep(Math.max(0, staggerTime - firstBatchDuration));
+      await sleep(Math.max(0, staggerTimeMs - firstBatchDurationMs));
 
       // Fetch the rest of the batches in parallel in a staggered way and process them.
       if (batchesCount > 1) {
-        logger.debug('Fetching batches of active dAPIs', { batchesCount, staggerTime });
+        logger.debug('Fetching batches of active dAPIs', { batchesCount, staggerTimeMs });
       }
       const processOtherBatchesPromises = range(1, batchesCount).map(async (batchIndex) => {
-        await sleep((batchIndex - 1) * staggerTime);
+        await sleep((batchIndex - 1) * staggerTimeMs);
 
         const goBatch = await go(async () => {
           logger.debug(`Fetching batch of active dAPIs`, { batchIndex });
@@ -250,7 +254,7 @@ export const processBatch = async (
         logger.debug(`Clearing dAPI update timestamp because it no longer needs an update`, {
           dapiName: decodedDapiName,
         });
-        clearSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWalletAddress);
+        clearSponsorLastUpdateTimestamp(chainId, providerName, sponsorWalletAddress);
       }
     }
   }

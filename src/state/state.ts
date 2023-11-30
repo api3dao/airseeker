@@ -14,8 +14,8 @@ import type {
 } from '../types';
 
 interface GasState {
-  gasPrices: { price: BigNumber; timestampMs: number }[];
-  sponsorLastUpdateTimestampMs: Record<string, number>;
+  gasPrices: { price: BigNumber; timestamp: number }[];
+  sponsorLastUpdateTimestamp: Record<string, number>;
 }
 
 export interface State {

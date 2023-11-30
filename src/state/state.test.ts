@@ -11,8 +11,8 @@ const stateMock: State = {
   gasPrices: {
     '31337': {
       localhost: {
-        gasPrices: [{ price: BigNumber.from(10), timestampMs: timestampMock }],
-        sponsorLastUpdateTimestampMs: { '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266': timestampMock },
+        gasPrices: [{ price: BigNumber.from(10), timestamp: timestampMock }],
+        sponsorLastUpdateTimestamp: { '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266': timestampMock },
       },
     },
   },

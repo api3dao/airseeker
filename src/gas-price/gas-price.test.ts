@@ -6,9 +6,9 @@ import { getState, updateState } from '../state';
 
 import {
   getRecommendedGasPrice,
-  setSponsorLastUpdateTimestampMs,
+  setSponsorLastUpdateTimestamp,
   saveGasPrice,
-  clearSponsorLastUpdateTimestampMs,
+  clearSponsorLastUpdateTimestamp,
   purgeOldGasPrices,
   initializeGasState,
   calculateScalingMultiplier,
@@ -29,7 +29,8 @@ const gasSettings = {
   scalingWindow: 120,
   maxScalingMultiplier: 2,
 };
-const timestampMsMock = 1_696_930_907_351;
+const dateNowMock = 1_696_930_907_351;
+const timestampMock = Math.floor(dateNowMock / 1000);
 const sponsorWalletAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
 beforeEach(() => {
@@ -55,9 +56,9 @@ describe(purgeOldGasPrices.name, () => {
   it('clears expired gas prices from the state', () => {
     const oldGasPriceMock = {
       price: ethers.utils.parseUnits('5', 'gwei'),
-      timestampMs: timestampMsMock - gasSettings.sanitizationSamplingWindow * 1000 - 1,
+      timestamp: timestampMock - gasSettings.sanitizationSamplingWindow - 1,
     };
-    jest.spyOn(Date, 'now').mockReturnValue(timestampMsMock);
+    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
     });
@@ -70,37 +71,37 @@ describe(purgeOldGasPrices.name, () => {
 
 describe(saveGasPrice.name, () => {
   it('updates state with price data', () => {
-    jest.spyOn(Date, 'now').mockReturnValue(timestampMsMock);
+    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
 
     saveGasPrice(chainId, providerName, ethers.utils.parseUnits('10', 'gwei'));
 
     expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
-      { price: ethers.utils.parseUnits('10', 'gwei'), timestampMs: timestampMsMock },
+      { price: ethers.utils.parseUnits('10', 'gwei'), timestamp: timestampMock },
     ]);
   });
 });
 
-describe(setSponsorLastUpdateTimestampMs.name, () => {
+describe(setSponsorLastUpdateTimestamp.name, () => {
   it('sets the last update timestamp for the sponsor', () => {
-    jest.spyOn(Date, 'now').mockReturnValue(timestampMsMock);
+    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
 
-    setSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWalletAddress);
+    setSponsorLastUpdateTimestamp(chainId, providerName, sponsorWalletAddress);
 
     expect(
-      getState().gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress]
-    ).toStrictEqual(timestampMsMock);
+      getState().gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress]
+    ).toStrictEqual(timestampMock);
   });
 });
 
-describe(clearSponsorLastUpdateTimestampMs.name, () => {
+describe(clearSponsorLastUpdateTimestamp.name, () => {
   it('clears the last update timestamp for the sponsor', () => {
-    jest.spyOn(Date, 'now').mockReturnValue(timestampMsMock);
-    setSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWalletAddress);
+    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
+    setSponsorLastUpdateTimestamp(chainId, providerName, sponsorWalletAddress);
 
-    clearSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWalletAddress);
+    clearSponsorLastUpdateTimestamp(chainId, providerName, sponsorWalletAddress);
 
     expect(
-      getState().gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress]
+      getState().gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress]
     ).toBeUndefined();
   });
 });
@@ -144,7 +145,7 @@ describe(getPercentile.name, () => {
 
 describe(getRecommendedGasPrice.name, () => {
   it('uses provider recommended gas price when there are no historical prices', async () => {
-    jest.spyOn(Date, 'now').mockReturnValue(timestampMsMock);
+    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     jest.spyOn(provider, 'getGasPrice').mockResolvedValueOnce(ethers.utils.parseUnits('10', 'gwei'));
     jest.spyOn(logger, 'debug');
 
@@ -152,7 +153,7 @@ describe(getRecommendedGasPrice.name, () => {
 
     expect(gasPrice).toStrictEqual(ethers.utils.parseUnits('15', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
     expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
-      { price: ethers.utils.parseUnits('10', 'gwei'), timestampMs: timestampMsMock },
+      { price: ethers.utils.parseUnits('10', 'gwei'), timestamp: timestampMock },
     ]);
 
     expect(logger.debug).toHaveBeenCalledTimes(3);
@@ -167,9 +168,9 @@ describe(getRecommendedGasPrice.name, () => {
   it('uses the sanitized percentile price from the state if the new price is above the percentile', async () => {
     const gasPricesMock = Array.from(Array.from({ length: 10 }), (_, i) => ({
       price: ethers.utils.parseUnits(`${i + 1}`, 'gwei'),
-      timestampMs: timestampMsMock - 0.9 * gasSettings.sanitizationSamplingWindow * 1000 - 1,
+      timestamp: timestampMock - 0.9 * gasSettings.sanitizationSamplingWindow - 1,
     }));
-    jest.spyOn(Date, 'now').mockReturnValue(timestampMsMock);
+    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     jest.spyOn(provider, 'getGasPrice').mockResolvedValueOnce(ethers.utils.parseUnits('10', 'gwei'));
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName]!.gasPrices = gasPricesMock;
@@ -181,7 +182,7 @@ describe(getRecommendedGasPrice.name, () => {
 
     expect(gasPrice).toStrictEqual(ethers.utils.parseUnits('12', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
     expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
-      { price: ethers.utils.parseUnits('10', 'gwei'), timestampMs: timestampMsMock },
+      { price: ethers.utils.parseUnits('10', 'gwei'), timestamp: timestampMock },
       ...gasPricesMock,
     ]);
 
@@ -199,9 +200,9 @@ describe(getRecommendedGasPrice.name, () => {
     const oldGasPriceValueMock = ethers.utils.parseUnits('11', 'gwei');
     const oldGasPriceMock = {
       price: oldGasPriceValueMock,
-      timestampMs: timestampMsMock,
+      timestamp: timestampMock,
     };
-    jest.spyOn(Date, 'now').mockReturnValue(timestampMsMock);
+    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     jest.spyOn(provider, 'getGasPrice').mockResolvedValueOnce(ethers.utils.parseUnits('10', 'gwei'));
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
@@ -212,7 +213,7 @@ describe(getRecommendedGasPrice.name, () => {
 
     expect(gasPrice).toStrictEqual(ethers.utils.parseUnits('15', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
     expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
-      { price: ethers.utils.parseUnits('10', 'gwei'), timestampMs: timestampMsMock },
+      { price: ethers.utils.parseUnits('10', 'gwei'), timestamp: timestampMock },
       oldGasPriceMock,
     ]);
 
@@ -225,14 +226,14 @@ describe(getRecommendedGasPrice.name, () => {
     const oldGasPriceValueMock = ethers.utils.parseUnits('5', 'gwei');
     const oldGasPriceMock = {
       price: oldGasPriceValueMock,
-      timestampMs: timestampMsMock,
+      timestamp: timestampMock,
     };
-    jest.spyOn(Date, 'now').mockReturnValue(timestampMsMock);
+    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     jest.spyOn(provider, 'getGasPrice').mockResolvedValueOnce(ethers.utils.parseUnits('10', 'gwei'));
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
-        timestampMsMock - gasSettings.scalingWindow * 1000 - 1;
+      draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress] =
+        timestampMock - gasSettings.scalingWindow - 1;
     });
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'warn');
@@ -241,7 +242,7 @@ describe(getRecommendedGasPrice.name, () => {
 
     expect(gasPrice).toStrictEqual(ethers.utils.parseUnits('20', 'gwei')); // The price is multiplied by the scaling multiplier.
     expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
-      { price: ethers.utils.parseUnits('10', 'gwei'), timestampMs: timestampMsMock },
+      { price: ethers.utils.parseUnits('10', 'gwei'), timestamp: timestampMock },
       oldGasPriceMock,
     ]);
 
@@ -256,22 +257,23 @@ describe(getRecommendedGasPrice.name, () => {
     const oldGasPriceValueMock = ethers.utils.parseUnits('5', 'gwei');
     const oldGasPriceMock = {
       price: oldGasPriceValueMock,
-      timestampMs: timestampMsMock,
+      timestamp: timestampMock,
     };
-    jest.spyOn(Date, 'now').mockReturnValue(timestampMsMock);
+    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     jest.spyOn(provider, 'getGasPrice').mockResolvedValueOnce(ethers.utils.parseUnits('10', 'gwei'));
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] =
-        timestampMsMock - gasSettings.scalingWindow * 1000 + 1000;
+      draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress] =
+        timestampMock - gasSettings.scalingWindow + 1000;
     });
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'warn');
 
     const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
+
     expect(gasPrice).toStrictEqual(ethers.utils.parseUnits('15', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
     expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
-      { price: ethers.utils.parseUnits('10', 'gwei'), timestampMs: timestampMsMock },
+      { price: ethers.utils.parseUnits('10', 'gwei'), timestamp: timestampMock },
       oldGasPriceMock,
     ]);
 
