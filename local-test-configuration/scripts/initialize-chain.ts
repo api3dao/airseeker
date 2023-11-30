@@ -312,9 +312,9 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     tx = await dapiDataRegistry
       .connect(api3MarketContract)
       .addDapi(
-        dapiName,
-        beaconSetId,
-        sponsorWalletMnemonic,
+        dapiName!,
+        beaconSetId!,
+        sponsorWalletMnemonic!,
         deviationThresholdInPercentage,
         deviationReference,
         heartbeatInterval,
