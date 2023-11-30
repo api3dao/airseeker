@@ -106,8 +106,8 @@ export const updateFeed = async (
         const gasPrice = goGasPrice.data;
 
         // We want to set the timestamp of the first update transaction. We can determine if the transaction is the
-        // original one if it is't not a retry of a pending transaction. That is, iff there is no timestamp for the
-        // particular sponsor wallet. This assumes that a single sponsor updates a single dAPI.
+        // original one and that it isn't a retry of a pending transaction (if there is no timestamp for the
+        // particular sponsor wallet). This assumes that a single sponsor updates a single dAPI.
         if (!hasPendingTransaction(chainId, providerName, sponsorWallet.address)) {
           logger.debug('Setting timestamp of the original update transaction');
           setSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWallet.address);
@@ -148,11 +148,7 @@ export const updateFeeds = async (
   provider: ethers.providers.StaticJsonRpcProvider,
   api3ServerV1: Api3ServerV1,
   updatableDapis: UpdatableDapi[]
-) => {
-  return Promise.all(
-    updatableDapis.map(async (dapi) => updateFeed(chainId, providerName, provider, api3ServerV1, dapi))
-  );
-};
+) => Promise.all(updatableDapis.map(async (dapi) => updateFeed(chainId, providerName, provider, api3ServerV1, dapi)));
 
 export const estimateMulticallGasLimit = async (
   api3ServerV1: Api3ServerV1,
