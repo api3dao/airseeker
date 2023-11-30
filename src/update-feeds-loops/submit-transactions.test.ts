@@ -352,6 +352,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
           },
           sponsorWalletMnemonic: 'diamond result history offer forest diagram crop armed stumble orchard stage glance',
         },
+        derivedSponsorWallets: {},
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
