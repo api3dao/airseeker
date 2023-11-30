@@ -9,14 +9,14 @@ import * as stateModule from '../state';
 import * as utilsModule from '../utils';
 
 import type { UpdatableDapi } from './get-updatable-feeds';
-import * as updateTransactionsModule from './submit-transactions';
+import * as submitTransactionsModule from './submit-transactions';
 
-describe(updateTransactionsModule.estimateMulticallGasLimit.name, () => {
+describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
   it('estimates the gas limit for a multicall', async () => {
     const mockApi3ServerV1 = generateMockApi3ServerV1();
     mockApi3ServerV1.estimateGas.multicall.mockResolvedValueOnce(ethers.BigNumber.from(500_000));
 
-    const gasLimit = await updateTransactionsModule.estimateMulticallGasLimit(
+    const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
       mockApi3ServerV1 as unknown as Api3ServerV1,
       ['0xbeaconId1Calldata', '0xbeaconId2Calldata', '0xbeaconSetCalldata'],
       undefined
@@ -29,7 +29,7 @@ describe(updateTransactionsModule.estimateMulticallGasLimit.name, () => {
     const mockApi3ServerV1 = generateMockApi3ServerV1();
     mockApi3ServerV1.estimateGas.multicall.mockRejectedValue(new Error('some-error'));
 
-    const gasLimit = await updateTransactionsModule.estimateMulticallGasLimit(
+    const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
       mockApi3ServerV1 as unknown as Api3ServerV1,
       ['0xbeaconId1Calldata', '0xbeaconId2Calldata', '0xbeaconSetCalldata'],
       2_000_000
@@ -43,7 +43,7 @@ describe(updateTransactionsModule.estimateMulticallGasLimit.name, () => {
     mockApi3ServerV1.estimateGas.multicall.mockRejectedValue(new Error('some-error'));
 
     await expect(async () =>
-      updateTransactionsModule.estimateMulticallGasLimit(
+      submitTransactionsModule.estimateMulticallGasLimit(
         mockApi3ServerV1 as unknown as Api3ServerV1,
         ['0xbeaconId1Calldata', '0xbeaconId2Calldata', '0xbeaconSetCalldata'],
         undefined
@@ -52,12 +52,12 @@ describe(updateTransactionsModule.estimateMulticallGasLimit.name, () => {
   });
 });
 
-describe(updateTransactionsModule.createUpdateFeedCalldatas.name, () => {
+describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
   it('creates beacon update calldata', () => {
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1.interface, 'encodeFunctionData');
 
-    updateTransactionsModule.createUpdateFeedCalldatas(
+    submitTransactionsModule.createUpdateFeedCalldatas(
       api3ServerV1 as unknown as Api3ServerV1,
       allowPartial<UpdatableDapi>({
         updatableBeacons: [
@@ -98,7 +98,7 @@ describe(updateTransactionsModule.createUpdateFeedCalldatas.name, () => {
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1.interface, 'encodeFunctionData');
 
-    updateTransactionsModule.createUpdateFeedCalldatas(
+    submitTransactionsModule.createUpdateFeedCalldatas(
       api3ServerV1 as unknown as Api3ServerV1,
       allowPartial<UpdatableDapi>({
         updatableBeacons: [
@@ -186,7 +186,7 @@ describe(updateTransactionsModule.createUpdateFeedCalldatas.name, () => {
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1.interface, 'encodeFunctionData');
 
-    updateTransactionsModule.createUpdateFeedCalldatas(
+    submitTransactionsModule.createUpdateFeedCalldatas(
       api3ServerV1 as unknown as Api3ServerV1,
       allowPartial<UpdatableDapi>({
         updatableBeacons: [
@@ -237,7 +237,7 @@ describe(updateTransactionsModule.createUpdateFeedCalldatas.name, () => {
   });
 });
 
-describe(updateTransactionsModule.getDerivedSponsorWallet.name, () => {
+describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
   const dapiName = utilsModule.encodeDapiName('ETH/USD');
 
   it('returns the derived sponsor wallet', () => {
@@ -250,7 +250,7 @@ describe(updateTransactionsModule.getDerivedSponsorWallet.name, () => {
     );
     jest.spyOn(utilsModule, 'deriveSponsorWallet');
 
-    const sponsorWallet = updateTransactionsModule.getDerivedSponsorWallet('some-mnemonic', dapiName);
+    const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet('some-mnemonic', dapiName);
 
     expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(0);
     expect(sponsorWallet.privateKey).toBe('0x034e238bdc2622122e7b2191ee5be5df38597b6f58e45b25c6d32cae3110ebfa');
@@ -265,7 +265,7 @@ describe(updateTransactionsModule.getDerivedSponsorWallet.name, () => {
     jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest.spyOn(utilsModule, 'deriveSponsorWallet');
 
-    const sponsorWallet = updateTransactionsModule.getDerivedSponsorWallet(
+    const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
       'diamond result history offer forest diagram crop armed stumble orchard stage glance',
       dapiName
     );
@@ -275,11 +275,11 @@ describe(updateTransactionsModule.getDerivedSponsorWallet.name, () => {
   });
 });
 
-describe(updateTransactionsModule.submitTransactions.name, () => {
+describe(submitTransactionsModule.submitTransactions.name, () => {
   it('updates all feeds', async () => {
-    jest.spyOn(updateTransactionsModule, 'submitTransaction').mockImplementation();
+    jest.spyOn(submitTransactionsModule, 'submitTransaction').mockImplementation();
 
-    await updateTransactionsModule.submitTransactions(
+    await submitTransactionsModule.submitTransactions(
       '31337',
       'evm-local',
       new ethers.providers.StaticJsonRpcProvider(),
@@ -294,20 +294,20 @@ describe(updateTransactionsModule.submitTransactions.name, () => {
       ]
     );
 
-    expect(updateTransactionsModule.submitTransaction).toHaveBeenCalledTimes(2);
+    expect(submitTransactionsModule.submitTransaction).toHaveBeenCalledTimes(2);
   });
 });
 
-describe(updateTransactionsModule.submitTransaction.name, () => {
+describe(submitTransactionsModule.submitTransaction.name, () => {
   const dapiName = utilsModule.encodeDapiName('ETH/USD');
 
   it('updates a dapi', async () => {
-    jest.spyOn(updateTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
+    jest.spyOn(submitTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'info');
-    jest.spyOn(updateTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(ethers.BigNumber.from(500_000));
+    jest.spyOn(submitTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(ethers.BigNumber.from(500_000));
     jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockResolvedValue(ethers.BigNumber.from(100_000_000));
-    jest.spyOn(updateTransactionsModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
+    jest.spyOn(submitTransactionsModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
     jest.spyOn(api3ServerV1, 'tryMulticall');
@@ -326,7 +326,7 @@ describe(updateTransactionsModule.submitTransaction.name, () => {
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
 
-    await updateTransactionsModule.submitTransaction(
+    await submitTransactionsModule.submitTransaction(
       '31337',
       'evm-local',
       new ethers.providers.StaticJsonRpcProvider(),

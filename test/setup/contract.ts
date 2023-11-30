@@ -1,4 +1,4 @@
-import * as abi from '@api3/airnode-abi';
+import { encode } from '@api3/airnode-abi';
 import {
   AccessControlRegistry__factory as AccessControlRegistryFactory,
   type Api3ServerV1,
@@ -96,7 +96,7 @@ const deriveBeaconData = (beaconData: RawBeaconData) => {
   const endpointId = ethers.utils.keccak256(
     ethers.utils.defaultAbiCoder.encode(['string', 'string'], [endpoint.oisTitle, endpoint.endpointName])
   );
-  const encodedParameters = abi.encode(templateParameters);
+  const encodedParameters = encode(templateParameters);
   const templateId = ethers.utils.solidityKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]);
   const beaconId = deriveBeaconId(airnodeAddress, templateId)!;
 

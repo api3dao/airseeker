@@ -3,8 +3,8 @@ import axios from 'axios';
 import { initializeState } from '../../test/fixtures/mock-config';
 import { updateState } from '../state';
 
-import * as dataFetcherModule from './data-fetcher-loop';
-import * as localDataStateModule from './signed-data-state';
+import * as dataFetcherLoopModule from './data-fetcher-loop';
+import * as signedDataStateModule from './signed-data-state';
 
 const mockedAxios = axios as jest.MockedFunction<typeof axios>;
 jest.mock('axios');
@@ -25,7 +25,7 @@ describe('data fetcher', () => {
   });
 
   it('retrieves signed data from urls', async () => {
-    const saveSignedDataSpy = jest.spyOn(localDataStateModule, 'saveSignedData');
+    const saveSignedDataSpy = jest.spyOn(signedDataStateModule, 'saveSignedData');
 
     mockedAxios.mockResolvedValue(
       Promise.resolve({
@@ -62,9 +62,9 @@ describe('data fetcher', () => {
       })
     );
 
-    jest.spyOn(localDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
+    jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
 
-    const dataFetcherPromise = dataFetcherModule.runDataFetcher();
+    const dataFetcherPromise = dataFetcherLoopModule.runDataFetcher();
     await expect(dataFetcherPromise).resolves.toBeDefined();
 
     expect(mockedAxios).toHaveBeenCalledTimes(1);
@@ -72,23 +72,23 @@ describe('data fetcher', () => {
   });
 
   it('calls signed api urls from config', async () => {
-    jest.spyOn(dataFetcherModule, 'callSignedApi');
+    jest.spyOn(dataFetcherLoopModule, 'callSignedApi');
 
     const signedApiUrl = 'http://some.url/0xbF3137b0a7574563a23a8fC8badC6537F98197CC';
     updateState((draft) => {
       draft.config.signedApiUrls = [signedApiUrl];
     });
 
-    const dataFetcherPromise = dataFetcherModule.runDataFetcher();
+    const dataFetcherPromise = dataFetcherLoopModule.runDataFetcher();
 
     await expect(dataFetcherPromise).resolves.toBeDefined();
 
     expect(mockedAxios).toHaveBeenCalledTimes(2);
-    expect(dataFetcherModule.callSignedApi).toHaveBeenNthCalledWith(
+    expect(dataFetcherLoopModule.callSignedApi).toHaveBeenNthCalledWith(
       1,
       'http://127.0.0.1:8090/0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
       9000
     );
-    expect(dataFetcherModule.callSignedApi).toHaveBeenNthCalledWith(2, signedApiUrl, 9000);
+    expect(dataFetcherLoopModule.callSignedApi).toHaveBeenNthCalledWith(2, signedApiUrl, 9000);
   });
 });

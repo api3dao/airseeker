@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 
 import { initializeState } from '../../test/fixtures/mock-config';
 import { allowPartial } from '../../test/utils';
-import * as signedDataState from '../data-fetcher-loop/signed-data-state';
+import * as signedDataStateModule from '../data-fetcher-loop/signed-data-state';
 import { logger } from '../logger';
 import { updateState } from '../state';
 import type { BeaconId, SignedData } from '../types';
@@ -10,7 +10,7 @@ import { encodeDapiName } from '../utils';
 
 import * as contractsModule from './contracts';
 import { multicallBeaconValues, getUpdatableFeeds } from './get-updatable-feeds';
-import * as checkFeedsModule from './get-updatable-feeds';
+import * as getUpdatableFeedsModule from './get-updatable-feeds';
 
 const chainId = '31337';
 const rpcUrl = 'http://127.0.0.1:8545/';
@@ -114,11 +114,11 @@ describe(getUpdatableFeeds.name, () => {
       },
     });
     jest
-      .spyOn(signedDataState, 'getSignedData')
+      .spyOn(signedDataStateModule, 'getSignedData')
       .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
 
     // None of the feeds failed to update
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+    jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
         timestamp: ethers.BigNumber.from(150),
         value: ethers.BigNumber.from('400'),
@@ -211,11 +211,11 @@ describe(getUpdatableFeeds.name, () => {
       },
     });
     jest
-      .spyOn(signedDataState, 'getSignedData')
+      .spyOn(signedDataStateModule, 'getSignedData')
       .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
 
     // None of the feeds failed to update
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+    jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
         timestamp: ethers.BigNumber.from(150),
         value: ethers.BigNumber.from('400'),
@@ -308,7 +308,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     });
     jest
-      .spyOn(signedDataState, 'getSignedData')
+      .spyOn(signedDataStateModule, 'getSignedData')
       .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
 
     // Set up batch with on-chain values that don't trigger an update
@@ -328,7 +328,7 @@ describe(getUpdatableFeeds.name, () => {
     ]);
 
     // Ensure on-chain values don't trigger an update
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+    jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
         timestamp: ethers.BigNumber.from(150),
         value: ethers.BigNumber.from('200'),
@@ -369,11 +369,11 @@ describe(getUpdatableFeeds.name, () => {
       },
     });
     jest
-      .spyOn(signedDataState, 'getSignedData')
+      .spyOn(signedDataStateModule, 'getSignedData')
       .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
 
     // None of the feeds failed to update
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+    jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
         timestamp: ethers.BigNumber.from(150),
         value: ethers.BigNumber.from('400'),
@@ -427,7 +427,7 @@ describe(getUpdatableFeeds.name, () => {
         decodedDapiName: 'test',
       },
     ]);
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockRejectedValueOnce(new Error('Multicall failed'));
+    jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockRejectedValueOnce(new Error('Multicall failed'));
     jest.spyOn(logger, 'error');
 
     const checkFeedsResult = await getUpdatableFeeds(batch, 1, provider, '31337');

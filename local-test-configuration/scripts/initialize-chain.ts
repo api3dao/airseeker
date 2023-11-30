@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import * as abi from '@api3/airnode-abi';
+import { encode } from '@api3/airnode-abi';
 import {
   AccessControlRegistry__factory as AccessControlRegistryFactory,
   Api3ServerV1__factory as Api3ServerV1Factory,
@@ -32,7 +32,7 @@ interface RawBeaconData {
 const deriveBeaconData = (beaconData: RawBeaconData) => {
   const { endpointId, parameters: parameters, airnodeAddress } = beaconData;
 
-  const encodedParameters = abi.encode(parameters);
+  const encodedParameters = encode(parameters);
   const templateId = ethers.utils.solidityKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]);
   const beaconId = deriveBeaconId(airnodeAddress, templateId)!;
 

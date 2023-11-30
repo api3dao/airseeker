@@ -6,8 +6,7 @@ import { getState, updateState } from '../state';
 import type { SignedData } from '../types';
 import { deriveBeaconId } from '../utils';
 
-import { purgeOldSignedData, verifySignedDataIntegrity } from './signed-data-state';
-import * as localDataStateModule from './signed-data-state';
+import * as signedDataStateModule from './signed-data-state';
 
 describe('signed data state', () => {
   let testDataPoint: SignedData;
@@ -30,13 +29,13 @@ describe('signed data state', () => {
   });
 
   it('stores and gets a data point', () => {
-    jest.spyOn(localDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
+    jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
     // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-    const promisedStorage = localDataStateModule.saveSignedData(testDataPoint);
+    const promisedStorage = signedDataStateModule.saveSignedData(testDataPoint);
     expect(promisedStorage).toBeFalsy();
 
     const dataFeedId = deriveBeaconId(testDataPoint.airnode, testDataPoint.templateId)!;
-    const datapoint = localDataStateModule.getSignedData(dataFeedId);
+    const datapoint = signedDataStateModule.getSignedData(dataFeedId);
 
     expect(datapoint).toStrictEqual(testDataPoint);
   });
@@ -55,8 +54,8 @@ describe('signed data state', () => {
       timestamp,
     };
 
-    expect(verifySignedDataIntegrity(testDataPoint)).toBeTruthy();
-    expect(verifySignedDataIntegrity(futureTestDataPoint)).toBeFalsy();
+    expect(signedDataStateModule.verifySignedDataIntegrity(testDataPoint)).toBeTruthy();
+    expect(signedDataStateModule.verifySignedDataIntegrity(futureTestDataPoint)).toBeFalsy();
   });
 
   it('checks the signature on signed data', async () => {
@@ -73,7 +72,7 @@ describe('signed data state', () => {
       timestamp,
     };
 
-    expect(verifySignedDataIntegrity(badTestDataPoint)).toBeFalsy();
+    expect(signedDataStateModule.verifySignedDataIntegrity(badTestDataPoint)).toBeFalsy();
   });
 
   it('purges old data from the state', () => {
@@ -90,7 +89,7 @@ describe('signed data state', () => {
       });
     });
 
-    purgeOldSignedData();
+    signedDataStateModule.purgeOldSignedData();
 
     expect(Object.values(getState().signedDatas)).toStrictEqual([
       {
