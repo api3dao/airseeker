@@ -68,6 +68,7 @@ export const decodeReadDapiWithIndexResponse = (
 
   return {
     dapiName,
+    // TODO: Add decoded dapiName to make it clear which one is encoded and which one is decoded
     updateParameters: {
       deviationReference,
       deviationThresholdInPercentage,

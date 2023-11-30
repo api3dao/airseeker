@@ -46,96 +46,109 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
     : beaconUpdateCalls;
 };
 
-export const updateFeeds = async (
+export const updateFeed = async (
   chainId: ChainId,
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
   api3ServerV1: Api3ServerV1,
-  updatableDapis: UpdatableDapi[]
+  updatableDapi: UpdatableDapi
 ) => {
   const state = getState();
   const {
     config: { chains, sponsorWalletMnemonic },
   } = state;
 
-  // Update all of the dAPIs in parallel.
-  return Promise.all(
-    updatableDapis.map(async (dapi) => {
-      const { dapiInfo } = dapi;
-      const {
-        dapiName,
-        decodedDataFeed: { dataFeedId },
-      } = dapiInfo;
-      const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
-      const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
+  const { dapiInfo } = updatableDapi;
+  const {
+    dapiName,
+    decodedDataFeed: { dataFeedId },
+  } = dapiInfo;
+  const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
+  const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
-      return logger.runWithContext({ dapiName, dataFeedId }, async () => {
-        const goUpdate = await go(
-          async () => {
-            logger.debug('Creating calldatas');
-            const dataFeedUpdateCalldatas = createUpdateFeedCalldatas(api3ServerV1, dapi);
+  return logger.runWithContext({ dapiName, dataFeedId }, async () => {
+    // NOTE: We use go mainly to set a timeout for the whole update process. We expect the function not to throw and
+    // handle errors internally.
+    const goUpdate = await go(
+      async () => {
+        logger.debug('Creating calldatas');
+        const dataFeedUpdateCalldatas = createUpdateFeedCalldatas(api3ServerV1, updatableDapi);
 
-            logger.debug('Estimating gas limit');
-            const goEstimateGasLimit = await go(async () =>
-              estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas, fallbackGasLimit)
-            );
-            if (!goEstimateGasLimit.success) {
-              logger.error(`Skipping dAPI update because estimating gas limit failed`, goEstimateGasLimit.error);
-              return;
-            }
-            const gasLimit = goEstimateGasLimit.data;
+        logger.debug('Estimating gas limit');
+        const goEstimateGasLimit = await go(async () =>
+          estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas, fallbackGasLimit)
+        );
+        if (!goEstimateGasLimit.success) {
+          logger.error(`Skipping dAPI update because estimating gas limit failed`, goEstimateGasLimit.error);
+          return null;
+        }
+        const gasLimit = goEstimateGasLimit.data;
 
-            logger.debug('Getting derived sponsor wallet');
-            const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
+        logger.debug('Getting derived sponsor wallet');
+        const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
 
-            logger.debug('Getting gas price');
-            const goGasPrice = await go(
-              async () =>
-                getAirseekerRecommendedGasPrice(
-                  chainId,
-                  providerName,
-                  provider,
-                  chains[chainId]!.gasSettings,
-                  sponsorWallet.address
-                ),
-              { totalTimeoutMs: dataFeedUpdateIntervalMs }
-            );
-            if (!goGasPrice.success) {
-              logger.error(`Failed to get gas price`, goGasPrice.error);
-              return;
-            }
-            const gasPrice = goGasPrice.data;
-
-            // We want to set the timestamp of the first update transaction. We can determine if the transaction is the
-            // original one if it is't not a retry of a pending transaction. That is, iff there is no timestamp for the
-            // particular sponsor wallet. This assumes that a single sponsor updates a single dAPI.
-            if (!hasPendingTransaction(chainId, providerName, sponsorWallet.address)) {
-              logger.debug('Setting timestamp of the original update transaction');
-              setSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWallet.address);
-            }
-
-            logger.debug('Updating dAPI', { gasPrice: goGasPrice.data.toString(), gasLimit: gasLimit.toString() });
-            return (
-              api3ServerV1
-                // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
-                // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
-                .connect(sponsorWallet.connect(api3ServerV1.provider))
-                .tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit })
-            );
-          },
+        logger.debug('Getting gas price');
+        const goGasPrice = await go(
+          async () =>
+            getAirseekerRecommendedGasPrice(
+              chainId,
+              providerName,
+              provider,
+              chains[chainId]!.gasSettings,
+              sponsorWallet.address
+            ),
           { totalTimeoutMs: dataFeedUpdateIntervalMs }
         );
+        if (!goGasPrice.success) {
+          logger.error(`Failed to get gas price`, goGasPrice.error);
+          return null;
+        }
+        const gasPrice = goGasPrice.data;
 
-        if (!goUpdate.success) {
-          logger.error(`Failed to update a dAPI`, goUpdate.error);
+        // We want to set the timestamp of the first update transaction. We can determine if the transaction is the
+        // original one and that it isn't a retry of a pending transaction (if there is no timestamp for the
+        // particular sponsor wallet). This assumes that a single sponsor updates a single dAPI.
+        if (!hasPendingTransaction(chainId, providerName, sponsorWallet.address)) {
+          logger.debug('Setting timestamp of the original update transaction');
+          setSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWallet.address);
+        }
+
+        logger.debug('Updating dAPI', { gasPrice: goGasPrice.data.toString(), gasLimit: gasLimit.toString() });
+        const goMulticall = await go(async () => {
+          return (
+            api3ServerV1
+              // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
+              // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
+              .connect(sponsorWallet.connect(api3ServerV1.provider))
+              .tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit })
+          );
+        });
+        if (!goMulticall.success) {
+          logger.error(`Failed to update a dAPI`, goMulticall.error);
           return null;
         }
 
-        return goUpdate.data;
-      });
-    })
-  );
+        logger.info('Successfully updated dAPI');
+        return goMulticall.data;
+      },
+      { totalTimeoutMs: dataFeedUpdateIntervalMs }
+    );
+
+    if (!goUpdate.success) {
+      logger.error(`Unexpected error during updating dAPI`, goUpdate.error);
+      return null;
+    }
+    return goUpdate.data;
+  });
 };
+
+export const updateFeeds = async (
+  chainId: ChainId,
+  providerName: ProviderName,
+  provider: ethers.providers.StaticJsonRpcProvider,
+  api3ServerV1: Api3ServerV1,
+  updatableDapis: UpdatableDapi[]
+) => Promise.all(updatableDapis.map(async (dapi) => updateFeed(chainId, providerName, provider, api3ServerV1, dapi)));
 
 export const estimateMulticallGasLimit = async (
   api3ServerV1: Api3ServerV1,
@@ -153,7 +166,7 @@ export const estimateMulticallGasLimit = async (
     throw new Error('Unable to estimate gas limit');
   }
 
-  return fallbackGasLimit;
+  return ethers.BigNumber.from(fallbackGasLimit);
 };
 
 export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiName: string) => {
@@ -165,7 +178,7 @@ export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiName:
   }
 
   const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
-  logger.debug('Derived new sponsor wallet', { dapiName, sponsorWalletAddress: sponsorWallet.address });
+  logger.debug('Derived new sponsor wallet', { sponsorWalletAddress: sponsorWallet.address });
 
   updateState((draft) => {
     draft.derivedSponsorWallets = {
