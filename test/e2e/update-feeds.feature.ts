@@ -1,12 +1,12 @@
 import { ethers } from 'ethers';
 import { omit } from 'lodash';
 
-import { initializeGasStore } from '../../src/gas-price';
+import { initializeGasState } from '../../src/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
-import { runUpdateFeeds } from '../../src/update-feeds';
-import { decodeDataFeed } from '../../src/update-feeds/dapi-data-registry';
-import { updateFeeds } from '../../src/update-feeds/update-transactions';
+import { runUpdateFeeds } from '../../src/update-feeds-loops';
+import { decodeDataFeed } from '../../src/update-feeds-loops/contracts';
+import { submitTransactions } from '../../src/update-feeds-loops/submit-transactions';
 import { decodeDapiName } from '../../src/utils';
 import { initializeState } from '../fixtures/mock-config';
 import { deployAndUpdate } from '../setup/contract';
@@ -24,7 +24,7 @@ it('reads blockchain data', async () => {
   jest.spyOn(logger, 'debug').mockImplementation();
 
   initializeState(config);
-  initializeGasStore(chainId, providerName);
+  initializeGasState(chainId, providerName);
 
   await runUpdateFeeds(providerName, chain, chainId);
 
@@ -46,7 +46,7 @@ it('updates blockchain data', async () => {
   stateModule.updateState((draft) => {
     draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic.phrase;
   });
-  initializeGasStore(chainId, providerName);
+  initializeGasState(chainId, providerName);
   const btcDapi = await dapiDataRegistry.readDapiWithIndex(0);
 
   const decodedDataFeed = decodeDataFeed(btcDapi.dataFeed);
@@ -70,7 +70,7 @@ it('updates blockchain data', async () => {
   );
   jest.spyOn(logger, 'debug');
 
-  await updateFeeds(chainId, providerName, provider, api3ServerV1, [
+  await submitTransactions(chainId, providerName, provider, api3ServerV1, [
     {
       dapiInfo: decodedBtcDapi,
       updatableBeacons: [
@@ -86,13 +86,18 @@ it('updates blockchain data', async () => {
     },
   ]);
 
-  expect(logger.debug).toHaveBeenCalledTimes(8);
+  expect(logger.debug).toHaveBeenCalledTimes(10);
   expect(logger.debug).toHaveBeenNthCalledWith(1, 'Creating calldatas');
   expect(logger.debug).toHaveBeenNthCalledWith(2, 'Estimating gas limit');
   expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting derived sponsor wallet');
   expect(logger.debug).toHaveBeenNthCalledWith(4, 'Derived new sponsor wallet', expect.anything());
   expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting gas price');
-  expect(logger.debug).toHaveBeenNthCalledWith(6, 'Updating gas price store.');
-  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Setting timestamp of the original update transaction');
-  expect(logger.debug).toHaveBeenNthCalledWith(8, 'Updating dAPI', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(6, 'Fetching gas price and saving it to the state');
+  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Purging old gas prices');
+  expect(logger.debug).toHaveBeenNthCalledWith(
+    8,
+    'No historical gas prices to compute the percentile. Using the provider recommended gas price'
+  );
+  expect(logger.debug).toHaveBeenNthCalledWith(9, 'Setting timestamp of the original update transaction');
+  expect(logger.debug).toHaveBeenNthCalledWith(10, 'Updating dAPI', expect.anything());
 });

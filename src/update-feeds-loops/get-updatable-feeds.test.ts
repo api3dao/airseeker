@@ -2,16 +2,15 @@ import { ethers } from 'ethers';
 
 import { initializeState } from '../../test/fixtures/mock-config';
 import { allowPartial } from '../../test/utils';
+import * as signedDataStateModule from '../data-fetcher-loop/signed-data-state';
 import { logger } from '../logger';
-import * as signedDataStore from '../signed-data-store/signed-data-store';
 import { updateState } from '../state';
 import type { BeaconId, SignedData } from '../types';
 import { encodeDapiName } from '../utils';
 
-import * as contractUtils from './api3-server-v1';
-import { multicallBeaconValues, getUpdatableFeeds } from './check-feeds';
-import * as checkFeedsModule from './check-feeds';
-import type { DecodedReadDapiWithIndexResponse } from './dapi-data-registry';
+import * as contractsModule from './contracts';
+import { multicallBeaconValues, getUpdatableFeeds } from './get-updatable-feeds';
+import * as getUpdatableFeedsModule from './get-updatable-feeds';
 
 const chainId = '31337';
 const rpcUrl = 'http://127.0.0.1:8545/';
@@ -62,7 +61,7 @@ describe(multicallBeaconValues.name, () => {
       interface: { encodeFunctionData: encodeFunctionDataMock },
     };
 
-    jest.spyOn(contractUtils, 'getApi3ServerV1').mockReturnValue(mockContract as any);
+    jest.spyOn(contractsModule, 'getApi3ServerV1').mockReturnValue(mockContract as any);
 
     const callAndParseMulticallPromise = await multicallBeaconValues(feedIds as unknown as string[], provider, '31337');
 
@@ -88,7 +87,7 @@ describe(getUpdatableFeeds.name, () => {
   beforeEach(() => {
     initializeState();
     updateState((draft) => {
-      draft.signedApiStore = allowPartial<Record<BeaconId, SignedData>>({
+      draft.signedDatas = allowPartial<Record<BeaconId, SignedData>>({
         '0x000a': { timestamp: '100', encodedValue: encodeBeaconValue('200') },
         '0x000b': { timestamp: '150', encodedValue: encodeBeaconValue('250') },
         '0x000c': { timestamp: '200', encodedValue: encodeBeaconValue('300') },
@@ -100,7 +99,7 @@ describe(getUpdatableFeeds.name, () => {
     jest.useFakeTimers().setSystemTime(90);
 
     // Only the third feed will satisfy the timestamp check
-    const mockSignedDataStore = allowPartial<Record<string, SignedData>>({
+    const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '101',
         encodedValue: encodeBeaconValue('200'),
@@ -115,11 +114,11 @@ describe(getUpdatableFeeds.name, () => {
       },
     });
     jest
-      .spyOn(signedDataStore, 'getStoreDataPoint')
-      .mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
+      .spyOn(signedDataStateModule, 'getSignedData')
+      .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
 
     // None of the feeds failed to update
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+    jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
         timestamp: ethers.BigNumber.from(150),
         value: ethers.BigNumber.from('400'),
@@ -135,7 +134,7 @@ describe(getUpdatableFeeds.name, () => {
     });
     jest.spyOn(logger, 'info');
 
-    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
         dataFeedValue: {
@@ -197,7 +196,7 @@ describe(getUpdatableFeeds.name, () => {
     jest.useFakeTimers().setSystemTime(500_000);
 
     // Only the third feed will satisfy the timestamp check
-    const mockSignedDataStore = allowPartial<Record<string, SignedData>>({
+    const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '101',
         encodedValue: encodeBeaconValue('400'),
@@ -212,11 +211,11 @@ describe(getUpdatableFeeds.name, () => {
       },
     });
     jest
-      .spyOn(signedDataStore, 'getStoreDataPoint')
-      .mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
+      .spyOn(signedDataStateModule, 'getSignedData')
+      .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
 
     // None of the feeds failed to update
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+    jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
         timestamp: ethers.BigNumber.from(150),
         value: ethers.BigNumber.from('400'),
@@ -232,7 +231,7 @@ describe(getUpdatableFeeds.name, () => {
     });
     jest.spyOn(logger, 'debug');
 
-    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 1 },
         dataFeedValue: {
@@ -293,8 +292,8 @@ describe(getUpdatableFeeds.name, () => {
   it('returns an empty array for old fulfillment data', async () => {
     jest.useFakeTimers().setSystemTime(150);
 
-    // Mock signed data store to have stale data
-    const mockSignedDataStore = allowPartial<Record<string, SignedData>>({
+    // Mock signed data state to have stale data
+    const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '101',
         encodedValue: encodeBeaconValue('200'),
@@ -309,11 +308,11 @@ describe(getUpdatableFeeds.name, () => {
       },
     });
     jest
-      .spyOn(signedDataStore, 'getStoreDataPoint')
-      .mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
+      .spyOn(signedDataStateModule, 'getSignedData')
+      .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
 
     // Set up batch with on-chain values that don't trigger an update
-    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
         dataFeedValue: {
@@ -329,7 +328,7 @@ describe(getUpdatableFeeds.name, () => {
     ]);
 
     // Ensure on-chain values don't trigger an update
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+    jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
         timestamp: ethers.BigNumber.from(150),
         value: ethers.BigNumber.from('200'),
@@ -355,7 +354,7 @@ describe(getUpdatableFeeds.name, () => {
     jest.useFakeTimers().setSystemTime(90);
 
     // Only the third feed will satisfy the timestamp check
-    const mockSignedDataStore = allowPartial<Record<string, SignedData>>({
+    const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '101',
         encodedValue: encodeBeaconValue('400'),
@@ -370,11 +369,11 @@ describe(getUpdatableFeeds.name, () => {
       },
     });
     jest
-      .spyOn(signedDataStore, 'getStoreDataPoint')
-      .mockImplementation((dataFeedId: string) => mockSignedDataStore[dataFeedId]!);
+      .spyOn(signedDataStateModule, 'getSignedData')
+      .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
 
     // None of the feeds failed to update
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+    jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
         timestamp: ethers.BigNumber.from(150),
         value: ethers.BigNumber.from('400'),
@@ -390,7 +389,7 @@ describe(getUpdatableFeeds.name, () => {
     });
     jest.spyOn(logger, 'info');
 
-    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
         dataFeedValue: {
@@ -413,7 +412,7 @@ describe(getUpdatableFeeds.name, () => {
   });
 
   it('handles multicall failure', async () => {
-    const batch = allowPartial<DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
       {
         updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
         dataFeedValue: {
@@ -428,7 +427,7 @@ describe(getUpdatableFeeds.name, () => {
         decodedDapiName: 'test',
       },
     ]);
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockRejectedValueOnce(new Error('Multicall failed'));
+    jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockRejectedValueOnce(new Error('Multicall failed'));
     jest.spyOn(logger, 'error');
 
     const checkFeedsResult = await getUpdatableFeeds(batch, 1, provider, '31337');

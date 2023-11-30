@@ -58,7 +58,7 @@ export const verifySignedDataIntegrity = (signedData: SignedData) => {
   return verifyTimestamp(signedData) && verifySignedData(signedData);
 };
 
-export const setStoreDataPoint = (signedData: SignedData) => {
+export const saveSignedData = (signedData: SignedData) => {
   const { airnode, templateId, signature, timestamp, encodedValue } = signedData;
 
   if (!verifySignedDataIntegrity(signedData)) {
@@ -69,14 +69,14 @@ export const setStoreDataPoint = (signedData: SignedData) => {
 
   const dataFeedId = deriveBeaconId(airnode, templateId)!;
 
-  const existingValue = state.signedApiStore[dataFeedId];
+  const existingValue = state.signedDatas[dataFeedId];
   if (existingValue && existingValue.timestamp >= timestamp) {
-    logger.debug('Skipping store update. The signed data value is not fresher than the stored value.');
+    logger.debug('Skipping state update. The signed data value is not fresher than the stored value.');
     return;
   }
 
   if (!isSignedDataFresh(signedData)) {
-    logger.debug('Skipping store update. The signed data value is older than 24 hours.');
+    logger.debug('Skipping state update. The signed data value is older than 24 hours.');
     return;
   }
 
@@ -88,31 +88,25 @@ export const setStoreDataPoint = (signedData: SignedData) => {
     encodedValue,
   });
   updateState((draft) => {
-    draft.signedApiStore[dataFeedId] = signedData;
+    draft.signedDatas[dataFeedId] = signedData;
   });
 };
 
-export const getStoreDataPoint = (dataFeedId: BeaconId) => getState().signedApiStore[dataFeedId];
-
-export const clear = () => {
-  updateState((draft) => {
-    draft.signedApiStore = {};
-  });
-};
+export const getSignedData = (dataFeedId: BeaconId) => getState().signedDatas[dataFeedId];
 
 export const isSignedDataFresh = (signedData: SignedData) =>
   BigNumber.from(signedData.timestamp).gt(Math.ceil(Date.now() / 1000 - 24 * 60 * 60));
 
 export const purgeOldSignedData = () => {
   const state = getState();
-  const oldSignedData = Object.values(state.signedApiStore).filter((signedData) => isSignedDataFresh(signedData));
+  const oldSignedData = Object.values(state.signedDatas).filter((signedData) => isSignedDataFresh(signedData));
   if (oldSignedData.length > 0) {
     logger.info(`Purging some old signed data.`, { oldSignedData });
   }
 
   updateState((draft) => {
-    draft.signedApiStore = Object.fromEntries(
-      Object.entries(draft.signedApiStore).filter(([_dataFeedId, signedData]) => isSignedDataFresh(signedData))
+    draft.signedDatas = Object.fromEntries(
+      Object.entries(draft.signedDatas).filter(([_dataFeedId, signedData]) => isSignedDataFresh(signedData))
     );
   });
 };

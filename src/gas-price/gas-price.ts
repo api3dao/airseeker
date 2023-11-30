@@ -6,43 +6,43 @@ import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import { multiplyBigNumber } from '../utils';
 
-export const initializeGasStore = (chainId: string, providerName: string) =>
+export const initializeGasState = (chainId: string, providerName: string) =>
   updateState((draft) => {
-    if (!draft.gasPriceStore[chainId]) {
-      draft.gasPriceStore[chainId] = {};
+    if (!draft.gasPrices[chainId]) {
+      draft.gasPrices[chainId] = {};
     }
 
-    draft.gasPriceStore[chainId]![providerName] = { gasPrices: [], sponsorLastUpdateTimestampMs: {} };
+    draft.gasPrices[chainId]![providerName] = { gasPrices: [], sponsorLastUpdateTimestampMs: {} };
   });
 
 /**
- * Saves a gas price into the store.
+ * Saves a gas price into the state.
  * @param chainId
  * @param providerName
  * @param gasPrice
  */
-export const setStoreGasPrices = (chainId: string, providerName: string, gasPrice: ethers.BigNumber) =>
+export const saveGasPrice = (chainId: string, providerName: string, gasPrice: ethers.BigNumber) =>
   updateState((draft) => {
-    draft.gasPriceStore[chainId]![providerName]!.gasPrices.unshift({ price: gasPrice, timestampMs: Date.now() });
+    draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({ price: gasPrice, timestampMs: Date.now() });
   });
 
 /**
- * Removes gas prices where the timestamp is older than sanitizationSamplingWindow from the store.
+ * Removes gas prices where the timestamp is older than sanitizationSamplingWindow from the state.
  * @param chainId
  * @param providerName
  * @param sanitizationSamplingWindow
  */
-export const clearExpiredStoreGasPrices = (chainId: string, providerName: string, sanitizationSamplingWindow: number) =>
+export const purgeOldGasPrices = (chainId: string, providerName: string, sanitizationSamplingWindow: number) =>
   updateState((draft) => {
     // Remove gasPrices older than the sanitizationSamplingWindow.
     remove(
-      draft.gasPriceStore[chainId]![providerName]!.gasPrices,
+      draft.gasPrices[chainId]![providerName]!.gasPrices,
       (gasPrice) => gasPrice.timestampMs < Date.now() - sanitizationSamplingWindow * 1000
     );
   });
 
 /**
- * Saves a sponsor wallet's last update timestamp into the store.
+ * Saves a sponsor wallet's last update timestamp into the state.
  * @param chainId
  * @param providerName
  * @param sponsorWalletAddress
@@ -53,12 +53,12 @@ export const setSponsorLastUpdateTimestampMs = (
   sponsorWalletAddress: string
 ) => {
   updateState((draft) => {
-    draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] = Date.now();
+    draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress] = Date.now();
   });
 };
 
 /**
- * Removes a sponsor wallet's last update timestamp from the store.
+ * Removes a sponsor wallet's last update timestamp from the state.
  * @param chainId
  * @param providerName
  * @param sponsorWalletAddress
@@ -69,13 +69,13 @@ export const clearSponsorLastUpdateTimestampMs = (
   sponsorWalletAddress: string
 ) =>
   updateState((draft) => {
-    const gasPriceStorePerChain = draft?.gasPriceStore[chainId] ?? {};
+    const gasPriceStatePerChain = draft?.gasPrices[chainId] ?? {};
 
     const sponsorLastUpdateTimestampMs =
-      gasPriceStorePerChain[providerName]?.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+      gasPriceStatePerChain[providerName]?.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
 
     if (sponsorLastUpdateTimestampMs) {
-      delete draft.gasPriceStore[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+      delete draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestampMs[sponsorWalletAddress];
     }
   });
 
@@ -83,7 +83,7 @@ export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => 
   if (array.length === 0) return;
 
   array.sort((a, b) => (a.gt(b) ? 1 : -1));
-  const index = Math.ceil(array.length * (percentile / 100)) - 1;
+  const index = Math.max(0, Math.ceil(array.length * (percentile / 100)) - 1);
   return array[index];
 };
 
@@ -106,34 +106,6 @@ export const calculateScalingMultiplier = (
   );
 
 /**
- * Fetches the provider recommended gas price and saves it in the store.
- * @param chainId
- * @param providerName
- * @param provider
- */
-export const updateGasPriceStore = async (
-  chainId: string,
-  providerName: string,
-  provider: ethers.providers.StaticJsonRpcProvider
-) => {
-  // Get the provider recommended gas price
-  const gasPrice = await provider.getGasPrice();
-  // Save the new provider recommended gas price to the state
-  setStoreGasPrices(chainId, providerName, gasPrice);
-
-  return gasPrice;
-};
-
-/**
- * Checks if a sponsor wallet has a pending transaction.
- */
-export const hasPendingTransaction = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
-  const { sponsorLastUpdateTimestampMs } = getState().gasPriceStore[chainId]![providerName]!;
-
-  return !!sponsorLastUpdateTimestampMs[sponsorWalletAddress];
-};
-
-/**
  *  Calculates the gas price to be used in a transaction based on sanitization and scaling settings.
  * @param chainId
  * @param providerName
@@ -141,7 +113,7 @@ export const hasPendingTransaction = (chainId: string, providerName: string, spo
  * @param gasSettings
  * @param sponsorWalletAddress
  */
-export const getAirseekerRecommendedGasPrice = async (
+export const getRecommendedGasPrice = async (
   chainId: string,
   providerName: string,
   provider: ethers.providers.StaticJsonRpcProvider,
@@ -156,16 +128,15 @@ export const getAirseekerRecommendedGasPrice = async (
     maxScalingMultiplier,
   } = gasSettings;
   const state = getState();
-  const { gasPrices, sponsorLastUpdateTimestampMs } = state.gasPriceStore[chainId]![providerName]!;
+  const { gasPrices, sponsorLastUpdateTimestampMs } = state.gasPrices[chainId]![providerName]!;
 
-  // Get the configured percentile of historical gas prices before adding the new price
-  const percentileGasPrice = getPercentile(
-    sanitizationPercentile,
-    gasPrices.map((gasPrice) => gasPrice.price)
-  );
+  // Get the provider recommended gas price and save it to the state
+  logger.debug('Fetching gas price and saving it to the state');
+  const gasPrice = await provider.getGasPrice();
+  saveGasPrice(chainId, providerName, gasPrice);
 
-  logger.debug('Updating gas price store.');
-  const gasPrice = await updateGasPriceStore(chainId, providerName, provider);
+  logger.debug('Purging old gas prices');
+  purgeOldGasPrices(chainId, providerName, sanitizationSamplingWindow);
 
   const lastUpdateTimestampMs = sponsorLastUpdateTimestampMs[sponsorWalletAddress];
 
@@ -189,13 +160,26 @@ export const getAirseekerRecommendedGasPrice = async (
   // Check if there are entries with a timestamp older than at least 90% of the sanitizationSamplingWindow
   const hasSufficientSanitizationData = gasPrices.some((gasPrice) => gasPrice.timestampMs <= minTimestampMs);
 
+  // Get the configured percentile of historical gas prices
+  const percentileGasPrice = getPercentile(
+    sanitizationPercentile,
+    gasPrices.map((gasPrice) => gasPrice.price)
+  );
+  if (!percentileGasPrice) {
+    logger.debug('No historical gas prices to compute the percentile. Using the provider recommended gas price');
+    return multiplyBigNumber(gasPrice, recommendedGasPriceMultiplier);
+  }
+
   // Log a warning if there is not enough historical data to sanitize the gas price but the price could be sanitized
-  if (!hasSufficientSanitizationData && percentileGasPrice && gasPrice.gt(percentileGasPrice)) {
-    logger.warn('Gas price could be sanitized but there is not enough historical data');
+  if (!hasSufficientSanitizationData && gasPrice.gt(percentileGasPrice)) {
+    logger.warn('Gas price could be sanitized but there is not enough historical data', {
+      gasPrice: gasPrice.toString(),
+      percentileGasPrice: percentileGasPrice.toString(),
+    });
   }
 
   // If necessary, sanitize the gas price and log a warning because this should not happen under normal circumstances
-  if (hasSufficientSanitizationData && percentileGasPrice && gasPrice.gt(percentileGasPrice)) {
+  if (hasSufficientSanitizationData && gasPrice.gt(percentileGasPrice)) {
     logger.warn('Sanitizing gas price', {
       gasPrice: gasPrice.toString(),
       percentileGasPrice: percentileGasPrice.toString(),

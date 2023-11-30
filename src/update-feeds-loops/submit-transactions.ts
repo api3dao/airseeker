@@ -2,23 +2,13 @@ import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
-import { getAirseekerRecommendedGasPrice, hasPendingTransaction, setSponsorLastUpdateTimestampMs } from '../gas-price';
+import { getRecommendedGasPrice, setSponsorLastUpdateTimestampMs } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { SignedData, ChainId, ProviderName } from '../types';
+import type { ChainId, ProviderName } from '../types';
 import { deriveSponsorWallet } from '../utils';
 
-import type { DecodedReadDapiWithIndexResponse } from './dapi-data-registry';
-
-export interface UpdatableBeacon {
-  beaconId: string;
-  signedData: SignedData;
-}
-
-export interface UpdatableDapi {
-  dapiInfo: DecodedReadDapiWithIndexResponse;
-  updatableBeacons: UpdatableBeacon[];
-}
+import type { UpdatableDapi } from './get-updatable-feeds';
 
 export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableDapi: UpdatableDapi) => {
   const { dapiInfo, updatableBeacons } = updatableDapi;
@@ -46,7 +36,13 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
     : beaconUpdateCalls;
 };
 
-export const updateFeed = async (
+export const hasSponsorPendingTransaction = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
+  const { sponsorLastUpdateTimestampMs } = getState().gasPrices[chainId]![providerName]!;
+
+  return !!sponsorLastUpdateTimestampMs[sponsorWalletAddress];
+};
+
+export const submitTransaction = async (
   chainId: ChainId,
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
@@ -91,7 +87,7 @@ export const updateFeed = async (
         logger.debug('Getting gas price');
         const goGasPrice = await go(
           async () =>
-            getAirseekerRecommendedGasPrice(
+            getRecommendedGasPrice(
               chainId,
               providerName,
               provider,
@@ -109,7 +105,7 @@ export const updateFeed = async (
         // We want to set the timestamp of the first update transaction. We can determine if the transaction is the
         // original one and that it isn't a retry of a pending transaction (if there is no timestamp for the
         // particular sponsor wallet). This assumes that a single sponsor updates a single dAPI.
-        if (!hasPendingTransaction(chainId, providerName, sponsorWallet.address)) {
+        if (!hasSponsorPendingTransaction(chainId, providerName, sponsorWallet.address)) {
           logger.debug('Setting timestamp of the original update transaction');
           setSponsorLastUpdateTimestampMs(chainId, providerName, sponsorWallet.address);
         }
@@ -143,13 +139,16 @@ export const updateFeed = async (
   });
 };
 
-export const updateFeeds = async (
+export const submitTransactions = async (
   chainId: ChainId,
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
   api3ServerV1: Api3ServerV1,
   updatableDapis: UpdatableDapi[]
-) => Promise.all(updatableDapis.map(async (dapi) => updateFeed(chainId, providerName, provider, api3ServerV1, dapi)));
+) =>
+  Promise.all(
+    updatableDapis.map(async (dapi) => submitTransaction(chainId, providerName, provider, api3ServerV1, dapi))
+  );
 
 export const estimateMulticallGasLimit = async (
   api3ServerV1: Api3ServerV1,

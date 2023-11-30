@@ -1,4 +1,4 @@
-import * as nodeFs from 'node:fs';
+import * as nodeFsModule from 'node:fs';
 import path from 'node:path';
 
 import { isObject } from 'lodash';
@@ -26,7 +26,7 @@ describe('checks README', () => {
     expect(exampleSecretsData).toBeDefined();
     expect(readmeData).toBeDefined();
 
-    const readFileSyncSpy = jest.spyOn(nodeFs, 'readFileSync');
+    const readFileSyncSpy = jest.spyOn(nodeFsModule, 'readFileSync');
 
     readFileSyncSpy.mockImplementationOnce(() => exampleSecretsData);
     readFileSyncSpy.mockImplementationOnce(() => exampleConfigData);

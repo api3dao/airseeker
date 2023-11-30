@@ -20,14 +20,11 @@ interface GasState {
 
 export interface State {
   config: Config;
-  dataFetcherInterval?: NodeJS.Timeout;
-  gasPriceStore: Record<ChainId, Record<ProviderName, GasState>>;
+  gasPrices: Record<ChainId, Record<ProviderName, GasState>>;
   derivedSponsorWallets: Record<DapiName, PrivateKey>;
-  signedApiStore: Record<BeaconId, SignedData>;
-  signedApiUrlStore: Record<ChainId, Record<ProviderName, Record<AirnodeAddress, SignedApiUrl>>>;
+  signedDatas: Record<BeaconId, SignedData>;
+  signedApiUrls: Record<ChainId, Record<ProviderName, Record<AirnodeAddress, SignedApiUrl>>>;
 }
-
-type StateUpdater = (draft: Draft<State>) => void;
 
 let state: State | undefined;
 
@@ -42,13 +39,13 @@ export const getState = (): State => {
 export const setInitialState = (config: Config) => {
   state = {
     config,
-    gasPriceStore: {},
-    signedApiStore: {},
-    signedApiUrlStore: {},
+    gasPrices: {},
+    signedDatas: {},
+    signedApiUrls: {},
     derivedSponsorWallets: {},
   };
 };
 
-export const updateState = (updater: StateUpdater) => {
+export const updateState = (updater: (draft: Draft<State>) => void) => {
   state = produce(getState(), updater);
 };

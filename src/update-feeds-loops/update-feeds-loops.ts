@@ -3,23 +3,23 @@ import { ethers } from 'ethers';
 import { isError, range, size, zip } from 'lodash';
 
 import type { Chain } from '../config/schema';
-import { INT224_MAX, INT224_MIN, RPC_PROVIDER_TIMEOUT_MS } from '../constants';
-import { clearSponsorLastUpdateTimestampMs, initializeGasStore, hasPendingTransaction } from '../gas-price';
+import { RPC_PROVIDER_TIMEOUT_MS } from '../constants';
+import { clearSponsorLastUpdateTimestampMs, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
 import { sleep, deriveSponsorWallet } from '../utils';
 
-import { getApi3ServerV1 } from './api3-server-v1';
-import { getUpdatableFeeds } from './check-feeds';
 import {
   decodeDapisCountResponse,
   decodeReadDapiWithIndexResponse,
   getDapiDataRegistry,
   verifyMulticallResponse,
   type DecodedReadDapiWithIndexResponse,
-} from './dapi-data-registry';
-import { updateFeeds } from './update-transactions';
+  getApi3ServerV1,
+} from './contracts';
+import { getUpdatableFeeds } from './get-updatable-feeds';
+import { hasSponsorPendingTransaction, submitTransactions } from './submit-transactions';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -39,12 +39,12 @@ export const startUpdateFeedsLoops = async () => {
       logger.debug(`Starting update loops for chain`, { chainId, staggerTime, providerNames: Object.keys(providers) });
 
       for (const providerName of Object.keys(providers)) {
-        logger.debug(`Initializing gas store`, { chainId, providerName });
-        initializeGasStore(chainId, providerName);
+        logger.debug(`Initializing gas state`, { chainId, providerName });
+        initializeGasState(chainId, providerName);
 
         logger.debug(`Starting update feed loop`, { chainId, providerName });
         // Run the update feed loop manually for the first time, because setInterval first waits for the given period of
-        // time.
+        // time before calling the callback function.
         void runUpdateFeeds(providerName, chain, chainId);
         setInterval(async () => runUpdateFeeds(providerName, chain, chainId), dataFeedUpdateIntervalMs);
 
@@ -203,18 +203,6 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
   });
 };
 
-// https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
-export const decodeBeaconValue = (encodedBeaconValue: string) => {
-  const decodedBeaconValue = ethers.BigNumber.from(
-    ethers.utils.defaultAbiCoder.decode(['int256'], encodedBeaconValue)[0]
-  );
-  if (decodedBeaconValue.gt(INT224_MAX) || decodedBeaconValue.lt(INT224_MIN)) {
-    return null;
-  }
-
-  return decodedBeaconValue;
-};
-
 export const processBatch = async (
   batch: DecodedReadDapiWithIndexResponse[],
   providerName: ProviderName,
@@ -233,11 +221,11 @@ export const processBatch = async (
         url: `${url}/${beacon!.airnodeAddress}`,
         airnodeAddress: beacon!.airnodeAddress,
       }));
-      if (!draft.signedApiUrlStore) draft.signedApiUrlStore = {};
-      if (!draft.signedApiUrlStore[chainId]) draft.signedApiUrlStore[chainId] = {};
-      if (!draft.signedApiUrlStore[chainId]![providerName]) draft.signedApiUrlStore[chainId]![providerName] = {};
+      if (!draft.signedApiUrls) draft.signedApiUrls = {};
+      if (!draft.signedApiUrls[chainId]) draft.signedApiUrls[chainId] = {};
+      if (!draft.signedApiUrls[chainId]![providerName]) draft.signedApiUrls[chainId]![providerName] = {};
       for (const { airnodeAddress, url } of receivedUrls) {
-        draft.signedApiUrlStore[chainId]![providerName]![airnodeAddress] = url;
+        draft.signedApiUrls[chainId]![providerName]![airnodeAddress] = url;
       }
     }
   });
@@ -251,7 +239,7 @@ export const processBatch = async (
 
     if (!dapiNamesToUpdate.has(dapiName)) {
       const sponsorWalletAddress = deriveSponsorWallet(sponsorWalletMnemonic, dapiName).address;
-      const timestampNeedsClearing = hasPendingTransaction(chainId, providerName, sponsorWalletAddress);
+      const timestampNeedsClearing = hasSponsorPendingTransaction(chainId, providerName, sponsorWalletAddress);
       if (timestampNeedsClearing) {
         // NOTE: A dAPI may stop needing an update for two reasons:
         //  1. It has been updated by a transaction. This could have been done by this Airseeker or some backup.
@@ -267,7 +255,7 @@ export const processBatch = async (
     }
   }
 
-  const updatedFeeds = await updateFeeds(
+  const updatedFeeds = await submitTransactions(
     chainId,
     providerName,
     provider,

@@ -6,10 +6,9 @@ import { getState, updateState } from '../state';
 import type { SignedData } from '../types';
 import { deriveBeaconId } from '../utils';
 
-import { purgeOldSignedData, verifySignedDataIntegrity } from './signed-data-store';
-import * as localDataStore from './signed-data-store';
+import * as signedDataStateModule from './signed-data-state';
 
-describe('datastore', () => {
+describe('signed data state', () => {
   let testDataPoint: SignedData;
   const signer = ethers.Wallet.fromMnemonic('test test test test test test test test test test test junk');
 
@@ -29,16 +28,14 @@ describe('datastore', () => {
     };
   });
 
-  beforeEach(() => localDataStore.clear);
-
   it('stores and gets a data point', () => {
-    jest.spyOn(localDataStore, 'isSignedDataFresh').mockReturnValue(true);
+    jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
     // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-    const promisedStorage = localDataStore.setStoreDataPoint(testDataPoint);
+    const promisedStorage = signedDataStateModule.saveSignedData(testDataPoint);
     expect(promisedStorage).toBeFalsy();
 
     const dataFeedId = deriveBeaconId(testDataPoint.airnode, testDataPoint.templateId)!;
-    const datapoint = localDataStore.getStoreDataPoint(dataFeedId);
+    const datapoint = signedDataStateModule.getSignedData(dataFeedId);
 
     expect(datapoint).toStrictEqual(testDataPoint);
   });
@@ -57,8 +54,8 @@ describe('datastore', () => {
       timestamp,
     };
 
-    expect(verifySignedDataIntegrity(testDataPoint)).toBeTruthy();
-    expect(verifySignedDataIntegrity(futureTestDataPoint)).toBeFalsy();
+    expect(signedDataStateModule.verifySignedDataIntegrity(testDataPoint)).toBeTruthy();
+    expect(signedDataStateModule.verifySignedDataIntegrity(futureTestDataPoint)).toBeFalsy();
   });
 
   it('checks the signature on signed data', async () => {
@@ -75,26 +72,26 @@ describe('datastore', () => {
       timestamp,
     };
 
-    expect(verifySignedDataIntegrity(badTestDataPoint)).toBeFalsy();
+    expect(signedDataStateModule.verifySignedDataIntegrity(badTestDataPoint)).toBeFalsy();
   });
 
-  it('purges old data from the store', () => {
+  it('purges old data from the state', () => {
     const baseTime = 1_700_126_230_000;
     jest.useFakeTimers().setSystemTime(baseTime);
 
     initializeState();
     updateState((draft) => {
-      draft.signedApiStore['0x000'] = allowPartial<SignedData>({
+      draft.signedDatas['0x000'] = allowPartial<SignedData>({
         timestamp: (baseTime / 1000 - 25 * 60 * 60).toString(),
       });
-      draft.signedApiStore['0x001'] = allowPartial<SignedData>({
+      draft.signedDatas['0x001'] = allowPartial<SignedData>({
         timestamp: (baseTime / 1000 - 23 * 60 * 60).toString(),
       });
     });
 
-    purgeOldSignedData();
+    signedDataStateModule.purgeOldSignedData();
 
-    expect(Object.values(getState().signedApiStore)).toStrictEqual([
+    expect(Object.values(getState().signedDatas)).toStrictEqual([
       {
         timestamp: (baseTime / 1000 - 23 * 60 * 60).toString(),
       },

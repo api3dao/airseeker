@@ -1,10 +1,10 @@
 import axios from 'axios';
 
 import { initializeState } from '../../test/fixtures/mock-config';
-import * as localDataStore from '../signed-data-store';
 import { updateState } from '../state';
 
-import * as dataFetcherModule from './data-fetcher';
+import * as dataFetcherLoopModule from './data-fetcher-loop';
+import * as signedDataStateModule from './signed-data-state';
 
 const mockedAxios = axios as jest.MockedFunction<typeof axios>;
 jest.mock('axios');
@@ -12,9 +12,8 @@ jest.mock('axios');
 describe('data fetcher', () => {
   beforeEach(() => {
     initializeState();
-    localDataStore.clear();
     updateState((draft) => {
-      draft.signedApiUrlStore = {
+      draft.signedApiUrls = {
         '31337': {
           hardhat: {
             '0xC04575A2773Da9Cd23853A69694e02111b2c4182':
@@ -26,7 +25,7 @@ describe('data fetcher', () => {
   });
 
   it('retrieves signed data from urls', async () => {
-    const setStoreDataPointSpy = jest.spyOn(localDataStore, 'setStoreDataPoint');
+    const saveSignedDataSpy = jest.spyOn(signedDataStateModule, 'saveSignedData');
 
     mockedAxios.mockResolvedValue(
       Promise.resolve({
@@ -63,28 +62,33 @@ describe('data fetcher', () => {
       })
     );
 
-    jest.spyOn(localDataStore, 'isSignedDataFresh').mockReturnValue(true);
+    jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
 
-    const dataFetcherPromise = dataFetcherModule.runDataFetcher();
+    const dataFetcherPromise = dataFetcherLoopModule.runDataFetcher();
     await expect(dataFetcherPromise).resolves.toBeDefined();
 
     expect(mockedAxios).toHaveBeenCalledTimes(1);
-    expect(setStoreDataPointSpy).toHaveBeenCalledTimes(3);
+    expect(saveSignedDataSpy).toHaveBeenCalledTimes(3);
   });
 
   it('calls signed api urls from config', async () => {
-    jest.spyOn(dataFetcherModule, 'callSignedDataApi');
+    jest.spyOn(dataFetcherLoopModule, 'callSignedApi');
 
     const signedApiUrl = 'http://some.url/0xbF3137b0a7574563a23a8fC8badC6537F98197CC';
     updateState((draft) => {
       draft.config.signedApiUrls = [signedApiUrl];
     });
 
-    const dataFetcherPromise = dataFetcherModule.runDataFetcher();
+    const dataFetcherPromise = dataFetcherLoopModule.runDataFetcher();
 
     await expect(dataFetcherPromise).resolves.toBeDefined();
 
     expect(mockedAxios).toHaveBeenCalledTimes(2);
-    expect(dataFetcherModule.callSignedDataApi).toHaveBeenCalledWith(signedApiUrl, 10_000);
+    expect(dataFetcherLoopModule.callSignedApi).toHaveBeenNthCalledWith(
+      1,
+      'http://127.0.0.1:8090/0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
+      9000
+    );
+    expect(dataFetcherLoopModule.callSignedApi).toHaveBeenNthCalledWith(2, signedApiUrl, 9000);
   });
 });

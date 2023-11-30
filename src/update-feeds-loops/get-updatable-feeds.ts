@@ -1,21 +1,28 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
-import { calculateMedian, checkUpdateConditions } from '../condition-check';
+import { getSignedData } from '../data-fetcher-loop/signed-data-state';
+import { calculateMedian, isDataFeedUpdatable } from '../deviation-check';
 import { logger } from '../logger';
-import { getStoreDataPoint } from '../signed-data-store';
 import { getState } from '../state';
-import type { BeaconId, ChainId } from '../types';
-import { multiplyBigNumber } from '../utils';
+import type { BeaconId, ChainId, SignedData } from '../types';
+import { decodeBeaconValue, multiplyBigNumber } from '../utils';
 
-import { getApi3ServerV1 } from './api3-server-v1';
-import type { DecodedReadDapiWithIndexResponse } from './dapi-data-registry';
-import { decodeBeaconValue } from './update-feeds';
-import type { UpdatableDapi } from './update-transactions';
+import { getApi3ServerV1, type DecodedReadDapiWithIndexResponse } from './contracts';
 
 interface BeaconValue {
   timestamp: ethers.BigNumber;
   value: ethers.BigNumber;
+}
+
+export interface UpdatableBeacon {
+  beaconId: string;
+  signedData: SignedData;
+}
+
+export interface UpdatableDapi {
+  dapiInfo: DecodedReadDapiWithIndexResponse;
+  updatableBeacons: UpdatableBeacon[];
 }
 
 export const getUpdatableFeeds = async (
@@ -44,7 +51,7 @@ export const getUpdatableFeeds = async (
       .map((dapiInfo) => {
         const beaconsWithData = dapiInfo.decodedDataFeed.beacons.map(({ beaconId }) => {
           const onChainValue: BeaconValue = onChainFeedValues[beaconId]!;
-          const signedData = getStoreDataPoint(beaconId);
+          const signedData = getSignedData(beaconId);
           const offChainValue: BeaconValue | undefined = signedData
             ? {
                 timestamp: ethers.BigNumber.from(signedData.timestamp),
@@ -76,7 +83,7 @@ export const getUpdatableFeeds = async (
           deviationThresholdCoefficient
         );
 
-        return checkUpdateConditions(
+        return isDataFeedUpdatable(
           dataFeedValue.value,
           dataFeedValue.timestamp,
           newBeaconSetValue,

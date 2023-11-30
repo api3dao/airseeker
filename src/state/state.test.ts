@@ -3,13 +3,12 @@ import { BigNumber } from 'ethers';
 import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
 import { deriveBeaconId } from '../utils';
 
-import { updateState, getState } from './state';
+import { updateState, getState, type State } from './state';
 
 const timestampMock = 1_696_930_907_351;
-const stateMock = {
+const stateMock: State = {
   config: generateTestConfig(),
-
-  gasPriceStore: {
+  gasPrices: {
     '31337': {
       localhost: {
         gasPrices: [{ price: BigNumber.from(10), timestampMs: timestampMock }],
@@ -17,7 +16,7 @@ const stateMock = {
       },
     },
   },
-  signedApiStore: {
+  signedDatas: {
     [deriveBeaconId(
       '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
       '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183'
@@ -30,7 +29,7 @@ const stateMock = {
       timestamp: 'something-silly',
     },
   },
-  signedApiUrlStore: {
+  signedApiUrls: {
     '31337': {
       hardhat: {
         '0xC04575A2773Da9Cd23853A69694e02111b2c4182':
@@ -39,7 +38,6 @@ const stateMock = {
     },
   },
   derivedSponsorWallets: {},
-  dapis: {},
 };
 
 beforeAll(() => {
@@ -67,18 +65,18 @@ describe('state', () => {
 
   it('should update the state correctly', () => {
     const stateBefore = getState();
+
     updateState((draft) => {
-      draft.signedApiStore[beaconId] = signedDataSample;
+      draft.signedDatas[beaconId] = signedDataSample;
     });
 
     const stateAfter = getState();
-
     expect(stateBefore).toStrictEqual(stateMock);
     expect(stateBefore).not.toStrictEqual(stateAfter);
     expect(stateAfter).toStrictEqual({
       ...stateBefore,
-      signedApiStore: {
-        ...stateBefore.signedApiStore,
+      signedDatas: {
+        ...stateBefore.signedDatas,
         [beaconId]: signedDataSample,
       },
     });

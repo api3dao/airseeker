@@ -1,7 +1,7 @@
 import { goSync } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
-import { AIRSEEKER_PROTOCOL_ID } from './constants';
+import { AIRSEEKER_PROTOCOL_ID, INT224_MAX, INT224_MIN } from './constants';
 
 export const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -40,3 +40,15 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: str
 
 export const multiplyBigNumber = (bigNumber: ethers.BigNumber, multiplier: number) =>
   bigNumber.mul(ethers.BigNumber.from(Math.round(multiplier * 100))).div(ethers.BigNumber.from(100));
+
+// https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
+export const decodeBeaconValue = (encodedBeaconValue: string) => {
+  const decodedBeaconValue = ethers.BigNumber.from(
+    ethers.utils.defaultAbiCoder.decode(['int256'], encodedBeaconValue)[0]
+  );
+  if (decodedBeaconValue.gt(INT224_MAX) || decodedBeaconValue.lt(INT224_MIN)) {
+    return null;
+  }
+
+  return decodedBeaconValue;
+};

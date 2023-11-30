@@ -10,10 +10,10 @@ import * as stateModule from '../state';
 import type { DapiDataRegistry } from '../typechain-types';
 import * as utilsModule from '../utils';
 
-import * as checkFeedsModule from './check-feeds';
-import * as dapiDataRegistryModule from './dapi-data-registry';
-import * as updateFeedsModule from './update-feeds';
-import * as updateTransactionModule from './update-transactions';
+import * as contractsModule from './contracts';
+import * as getUpdatableFeedsModule from './get-updatable-feeds';
+import * as submitTransactionModule from './submit-transactions';
+import * as updateFeedsLoopsModule from './update-feeds-loops';
 
 const chainId = '31337';
 const rpcUrl = 'http://127.0.0.1:8545/';
@@ -22,7 +22,7 @@ const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
   name: chainId,
 });
 
-describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
+describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
   it('starts staggered update loops for a chain', async () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
@@ -40,14 +40,14 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
-    jest.spyOn(updateFeedsModule, 'runUpdateFeeds').mockImplementation();
+    jest.spyOn(updateFeedsLoopsModule, 'runUpdateFeeds').mockImplementation();
     const intervalCalls = [] as number[];
     jest.spyOn(global, 'setInterval').mockImplementation((() => {
       intervalCalls.push(Date.now());
     }) as any);
     jest.spyOn(logger, 'debug');
 
-    await updateFeedsModule.startUpdateFeedsLoops();
+    await updateFeedsLoopsModule.startUpdateFeedsLoops();
 
     // Expect the intervals to be called with the correct stagger time.
     expect(setInterval).toHaveBeenCalledTimes(2);
@@ -60,7 +60,7 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
       staggerTime: 50,
       providerNames: ['first-provider', 'second-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas store', {
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas state', {
       chainId: '123',
       providerName: 'first-provider',
     });
@@ -68,7 +68,7 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
       chainId: '123',
       providerName: 'first-provider',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Initializing gas store', {
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Initializing gas state', {
       chainId: '123',
       providerName: 'second-provider',
     });
@@ -100,14 +100,14 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
-    jest.spyOn(updateFeedsModule, 'runUpdateFeeds').mockImplementation();
+    jest.spyOn(updateFeedsLoopsModule, 'runUpdateFeeds').mockImplementation();
     const intervalCalls = [] as number[];
     jest.spyOn(global, 'setInterval').mockImplementation((() => {
       intervalCalls.push(Date.now());
     }) as any);
     jest.spyOn(logger, 'debug');
 
-    await updateFeedsModule.startUpdateFeedsLoops();
+    await updateFeedsLoopsModule.startUpdateFeedsLoops();
 
     // Expect the intervals to be called with the correct stagger time.
     expect(setInterval).toHaveBeenCalledTimes(2);
@@ -120,7 +120,7 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
       staggerTime: 100,
       providerNames: ['first-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas store', {
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas state', {
       chainId: '123',
       providerName: 'first-provider',
     });
@@ -133,7 +133,7 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
       staggerTime: 100,
       providerNames: ['another-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Initializing gas store', {
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Initializing gas state', {
       chainId: '456',
       providerName: 'another-provider',
     });
@@ -144,16 +144,14 @@ describe(updateFeedsModule.startUpdateFeedsLoops.name, () => {
   });
 });
 
-describe(updateFeedsModule.runUpdateFeeds.name, () => {
+describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
   it('aborts when fetching first dAPIs batch fails', async () => {
     const dapiDataRegistry = generateMockDapiDataRegistry();
-    jest
-      .spyOn(dapiDataRegistryModule, 'getDapiDataRegistry')
-      .mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
+    jest.spyOn(contractsModule, 'getDapiDataRegistry').mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
     dapiDataRegistry.callStatic.tryMulticall.mockRejectedValueOnce(new Error('provider-error'));
     jest.spyOn(logger, 'error');
 
-    await updateFeedsModule.runUpdateFeeds(
+    await updateFeedsLoopsModule.runUpdateFeeds(
       'provider-name',
       allowPartial<Chain>({
         dataFeedBatchSize: 2,
@@ -176,9 +174,7 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
     const firstDapi = generateReadDapiWithIndexResponse();
     const thirdDapi = generateReadDapiWithIndexResponse();
     const dapiDataRegistry = generateMockDapiDataRegistry();
-    jest
-      .spyOn(dapiDataRegistryModule, 'getDapiDataRegistry')
-      .mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
+    jest.spyOn(contractsModule, 'getDapiDataRegistry').mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
     dapiDataRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
     dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
       successes: [true, true],
@@ -199,29 +195,29 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrlStore: {
+        signedApiUrls: {
           '31337': {},
         },
-        signedApiStore: {},
-        gasPriceStore: {},
+        signedDatas: {},
+        gasPrices: {},
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest
-      .spyOn(checkFeedsModule, 'getUpdatableFeeds')
-      .mockResolvedValueOnce([allowPartial<updateTransactionModule.UpdatableDapi>({ dapiInfo: firstDapi })])
-      .mockResolvedValueOnce([allowPartial<updateTransactionModule.UpdatableDapi>({ dapiInfo: thirdDapi })]);
-    jest.spyOn(updateTransactionModule, 'updateFeeds').mockResolvedValue([null, null]);
+      .spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds')
+      .mockResolvedValueOnce([allowPartial<getUpdatableFeedsModule.UpdatableDapi>({ dapiInfo: firstDapi })])
+      .mockResolvedValueOnce([allowPartial<getUpdatableFeedsModule.UpdatableDapi>({ dapiInfo: thirdDapi })]);
+    jest.spyOn(submitTransactionModule, 'submitTransactions').mockResolvedValue([null, null]);
     const processBatchCalls = [] as number[];
-    const originalProcessBatch = updateFeedsModule.processBatch;
+    const originalProcessBatch = updateFeedsLoopsModule.processBatch;
     jest
-      .spyOn(updateFeedsModule, 'processBatch')
+      .spyOn(updateFeedsLoopsModule, 'processBatch')
       .mockImplementation(async (...args: Parameters<typeof originalProcessBatch>) => {
         processBatchCalls.push(Date.now());
         return originalProcessBatch(...args);
       });
 
-    await updateFeedsModule.runUpdateFeeds(
+    await updateFeedsLoopsModule.runUpdateFeeds(
       'provider-name',
       allowPartial<Chain>({
         dataFeedBatchSize: 1,
@@ -241,7 +237,7 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
     expect(sleepCalls[2]).toBe(50);
 
     // Expect the call times of processBatch to be staggered as well.
-    expect(updateFeedsModule.processBatch).toHaveBeenCalledTimes(2);
+    expect(updateFeedsLoopsModule.processBatch).toHaveBeenCalledTimes(2);
     expect(processBatchCalls[1]! - processBatchCalls[0]!).toBeGreaterThan(100 - 20); // The stagger time is 50ms, but second batch fails to load which means the third second processBatch call needs to happen after we wait for 2 stagger times. We add some buffer to account for processing delays.
 
     // Expect the logs to be called with the correct context.
@@ -274,9 +270,7 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
   it('catches unhandled error', async () => {
     const dapi = generateReadDapiWithIndexResponse();
     const dapiDataRegistry = generateMockDapiDataRegistry();
-    jest
-      .spyOn(dapiDataRegistryModule, 'getDapiDataRegistry')
-      .mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
+    jest.spyOn(contractsModule, 'getDapiDataRegistry').mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
     dapiDataRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
     dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
       successes: [true, true],
@@ -286,16 +280,18 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrlStore: {},
-        signedApiStore: {},
-        gasPriceStore: {},
+        signedApiUrls: {},
+        signedDatas: {},
+        gasPrices: {},
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest.spyOn(logger, 'error');
-    jest.spyOn(checkFeedsModule, 'getUpdatableFeeds').mockRejectedValueOnce(new Error('unexpected-unhandled-error'));
+    jest
+      .spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds')
+      .mockRejectedValueOnce(new Error('unexpected-unhandled-error'));
 
-    await updateFeedsModule.runUpdateFeeds(
+    await updateFeedsLoopsModule.runUpdateFeeds(
       'provider-name',
       allowPartial<Chain>({
         dataFeedBatchSize: 1,
@@ -317,10 +313,10 @@ describe(updateFeedsModule.runUpdateFeeds.name, () => {
   });
 });
 
-describe(updateFeedsModule.processBatch.name, () => {
+describe(updateFeedsLoopsModule.processBatch.name, () => {
   it('applies deviationThresholdCoefficient from config', async () => {
     const dapi = generateReadDapiWithIndexResponse();
-    const decodedDataFeed = dapiDataRegistryModule.decodeDataFeed(dapi.dataFeed);
+    const decodedDataFeed = contractsModule.decodeDataFeed(dapi.dataFeed);
     const decodedDapi = {
       ...omit(dapi, ['dataFeed']),
       decodedDataFeed,
@@ -331,8 +327,8 @@ describe(updateFeedsModule.processBatch.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrlStore: {},
-        signedApiStore: {
+        signedApiUrls: {},
+        signedDatas: {
           '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
             airnode: '0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4',
             templateId: '0x457a3b3da67e394a895ea49e534a4d91b2d009477bef15eab8cbed313925b010',
@@ -352,12 +348,12 @@ describe(updateFeedsModule.processBatch.name, () => {
             timestamp: (dapi.dataFeedValue.timestamp + 1).toString(),
           },
         },
-        gasPriceStore: {},
+        gasPrices: {},
       })
     );
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'info');
-    jest.spyOn(checkFeedsModule, 'multicallBeaconValues').mockResolvedValue({
+    jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
         timestamp: ethers.BigNumber.from(150),
         value: ethers.BigNumber.from('400'),
@@ -372,7 +368,7 @@ describe(updateFeedsModule.processBatch.name, () => {
       },
     });
 
-    const feeds = checkFeedsModule.getUpdatableFeeds([decodedDapi], 2, provider, '31337');
+    const feeds = getUpdatableFeedsModule.getUpdatableFeeds([decodedDapi], 2, provider, '31337');
 
     expect(logger.warn).not.toHaveBeenCalledWith(`Off-chain sample's timestamp is older than on-chain timestamp.`);
     expect(logger.warn).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
@@ -381,22 +377,22 @@ describe(updateFeedsModule.processBatch.name, () => {
   });
 });
 
-describe(updateFeedsModule.calculateStaggerTime.name, () => {
+describe(updateFeedsLoopsModule.calculateStaggerTime.name, () => {
   it('calculates zero stagger time for specific edge cases', () => {
-    expect(updateFeedsModule.calculateStaggerTime(1, 10_000, 60_000)).toBe(0); // When there is only a single batch.
-    expect(updateFeedsModule.calculateStaggerTime(2, 25_000, 30_000)).toBe(0); // When there are just two batches and fetching the first batch takes too long.
+    expect(updateFeedsLoopsModule.calculateStaggerTime(1, 10_000, 60_000)).toBe(0); // When there is only a single batch.
+    expect(updateFeedsLoopsModule.calculateStaggerTime(2, 25_000, 30_000)).toBe(0); // When there are just two batches and fetching the first batch takes too long.
   });
 
   it('uses remaining time to calculate stagger time when fetching batch takes too long', () => {
-    expect(updateFeedsModule.calculateStaggerTime(3, 15_000, 30_000)).toBe(7500);
-    expect(updateFeedsModule.calculateStaggerTime(10, 10_000, 50_000)).toBe(4444);
-    expect(updateFeedsModule.calculateStaggerTime(10, 20_000, 20_000)).toBe(0);
+    expect(updateFeedsLoopsModule.calculateStaggerTime(3, 15_000, 30_000)).toBe(7500);
+    expect(updateFeedsLoopsModule.calculateStaggerTime(10, 10_000, 50_000)).toBe(4444);
+    expect(updateFeedsLoopsModule.calculateStaggerTime(10, 20_000, 20_000)).toBe(0);
   });
 
   it('staggers the batches evenly', () => {
     const firstBatchDuration = 10_000;
     const batchCount = 11;
-    const staggerTime = updateFeedsModule.calculateStaggerTime(batchCount, firstBatchDuration, 50_000);
+    const staggerTime = updateFeedsLoopsModule.calculateStaggerTime(batchCount, firstBatchDuration, 50_000);
 
     const fetchTimes = [0, firstBatchDuration];
     for (let i = 1; i < batchCount - 1; i++) {
@@ -409,6 +405,6 @@ describe(updateFeedsModule.calculateStaggerTime.name, () => {
   });
 
   it('returns zero if first batch takes more than the full update interval', () => {
-    expect(updateFeedsModule.calculateStaggerTime(3, 60_000, 30_000)).toBe(0);
+    expect(updateFeedsLoopsModule.calculateStaggerTime(3, 60_000, 30_000)).toBe(0);
   });
 });
