@@ -90,9 +90,9 @@ const joinUrl = (url: string, path: string) => {
   return new URL(path, url).href;
 };
 
-const loadPusherConfig = (pusherDir: 'pusher-1' | 'pusher-2') => {
-  const configPath = join(__dirname, `/../`, pusherDir);
-  const rawConfig = JSON.parse(readFileSync(join(configPath, 'pusher.json'), 'utf8'));
+const loadAirnodeFeedConfig = (airnodeFeedDir: 'airnode-feed-1' | 'airnode-feed-2') => {
+  const configPath = join(__dirname, `/../`, airnodeFeedDir);
+  const rawConfig = JSON.parse(readFileSync(join(configPath, 'airnode-feed.json'), 'utf8'));
   const rawSecrets = dotenv.parse(readFileSync(join(configPath, 'secrets.env'), 'utf8'));
 
   const secrets = parseSecrets(rawSecrets);
@@ -100,13 +100,13 @@ const loadPusherConfig = (pusherDir: 'pusher-1' | 'pusher-2') => {
 };
 
 const getBeaconSetNames = () => {
-  const pusher = loadPusherConfig('pusher-1');
-  const pusherWallet = ethers.Wallet.fromMnemonic(pusher.nodeSettings.airnodeWalletMnemonic);
-  const pusherBeacons = Object.values(pusher.templates).map((template: any) => {
-    return deriveBeaconData({ ...template, airnodeAddress: pusherWallet.address });
+  const airnodeFeed = loadAirnodeFeedConfig('airnode-feed-1');
+  const airnodeFeedWallet = ethers.Wallet.fromMnemonic(airnodeFeed.nodeSettings.airnodeWalletMnemonic);
+  const airnodeFeedBeacons = Object.values(airnodeFeed.templates).map((template: any) => {
+    return deriveBeaconData({ ...template, airnodeAddress: airnodeFeedWallet.address });
   });
 
-  return pusherBeacons.map((beacon) => beacon.parameters[0]!.value);
+  return airnodeFeedBeacons.map((beacon) => beacon.parameters[0]!.value);
 };
 
 export const fundAirseekerSponsorWallet = async (funderWallet: ethers.Wallet) => {
@@ -210,28 +210,32 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   await tx.wait();
 
   // Create templates
-  const pusher1 = loadPusherConfig('pusher-1');
-  const pusher2 = loadPusherConfig('pusher-2');
-  const pusher1Wallet = ethers.Wallet.fromMnemonic(pusher1.nodeSettings.airnodeWalletMnemonic).connect(provider);
-  const pusher2Wallet = ethers.Wallet.fromMnemonic(pusher2.nodeSettings.airnodeWalletMnemonic).connect(provider);
-  const pusher1Beacons = Object.values(pusher1.templates).map((template: any) => {
-    return deriveBeaconData({ ...template, airnodeAddress: pusher1Wallet.address });
+  const airnodeFeed1 = loadAirnodeFeedConfig('airnode-feed-1');
+  const airnodeFeed2 = loadAirnodeFeedConfig('airnode-feed-2');
+  const airnodeFeed1Wallet = ethers.Wallet.fromMnemonic(airnodeFeed1.nodeSettings.airnodeWalletMnemonic).connect(
+    provider
+  );
+  const airnodeFeed2Wallet = ethers.Wallet.fromMnemonic(airnodeFeed2.nodeSettings.airnodeWalletMnemonic).connect(
+    provider
+  );
+  const airnodeFeed1Beacons = Object.values(airnodeFeed1.templates).map((template: any) => {
+    return deriveBeaconData({ ...template, airnodeAddress: airnodeFeed1Wallet.address });
   });
-  const pusher2Beacons = Object.values(pusher2.templates).map((template: any) => {
-    return deriveBeaconData({ ...template, airnodeAddress: pusher2Wallet.address });
+  const airnodeFeed2Beacons = Object.values(airnodeFeed2.templates).map((template: any) => {
+    return deriveBeaconData({ ...template, airnodeAddress: airnodeFeed2Wallet.address });
   });
 
   // Derive beacon set IDs and names
-  const beaconSetIds = zip(pusher1Beacons, pusher2Beacons).map(([beacon1, beacon2]) =>
+  const beaconSetIds = zip(airnodeFeed1Beacons, airnodeFeed2Beacons).map(([beacon1, beacon2]) =>
     ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['bytes32[]'], [[beacon1!.beaconId, beacon2!.beaconId]]))
   );
-  const beaconSetNames = pusher1Beacons.map((beacon) => beacon.parameters[0]!.value);
+  const beaconSetNames = airnodeFeed1Beacons.map((beacon) => beacon.parameters[0]!.value);
 
   // Register merkle tree hashes
   const timestamp = Math.floor(Date.now() / 1000);
   const apiTreeValues = [
-    [pusher1Wallet.address, joinUrl(pusher1.signedApis[0].url, 'default')], // NOTE: Pusher pushes to the "/" of the signed API, but we need to query it additional path.
-    [pusher2Wallet.address, joinUrl(pusher2.signedApis[0].url, 'default')], // NOTE: Pusher pushes to the "/" of the signed API, but we need to query it additional path.
+    [airnodeFeed1Wallet.address, joinUrl(airnodeFeed1.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the signed API, but we need to query it additional path.
+    [airnodeFeed2Wallet.address, joinUrl(airnodeFeed2.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the signed API, but we need to query it additional path.
   ] as const;
   const apiTree = StandardMerkleTree.of(apiTreeValues as any, ['address', 'string']);
   const apiHashType = ethers.utils.solidityKeccak256(['string'], ['Signed API URL Merkle tree root']);
@@ -288,10 +292,10 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
       .registerAirnodeSignedApiUrl(airnode, url, apiTreeRoot, apiTreeProof);
     await tx.wait();
   }
-  const dapiInfos = zip(pusher1Beacons, pusher2Beacons).map(([pusher1Beacon, pusher2Beacon], i) => {
+  const dapiInfos = zip(airnodeFeed1Beacons, airnodeFeed2Beacons).map(([airnodeFeed1Beacon, airnodeFeed2Beacon], i) => {
     return {
-      airnodes: [pusher1Beacon!.airnodeAddress, pusher2Beacon!.airnodeAddress],
-      templateIds: [pusher1Beacon!.templateId, pusher1Beacon!.templateId],
+      airnodes: [airnodeFeed1Beacon!.airnodeAddress, airnodeFeed2Beacon!.airnodeAddress],
+      templateIds: [airnodeFeed1Beacon!.templateId, airnodeFeed1Beacon!.templateId],
       dapiTreeValue: dapiTreeValues[i]!,
     };
   });
@@ -329,11 +333,11 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     api3ServerV1,
     dapiDataRegistry,
 
-    pusher1Wallet,
-    pusher2Wallet,
+    airnodeFeed1Wallet,
+    airnodeFeed2Wallet,
 
-    pusher1Beacons,
-    pusher2Beacons,
+    airnodeFeed1Beacons,
+    airnodeFeed2Beacons,
     beaconSetNames,
   };
 };
