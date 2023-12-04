@@ -408,3 +408,95 @@ describe(updateFeedsLoopsModule.calculateStaggerTimeMs.name, () => {
     expect(updateFeedsLoopsModule.calculateStaggerTimeMs(3, 60_000, 30_000)).toBe(0);
   });
 });
+
+describe(updateFeedsLoopsModule.discardInvalidProviders.name, () => {
+  it('discards providers that fail to report correct chain ID', async () => {
+    const state = allowPartial<stateModule.State>({
+      config: {
+        chains: {
+          '1': {
+            providers: {
+              'legit-provider': { url: 'legit-provider-1-url' },
+              'invalid-provider': { url: 'invalid-provider-1-url' },
+            },
+          },
+          '2': {
+            providers: {
+              'legit-provider': { url: 'legit-provider-2-url' },
+              'invalid-provider': { url: 'invalid-provider-2-url' },
+            },
+          },
+        },
+      },
+    });
+    jest.spyOn(stateModule, 'getState').mockReturnValue(state);
+    jest.spyOn(stateModule, 'updateState').mockImplementation((updater) => updater(state));
+    jest.spyOn(logger, 'warn');
+    jest.spyOn(updateFeedsLoopsModule, 'createProvider').mockImplementation((url) => {
+      return {
+        // eslint-disable-next-line @typescript-eslint/require-await
+        getNetwork: jest.fn().mockImplementation(async () => {
+          // eslint-disable-next-line jest/no-conditional-in-test
+          switch (url) {
+            case 'legit-provider-1-url': {
+              return { chainId: 1 };
+            }
+            case 'invalid-provider-1-url': {
+              return { chainId: 2 };
+            }
+            case 'legit-provider-2-url': {
+              return { chainId: 2 };
+            }
+            case 'invalid-provider-2-url': {
+              throw new Error('provider-error');
+            }
+            default: {
+              throw new Error('Unexpected provider URL');
+            }
+          }
+        }),
+      } as any;
+    });
+
+    await updateFeedsLoopsModule.discardInvalidProviders();
+
+    // Expect the providers to be discarded from the state. Under normal circumstances, the state would be updated
+    // immutably.
+    expect(state).toStrictEqual({
+      config: {
+        chains: {
+          '1': {
+            providers: {
+              'legit-provider': {
+                url: 'legit-provider-1-url',
+              },
+            },
+          },
+          '2': {
+            providers: {
+              'legit-provider': {
+                url: 'legit-provider-2-url',
+              },
+            },
+          },
+        },
+      },
+    });
+
+    expect(logger.warn).toHaveBeenCalledTimes(2);
+    expect(logger.warn).toHaveBeenNthCalledWith(
+      1,
+      'Discarding provider because it reports a different chain ID than the one specified in the config',
+      {
+        chainIdFromConfig: '1',
+        providerChainId: '2',
+        providerName: 'invalid-provider',
+      }
+    );
+    expect(logger.warn).toHaveBeenNthCalledWith(2, 'Discarding provider because it failed to report chain ID', {
+      chainIdFromConfig: '2',
+      errorMessage: 'provider-error',
+      providerName: 'invalid-provider',
+    });
+  });
+});

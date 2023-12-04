@@ -21,11 +21,74 @@ import {
 import { getUpdatableFeeds } from './get-updatable-feeds';
 import { hasSponsorPendingTransaction, submitTransactions } from './submit-transactions';
 
+export const createProvider = (url: string) => {
+  return new ethers.providers.StaticJsonRpcProvider({
+    url,
+    timeout: RPC_PROVIDER_TIMEOUT_MS,
+  });
+};
+
+export const discardInvalidProviders = async () => {
+  const state = getState();
+  const {
+    config: { chains },
+  } = state;
+
+  const providersByChainId = await Promise.all(
+    Object.entries(chains).map(async ([chainId, chain]) => {
+      const { providers } = chain;
+      const providerNames = Object.keys(providers);
+      const providerInfoByProviderName = await Promise.all(
+        providerNames.map(async (providerName) => {
+          const provider = createProvider(providers[providerName]!.url);
+          const goChainId = await go(async () => provider.getNetwork().then((network) => network.chainId));
+          return { providerName, goProviderChainId: goChainId };
+        })
+      );
+      return { chainId, providerInfoByProviderName };
+    })
+  );
+
+  updateState((draft) => {
+    for (const { chainId, providerInfoByProviderName } of providersByChainId) {
+      const chain = draft.config.chains[chainId]!;
+      for (const { providerName, goProviderChainId } of providerInfoByProviderName) {
+        if (!goProviderChainId.success) {
+          logger.warn(`Discarding provider because it failed to report chain ID`, {
+            chainIdFromConfig: chainId,
+            providerName,
+            errorMessage: goProviderChainId.error.message,
+          });
+          delete chain.providers[providerName];
+          continue;
+        }
+        const providerChainId = goProviderChainId.data.toString();
+
+        if (providerChainId !== chainId) {
+          logger.warn(
+            `Discarding provider because it reports a different chain ID than the one specified in the config`,
+            {
+              chainIdFromConfig: chainId,
+              providerName,
+              providerChainId,
+            }
+          );
+          delete chain.providers[providerName];
+        }
+      }
+    }
+  });
+};
+
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
   const {
     config: { chains },
   } = state;
+
+  // Validate chain IDs across all providers and discard the ones that report a different chain ID compared to the one
+  // specified in the config.
+  await discardInvalidProviders();
 
   // Start update loops for each chain in parallel.
   await Promise.all(
@@ -87,10 +150,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
       // Create a provider and connect it to the DapiDataRegistry contract.
-      const provider = new ethers.providers.StaticJsonRpcProvider({
-        url: providers[providerName]!.url,
-        timeout: RPC_PROVIDER_TIMEOUT_MS,
-      });
+      const provider = createProvider(providers[providerName]!.url);
       const dapiDataRegistry = getDapiDataRegistry(contracts.DapiDataRegistry, provider);
 
       logger.debug(`Fetching first batch of dAPIs batches`);
