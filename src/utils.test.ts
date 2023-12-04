@@ -1,13 +1,15 @@
 import { deriveSponsorWallet, deriveWalletPathFromSponsorAddress, encodeDapiName } from './utils';
 
 describe(deriveSponsorWallet.name, () => {
-  it('derives sponsor wallets for a dAPI', () => {
-    const btcEthDapiName = encodeDapiName('BTC/ETH');
+  it('derives different wallets for dAPIs with same prefix', () => {
+    const dapiName = encodeDapiName('Ethereum - Avalanche');
+    const otherDapiName = encodeDapiName('Ethereum - Avalanche (DEX)');
     const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
 
-    const btcEthSponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, btcEthDapiName);
+    const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
+    const otherSponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, otherDapiName);
 
-    expect(btcEthSponsorWallet.address).toBe('0xDa8b0388F435F609C8cdA6cf73C890D90205c863');
+    expect(sponsorWallet.address).not.toBe(otherSponsorWallet.address);
   });
 });
 
