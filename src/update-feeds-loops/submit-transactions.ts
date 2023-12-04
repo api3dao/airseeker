@@ -6,7 +6,7 @@ import { getRecommendedGasPrice, setSponsorLastUpdateTimestamp } from '../gas-pr
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
-import { decodeDapiName, deriveSponsorWallet } from '../utils';
+import { deriveSponsorWallet } from '../utils';
 
 import type { UpdatableDapi } from './get-updatable-feeds';
 
@@ -186,18 +186,6 @@ export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiName:
 
   const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
   logger.debug('Derived new sponsor wallet', { sponsorWalletAddress: sponsorWallet.address });
-
-  // Log a warning when there is a collision between the derived sponsor wallet and the existing one.
-  const existingSponsorWallet = Object.entries(derivedSponsorWallets).find(
-    ([, existingPrivateKey]) => existingPrivateKey === sponsorWallet.privateKey
-  );
-  if (existingSponsorWallet) {
-    logger.warn(`There is a collision between the derived sponsor wallet and the existing one`, {
-      sponsorWalletAddress: sponsorWallet.address,
-      existingDapiName: decodeDapiName(existingSponsorWallet[0]),
-      dapiName: decodeDapiName(dapiName),
-    });
-  }
 
   updateState((draft) => {
     draft.derivedSponsorWallets = {
