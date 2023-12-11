@@ -1,11 +1,11 @@
 # Local Airseeker test
 
-The idea is to use the Docker images for Pusher, Signed API and Airseeker and run them locally. Specifically, this is
-the setup:
+The idea is to use the Docker images for Airnode feed, Signed API and Airseeker and run them locally. Specifically, this
+is the setup:
 
-- Use 2 pushers with Nodary API and reasonable fetch limits. Each pusher has a different Airnode mnemonic to mimic a
-  different API. One of the APIs is delayed so that the beacons have different values.
-- Use 2 signed APIs and each Pusher pushes to a separate Signed API.
+- Use 2 Airnode feeds with Nodary API and reasonable fetch limits. Each Airnode feed has a different Airnode mnemonic to
+  mimic a different API. One of the APIs is delayed so that the beacons have different values.
+- Use 2 signed APIs and each Airnode feed pushes to a separate Signed API.
 - We run Airseeker only on Hardhat network for setup simplicity. Initially, I wanted to have a Polygon testnet as well,
   but gave up on that idea for now. The setup can be easily extended to run on any chain, just by not starting Hardhat
   network and using a different RPCs.
@@ -19,7 +19,7 @@ assets from the Nodary API to see Airseeker updates.
   missing secrets. Some of the secrets are the deployed contract addresses, which you'll get by following the next
   instructions.
 
-- Build all of the Docker containers. Do build containers for Pusher and Signed API you need to run
+- Build all of the Docker containers. Do build containers for Airnode feed and Signed API you need to run
   [this command](https://github.com/api3dao/signed-api/blob/0bad6fc8dd6aaffaa12cf099ab6bbf7c98d487c8/package.json#L11)
   from the signed-api repository. For Airseeker, you can run `pnpm docker:build` from the root of this repository.
 
@@ -37,16 +37,16 @@ docker run --publish 4002:80 -it --init --volume $(pwd)/local-test-configuration
 
 You can go to `http://localhost:4001/` and `http://localhost:4002/` to see the Signed API 1 and 2 respectively.
 
-- Start Pusher 1 (in a separate terminal):
+- Start Airnode feed 1 (in a separate terminal):
 
 ```sh
-docker run -it --init --volume $(pwd)/local-test-configuration/pusher-1:/app/config --network host --env-file ./local-test-configuration/pusher-1/.env --rm --memory=256m api3/pusher:latest
+docker run -it --init --volume $(pwd)/local-test-configuration/airnode-feed-1:/app/config --network host --env-file ./local-test-configuration/airnode-feed-1/.env --rm --memory=256m api3/airnode-feed:latest
 ```
 
-- Start Pusher 2 (in a separate terminal):
+- Start Airnode feed 2 (in a separate terminal):
 
 ```sh
-docker run -it --init --volume $(pwd)/local-test-configuration/pusher-2:/app/config --network host --env-file ./local-test-configuration/pusher-2/.env --rm --memory=256m api3/pusher:latest
+docker run -it --init --volume $(pwd)/local-test-configuration/airnode-feed-2:/app/config --network host --env-file ./local-test-configuration/airnode-feed-2/.env --rm --memory=256m api3/airnode-feed:latest
 ```
 
 - Start Hardhat node (in a separate terminal):
