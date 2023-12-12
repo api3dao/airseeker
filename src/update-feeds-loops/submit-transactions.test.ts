@@ -343,19 +343,19 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
 
     // Verify that the dAPI was updated successfully.
     expect(logger.info).toHaveBeenCalledTimes(1);
-    expect(logger.info).toHaveBeenCalledWith('Successfully updated dAPI');
+    expect(logger.info).toHaveBeenCalledWith('Successfully updated dAPI.');
 
     // Verify the flow of the update process via the debug logs. Note, that some debug log calls are not here because
     // many functions are mocked.
     expect(logger.debug).toHaveBeenCalledTimes(7);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Creating calldatas');
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Estimating gas limit');
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting derived sponsor wallet');
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Derived new sponsor wallet', {
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Creating calldatas.');
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Estimating gas limit.');
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting derived sponsor wallet.');
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Derived new sponsor wallet.', {
       sponsorWalletAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting gas price');
-    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Setting timestamp of the original update transaction');
-    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Updating dAPI', { gasLimit: '500000', gasPrice: '100000000' });
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting gas price.');
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Setting timestamp of the original update transaction.');
+    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Updating dAPI.', { gasLimit: '500000', gasPrice: '100000000' });
   });
 });

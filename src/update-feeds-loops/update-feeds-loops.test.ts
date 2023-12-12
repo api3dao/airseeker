@@ -55,24 +55,24 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
 
     // Expect the logs to be called with the correct context.
     expect(logger.debug).toHaveBeenCalledTimes(5);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Starting update loops for chain', {
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Starting update loops for chain.', {
       chainId: '123',
       staggerTimeMs: 50,
       providerNames: ['first-provider', 'second-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas state', {
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas state.', {
       chainId: '123',
       providerName: 'first-provider',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update feed loop', {
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update feed loop.', {
       chainId: '123',
       providerName: 'first-provider',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Initializing gas state', {
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Initializing gas state.', {
       chainId: '123',
       providerName: 'second-provider',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Starting update feed loop', {
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Starting update feed loop.', {
       chainId: '123',
       providerName: 'second-provider',
     });
@@ -115,29 +115,29 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
 
     // Expect the logs to be called with the correct context.
     expect(logger.debug).toHaveBeenCalledTimes(6);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Starting update loops for chain', {
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Starting update loops for chain.', {
       chainId: '123',
       staggerTimeMs: 100,
       providerNames: ['first-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas state', {
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas state.', {
       chainId: '123',
       providerName: 'first-provider',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update feed loop', {
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update feed loop.', {
       chainId: '123',
       providerName: 'first-provider',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Starting update loops for chain', {
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Starting update loops for chain.', {
       chainId: '456',
       staggerTimeMs: 100,
       providerNames: ['another-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Initializing gas state', {
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Initializing gas state.', {
       chainId: '456',
       providerName: 'another-provider',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Starting update feed loop', {
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Starting update feed loop.', {
       chainId: '456',
       providerName: 'another-provider',
     });
@@ -166,7 +166,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
 
     // Expect the logs to be called with the correct context.
     expect(logger.error).toHaveBeenCalledTimes(1);
-    expect(logger.error).toHaveBeenCalledWith('Failed to get first active dAPIs batch', new Error('provider-error'));
+    expect(logger.error).toHaveBeenCalledWith('Failed to get first active dAPIs batch.', new Error('provider-error'));
   });
 
   it('fetches and processes other batches in a staggered way and logs errors', async () => {
@@ -243,24 +243,24 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     // Expect the logs to be called with the correct context.
     expect(logger.error).toHaveBeenCalledTimes(1);
     expect(logger.error).toHaveBeenCalledWith(
-      'Failed to get active dAPIs batch',
+      'Failed to get active dAPIs batch.',
       new Error('One of the multicalls failed')
     );
     expect(logger.debug).toHaveBeenCalledTimes(7);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of dAPIs batches');
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs', expect.anything());
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching batches of active dAPIs', {
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of dAPIs batches.');
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs.', expect.anything());
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching batches of active dAPIs.', {
       batchesCount: 3,
       staggerTimeMs: 50,
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching batch of active dAPIs', {
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching batch of active dAPIs.', {
       batchIndex: 1,
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batch of active dAPIs', {
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batch of active dAPIs.', {
       batchIndex: 2,
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Processing batch of active dAPIs', expect.anything());
-    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Finished processing batches of active dAPIs', {
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Processing batch of active dAPIs.', expect.anything());
+    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Finished processing batches of active dAPIs.', {
       dapiUpdateFailures: 2,
       dapiUpdates: 0,
       skippedBatchesCount: 1,
@@ -307,7 +307,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     // Expect the logs to be called with the correct context.
     expect(logger.error).toHaveBeenCalledTimes(1);
     expect(logger.error).toHaveBeenCalledWith(
-      'Unexpected error when updating data feeds feeds',
+      'Unexpected error when updating data feeds feeds.',
       new Error('unexpected-unhandled-error')
     );
   });

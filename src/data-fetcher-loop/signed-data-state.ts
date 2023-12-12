@@ -18,7 +18,7 @@ export const verifySignedData = ({ airnode, templateId, timestamp, signature, en
   });
 
   if (!goVerify.success) {
-    logger.error(`Signature verification failed`, {
+    logger.error(`Signature verification failed.`, {
       airnode,
       templateId,
       signature,
@@ -80,7 +80,7 @@ export const saveSignedData = (signedData: SignedData) => {
     return;
   }
 
-  logger.debug(`Storing signed data`, {
+  logger.debug(`Storing signed data.`, {
     airnode,
     templateId,
     timestamp,

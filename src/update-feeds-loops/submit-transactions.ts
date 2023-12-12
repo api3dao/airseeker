@@ -68,23 +68,23 @@ export const submitTransaction = async (
     // handle errors internally.
     const goUpdate = await go(
       async () => {
-        logger.debug('Creating calldatas');
+        logger.debug('Creating calldatas.');
         const dataFeedUpdateCalldatas = createUpdateFeedCalldatas(api3ServerV1, updatableDapi);
 
-        logger.debug('Estimating gas limit');
+        logger.debug('Estimating gas limit.');
         const goEstimateGasLimit = await go(async () =>
           estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas, fallbackGasLimit)
         );
         if (!goEstimateGasLimit.success) {
-          logger.error(`Skipping dAPI update because estimating gas limit failed`, goEstimateGasLimit.error);
+          logger.error(`Skipping dAPI update because estimating gas limit failed.`, goEstimateGasLimit.error);
           return null;
         }
         const gasLimit = goEstimateGasLimit.data;
 
-        logger.debug('Getting derived sponsor wallet');
+        logger.debug('Getting derived sponsor wallet.');
         const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
 
-        logger.debug('Getting gas price');
+        logger.debug('Getting gas price.');
         const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWallet.address);
         if (!gasPrice) return null;
 
@@ -92,11 +92,11 @@ export const submitTransaction = async (
         // original one and that it isn't a retry of a pending transaction (if there is no timestamp for the
         // particular sponsor wallet). This assumes that a single sponsor updates a single dAPI.
         if (!hasSponsorPendingTransaction(chainId, providerName, sponsorWallet.address)) {
-          logger.debug('Setting timestamp of the original update transaction');
+          logger.debug('Setting timestamp of the original update transaction.');
           setSponsorLastUpdateTimestamp(chainId, providerName, sponsorWallet.address);
         }
 
-        logger.debug('Updating dAPI', { gasPrice: gasPrice.toString(), gasLimit: gasLimit.toString() });
+        logger.debug('Updating dAPI.', { gasPrice: gasPrice.toString(), gasLimit: gasLimit.toString() });
         const goMulticall = await go(async () => {
           return (
             api3ServerV1
@@ -111,21 +111,21 @@ export const submitTransaction = async (
           // gas price. Because this is intended flow, we catch the transaction error and log an information message
           // instead.
           if ((goMulticall.error as any).code === 'REPLACEMENT_UNDERPRICED') {
-            logger.info(`Failed to submit replacement transaction because it was underpriced`);
+            logger.info(`Failed to submit replacement transaction because it was underpriced.`);
             return null;
           }
-          logger.error(`Failed to update a dAPI`, goMulticall.error);
+          logger.error(`Failed to update a dAPI.`, goMulticall.error);
           return null;
         }
 
-        logger.info('Successfully updated dAPI');
+        logger.info('Successfully updated dAPI.');
         return goMulticall.data;
       },
       { totalTimeoutMs: dataFeedUpdateIntervalMs }
     );
 
     if (!goUpdate.success) {
-      logger.error(`Unexpected error during updating dAPI`, goUpdate.error);
+      logger.error(`Unexpected error during updating dAPI.`, goUpdate.error);
       return null;
     }
     return goUpdate.data;
@@ -153,7 +153,7 @@ export const estimateMulticallGasLimit = async (
     // Adding a extra 10% because multicall consumes less gas than tryMulticall
     return goEstimateGas.data.mul(ethers.BigNumber.from(Math.round(1.1 * 100))).div(ethers.BigNumber.from(100));
   }
-  logger.warn(`Unable to estimate gas for multicall using provider`, goEstimateGas.error);
+  logger.warn(`Unable to estimate gas for multicall using provider.`, goEstimateGas.error);
 
   if (!fallbackGasLimit) {
     throw new Error('Unable to estimate gas limit');
@@ -171,7 +171,7 @@ export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiName:
   }
 
   const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
-  logger.debug('Derived new sponsor wallet', { sponsorWalletAddress: sponsorWallet.address });
+  logger.debug('Derived new sponsor wallet.', { sponsorWalletAddress: sponsorWallet.address });
 
   updateState((draft) => {
     draft.derivedSponsorWallets = {

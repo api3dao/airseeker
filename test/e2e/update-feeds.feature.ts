@@ -28,7 +28,7 @@ it('reads blockchain data', async () => {
 
   await runUpdateFeeds(providerName, chain, chainId);
 
-  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs.', expect.anything());
 });
 
 it('updates blockchain data', async () => {
@@ -87,17 +87,17 @@ it('updates blockchain data', async () => {
   ]);
 
   expect(logger.debug).toHaveBeenCalledTimes(10);
-  expect(logger.debug).toHaveBeenNthCalledWith(1, 'Creating calldatas');
-  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Estimating gas limit');
-  expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting derived sponsor wallet');
-  expect(logger.debug).toHaveBeenNthCalledWith(4, 'Derived new sponsor wallet', expect.anything());
-  expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting gas price');
-  expect(logger.debug).toHaveBeenNthCalledWith(6, 'Fetching gas price and saving it to the state');
-  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Purging old gas prices');
+  expect(logger.debug).toHaveBeenNthCalledWith(1, 'Creating calldatas.');
+  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Estimating gas limit.');
+  expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting derived sponsor wallet.');
+  expect(logger.debug).toHaveBeenNthCalledWith(4, 'Derived new sponsor wallet.', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting gas price.');
+  expect(logger.debug).toHaveBeenNthCalledWith(6, 'Fetching gas price and saving it to the state.');
+  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Purging old gas prices.');
   expect(logger.debug).toHaveBeenNthCalledWith(
     8,
-    'No historical gas prices to compute the percentile. Using the provider recommended gas price'
+    'No historical gas prices to compute the percentile. Using the provider recommended gas price.'
   );
-  expect(logger.debug).toHaveBeenNthCalledWith(9, 'Setting timestamp of the original update transaction');
-  expect(logger.debug).toHaveBeenNthCalledWith(10, 'Updating dAPI', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(9, 'Setting timestamp of the original update transaction.');
+  expect(logger.debug).toHaveBeenNthCalledWith(10, 'Updating dAPI.', expect.anything());
 });

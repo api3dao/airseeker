@@ -153,11 +153,11 @@ describe(getRecommendedGasPrice.name, () => {
     ]);
 
     expect(logger.debug).toHaveBeenCalledTimes(3);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state');
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices');
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices.');
     expect(logger.debug).toHaveBeenNthCalledWith(
       3,
-      'No historical gas prices to compute the percentile. Using the provider recommended gas price'
+      'No historical gas prices to compute the percentile. Using the provider recommended gas price.'
     );
   });
 
@@ -183,10 +183,10 @@ describe(getRecommendedGasPrice.name, () => {
     ]);
 
     expect(logger.debug).toHaveBeenCalledTimes(2);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state');
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices');
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices.');
     expect(logger.warn).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenNthCalledWith(1, 'Sanitizing gas price', {
+    expect(logger.warn).toHaveBeenNthCalledWith(1, 'Sanitizing gas price.', {
       gasPrice: '10000000000',
       percentileGasPrice: '8000000000',
     });
@@ -214,8 +214,8 @@ describe(getRecommendedGasPrice.name, () => {
     ]);
 
     expect(logger.debug).toHaveBeenCalledTimes(2);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state');
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices');
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices.');
   });
 
   it('applies scaling if last update timestamp is past the scaling window', async () => {
@@ -243,10 +243,10 @@ describe(getRecommendedGasPrice.name, () => {
     ]);
 
     expect(logger.debug).toHaveBeenCalledTimes(2);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state');
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices');
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices.');
     expect(logger.warn).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenNthCalledWith(1, 'Scaling gas price', { gasPrice: '10000000000', multiplier: 2 });
+    expect(logger.warn).toHaveBeenNthCalledWith(1, 'Scaling gas price.', { gasPrice: '10000000000', multiplier: 2 });
   });
 
   it('does not apply scaling if the lag is not sufficient', async () => {
@@ -274,12 +274,12 @@ describe(getRecommendedGasPrice.name, () => {
     ]);
 
     expect(logger.debug).toHaveBeenCalledTimes(2);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state');
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices');
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices.');
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenNthCalledWith(
       1,
-      'Gas price could be sanitized but there is not enough historical data',
+      'Gas price could be sanitized but there is not enough historical data.',
       { gasPrice: '10000000000', percentileGasPrice: '5000000000' }
     );
   });
@@ -293,8 +293,8 @@ describe(getRecommendedGasPrice.name, () => {
 
     expect(gasPrice).toBeNull();
     expect(logger.debug).toHaveBeenCalledTimes(1);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state');
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
     expect(logger.warn).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenNthCalledWith(1, 'There is no gas price to use. Skipping update');
+    expect(logger.warn).toHaveBeenNthCalledWith(1, 'There is no gas price to use. Skipping update.');
   });
 });
