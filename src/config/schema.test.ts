@@ -86,7 +86,7 @@ describe('chains schema', () => {
     const parsed = chainsSchema.parse(chains);
 
     expect(parsed['1']!.contracts).toStrictEqual({
-      Api3ServerV1: '0x3dEC619dc529363767dEe9E71d8dD1A5bc270D76',
+      Api3ServerV1: '0x709944a48cAf83535e43471680fDA4905FB3920a',
       DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
     });
   });
