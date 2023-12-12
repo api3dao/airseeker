@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@api3/airnode-protocol-v1':
-    specifier: ^2.10.0
-    version: 2.10.0
+    specifier: ^3.0.0
+    version: 3.0.0
   '@api3/commons':
     specifier: ^0.4.1
     version: 0.4.1(eslint@8.50.0)(jest@29.7.0)(typescript@5.2.2)
@@ -167,6 +167,12 @@ packages:
 
   /@api3/airnode-protocol-v1@2.10.0:
     resolution: {integrity: sha512-5pXI9OUXeyM2IbVYrkW48Eymt7qGT5nfBU8GR2XZsRE8dCRZTIIfp+xdAMH+OFm62GGnUDz9e1uTiAHkRWrtKA==}
+    dependencies:
+      '@openzeppelin/contracts': 4.8.2
+    dev: false
+
+  /@api3/airnode-protocol-v1@3.0.0:
+    resolution: {integrity: sha512-QMBLPxxnbibxweoRLnPOiGMTPqHnAmqn1BRrSTJS9APcdB2FfDqozcRW1Ye5oHLQL1wOH973hJODetWHcBUf8g==}
     dependencies:
       '@openzeppelin/contracts': 4.8.2
     dev: false
@@ -1711,6 +1717,7 @@ packages:
 
   /@nomiclabs/hardhat-etherscan@3.1.7(hardhat@2.18.3):
     resolution: {integrity: sha512-tZ3TvSgpvsQ6B6OGmo1/Au6u8BrAkvs1mIC/eURA3xgIfznUZBhmpne8hv7BXUzw9xNL3fXdpOYgOQlVMTcoHQ==}
+    deprecated: The @nomiclabs/hardhat-etherscan package is deprecated, please use @nomicfoundation/hardhat-verify instead
     peerDependencies:
       hardhat: ^2.0.4
     dependencies:
