@@ -121,6 +121,13 @@ export const submitTransaction = async (
           );
         });
         if (!goMulticall.success) {
+          // It is possible (and sometimes expected) that we try to submit a replacement transaction with insufficient
+          // gas price. Because this is intended flow, we catch the transaction error and log an information message
+          // instead.
+          if ((goMulticall.error as any).code === 'REPLACEMENT_UNDERPRICED') {
+            logger.info(`Failed to submit replacement transaction because it was underpriced`);
+            return null;
+          }
           logger.error(`Failed to update a dAPI`, goMulticall.error);
           return null;
         }
