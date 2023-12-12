@@ -271,7 +271,7 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
     );
 
     expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(1);
-    expect(sponsorWallet.privateKey).toBe('0x5ce56599524b4368d002708b97259864dd9860fc6234f54f0992c9f5ef3cf7ce');
+    expect(sponsorWallet.privateKey).toBe('0xd4cc2592775d876d6af59163bb7894272d84f538439e3c53af3bebdc0668b49d');
   });
 });
 
@@ -352,7 +352,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Estimating gas limit');
     expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting derived sponsor wallet');
     expect(logger.debug).toHaveBeenNthCalledWith(4, 'Derived new sponsor wallet', {
-      sponsorWalletAddress: '0xEB7620827D91362571f8090BE3F86B6C08E4E207',
+      sponsorWalletAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
     });
     expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting gas price');
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Setting timestamp of the original update transaction');
