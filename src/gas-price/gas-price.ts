@@ -1,7 +1,7 @@
+import { go } from '@api3/promise-utils';
 import type { ethers } from 'ethers';
 import { remove } from 'lodash';
 
-import type { GasSettings } from '../config/schema';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import { multiplyBigNumber } from '../utils';
@@ -114,24 +114,41 @@ export const getRecommendedGasPrice = async (
   chainId: string,
   providerName: string,
   provider: ethers.providers.StaticJsonRpcProvider,
-  gasSettings: GasSettings,
   sponsorWalletAddress: string
 ) => {
-  const {
-    recommendedGasPriceMultiplier,
-    sanitizationPercentile,
-    sanitizationSamplingWindow,
-    scalingWindow,
-    maxScalingMultiplier,
-  } = gasSettings;
   const state = getState();
-  const { gasPrices, sponsorLastUpdateTimestamp: sponsorLastUpdateTimestamp } =
-    state.gasPrices[chainId]![providerName]!;
+  const { gasPrices, sponsorLastUpdateTimestamp } = state.gasPrices[chainId]![providerName]!;
+  const {
+    gasSettings: {
+      recommendedGasPriceMultiplier,
+      sanitizationPercentile,
+      sanitizationSamplingWindow,
+      scalingWindow,
+      maxScalingMultiplier,
+    },
+    dataFeedUpdateInterval,
+  } = state.config.chains[chainId]!;
 
   // Get the provider recommended gas price and save it to the state
   logger.debug('Fetching gas price and saving it to the state');
-  const gasPrice = await provider.getGasPrice();
-  saveGasPrice(chainId, providerName, gasPrice);
+  const goGasPrice = await go(async () => provider.getGasPrice());
+  let gasPrice = goGasPrice.data;
+  if (!goGasPrice.success) logger.error('Failed to fetch gas price from RPC provider', goGasPrice.error);
+  if (gasPrice) saveGasPrice(chainId, providerName, gasPrice);
+
+  // If the gas price from RPC provider is not available, use the last saved gas price (provided it's fresh enough)
+  if (!gasPrice && gasPrices.length > 0) {
+    const lastSavedTimestamp = Math.max(...gasPrices.map((gasPrice) => gasPrice.timestamp));
+    const lastSavedGasPrice = gasPrices.find((gasPrice) => gasPrice.timestamp === lastSavedTimestamp)!.price;
+
+    if (lastSavedTimestamp >= Math.floor(Date.now() / 1000) - 10 * dataFeedUpdateInterval) {
+      gasPrice = lastSavedGasPrice;
+    }
+  }
+  if (!gasPrice) {
+    logger.warn('There is no gas price to use. Skipping update');
+    return null;
+  }
 
   logger.debug('Purging old gas prices');
   purgeOldGasPrices(chainId, providerName, sanitizationSamplingWindow);
