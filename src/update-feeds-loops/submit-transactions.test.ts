@@ -271,37 +271,7 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
     );
 
     expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(1);
-    expect(sponsorWallet.privateKey).toBe('0x5ce56599524b4368d002708b97259864dd9860fc6234f54f0992c9f5ef3cf7ce');
-  });
-
-  it('logs a warning when there is a collision between the derived sponsor wallet and the existing one', () => {
-    const dapiName = utilsModule.encodeDapiName('Ethereum - Avalanche');
-    const otherDapiName = utilsModule.encodeDapiName('Ethereum - Avalanche (DEX)');
-    jest.spyOn(stateModule, 'getState').mockReturnValue(
-      allowPartial<stateModule.State>({
-        derivedSponsorWallets: {
-          [dapiName]: '0x5b597563b391fa9c4e646065af54776c99802439d348a1a70c9473733a693e99',
-        },
-      })
-    );
-    jest.spyOn(stateModule, 'updateState').mockImplementation();
-    jest.spyOn(utilsModule, 'deriveSponsorWallet');
-    jest.spyOn(logger, 'warn');
-
-    submitTransactionsModule.getDerivedSponsorWallet(
-      'diamond result history offer forest diagram crop armed stumble orchard stage glance',
-      otherDapiName
-    );
-
-    expect(logger.warn).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenCalledWith(
-      'There is a collision between the derived sponsor wallet and the existing one',
-      {
-        sponsorWalletAddress: '0xBf346edE0E2BdfCB8803e0b77C2918DC7D774B69',
-        existingDapiName: 'Ethereum - Avalanche',
-        dapiName: 'Ethereum - Avalanche (DEX)',
-      }
-    );
+    expect(sponsorWallet.privateKey).toBe('0xd4cc2592775d876d6af59163bb7894272d84f538439e3c53af3bebdc0668b49d');
   });
 });
 
@@ -352,7 +322,6 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
           },
           sponsorWalletMnemonic: 'diamond result history offer forest diagram crop armed stumble orchard stage glance',
         },
-        derivedSponsorWallets: {},
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
@@ -383,7 +352,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Estimating gas limit');
     expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting derived sponsor wallet');
     expect(logger.debug).toHaveBeenNthCalledWith(4, 'Derived new sponsor wallet', {
-      sponsorWalletAddress: '0xEB7620827D91362571f8090BE3F86B6C08E4E207',
+      sponsorWalletAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
     });
     expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting gas price');
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Setting timestamp of the original update transaction');

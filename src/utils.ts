@@ -28,8 +28,12 @@ export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
 }
 
 export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: string) => {
-  // Take first 20 bytes of dapiName as sponsor address together with the "0x" prefix.
-  const sponsorAddress = ethers.utils.getAddress(dapiName.slice(0, 42));
+  // Hash the dAPI because we need to take the first 20 bytes of it which could result in the same sponsor address for
+  // different dAPIs with the same prefix.
+  const hashedDapiName = ethers.utils.keccak256(dapiName);
+
+  // Take first 20 bytes of the hashed dapiName as sponsor address together with the "0x" prefix.
+  const sponsorAddress = ethers.utils.getAddress(hashedDapiName.slice(0, 42));
   const sponsorWallet = ethers.Wallet.fromMnemonic(
     sponsorWalletMnemonic,
     `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
