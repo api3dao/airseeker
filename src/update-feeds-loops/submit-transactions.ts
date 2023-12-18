@@ -85,22 +85,8 @@ export const submitTransaction = async (
         const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
 
         logger.debug('Getting gas price');
-        const goGasPrice = await go(
-          async () =>
-            getRecommendedGasPrice(
-              chainId,
-              providerName,
-              provider,
-              chains[chainId]!.gasSettings,
-              sponsorWallet.address
-            ),
-          { totalTimeoutMs: dataFeedUpdateIntervalMs }
-        );
-        if (!goGasPrice.success) {
-          logger.error(`Failed to get gas price`, goGasPrice.error);
-          return null;
-        }
-        const gasPrice = goGasPrice.data;
+        const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWallet.address);
+        if (!gasPrice) return null;
 
         // We want to set the timestamp of the first update transaction. We can determine if the transaction is the
         // original one and that it isn't a retry of a pending transaction (if there is no timestamp for the
@@ -110,7 +96,7 @@ export const submitTransaction = async (
           setSponsorLastUpdateTimestamp(chainId, providerName, sponsorWallet.address);
         }
 
-        logger.debug('Updating dAPI', { gasPrice: goGasPrice.data.toString(), gasLimit: gasLimit.toString() });
+        logger.debug('Updating dAPI', { gasPrice: gasPrice.toString(), gasLimit: gasLimit.toString() });
         const goMulticall = await go(async () => {
           return (
             api3ServerV1

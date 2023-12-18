@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-import { initializeState } from '../../test/fixtures/mock-config';
+import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 
@@ -22,19 +22,15 @@ const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
   chainId: Number.parseInt(chainId, 10),
   name: chainId,
 });
-const gasSettings = {
-  recommendedGasPriceMultiplier: 1.5,
-  sanitizationSamplingWindow: 900,
-  sanitizationPercentile: 80,
-  scalingWindow: 120,
-  maxScalingMultiplier: 2,
-};
 const dateNowMock = 1_696_930_907_351;
 const timestampMock = Math.floor(dateNowMock / 1000);
 const sponsorWalletAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+const testConfig = generateTestConfig();
+testConfig.chains[chainId]!.gasSettings.scalingWindow = 120;
+const { gasSettings } = testConfig.chains[chainId]!;
 
 beforeEach(() => {
-  initializeState();
+  initializeState(testConfig);
   initializeGasState(chainId, providerName);
 });
 
@@ -149,7 +145,7 @@ describe(getRecommendedGasPrice.name, () => {
     jest.spyOn(provider, 'getGasPrice').mockResolvedValueOnce(ethers.utils.parseUnits('10', 'gwei'));
     jest.spyOn(logger, 'debug');
 
-    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
+    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(ethers.utils.parseUnits('15', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
     expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
@@ -178,7 +174,7 @@ describe(getRecommendedGasPrice.name, () => {
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'warn');
 
-    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
+    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(ethers.utils.parseUnits('12', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
     expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
@@ -209,7 +205,7 @@ describe(getRecommendedGasPrice.name, () => {
     });
     jest.spyOn(logger, 'debug');
 
-    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
+    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(ethers.utils.parseUnits('15', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
     expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
@@ -238,7 +234,7 @@ describe(getRecommendedGasPrice.name, () => {
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'warn');
 
-    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
+    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(ethers.utils.parseUnits('20', 'gwei')); // The price is multiplied by the scaling multiplier.
     expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
@@ -269,7 +265,7 @@ describe(getRecommendedGasPrice.name, () => {
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'warn');
 
-    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress);
+    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(ethers.utils.parseUnits('15', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
     expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
@@ -293,12 +289,12 @@ describe(getRecommendedGasPrice.name, () => {
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'warn');
 
-    await expect(async () =>
-      getRecommendedGasPrice(chainId, providerName, provider, gasSettings, sponsorWalletAddress)
-    ).rejects.toThrow('Provider error');
+    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWalletAddress);
 
+    expect(gasPrice).toBeNull();
     expect(logger.debug).toHaveBeenCalledTimes(1);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state');
-    expect(logger.warn).toHaveBeenCalledTimes(0);
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenNthCalledWith(1, 'There is no gas price to use. Skipping update');
   });
 });
