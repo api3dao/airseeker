@@ -25,4 +25,7 @@
 **/artifacts
 **/coverage.json
 **/typechain
-**/typechain-types
+
+# NOTE: Typechain types are copied to the Docker image to avoid building them from inside the container, because for
+# that it needs to download the solidity compiler which breaks when building the linux/amd64 image from macOS.
+# **/typechain-types
