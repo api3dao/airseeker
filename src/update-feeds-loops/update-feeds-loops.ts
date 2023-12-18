@@ -36,17 +36,17 @@ export const startUpdateFeedsLoops = async () => {
       // Calculate the stagger time for each provider on the same chain to maximize transaction throughput and update
       // frequency.
       const staggerTimeMs = dataFeedUpdateIntervalMs / size(providers);
-      logger.debug(`Starting update loops for chain`, {
+      logger.debug(`Starting update loops for chain.`, {
         chainId,
         staggerTimeMs,
         providerNames: Object.keys(providers),
       });
 
       for (const providerName of Object.keys(providers)) {
-        logger.debug(`Initializing gas state`, { chainId, providerName });
+        logger.debug(`Initializing gas state.`, { chainId, providerName });
         initializeGasState(chainId, providerName);
 
-        logger.debug(`Starting update feed loop`, { chainId, providerName });
+        logger.debug(`Starting update feed loop.`, { chainId, providerName });
         // Run the update feed loop manually for the first time, because setInterval first waits for the given period of
         // time before calling the callback function.
         void runUpdateFeeds(providerName, chain, chainId);
@@ -93,7 +93,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       });
       const dapiDataRegistry = getDapiDataRegistry(contracts.DapiDataRegistry, provider);
 
-      logger.debug(`Fetching first batch of dAPIs batches`);
+      logger.debug(`Fetching first batch of dAPIs batches.`);
       const firstBatchStartTimeMs = Date.now();
       const goFirstBatch = await go(
         async () => {
@@ -121,13 +121,13 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
         { totalTimeoutMs: dataFeedUpdateIntervalMs }
       );
       if (!goFirstBatch.success) {
-        logger.error(`Failed to get first active dAPIs batch`, goFirstBatch.error);
+        logger.error(`Failed to get first active dAPIs batch.`, goFirstBatch.error);
         return;
       }
 
       const { firstBatch, dapisCount } = goFirstBatch.data;
       if (dapisCount === 0) {
-        logger.warn(`No active dAPIs found`);
+        logger.warn(`No active dAPIs found.`);
         return;
       }
       // NOTE: We need to explicitly handle the .catch here because it's possible that the promise settles before it's
@@ -150,13 +150,13 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
 
       // Fetch the rest of the batches in parallel in a staggered way and process them.
       if (batchesCount > 1) {
-        logger.debug('Fetching batches of active dAPIs', { batchesCount, staggerTimeMs });
+        logger.debug('Fetching batches of active dAPIs.', { batchesCount, staggerTimeMs });
       }
       const processOtherBatchesPromises = range(1, batchesCount).map(async (batchIndex) => {
         await sleep((batchIndex - 1) * staggerTimeMs);
 
         const goBatch = await go(async () => {
-          logger.debug(`Fetching batch of active dAPIs`, { batchIndex });
+          logger.debug(`Fetching batch of active dAPIs.`, { batchIndex });
           const dapiBatchIndexStart = batchIndex * dataFeedBatchSize;
           const dapiBatchIndexEnd = Math.min(dapisCount, dapiBatchIndexStart + dataFeedBatchSize);
           const readDapiWithIndexCalldatas = range(dapiBatchIndexStart, dapiBatchIndexEnd).map((dapiIndex) =>
@@ -169,7 +169,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
           return returndata.map((returndata) => decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata));
         });
         if (!goBatch.success) {
-          logger.error(`Failed to get active dAPIs batch`, goBatch.error);
+          logger.error(`Failed to get active dAPIs batch.`, goBatch.error);
           return;
         }
         const batch = goBatch.data;
@@ -194,7 +194,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       const skippedBatchesCount = processedBatches.filter((batch) => !batch).length;
       const dapiUpdates = processedBatches.reduce((acc, batch) => acc + (batch ? batch.successCount : 0), 0);
       const dapiUpdateFailures = processedBatches.reduce((acc, batch) => acc + (batch ? batch.errorCount : 0), 0);
-      logger.debug(`Finished processing batches of active dAPIs`, {
+      logger.debug(`Finished processing batches of active dAPIs.`, {
         skippedBatchesCount,
         dapiUpdates,
         dapiUpdateFailures,
@@ -202,7 +202,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
     });
 
     if (!goRunUpdateFeeds.success) {
-      logger.error(`Unexpected error when updating data feeds feeds`, goRunUpdateFeeds.error);
+      logger.error(`Unexpected error when updating data feeds feeds.`, goRunUpdateFeeds.error);
     }
   });
 };
@@ -213,7 +213,7 @@ export const processBatch = async (
   provider: ethers.providers.StaticJsonRpcProvider,
   chainId: ChainId
 ) => {
-  logger.debug('Processing batch of active dAPIs', { dapiNames: batch.map((dapi) => dapi.decodedDapiName) });
+  logger.debug('Processing batch of active dAPIs.', { dapiNames: batch.map((dapi) => dapi.decodedDapiName) });
   const {
     config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient },
   } = getState();
@@ -251,7 +251,7 @@ export const processBatch = async (
         //
         // We can't differentiate between these cases unless we check recent update transactions, which we don't want to
         // do.
-        logger.debug(`Clearing dAPI update timestamp because it no longer needs an update`, {
+        logger.debug(`Clearing dAPI update timestamp because it no longer needs an update.`, {
           dapiName: decodedDapiName,
         });
         clearSponsorLastUpdateTimestamp(chainId, providerName, sponsorWalletAddress);

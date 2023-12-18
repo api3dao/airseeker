@@ -130,10 +130,10 @@ export const getRecommendedGasPrice = async (
   } = state.config.chains[chainId]!;
 
   // Get the provider recommended gas price and save it to the state
-  logger.debug('Fetching gas price and saving it to the state');
+  logger.debug('Fetching gas price and saving it to the state.');
   const goGasPrice = await go(async () => provider.getGasPrice());
   let gasPrice = goGasPrice.data;
-  if (!goGasPrice.success) logger.error('Failed to fetch gas price from RPC provider', goGasPrice.error);
+  if (!goGasPrice.success) logger.error('Failed to fetch gas price from RPC provider.', goGasPrice.error);
   if (gasPrice) saveGasPrice(chainId, providerName, gasPrice);
 
   // If the gas price from RPC provider is not available, use the last saved gas price (provided it's fresh enough)
@@ -146,11 +146,11 @@ export const getRecommendedGasPrice = async (
     }
   }
   if (!gasPrice) {
-    logger.warn('There is no gas price to use. Skipping update');
+    logger.warn('There is no gas price to use. Skipping update.');
     return null;
   }
 
-  logger.debug('Purging old gas prices');
+  logger.debug('Purging old gas prices.');
   purgeOldGasPrices(chainId, providerName, sanitizationSamplingWindow);
 
   const lastUpdateTimestamp = sponsorLastUpdateTimestamp[sponsorWalletAddress];
@@ -164,7 +164,7 @@ export const getRecommendedGasPrice = async (
       scalingWindow
     );
 
-    logger.warn('Scaling gas price', { gasPrice: gasPrice.toString(), multiplier });
+    logger.warn('Scaling gas price.', { gasPrice: gasPrice.toString(), multiplier });
     return multiplyBigNumber(gasPrice, multiplier);
   }
 
@@ -181,13 +181,13 @@ export const getRecommendedGasPrice = async (
     gasPrices.map((gasPrice) => gasPrice.price)
   );
   if (!percentileGasPrice) {
-    logger.debug('No historical gas prices to compute the percentile. Using the provider recommended gas price');
+    logger.debug('No historical gas prices to compute the percentile. Using the provider recommended gas price.');
     return multiplyBigNumber(gasPrice, recommendedGasPriceMultiplier);
   }
 
   // Log a warning if there is not enough historical data to sanitize the gas price but the price could be sanitized
   if (!hasSufficientSanitizationData && gasPrice.gt(percentileGasPrice)) {
-    logger.warn('Gas price could be sanitized but there is not enough historical data', {
+    logger.warn('Gas price could be sanitized but there is not enough historical data.', {
       gasPrice: gasPrice.toString(),
       percentileGasPrice: percentileGasPrice.toString(),
     });
@@ -195,7 +195,7 @@ export const getRecommendedGasPrice = async (
 
   // If necessary, sanitize the gas price and log a warning because this should not happen under normal circumstances
   if (hasSufficientSanitizationData && gasPrice.gt(percentileGasPrice)) {
-    logger.warn('Sanitizing gas price', {
+    logger.warn('Sanitizing gas price.', {
       gasPrice: gasPrice.toString(),
       percentileGasPrice: percentileGasPrice.toString(),
     });

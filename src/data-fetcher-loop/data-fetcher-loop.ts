@@ -56,7 +56,7 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
   );
 
   if (!goAxiosCall.success) {
-    logger.warn('Failed to fetch data from signed API', parseAxiosError(goAxiosCall.error));
+    logger.warn('Failed to fetch data from signed API.', parseAxiosError(goAxiosCall.error));
     return null;
   }
 
@@ -67,7 +67,7 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
 
 export const runDataFetcher = async () => {
   return logger.runWithContext({ dataFetcherCoordinatorId: Date.now().toString() }, async () => {
-    logger.debug('Running data fetcher');
+    logger.debug('Running data fetcher.');
     const state = getState();
     const {
       config: { signedDataFetchInterval, signedApiUrls },
@@ -84,7 +84,7 @@ export const runDataFetcher = async () => {
       ...signedApiUrls,
     ]);
 
-    logger.debug('Fetching data from signed APIs', { urls });
+    logger.debug('Fetching data from signed APIs.', { urls });
     const fetchResults = await Promise.all(
       urls.map(async (url) =>
         go(

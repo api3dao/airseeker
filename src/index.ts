@@ -5,11 +5,11 @@ import { setInitialState } from './state';
 import { startUpdateFeedsLoops } from './update-feeds-loops';
 
 function main() {
-  logger.info('Loading configuration and setting initial state');
+  logger.info('Loading configuration and setting initial state.');
   const config = loadConfig();
   setInitialState(config);
 
-  logger.info('Starting Airseeker loops');
+  logger.info('Starting Airseeker loops.');
   startDataFetcherLoop();
   void startUpdateFeedsLoops();
 }
