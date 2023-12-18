@@ -82,7 +82,7 @@ export const submitTransaction = async (
         const gasLimit = goEstimateGasLimit.data;
 
         logger.debug('Getting derived sponsor wallet.');
-        const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
+        const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName ?? dataFeedId);
 
         logger.debug('Getting gas price.');
         const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWallet.address);
@@ -162,22 +162,19 @@ export const estimateMulticallGasLimit = async (
   return ethers.BigNumber.from(fallbackGasLimit);
 };
 
-export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiName: string) => {
+export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, sponsorAddress: string) => {
   const { derivedSponsorWallets } = getState();
 
-  const privateKey = derivedSponsorWallets?.[dapiName];
+  const privateKey = derivedSponsorWallets?.[sponsorAddress];
   if (privateKey) {
     return new ethers.Wallet(privateKey);
   }
 
-  const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
+  const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, sponsorAddress);
   logger.debug('Derived new sponsor wallet.', { sponsorWalletAddress: sponsorWallet.address });
 
   updateState((draft) => {
-    draft.derivedSponsorWallets = {
-      ...draft.derivedSponsorWallets,
-      [dapiName]: sponsorWallet.privateKey,
-    };
+    draft.derivedSponsorWallets[sponsorAddress] = sponsorWallet.privateKey;
   });
 
   return sponsorWallet;

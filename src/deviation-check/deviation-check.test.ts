@@ -58,7 +58,7 @@ describe(isDeviationThresholdExceeded.name, () => {
       Date.now() / 1000 - 60 * 60 * 24,
       ethers.BigNumber.from(10),
       Date.now() / 1000,
-      60 * 60 * 23,
+      ethers.BigNumber.from(60 * 60 * 23),
       getDeviationThresholdAsBigNumber(2)
     );
 
@@ -71,7 +71,7 @@ describe(isDeviationThresholdExceeded.name, () => {
       Date.now() / 1000,
       ethers.BigNumber.from(10),
       Date.now() + 60 * 60 * 23,
-      86_400,
+      ethers.BigNumber.from(60 * 60 * 24),
       getDeviationThresholdAsBigNumber(2)
     );
 
@@ -81,13 +81,13 @@ describe(isDeviationThresholdExceeded.name, () => {
 
 describe(isOnChainDataFresh.name, () => {
   it('returns true if on chain data timestamp is newer than heartbeat interval', () => {
-    const isFresh = isOnChainDataFresh(Date.now() / 1000 - 100, 200);
+    const isFresh = isOnChainDataFresh(Date.now() / 1000 - 100, ethers.BigNumber.from(200));
 
     expect(isFresh).toBe(true);
   });
 
   it('returns false if on chain data timestamp is older than heartbeat interval', () => {
-    const isFresh = isOnChainDataFresh(Date.now() / 1000 - 300, 200);
+    const isFresh = isOnChainDataFresh(Date.now() / 1000 - 300, ethers.BigNumber.from(200));
 
     expect(isFresh).toBe(false);
   });

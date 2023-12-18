@@ -2,12 +2,12 @@ import { ethers } from 'ethers';
 import { omit } from 'lodash';
 
 import { generateTestConfig } from '../../test/fixtures/mock-config';
-import { generateMockDapiDataRegistry, generateReadDapiWithIndexResponse } from '../../test/fixtures/mock-contract';
+import { generateMockAirseekerRegistry, generateActiveDataFeedResponse } from '../../test/fixtures/mock-contract';
 import { allowPartial } from '../../test/utils';
 import type { Chain } from '../config/schema';
 import { logger } from '../logger';
 import * as stateModule from '../state';
-import type { DapiDataRegistry } from '../typechain-types';
+import type { AirseekerRegistry } from '../typechain-types';
 import * as utilsModule from '../utils';
 
 import * as contractsModule from './contracts';
@@ -146,9 +146,11 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
 
 describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
   it('aborts when fetching first dAPIs batch fails', async () => {
-    const dapiDataRegistry = generateMockDapiDataRegistry();
-    jest.spyOn(contractsModule, 'getDapiDataRegistry').mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
-    dapiDataRegistry.callStatic.tryMulticall.mockRejectedValueOnce(new Error('provider-error'));
+    const airseekerRegistry = generateMockAirseekerRegistry();
+    jest
+      .spyOn(contractsModule, 'getAirseekerRegistry')
+      .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
+    airseekerRegistry.callStatic.tryMulticall.mockRejectedValueOnce(new Error('provider-error'));
     jest.spyOn(logger, 'error');
 
     await updateFeedsLoopsModule.runUpdateFeeds(
@@ -158,7 +160,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
         dataFeedUpdateInterval: 10,
         providers: { ['provider-name']: { url: 'provider-url' } },
         contracts: {
-          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+          AirseekerRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
       }),
       '123'
@@ -171,17 +173,29 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
 
   it('fetches and processes other batches in a staggered way and logs errors', async () => {
     // Prepare the mocked contract so it returns three batches (of size 1) of dAPIs and the second batch fails to load.
-    const firstDapi = generateReadDapiWithIndexResponse();
-    const thirdDapi = generateReadDapiWithIndexResponse();
-    const dapiDataRegistry = generateMockDapiDataRegistry();
-    jest.spyOn(contractsModule, 'getDapiDataRegistry').mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
-    dapiDataRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
-    dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
+    const firstDapi = generateActiveDataFeedResponse();
+    const thirdDapi = generateActiveDataFeedResponse();
+    const decodedFirstDapi = {
+      ...omit(firstDapi, ['dataFeedDetails']),
+      updateParameters: contractsModule.decodeUpdateParameters(firstDapi.updateParameters),
+      decodedDataFeed: contractsModule.decodeDataFeedDetails(firstDapi.dataFeedDetails),
+    };
+    const decodedThirdDapi = {
+      ...omit(thirdDapi, ['dataFeedDetails']),
+      updateParameters: contractsModule.decodeUpdateParameters(thirdDapi.updateParameters),
+      decodedDataFeed: contractsModule.decodeDataFeedDetails(thirdDapi.dataFeedDetails),
+    };
+    const airseekerRegistry = generateMockAirseekerRegistry();
+    jest
+      .spyOn(contractsModule, 'getAirseekerRegistry')
+      .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
+    airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
+    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
       successes: [true, true],
       returndata: [[ethers.BigNumber.from(3)], firstDapi],
     });
-    dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [false], returndata: [] });
-    dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [true], returndata: [thirdDapi] });
+    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [false], returndata: [] });
+    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [true], returndata: [thirdDapi] });
     const sleepCalls = [] as number[];
     const originalSleep = utilsModule.sleep;
     jest.spyOn(utilsModule, 'sleep').mockImplementation(async (ms) => {
@@ -205,8 +219,16 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest
       .spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds')
-      .mockResolvedValueOnce([allowPartial<getUpdatableFeedsModule.UpdatableDapi>({ dapiInfo: firstDapi })])
-      .mockResolvedValueOnce([allowPartial<getUpdatableFeedsModule.UpdatableDapi>({ dapiInfo: thirdDapi })]);
+      .mockResolvedValueOnce([
+        allowPartial<getUpdatableFeedsModule.UpdatableDapi>({
+          dapiInfo: decodedFirstDapi,
+        }),
+      ])
+      .mockResolvedValueOnce([
+        allowPartial<getUpdatableFeedsModule.UpdatableDapi>({
+          dapiInfo: decodedThirdDapi,
+        }),
+      ]);
     jest.spyOn(submitTransactionModule, 'submitTransactions').mockResolvedValue([null, null]);
     const processBatchCalls = [] as number[];
     const originalProcessBatch = updateFeedsLoopsModule.processBatch;
@@ -224,7 +246,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
         dataFeedUpdateInterval: 0.15,
         providers: { ['provider-name']: { url: 'provider-url' } },
         contracts: {
-          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+          AirseekerRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
       }),
       '31337'
@@ -268,11 +290,13 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
   });
 
   it('catches unhandled error', async () => {
-    const dapi = generateReadDapiWithIndexResponse();
-    const dapiDataRegistry = generateMockDapiDataRegistry();
-    jest.spyOn(contractsModule, 'getDapiDataRegistry').mockReturnValue(dapiDataRegistry as unknown as DapiDataRegistry);
-    dapiDataRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
-    dapiDataRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
+    const dapi = generateActiveDataFeedResponse();
+    const airseekerRegistry = generateMockAirseekerRegistry();
+    jest
+      .spyOn(contractsModule, 'getAirseekerRegistry')
+      .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
+    airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
+    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
       successes: [true, true],
       returndata: [[ethers.BigNumber.from(1)], dapi],
     });
@@ -298,7 +322,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
         dataFeedUpdateInterval: 0.1,
         providers: { ['provider-name']: { url: 'provider-url' } },
         contracts: {
-          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+          AirseekerRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
         },
       }),
       '31337'
@@ -315,14 +339,16 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
 
 describe(updateFeedsLoopsModule.processBatch.name, () => {
   it('applies deviationThresholdCoefficient from config', async () => {
-    const dapi = generateReadDapiWithIndexResponse();
-    const decodedDataFeed = contractsModule.decodeDataFeed(dapi.dataFeed);
+    const dapi = generateActiveDataFeedResponse();
+    const decodedDataFeed = contractsModule.decodeDataFeedDetails(dapi.dataFeedDetails);
+    const updateParameters = contractsModule.decodeUpdateParameters(dapi.updateParameters);
     const decodedDapi = {
-      ...omit(dapi, ['dataFeed']),
+      ...omit(dapi, ['dataFeedDetails']),
+      updateParameters,
       decodedDataFeed,
       decodedDapiName: utilsModule.decodeDapiName(dapi.dapiName),
     };
-    jest.spyOn(Date, 'now').mockReturnValue(dapi.dataFeedValue.timestamp);
+    jest.spyOn(Date, 'now').mockReturnValue(dapi.dataFeedTimestamp * 1000);
     const testConfig = generateTestConfig();
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
@@ -336,16 +362,16 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
               ['int256'],
               [
                 ethers.BigNumber.from(
-                  dapi.dataFeedValue.value
+                  dapi.dataFeedValue
                     // Multiply the new value by the on chain deviationThresholdInPercentage
-                    .mul(dapi.updateParameters.deviationThresholdInPercentage.add(1 * 1e8))
+                    .mul(updateParameters.deviationThresholdInPercentage.add(1 * 1e8))
                     .div(1e8)
                 ),
               ]
             ),
             signature:
               '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
-            timestamp: (dapi.dataFeedValue.timestamp + 1).toString(),
+            timestamp: (dapi.dataFeedTimestamp + 1).toString(),
           },
         },
         gasPrices: {},

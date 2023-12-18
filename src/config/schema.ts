@@ -22,7 +22,7 @@ export type Provider = z.infer<typeof providerSchema>;
 export const optionalContractsSchema = z
   .object({
     Api3ServerV1: evmAddressSchema.optional(),
-    DapiDataRegistry: evmAddressSchema,
+    AirseekerRegistry: evmAddressSchema,
   })
   .strict();
 
@@ -93,7 +93,7 @@ export const chainsSchema = z
         const { contracts } = chain;
         const parsedContracts = contractsSchema.safeParse({
           Api3ServerV1: contracts.Api3ServerV1 ?? references.Api3ServerV1[chainId],
-          DapiDataRegistry: contracts.DapiDataRegistry,
+          AirseekerRegistry: contracts.AirseekerRegistry,
         });
         if (!parsedContracts.success) {
           ctx.addIssue({

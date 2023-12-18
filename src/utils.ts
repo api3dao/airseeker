@@ -27,10 +27,10 @@ export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
   return `${AIRSEEKER_PROTOCOL_ID}/${paths.join('/')}`;
 }
 
-export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiName: string) => {
-  // Hash the dAPI because we need to take the first 20 bytes of it which could result in the same sponsor address for
-  // different dAPIs with the same prefix.
-  const hashedDapiName = ethers.utils.keccak256(dapiName);
+export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDataFeedId: string) => {
+  // Hash the dAPI name or data feed ID because we need to take the first 20 bytes of it which could result in
+  // collisions for dAPIs with the same prefix.
+  const hashedDapiName = ethers.utils.keccak256(dapiNameOrDataFeedId);
 
   // Take first 20 bytes of the hashed dapiName as sponsor address together with the "0x" prefix.
   const sponsorAddress = ethers.utils.getAddress(hashedDapiName.slice(0, 42));

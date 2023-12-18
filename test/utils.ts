@@ -23,10 +23,10 @@ export type DeepPartial<T> = T extends object
  */
 export const allowPartial = <T = unknown>(obj: DeepPartial<T>): T => obj as T;
 
-export const encodeBeaconFeed = (dataFeed: Beacon) =>
+export const encodeBeaconDetails = (dataFeed: Beacon) =>
   ethers.utils.defaultAbiCoder.encode(['address', 'bytes32'], [dataFeed.airnodeAddress, dataFeed.templateId]);
 
-export const encodeBeaconFeedSet = (dataFeed: Beacon[]) =>
+export const encodeBeaconSetDetails = (dataFeed: Beacon[]) =>
   ethers.utils.defaultAbiCoder.encode(
     ['address[]', 'bytes32[]'],
     [dataFeed.map((item) => item.airnodeAddress), dataFeed.map((item) => item.templateId)]

@@ -134,13 +134,14 @@ describe(getUpdatableFeeds.name, () => {
     });
     jest.spyOn(logger, 'info');
 
-    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
-        updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
-        dataFeedValue: {
-          value: ethers.BigNumber.from(10),
-          timestamp: 95,
+        updateParameters: {
+          deviationThresholdInPercentage: ethers.BigNumber.from(1),
+          heartbeatInterval: ethers.BigNumber.from(100),
         },
+        dataFeedValue: ethers.BigNumber.from(10),
+        dataFeedTimestamp: 95,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
@@ -165,10 +166,8 @@ describe(getUpdatableFeeds.name, () => {
         ],
         dapiInfo: {
           dapiName: encodeDapiName('test'),
-          dataFeedValue: {
-            timestamp: 95,
-            value: ethers.BigNumber.from('10'),
-          },
+          dataFeedValue: ethers.BigNumber.from('10'),
+          dataFeedTimestamp: 95,
           decodedDataFeed: {
             beacons: [
               expect.objectContaining({
@@ -185,7 +184,7 @@ describe(getUpdatableFeeds.name, () => {
           },
           updateParameters: {
             deviationThresholdInPercentage: ethers.BigNumber.from(1),
-            heartbeatInterval: 100,
+            heartbeatInterval: ethers.BigNumber.from(100),
           },
         },
       },
@@ -231,13 +230,14 @@ describe(getUpdatableFeeds.name, () => {
     });
     jest.spyOn(logger, 'debug');
 
-    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
-        updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 1 },
-        dataFeedValue: {
-          value: ethers.BigNumber.from(400),
-          timestamp: 90,
+        updateParameters: {
+          deviationThresholdInPercentage: ethers.BigNumber.from(1),
+          heartbeatInterval: ethers.BigNumber.from(1),
         },
+        dataFeedValue: ethers.BigNumber.from(400),
+        dataFeedTimestamp: 90,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
@@ -262,10 +262,8 @@ describe(getUpdatableFeeds.name, () => {
         ],
         dapiInfo: {
           dapiName: encodeDapiName('test'),
-          dataFeedValue: {
-            timestamp: 90,
-            value: ethers.BigNumber.from('400'),
-          },
+          dataFeedValue: ethers.BigNumber.from('400'),
+          dataFeedTimestamp: 90,
           decodedDataFeed: {
             beacons: [
               expect.objectContaining({
@@ -282,7 +280,7 @@ describe(getUpdatableFeeds.name, () => {
           },
           updateParameters: {
             deviationThresholdInPercentage: ethers.BigNumber.from(1),
-            heartbeatInterval: 1,
+            heartbeatInterval: ethers.BigNumber.from(1),
           },
         },
       },
@@ -312,13 +310,14 @@ describe(getUpdatableFeeds.name, () => {
       .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
 
     // Set up batch with on-chain values that don't trigger an update
-    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
-        updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
-        dataFeedValue: {
-          value: ethers.BigNumber.from(200),
-          timestamp: 160,
+        updateParameters: {
+          deviationThresholdInPercentage: ethers.BigNumber.from(1),
+          heartbeatInterval: ethers.BigNumber.from(100),
         },
+        dataFeedValue: ethers.BigNumber.from(200),
+        dataFeedTimestamp: 160,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
@@ -389,13 +388,14 @@ describe(getUpdatableFeeds.name, () => {
     });
     jest.spyOn(logger, 'info');
 
-    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
-        updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
-        dataFeedValue: {
-          value: ethers.BigNumber.from(400),
-          timestamp: 140,
+        updateParameters: {
+          deviationThresholdInPercentage: ethers.BigNumber.from(1),
+          heartbeatInterval: ethers.BigNumber.from(100),
         },
+        dataFeedValue: ethers.BigNumber.from(400),
+        dataFeedTimestamp: 140,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
@@ -412,13 +412,14 @@ describe(getUpdatableFeeds.name, () => {
   });
 
   it('handles multicall failure', async () => {
-    const batch = allowPartial<contractsModule.DecodedReadDapiWithIndexResponse[]>([
+    const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
-        updateParameters: { deviationThresholdInPercentage: ethers.BigNumber.from(1), heartbeatInterval: 100 },
-        dataFeedValue: {
-          value: ethers.BigNumber.from(10),
-          timestamp: 95,
+        updateParameters: {
+          deviationThresholdInPercentage: ethers.BigNumber.from(1),
+          heartbeatInterval: ethers.BigNumber.from(100),
         },
+        dataFeedValue: ethers.BigNumber.from(10),
+        dataFeedTimestamp: 95,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],

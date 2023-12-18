@@ -14,7 +14,7 @@
     </p>
 
     <h2>Active dAPIs</h2>
-    <p>Number of active dAPIs: <span id="activeDapisCount"></span></p>
+    <p>Number of active dAPIs: <span id="activeactiveDataFeedCount"></span></p>
     <pre id="activeDapis"></pre>
   </body>
   <script
@@ -744,7 +744,7 @@
         type: 'function',
       },
     ];
-    const dapiDataRegistryAbi = [
+    const airseekerRegistryAbi = [
       {
         inputs: [
           {
@@ -1122,7 +1122,7 @@
       },
       {
         inputs: [],
-        name: 'dapisCount',
+        name: 'activeDataFeedCount',
         outputs: [
           {
             internalType: 'uint256',
@@ -1205,7 +1205,7 @@
             type: 'uint256',
           },
         ],
-        name: 'readDapiWithIndex',
+        name: 'activeDataFeed',
         outputs: [
           {
             internalType: 'bytes32',
@@ -1230,7 +1230,7 @@
                 type: 'uint32',
               },
             ],
-            internalType: 'struct IDapiDataRegistry.UpdateParameters',
+            internalType: 'struct IAirseekerRegistry.UpdateParameters',
             name: 'updateParameters',
             type: 'tuple',
           },
@@ -1247,7 +1247,7 @@
                 type: 'uint32',
               },
             ],
-            internalType: 'struct IDapiDataRegistry.DataFeedValue',
+            internalType: 'struct IAirseekerRegistry.DataFeedValue',
             name: 'dataFeedValue',
             type: 'tuple',
           },
@@ -1293,7 +1293,7 @@
                 type: 'uint32',
               },
             ],
-            internalType: 'struct IDapiDataRegistry.UpdateParameters',
+            internalType: 'struct IAirseekerRegistry.UpdateParameters',
             name: 'updateParameters',
             type: 'tuple',
           },
@@ -1310,7 +1310,7 @@
                 type: 'uint32',
               },
             ],
-            internalType: 'struct IDapiDataRegistry.DataFeedValue',
+            internalType: 'struct IAirseekerRegistry.DataFeedValue',
             name: 'dataFeedValue',
             type: 'tuple',
           },
@@ -1451,11 +1451,11 @@
     const urlParams = new URLSearchParams(window.location.search);
     const rpcUrl = urlParams.get('rpcUrl'),
       api3ServerV1Address = urlParams.get('api3ServerV1Address'),
-      dapiDataRegistryAddress = urlParams.get('dapiDataRegistryAddress'),
+      airseekerRegistryAddress = urlParams.get('airseekerRegistryAddress'),
       airseekerMnemonic = decodeURIComponent(urlParams.get('airseekerMnemonic'));
 
     if (!api3ServerV1Address) throw new Error('api3ServerV1Address must be provided as URL parameter');
-    if (!dapiDataRegistryAddress) throw new Error('dapiDataRegistryAddress must be provided as URL parameter');
+    if (!airseekerRegistryAddress) throw new Error('airseekerRegistryAddress must be provided as URL parameter');
 
     function deriveBeaconId(airnodeAddress, templateId) {
       return ethers.utils.solidityKeccak256(['address', 'bytes32'], [airnodeAddress, templateId]);
@@ -1559,14 +1559,14 @@
 
     setInterval(async () => {
       const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-      const dapiDataRegistry = new ethers.Contract(dapiDataRegistryAddress, dapiDataRegistryAbi, provider);
-      const activeDapisCount = await dapiDataRegistry.dapisCount();
+      const airseekerRegistry = new ethers.Contract(airseekerRegistryAddress, airseekerRegistryAbi, provider);
+      const activeactiveDataFeedCount = await airseekerRegistry.activeDataFeedCount();
 
-      document.getElementById('activeDapisCount').innerHTML = activeDapisCount;
+      document.getElementById('activeactiveDataFeedCount').innerHTML = activeactiveDataFeedCount;
       let newActiveDapisHtml = '';
-      for (let i = 0; i < activeDapisCount; i++) {
+      for (let i = 0; i < activeactiveDataFeedCount; i++) {
         const { dapiName, updateParameters, dataFeedValue, dataFeed, signedApiUrls } =
-          await dapiDataRegistry.readDapiWithIndex(i);
+          await airseekerRegistry.activeDataFeed(i);
         const { deviationReference, deviationThresholdInPercentage, heartbeatInterval } = updateParameters;
         const { value, timestamp } = dataFeedValue;
         const dapi = {
