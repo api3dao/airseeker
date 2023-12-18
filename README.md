@@ -152,9 +152,9 @@ A record of contract addresses used by Airseeker.
 The address of the Api3ServerV1 contract. If not specified, the address is loaded from the
 [Airnode protocol v1](https://github.com/api3dao/airnode-protocol-v1) repository.
 
-###### `DapiDataRegistry`
+###### `AirseekerRegistry`
 
-The address of the DapiDataRegistry contract.
+The address of the AirseekerRegistry contract.
 
 ##### `providers`
 

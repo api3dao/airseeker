@@ -36,7 +36,6 @@
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@openzeppelin/contracts": "4.9.3",
-    "@openzeppelin/merkle-tree": "^1.0.5",
     "@typechain/ethers-v5": "^11.1.2",
     "@typechain/hardhat": "^9.1.0",
     "@types/jest": "^29.5.5",
@@ -63,7 +62,7 @@
   "dependencies": {
     "@api3/airnode-protocol-v1": "^3.0.0",
     "@api3/commons": "^0.4.1",
-    "@api3/dapi-management": "github:api3dao/dapi-management",
+    "@api3/dapi-management": "github:api3dao/dapi-management#bb-edition",
     "@api3/promise-utils": "^0.4.0",
     "@ethersproject/abi": "^5.7.0",
     "@ethersproject/providers": "^5.7.2",

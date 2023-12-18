@@ -39,15 +39,15 @@ export const isDeviationThresholdExceeded = (
 /**
  * Returns true when the on chain data timestamp is newer than the heartbeat interval.
  */
-export const isOnChainDataFresh = (timestamp: number, heartbeatInterval: number) =>
-  timestamp > Date.now() / 1000 - heartbeatInterval;
+export const isOnChainDataFresh = (timestamp: number, heartbeatInterval: BigNumber) =>
+  timestamp > Date.now() / 1000 - heartbeatInterval.toNumber();
 
 export const isDataFeedUpdatable = (
   onChainValue: ethers.BigNumber,
   onChainTimestamp: number,
   offChainValue: ethers.BigNumber,
   offChainTimestamp: number,
-  heartbeatInterval: number,
+  heartbeatInterval: BigNumber,
   deviationThreshold: BigNumber
 ): boolean => {
   // Check that fulfillment data is newer than on chain data. Update transaction with stale data would revert on chain,

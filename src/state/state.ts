@@ -3,7 +3,6 @@ import { produce, type Draft } from 'immer';
 
 import type { Config } from '../config/schema';
 import type {
-  DapiName,
   PrivateKey,
   ChainId,
   SignedData,
@@ -11,6 +10,7 @@ import type {
   ProviderName,
   SignedApiUrl,
   AirnodeAddress,
+  SponsorAddress,
 } from '../types';
 
 interface GasState {
@@ -21,7 +21,7 @@ interface GasState {
 export interface State {
   config: Config;
   gasPrices: Record<ChainId, Record<ProviderName, GasState>>;
-  derivedSponsorWallets: Record<DapiName, PrivateKey>;
+  derivedSponsorWallets: Record<SponsorAddress, PrivateKey>;
   signedDatas: Record<BeaconId, SignedData>;
   signedApiUrls: Record<ChainId, Record<ProviderName, Record<AirnodeAddress, SignedApiUrl>>>;
 }

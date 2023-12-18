@@ -8,7 +8,7 @@ import { getState } from '../state';
 import type { BeaconId, ChainId, SignedData } from '../types';
 import { decodeBeaconValue, multiplyBigNumber } from '../utils';
 
-import { getApi3ServerV1, type DecodedReadDapiWithIndexResponse } from './contracts';
+import { getApi3ServerV1, type DecodedActiveDataFeedResponse } from './contracts';
 
 interface BeaconValue {
   timestamp: ethers.BigNumber;
@@ -21,12 +21,12 @@ export interface UpdatableBeacon {
 }
 
 export interface UpdatableDapi {
-  dapiInfo: DecodedReadDapiWithIndexResponse;
+  dapiInfo: DecodedActiveDataFeedResponse;
   updatableBeacons: UpdatableBeacon[];
 }
 
 export const getUpdatableFeeds = async (
-  batch: DecodedReadDapiWithIndexResponse[],
+  batch: DecodedActiveDataFeedResponse[],
   deviationThresholdCoefficient: number,
   provider: ethers.providers.StaticJsonRpcProvider,
   chainId: ChainId
@@ -77,15 +77,15 @@ export const getUpdatableFeeds = async (
         const newBeaconSetValue = calculateMedian(beaconValues.map(({ value }) => value));
         const newBeaconSetTimestamp = calculateMedian(beaconValues.map(({ timestamp }) => timestamp))!.toNumber();
 
-        const { updateParameters, dataFeedValue } = dapiInfo;
+        const { updateParameters, dataFeedValue, dataFeedTimestamp } = dapiInfo;
         const adjustedDeviationThresholdCoefficient = multiplyBigNumber(
           updateParameters.deviationThresholdInPercentage,
           deviationThresholdCoefficient
         );
 
         return isDataFeedUpdatable(
-          dataFeedValue.value,
-          dataFeedValue.timestamp,
+          dataFeedValue,
+          dataFeedTimestamp,
           newBeaconSetValue,
           newBeaconSetTimestamp,
           updateParameters.heartbeatInterval,

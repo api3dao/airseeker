@@ -66,7 +66,7 @@ also required for the monitoring page.
 
 - Open the monitoring page located in `local-test-configuration/monitoring/index.html` in a browser with the following
   query parameters appended
-  `?api3ServerV1Address=<DEPLOYED_API3_SERVER_V1_ADDRESS>&dapiDataRegistryAddress=<DEPLOYED_DAPI_DATA_REGISTRY_ADDRESS>&rpcUrl=<RPC_URL>&airseekerMnemonic=<AIRSEEKER_MNEMONIC>`
+  `?api3ServerV1Address=<DEPLOYED_API3_SERVER_V1_ADDRESS>&airseekerRegistryAddress=<DEPLOYED_DAPI_DATA_REGISTRY_ADDRESS>&rpcUrl=<RPC_URL>&airseekerMnemonic=<AIRSEEKER_MNEMONIC>`
   and open console.
 
 The `AIRSEEKER_MNEMONIC` needs to be URI encoded via `encodeURIComponent` in JS. For example,

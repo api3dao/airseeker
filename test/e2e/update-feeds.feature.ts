@@ -5,7 +5,7 @@ import { initializeGasState } from '../../src/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
 import { runUpdateFeeds } from '../../src/update-feeds-loops';
-import { decodeDataFeed } from '../../src/update-feeds-loops/contracts';
+import { decodeDataFeedDetails, decodeUpdateParameters } from '../../src/update-feeds-loops/contracts';
 import { submitTransactions } from '../../src/update-feeds-loops/submit-transactions';
 import { decodeDapiName } from '../../src/utils';
 import { initializeState } from '../fixtures/mock-config';
@@ -35,7 +35,7 @@ it('updates blockchain data', async () => {
   const {
     config,
     api3ServerV1,
-    dapiDataRegistry,
+    airseekerRegistry,
     krakenBtcBeacon,
     binanceBtcBeacon,
     krakenAirnodeWallet,
@@ -47,16 +47,17 @@ it('updates blockchain data', async () => {
     draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic.phrase;
   });
   initializeGasState(chainId, providerName);
-  const btcDapi = await dapiDataRegistry.readDapiWithIndex(0);
+  const btcDapi = await airseekerRegistry.activeDataFeed(0);
 
-  const decodedDataFeed = decodeDataFeed(btcDapi.dataFeed);
+  const decodedDataFeed = decodeDataFeedDetails(btcDapi.dataFeedDetails);
   const decodedBtcDapi = {
-    ...omit(btcDapi, ['dataFeed']),
+    ...omit(btcDapi, ['dataFeedDetails', 'updateParameters']),
+    updateParameters: decodeUpdateParameters(btcDapi.updateParameters),
     decodedDataFeed,
     decodedDapiName: decodeDapiName(btcDapi.dapiName),
   };
 
-  const currentBlock = await dapiDataRegistry.provider.getBlock('latest');
+  const currentBlock = await airseekerRegistry.provider.getBlock('latest');
   const currentBlockTimestamp = currentBlock.timestamp;
   const binanceBtcSignedData = await generateSignedData(
     binanceAirnodeWallet,

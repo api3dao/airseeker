@@ -9,7 +9,7 @@ export const generateTestConfig = (): Config => ({
     '31337': {
       contracts: {
         Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
-        DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+        AirseekerRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
       },
       providers: { hardhat: { url: 'http://127.0.0.1:8545' } },
       gasSettings: {

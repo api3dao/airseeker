@@ -4,7 +4,7 @@
     "31337": {
       "contracts": {
         "Api3ServerV1": "${API3_SERVER_V1_ADDRESS}",
-        "DapiDataRegistry": "${DAPI_DATA_REGISTRY_ADDRESS}"
+        "AirseekerRegistry": "${DAPI_DATA_REGISTRY_ADDRESS}"
       },
       "providers": {
         "hardhat": {
