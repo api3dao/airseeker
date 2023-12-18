@@ -1,6 +1,6 @@
 FROM node:18-alpine
-ENV name="airseeker-v2"
-LABEL application="airseeker-v2" description="Airseeker V2 container"
+ENV name="airseeker"
+LABEL application="airseeker" description="Airseeker container"
 WORKDIR /app
 
 # Install pnpm globally (needs root privileges).

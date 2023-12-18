@@ -80,7 +80,7 @@ Airseeker shortly.
 - Run the Airseeker:
 
 ```sh
-docker run -it --init --volume $(pwd)/local-test-configuration/airseeker:/app/config --network host --env-file .env --rm api3/airseeker-v2:latest
+docker run -it --init --volume $(pwd)/local-test-configuration/airseeker:/app/config --network host --env-file .env --rm api3/airseeker:latest
 ```
 
 ## Final notes
