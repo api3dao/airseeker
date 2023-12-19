@@ -20,8 +20,8 @@ export interface UpdatableBeacon {
   signedData: SignedData;
 }
 
-export interface UpdatableDapi {
-  dapiInfo: DecodedActiveDataFeedResponse;
+export interface UpdatableDataFeed {
+  dataFeedInfo: DecodedActiveDataFeedResponse;
   updatableBeacons: UpdatableBeacon[];
 }
 
@@ -30,16 +30,19 @@ export const getUpdatableFeeds = async (
   deviationThresholdCoefficient: number,
   provider: ethers.providers.StaticJsonRpcProvider,
   chainId: ChainId
-): Promise<UpdatableDapi[]> => {
+): Promise<UpdatableDataFeed[]> => {
   const uniqueBeaconIds = [
     ...new Set(batch.flatMap((item) => item.decodedDataFeed.beacons.flatMap((beacon) => beacon.beaconId))),
   ];
   const goOnChainFeedValues = await go(async () => multicallBeaconValues(uniqueBeaconIds, provider, chainId));
   if (!goOnChainFeedValues.success) {
     logger.error(
-      `Multicalling on-chain data feed values has failed. Skipping update for all dAPIs in a batch`,
+      `Multicalling on-chain data feed values has failed. Skipping update for all data feeds in a batch`,
       goOnChainFeedValues.error,
-      { dapiNames: batch.map((dapi) => dapi.decodedDapiName) }
+      {
+        dapiNames: batch.map((dapi) => dapi.decodedDapiName),
+        dataFeedIds: batch.map((dapi) => dapi.decodedDataFeed.dataFeedId),
+      }
     );
     return [];
   }
@@ -48,8 +51,8 @@ export const getUpdatableFeeds = async (
   return (
     batch
       // Determine on-chain and off-chain values for each beacon.
-      .map((dapiInfo) => {
-        const beaconsWithData = dapiInfo.decodedDataFeed.beacons.map(({ beaconId }) => {
+      .map((dataFeedInfo) => {
+        const beaconsWithData = dataFeedInfo.decodedDataFeed.beacons.map(({ beaconId }) => {
           const onChainValue: BeaconValue = onChainFeedValues[beaconId]!;
           const signedData = getSignedData(beaconId);
           const offChainValue: BeaconValue | undefined = signedData
@@ -64,12 +67,12 @@ export const getUpdatableFeeds = async (
         });
 
         return {
-          dapiInfo,
+          dataFeedInfo,
           beaconsWithData,
         };
       })
-      // Filter out dapis that cannot be updated.
-      .filter(({ dapiInfo, beaconsWithData }) => {
+      // Filter out data feeds that cannot be updated.
+      .filter(({ dataFeedInfo, beaconsWithData }) => {
         const beaconValues = beaconsWithData.map(({ onChainValue, offChainValue, isUpdatable }) =>
           isUpdatable ? offChainValue! : onChainValue
         );
@@ -77,9 +80,9 @@ export const getUpdatableFeeds = async (
         const newBeaconSetValue = calculateMedian(beaconValues.map(({ value }) => value));
         const newBeaconSetTimestamp = calculateMedian(beaconValues.map(({ timestamp }) => timestamp))!.toNumber();
 
-        const { updateParameters, dataFeedValue, dataFeedTimestamp } = dapiInfo;
+        const { decodedUpdateParameters, dataFeedValue, dataFeedTimestamp } = dataFeedInfo;
         const adjustedDeviationThresholdCoefficient = multiplyBigNumber(
-          updateParameters.deviationThresholdInPercentage,
+          decodedUpdateParameters.deviationThresholdInPercentage,
           deviationThresholdCoefficient
         );
 
@@ -88,13 +91,13 @@ export const getUpdatableFeeds = async (
           dataFeedTimestamp,
           newBeaconSetValue,
           newBeaconSetTimestamp,
-          updateParameters.heartbeatInterval,
+          decodedUpdateParameters.heartbeatInterval,
           adjustedDeviationThresholdCoefficient
         );
       })
       // Compute the updateable beacons.
-      .map(({ dapiInfo, beaconsWithData }) => ({
-        dapiInfo,
+      .map(({ dataFeedInfo, beaconsWithData }) => ({
+        dataFeedInfo,
         updatableBeacons: beaconsWithData
           .filter(({ isUpdatable }) => isUpdatable)
           .map(({ beaconId, signedData }) => ({

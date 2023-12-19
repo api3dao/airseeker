@@ -204,7 +204,7 @@ export const deployAndUpdate = async () => {
     ethers.utils.defaultAbiCoder.encode(['bytes32[]'], [[binanceEthBeacon.beaconId, krakenEthBeacon.beaconId]])
   );
 
-  // Set active dAPIs and initialize sponsor wallets
+  // Set active data feeds and initialize sponsor wallets
   const apiTreeValues = [
     [krakenAirnodeWallet.address, 'https://kraken.com/'],
     [binanceAirnodeWallet.address, 'https://binance.com/'],

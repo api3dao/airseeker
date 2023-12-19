@@ -28,7 +28,7 @@ it('reads blockchain data', async () => {
 
   await runUpdateFeeds(providerName, chain, chainId);
 
-  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs.', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active data feeds.', expect.anything());
 });
 
 it('updates blockchain data', async () => {
@@ -47,14 +47,14 @@ it('updates blockchain data', async () => {
     draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic.phrase;
   });
   initializeGasState(chainId, providerName);
-  const btcDapi = await airseekerRegistry.activeDataFeed(0);
+  const btcDataFeed = await airseekerRegistry.activeDataFeed(0);
 
-  const decodedDataFeed = decodeDataFeedDetails(btcDapi.dataFeedDetails);
-  const decodedBtcDapi = {
-    ...omit(btcDapi, ['dataFeedDetails', 'updateParameters']),
-    updateParameters: decodeUpdateParameters(btcDapi.updateParameters),
+  const decodedDataFeed = decodeDataFeedDetails(btcDataFeed.dataFeedDetails);
+  const activeBtcDataFeed = {
+    ...omit(btcDataFeed, ['dataFeedDetails', 'updateParameters']),
+    decodedUpdateParameters: decodeUpdateParameters(btcDataFeed.updateParameters),
     decodedDataFeed,
-    decodedDapiName: decodeDapiName(btcDapi.dapiName),
+    decodedDapiName: decodeDapiName(btcDataFeed.dapiName),
   };
 
   const currentBlock = await airseekerRegistry.provider.getBlock('latest');
@@ -73,7 +73,7 @@ it('updates blockchain data', async () => {
 
   await submitTransactions(chainId, providerName, provider, api3ServerV1, [
     {
-      dapiInfo: decodedBtcDapi,
+      dataFeedInfo: activeBtcDataFeed,
       updatableBeacons: [
         {
           beaconId: binanceBtcBeacon.beaconId,
@@ -100,5 +100,5 @@ it('updates blockchain data', async () => {
     'No historical gas prices to compute the percentile. Using the provider recommended gas price.'
   );
   expect(logger.debug).toHaveBeenNthCalledWith(9, 'Setting timestamp of the original update transaction.');
-  expect(logger.debug).toHaveBeenNthCalledWith(10, 'Updating dAPI.', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(10, 'Updating data feed.', expect.anything());
 });

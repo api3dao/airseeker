@@ -145,7 +145,7 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
 });
 
 describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
-  it('aborts when fetching first dAPIs batch fails', async () => {
+  it('aborts when fetching first data feed batch fails', async () => {
     const airseekerRegistry = generateMockAirseekerRegistry();
     jest
       .spyOn(contractsModule, 'getAirseekerRegistry')
@@ -168,22 +168,25 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
 
     // Expect the logs to be called with the correct context.
     expect(logger.error).toHaveBeenCalledTimes(1);
-    expect(logger.error).toHaveBeenCalledWith('Failed to get first active dAPIs batch.', new Error('provider-error'));
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to get first active data feeds batch.',
+      new Error('provider-error')
+    );
   });
 
   it('fetches and processes other batches in a staggered way and logs errors', async () => {
-    // Prepare the mocked contract so it returns three batches (of size 1) of dAPIs and the second batch fails to load.
-    const firstDapi = generateActiveDataFeedResponse();
-    const thirdDapi = generateActiveDataFeedResponse();
-    const decodedFirstDapi = {
-      ...omit(firstDapi, ['dataFeedDetails']),
-      updateParameters: contractsModule.decodeUpdateParameters(firstDapi.updateParameters),
-      decodedDataFeed: contractsModule.decodeDataFeedDetails(firstDapi.dataFeedDetails),
+    // Prepare the mocked contract so it returns three batches (of size 1) of data feeds and the second batch fails to load.
+    const firstDataFeed = generateActiveDataFeedResponse();
+    const thirdDataFeed = generateActiveDataFeedResponse();
+    const decodedFirstDataFeed = {
+      ...omit(firstDataFeed, ['dataFeedDetails', 'updateParameters']),
+      decodedUpdateParameters: contractsModule.decodeUpdateParameters(firstDataFeed.updateParameters),
+      decodedDataFeed: contractsModule.decodeDataFeedDetails(firstDataFeed.dataFeedDetails),
     };
-    const decodedThirdDapi = {
-      ...omit(thirdDapi, ['dataFeedDetails']),
-      updateParameters: contractsModule.decodeUpdateParameters(thirdDapi.updateParameters),
-      decodedDataFeed: contractsModule.decodeDataFeedDetails(thirdDapi.dataFeedDetails),
+    const decodedThirdDataFeed = {
+      ...omit(thirdDataFeed, ['dataFeedDetails', 'updateParameters']),
+      decodedUpdateParameters: contractsModule.decodeUpdateParameters(thirdDataFeed.updateParameters),
+      decodedDataFeed: contractsModule.decodeDataFeedDetails(thirdDataFeed.dataFeedDetails),
     };
     const airseekerRegistry = generateMockAirseekerRegistry();
     jest
@@ -192,10 +195,10 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
     airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
       successes: [true, true],
-      returndata: [[ethers.BigNumber.from(3)], firstDapi],
+      returndata: [[ethers.BigNumber.from(3)], firstDataFeed],
     });
     airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [false], returndata: [] });
-    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [true], returndata: [thirdDapi] });
+    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [true], returndata: [thirdDataFeed] });
     const sleepCalls = [] as number[];
     const originalSleep = utilsModule.sleep;
     jest.spyOn(utilsModule, 'sleep').mockImplementation(async (ms) => {
@@ -220,13 +223,13 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     jest
       .spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds')
       .mockResolvedValueOnce([
-        allowPartial<getUpdatableFeedsModule.UpdatableDapi>({
-          dapiInfo: decodedFirstDapi,
+        allowPartial<getUpdatableFeedsModule.UpdatableDataFeed>({
+          dataFeedInfo: decodedFirstDataFeed,
         }),
       ])
       .mockResolvedValueOnce([
-        allowPartial<getUpdatableFeedsModule.UpdatableDapi>({
-          dapiInfo: decodedThirdDapi,
+        allowPartial<getUpdatableFeedsModule.UpdatableDataFeed>({
+          dataFeedInfo: decodedThirdDataFeed,
         }),
       ]);
     jest.spyOn(submitTransactionModule, 'submitTransactions').mockResolvedValue([null, null]);
@@ -265,32 +268,32 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     // Expect the logs to be called with the correct context.
     expect(logger.error).toHaveBeenCalledTimes(1);
     expect(logger.error).toHaveBeenCalledWith(
-      'Failed to get active dAPIs batch.',
+      'Failed to get active data feeds batch.',
       new Error('One of the multicalls failed')
     );
     expect(logger.debug).toHaveBeenCalledTimes(7);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of dAPIs batches.');
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs.', expect.anything());
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching batches of active dAPIs.', {
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of data feeds batches.');
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active data feeds.', expect.anything());
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching batches of active data feeds.', {
       batchesCount: 3,
       staggerTimeMs: 50,
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching batch of active dAPIs.', {
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching batch of active data feeds.', {
       batchIndex: 1,
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batch of active dAPIs.', {
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batch of active data feeds.', {
       batchIndex: 2,
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Processing batch of active dAPIs.', expect.anything());
-    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Finished processing batches of active dAPIs.', {
-      dapiUpdateFailures: 2,
-      dapiUpdates: 0,
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Processing batch of active data feeds.', expect.anything());
+    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Finished processing batches of active data feeds.', {
+      dataFeedUpdateFailures: 2,
+      dataFeedUpdates: 0,
       skippedBatchesCount: 1,
     });
   });
 
   it('catches unhandled error', async () => {
-    const dapi = generateActiveDataFeedResponse();
+    const dataFeed = generateActiveDataFeedResponse();
     const airseekerRegistry = generateMockAirseekerRegistry();
     jest
       .spyOn(contractsModule, 'getAirseekerRegistry')
@@ -298,7 +301,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
     airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
       successes: [true, true],
-      returndata: [[ethers.BigNumber.from(1)], dapi],
+      returndata: [[ethers.BigNumber.from(1)], dataFeed],
     });
     const testConfig = generateTestConfig();
     jest.spyOn(stateModule, 'getState').mockReturnValue(
@@ -339,16 +342,16 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
 
 describe(updateFeedsLoopsModule.processBatch.name, () => {
   it('applies deviationThresholdCoefficient from config', async () => {
-    const dapi = generateActiveDataFeedResponse();
-    const decodedDataFeed = contractsModule.decodeDataFeedDetails(dapi.dataFeedDetails);
-    const updateParameters = contractsModule.decodeUpdateParameters(dapi.updateParameters);
-    const decodedDapi = {
-      ...omit(dapi, ['dataFeedDetails']),
-      updateParameters,
+    const dataFeed = generateActiveDataFeedResponse();
+    const decodedDataFeed = contractsModule.decodeDataFeedDetails(dataFeed.dataFeedDetails);
+    const decodedUpdateParameters = contractsModule.decodeUpdateParameters(dataFeed.updateParameters);
+    const activeDataFeed = {
+      ...omit(dataFeed, ['dataFeedDetails', 'updateParameters']),
+      decodedUpdateParameters,
       decodedDataFeed,
-      decodedDapiName: utilsModule.decodeDapiName(dapi.dapiName),
+      decodedDapiName: utilsModule.decodeDapiName(dataFeed.dapiName),
     };
-    jest.spyOn(Date, 'now').mockReturnValue(dapi.dataFeedTimestamp * 1000);
+    jest.spyOn(Date, 'now').mockReturnValue(dataFeed.dataFeedTimestamp * 1000);
     const testConfig = generateTestConfig();
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
@@ -362,16 +365,16 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
               ['int256'],
               [
                 ethers.BigNumber.from(
-                  dapi.dataFeedValue
+                  dataFeed.dataFeedValue
                     // Multiply the new value by the on chain deviationThresholdInPercentage
-                    .mul(updateParameters.deviationThresholdInPercentage.add(1 * 1e8))
+                    .mul(decodedUpdateParameters.deviationThresholdInPercentage.add(1 * 1e8))
                     .div(1e8)
                 ),
               ]
             ),
             signature:
               '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
-            timestamp: (dapi.dataFeedTimestamp + 1).toString(),
+            timestamp: (dataFeed.dataFeedTimestamp + 1).toString(),
           },
         },
         gasPrices: {},
@@ -394,7 +397,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
       },
     });
 
-    const feeds = getUpdatableFeedsModule.getUpdatableFeeds([decodedDapi], 2, provider, '31337');
+    const feeds = getUpdatableFeedsModule.getUpdatableFeeds([activeDataFeed], 2, provider, '31337');
 
     expect(logger.warn).not.toHaveBeenCalledWith(`Off-chain sample's timestamp is older than on-chain timestamp.`);
     expect(logger.warn).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);

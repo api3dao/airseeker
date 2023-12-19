@@ -136,7 +136,7 @@ describe(getUpdatableFeeds.name, () => {
 
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
-        updateParameters: {
+        decodedUpdateParameters: {
           deviationThresholdInPercentage: ethers.BigNumber.from(1),
           heartbeatInterval: ethers.BigNumber.from(100),
         },
@@ -164,7 +164,7 @@ describe(getUpdatableFeeds.name, () => {
             },
           }),
         ],
-        dapiInfo: {
+        dataFeedInfo: {
           dapiName: encodeDapiName('test'),
           dataFeedValue: ethers.BigNumber.from('10'),
           dataFeedTimestamp: 95,
@@ -182,7 +182,7 @@ describe(getUpdatableFeeds.name, () => {
             ],
             dataFeedId: '0x000',
           },
-          updateParameters: {
+          decodedUpdateParameters: {
             deviationThresholdInPercentage: ethers.BigNumber.from(1),
             heartbeatInterval: ethers.BigNumber.from(100),
           },
@@ -232,7 +232,7 @@ describe(getUpdatableFeeds.name, () => {
 
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
-        updateParameters: {
+        decodedUpdateParameters: {
           deviationThresholdInPercentage: ethers.BigNumber.from(1),
           heartbeatInterval: ethers.BigNumber.from(1),
         },
@@ -260,7 +260,7 @@ describe(getUpdatableFeeds.name, () => {
             },
           }),
         ],
-        dapiInfo: {
+        dataFeedInfo: {
           dapiName: encodeDapiName('test'),
           dataFeedValue: ethers.BigNumber.from('400'),
           dataFeedTimestamp: 90,
@@ -278,7 +278,7 @@ describe(getUpdatableFeeds.name, () => {
             ],
             dataFeedId: '0x000',
           },
-          updateParameters: {
+          decodedUpdateParameters: {
             deviationThresholdInPercentage: ethers.BigNumber.from(1),
             heartbeatInterval: ethers.BigNumber.from(1),
           },
@@ -312,7 +312,7 @@ describe(getUpdatableFeeds.name, () => {
     // Set up batch with on-chain values that don't trigger an update
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
-        updateParameters: {
+        decodedUpdateParameters: {
           deviationThresholdInPercentage: ethers.BigNumber.from(1),
           heartbeatInterval: ethers.BigNumber.from(100),
         },
@@ -390,7 +390,7 @@ describe(getUpdatableFeeds.name, () => {
 
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
-        updateParameters: {
+        decodedUpdateParameters: {
           deviationThresholdInPercentage: ethers.BigNumber.from(1),
           heartbeatInterval: ethers.BigNumber.from(100),
         },
@@ -414,7 +414,7 @@ describe(getUpdatableFeeds.name, () => {
   it('handles multicall failure', async () => {
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
-        updateParameters: {
+        decodedUpdateParameters: {
           deviationThresholdInPercentage: ethers.BigNumber.from(1),
           heartbeatInterval: ethers.BigNumber.from(100),
         },
@@ -434,9 +434,9 @@ describe(getUpdatableFeeds.name, () => {
     const checkFeedsResult = await getUpdatableFeeds(batch, 1, provider, '31337');
 
     expect(logger.error).toHaveBeenCalledWith(
-      `Multicalling on-chain data feed values has failed. Skipping update for all dAPIs in a batch`,
+      `Multicalling on-chain data feed values has failed. Skipping update for all data feeds in a batch`,
       new Error('Multicall failed'),
-      { dapiNames: ['test'] }
+      { dapiNames: ['test'], dataFeedIds: ['0x000'] }
     );
     expect(checkFeedsResult).toStrictEqual([]);
   });

@@ -89,13 +89,14 @@ export const decodeActiveDataFeedResponse = (
   // https://github.com/api3dao/dapi-management/pull/3/files#diff-b6941851ebc92dc9691bbf0cb701fe9c4595cb78488c3bb92ad6e4b917719f4fR346
   const decodedDataFeed = decodeDataFeedDetails(dataFeedDetails);
 
-  // The dAPI name will be set to zero in case the data feed is not a dAPI and is identified by a data feed ID.
+  // The dAPI name will be set to zero (in bytes32) in case the data feed is not a dAPI and is identified by a data feed
+  // ID.
   const decodedDapiName = decodeDapiName(dapiName);
 
   return {
     dapiName: decodedDapiName === '' ? null : dapiName, // NOTE: Anywhere in the codebase the "dapiName" is the encoded version of the dAPI name.
     decodedDapiName: decodedDapiName === '' ? null : decodedDapiName,
-    updateParameters: decodeUpdateParameters(updateParameters),
+    decodedUpdateParameters: decodeUpdateParameters(updateParameters),
     dataFeedValue,
     dataFeedTimestamp,
     decodedDataFeed,
