@@ -118,8 +118,8 @@ sensitive information inside secrets.
 
 #### `sponsorWalletMnemonic`
 
-The mnemonic of the wallet used to derive sponsor wallets. Sponsor wallets are derived for each dAPI separately. It is
-recommended to interpolate this value from secrets. For example:
+The mnemonic of the wallet used to derive sponsor wallets. Sponsor wallets are derived for each data feed separately. It
+is recommended to interpolate this value from secrets. For example:
 
 ```jsonc
 // The mnemonic is interpolated from the "SPONSOR_WALLET_MNEMONIC" secret.
@@ -209,7 +209,7 @@ The interval specifying how often to run the data feed update loop. In seconds.
 
 ##### `dataFeedBatchSize`
 
-The batch size of active dAPIs that are to be fetched in a single RPC call.
+The batch size of active data feeds that are to be fetched in a single RPC call.
 
 ##### `fallbackGasLimit` _(optional)_
 

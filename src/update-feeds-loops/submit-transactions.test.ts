@@ -8,7 +8,7 @@ import { logger } from '../logger';
 import * as stateModule from '../state';
 import * as utilsModule from '../utils';
 
-import type { UpdatableDapi } from './get-updatable-feeds';
+import type { UpdatableDataFeed } from './get-updatable-feeds';
 import * as submitTransactionsModule from './submit-transactions';
 
 describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
@@ -59,7 +59,7 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
 
     submitTransactionsModule.createUpdateFeedCalldatas(
       api3ServerV1 as unknown as Api3ServerV1,
-      allowPartial<UpdatableDapi>({
+      allowPartial<UpdatableDataFeed>({
         updatableBeacons: [
           {
             beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
@@ -72,7 +72,7 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
             },
           },
         ],
-        dapiInfo: {
+        dataFeedInfo: {
           decodedDataFeed: {
             beacons: [
               {
@@ -100,7 +100,7 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
 
     submitTransactionsModule.createUpdateFeedCalldatas(
       api3ServerV1 as unknown as Api3ServerV1,
-      allowPartial<UpdatableDapi>({
+      allowPartial<UpdatableDataFeed>({
         updatableBeacons: [
           {
             beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
@@ -133,7 +133,7 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
             },
           },
         ],
-        dapiInfo: {
+        dataFeedInfo: {
           decodedDataFeed: {
             beacons: [
               {
@@ -188,7 +188,7 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
 
     submitTransactionsModule.createUpdateFeedCalldatas(
       api3ServerV1 as unknown as Api3ServerV1,
-      allowPartial<UpdatableDapi>({
+      allowPartial<UpdatableDataFeed>({
         updatableBeacons: [
           {
             beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
@@ -201,7 +201,7 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
             },
           },
         ],
-        dapiInfo: {
+        dataFeedInfo: {
           decodedDataFeed: {
             beacons: [
               {
@@ -237,6 +237,7 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
   });
 });
 
+// TODO: Test with data feed ID
 describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
   const dapiName = utilsModule.encodeDapiName('ETH/USD');
 
@@ -285,11 +286,11 @@ describe(submitTransactionsModule.submitTransactions.name, () => {
       new ethers.providers.StaticJsonRpcProvider(),
       generateMockApi3ServerV1() as unknown as Api3ServerV1,
       [
-        allowPartial<UpdatableDapi>({
-          dapiInfo: { dapiName: utilsModule.encodeDapiName('ETH/USD') },
+        allowPartial<UpdatableDataFeed>({
+          dataFeedInfo: { dapiName: utilsModule.encodeDapiName('ETH/USD') },
         }),
-        allowPartial<UpdatableDapi>({
-          dapiInfo: { dapiName: utilsModule.encodeDapiName('BTC/USD') },
+        allowPartial<UpdatableDataFeed>({
+          dataFeedInfo: { dapiName: utilsModule.encodeDapiName('BTC/USD') },
         }),
       ]
     );
@@ -331,8 +332,8 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
       'evm-local',
       new ethers.providers.StaticJsonRpcProvider(),
       api3ServerV1 as unknown as Api3ServerV1,
-      allowPartial<UpdatableDapi>({
-        dapiInfo: {
+      allowPartial<UpdatableDataFeed>({
+        dataFeedInfo: {
           dapiName,
           decodedDataFeed: {
             dataFeedId: '0xbeaconSetId',
@@ -343,7 +344,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
 
     // Verify that the dAPI was updated successfully.
     expect(logger.info).toHaveBeenCalledTimes(1);
-    expect(logger.info).toHaveBeenCalledWith('Successfully updated dAPI.');
+    expect(logger.info).toHaveBeenCalledWith('Successfully updated data feed.');
 
     // Verify the flow of the update process via the debug logs. Note, that some debug log calls are not here because
     // many functions are mocked.
@@ -356,6 +357,9 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     });
     expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting gas price.');
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Setting timestamp of the original update transaction.');
-    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Updating dAPI.', { gasLimit: '500000', gasPrice: '100000000' });
+    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Updating data feed.', {
+      gasLimit: '500000',
+      gasPrice: '100000000',
+    });
   });
 });

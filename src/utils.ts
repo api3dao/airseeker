@@ -13,9 +13,9 @@ export function deriveBeaconSetId(beaconIds: string[]) {
   return goSync(() => ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['bytes32[]'], [beaconIds]))).data;
 }
 
-export const encodeDapiName = (dapiName: string) => ethers.utils.formatBytes32String(dapiName);
+export const encodeDapiName = (decodedDapiName: string) => ethers.utils.formatBytes32String(decodedDapiName);
 
-export const decodeDapiName = (dapiName: string) => ethers.utils.parseBytes32String(dapiName);
+export const decodeDapiName = (encodedDapiName: string) => ethers.utils.parseBytes32String(encodedDapiName);
 
 export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
   const sponsorAddressBN = ethers.BigNumber.from(sponsorAddress);
@@ -30,10 +30,11 @@ export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
 export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDataFeedId: string) => {
   // Hash the dAPI name or data feed ID because we need to take the first 20 bytes of it which could result in
   // collisions for dAPIs with the same prefix.
-  const hashedDapiName = ethers.utils.keccak256(dapiNameOrDataFeedId);
+  const hashedDapiNameOrDataFeedId = ethers.utils.keccak256(dapiNameOrDataFeedId);
 
   // Take first 20 bytes of the hashed dapiName as sponsor address together with the "0x" prefix.
-  const sponsorAddress = ethers.utils.getAddress(hashedDapiName.slice(0, 42));
+  // TODO: Write a test that uses both dapi name and data feed ID.
+  const sponsorAddress = ethers.utils.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));
   const sponsorWallet = ethers.Wallet.fromMnemonic(
     sponsorWalletMnemonic,
     `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
