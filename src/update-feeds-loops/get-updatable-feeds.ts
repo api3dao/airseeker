@@ -40,8 +40,8 @@ export const getUpdatableFeeds = async (
       `Multicalling on-chain data feed values has failed. Skipping update for all data feeds in a batch`,
       goOnChainFeedValues.error,
       {
-        dapiNames: batch.map((dapi) => dapi.decodedDapiName),
-        dataFeedIds: batch.map((dapi) => dapi.decodedDataFeed.dataFeedId),
+        dapiNames: batch.map((dataFeed) => dataFeed.decodedDapiName),
+        dataFeedIds: batch.map((dataFeed) => dataFeed.decodedDataFeed.dataFeedId),
       }
     );
     return [];

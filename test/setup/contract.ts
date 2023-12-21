@@ -250,7 +250,7 @@ export const deployAndUpdate = async () => {
           [deviationThresholdInPercentage, deviationReference, heartbeatInterval]
         )
       );
-    await api3ServerV1.setDapiName(dapiName, beaconSetId);
+    await api3ServerV1.connect(deployerAndManager!).setDapiName(dapiName, beaconSetId);
     await airseekerRegistry.connect(deployerAndManager!).activateDataFeedIdOrDapiName(dapiName);
 
     // Initialize sponsor wallets

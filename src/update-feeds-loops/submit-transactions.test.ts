@@ -319,7 +319,7 @@ describe(submitTransactionsModule.submitTransactions.name, () => {
 describe(submitTransactionsModule.submitTransaction.name, () => {
   const dapiName = utilsModule.encodeDapiName('ETH/USD');
 
-  it('updates a dapi', async () => {
+  it('updates a dAPI', async () => {
     jest.spyOn(submitTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'info');
@@ -359,7 +359,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
       })
     );
 
-    // Verify that the dAPI was updated successfully.
+    // Verify that the data feed was updated successfully.
     expect(logger.info).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenCalledWith('Successfully updated data feed.');
 
