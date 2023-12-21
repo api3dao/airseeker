@@ -8,8 +8,8 @@ import { type DeepPartial, encodeBeaconDetails } from '../utils';
 export const generateActiveDataFeedResponse = () => ({
   dapiName: encodeDapiName('MOCK_FEED'),
   updateParameters: ethers.utils.defaultAbiCoder.encode(
-    ['uint256', 'uint256', 'uint256'],
-    [0.5 * 1e8, 0.5 * 1e8, 100] // deviationThresholdInPercentage, deviationReference, heartbeatInterval TODO: Is this correct?
+    ['uint256', 'int224', 'uint256'],
+    [0.5 * 1e8, 0.5 * 1e8, 100] // deviationThresholdInPercentage, deviationReference, heartbeatInterval
   ),
   dataFeedValue: ethers.BigNumber.from(123 * 1e6),
   dataFeedTimestamp: 1_629_811_200,
