@@ -133,24 +133,22 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.Wallet) =>
 
 export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.providers.JsonRpcProvider) => {
   // NOTE: It is OK if all of these roles are done via the funder wallet.
-  const deployer = funderWallet,
-    manager = funderWallet,
-    api3MarketUser = funderWallet,
+  const deployerAndManager = funderWallet,
     randomPerson = funderWallet;
 
   // Deploy contracts
-  const accessControlRegistryFactory = new AccessControlRegistryFactory(deployer as Signer);
+  const accessControlRegistryFactory = new AccessControlRegistryFactory(deployerAndManager as Signer);
   const accessControlRegistry = await accessControlRegistryFactory.deploy();
   await accessControlRegistry.deployTransaction.wait();
-  const api3ServerV1Factory = new Api3ServerV1Factory(deployer as Signer);
+  const api3ServerV1Factory = new Api3ServerV1Factory(deployerAndManager as Signer);
   const api3ServerV1AdminRoleDescription = 'Api3ServerV1 admin';
   const api3ServerV1 = await api3ServerV1Factory.deploy(
     accessControlRegistry.address,
     api3ServerV1AdminRoleDescription,
-    manager.address
+    deployerAndManager.address
   );
   await api3ServerV1.deployTransaction.wait();
-  const airseekerRegistryFactory = new AirseekerRegistryFactory(deployer as Signer);
+  const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager as Signer);
   const airseekerRegistry = await airseekerRegistryFactory.deploy(api3ServerV1.address);
   await airseekerRegistry.deployTransaction.wait();
 
@@ -177,7 +175,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   ] as const;
   let tx: ContractTransaction;
   for (const [airnode, url] of apiTreeValues) {
-    tx = await airseekerRegistry.connect(api3MarketUser).setSignedApiUrl(airnode, url);
+    tx = await airseekerRegistry.connect(deployerAndManager).setSignedApiUrl(airnode, url);
     await tx.wait();
   }
   const dapiInfos = zip(airnodeFeed1Beacons, airnodeFeed2Beacons).map(([airnodeFeed1Beacon, airnodeFeed2Beacon]) => {
@@ -185,10 +183,14 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
       airnodes: [airnodeFeed1Beacon!.airnodeAddress, airnodeFeed2Beacon!.airnodeAddress],
       templateIds: [airnodeFeed1Beacon!.templateId, airnodeFeed1Beacon!.templateId],
       dapiName: encodeDapiName(airnodeFeed1Beacon!.parameters[0]!.value),
+      beaconSetId: ethers.utils.defaultAbiCoder.encode(
+        ['bytes32[]'],
+        [[airnodeFeed1Beacon!.beaconId, airnodeFeed2Beacon!.beaconId]]
+      ),
     };
   });
   for (const dapiInfo of dapiInfos) {
-    const { airnodes, templateIds, dapiName } = dapiInfo;
+    const { airnodes, templateIds, dapiName, beaconSetId } = dapiInfo;
 
     const encodedBeaconSetData = ethers.utils.defaultAbiCoder.encode(
       ['address[]', 'bytes32[]'],
@@ -200,8 +202,10 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     const deviationThresholdInPercentage = ethers.BigNumber.from(HUNDRED_PERCENT / 100); // 1%
     const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
     const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
+    tx = await api3ServerV1.connect(deployerAndManager).setDapiName(dapiName, beaconSetId);
+    await tx.wait();
     tx = await airseekerRegistry
-      .connect(api3MarketUser)
+      .connect(deployerAndManager)
       .setUpdateParametersWithDapiName(
         dapiName,
         ethers.utils.defaultAbiCoder.encode(
