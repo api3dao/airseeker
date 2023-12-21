@@ -63,7 +63,12 @@ describe(multicallBeaconValues.name, () => {
 
     jest.spyOn(contractsModule, 'getApi3ServerV1').mockReturnValue(mockContract as any);
 
-    const callAndParseMulticallPromise = await multicallBeaconValues(feedIds as unknown as string[], provider, '31337');
+    const callAndParseMulticallPromise = await multicallBeaconValues(
+      feedIds as unknown as string[],
+      provider,
+      '31337',
+      1
+    );
 
     expect(callAndParseMulticallPromise).toStrictEqual({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {

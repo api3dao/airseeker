@@ -34,7 +34,8 @@ export const getUpdatableFeeds = async (
   const uniqueBeaconIds = [
     ...new Set(batch.flatMap((item) => item.decodedDataFeed.beacons.flatMap((beacon) => beacon.beaconId))),
   ];
-  const goOnChainFeedValues = await go(async () => multicallBeaconValues(uniqueBeaconIds, provider, chainId));
+  // TODO:
+  const goOnChainFeedValues = await go(async () => multicallBeaconValues(uniqueBeaconIds, provider, chainId, 0));
   if (!goOnChainFeedValues.success) {
     logger.error(
       `Multicalling on-chain data feed values has failed. Skipping update for all data feeds in a batch`,

@@ -141,7 +141,8 @@ export const submitTransactions = async (
 ) =>
   Promise.all(
     updatableDataFeeds.map(async (dataFeed) =>
-      submitTransaction(chainId, providerName, provider, api3ServerV1, dataFeed)
+      // TODO:
+      submitTransaction(chainId, providerName, provider, api3ServerV1, dataFeed, 0)
     )
   );
 

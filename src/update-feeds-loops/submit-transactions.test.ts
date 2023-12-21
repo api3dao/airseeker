@@ -356,7 +356,8 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
             dataFeedId: '0xBeaconSetId',
           },
         },
-      })
+      }),
+      1
     );
 
     // Verify that the data feed was updated successfully.
