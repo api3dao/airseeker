@@ -63,10 +63,10 @@ export interface DecodedUpdateParameters {
   heartbeatInterval: ethers.BigNumber;
 }
 
-export const decodeUpdateParameters = (updateParameters: string): DecodedUpdateParameters => {
-  // TODO: How are the updateParameters be encoded? Is this correct?
-  const [deviationReference, deviationThresholdInPercentage, heartbeatInterval] = ethers.utils.defaultAbiCoder.decode(
-    ['uint256', 'uint256', 'uint256'],
+export const decodeUpdateParameters = (updateParameters: string) => {
+  // https://github.com/api3dao/airnode-protocol-v1/blob/5f861715749e182e334c273d6a52c4f2560c7994/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L122
+  const [deviationThresholdInPercentage, deviationReference, heartbeatInterval] = ethers.utils.defaultAbiCoder.decode(
+    ['uint256', 'int224', 'uint256'],
     updateParameters
   );
 

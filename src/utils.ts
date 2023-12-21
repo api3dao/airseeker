@@ -32,8 +32,7 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDat
   // collisions for dAPIs with the same prefix.
   const hashedDapiNameOrDataFeedId = ethers.utils.keccak256(dapiNameOrDataFeedId);
 
-  // Take first 20 bytes of the hashed dapiName as sponsor address together with the "0x" prefix.
-  // TODO: Write a test that uses both dapi name and data feed ID.
+  // Take first 20 bytes of the hashed dapiName or data feed ID as sponsor address together with the "0x" prefix.
   const sponsorAddress = ethers.utils.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));
   const sponsorWallet = ethers.Wallet.fromMnemonic(
     sponsorWalletMnemonic,

@@ -11,6 +11,15 @@ describe(deriveSponsorWallet.name, () => {
 
     expect(sponsorWallet.address).not.toBe(otherSponsorWallet.address);
   });
+
+  it('works even with data feed ID', () => {
+    const dataFeedId = '0x917ecd1b870ef5fcbd53088046d0987493593d761e2516ec6acc455848976f36';
+    const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
+
+    const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dataFeedId);
+
+    expect(sponsorWallet.address).toBe('0x6fD46d2D7AB4574Be0185618944106fdaF20DB7D');
+  });
 });
 
 describe(deriveWalletPathFromSponsorAddress.name, () => {
