@@ -128,19 +128,19 @@ const initializeBeacon = async (
 };
 
 export const deployAndUpdate = async () => {
-  const [deployer, manager, api3MarketUser, randomPerson, walletFunder] = await ethers.getSigners();
+  const [deployerAndManager, randomPerson, walletFunder] = await ethers.getSigners();
 
   // Deploy contracts
-  const accessControlRegistryFactory = new AccessControlRegistryFactory(deployer as Signer);
+  const accessControlRegistryFactory = new AccessControlRegistryFactory(deployerAndManager as Signer);
   const accessControlRegistry = await accessControlRegistryFactory.deploy();
-  const api3ServerV1Factory = new Api3ServerV1Factory(deployer as Signer);
+  const api3ServerV1Factory = new Api3ServerV1Factory(deployerAndManager as Signer);
   const api3ServerV1AdminRoleDescription = 'Api3ServerV1 admin';
   const api3ServerV1 = await api3ServerV1Factory.deploy(
     accessControlRegistry.address,
     api3ServerV1AdminRoleDescription,
-    manager!.address
+    deployerAndManager!.address
   );
-  const airseekerRegistryFactory = new AirseekerRegistryFactory(deployer as Signer);
+  const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager as Signer);
   const airseekerRegistry = await airseekerRegistryFactory.deploy(api3ServerV1.address);
 
   // Initialize special wallet for contract initialization
@@ -212,7 +212,7 @@ export const deployAndUpdate = async () => {
   const airseekerWallet = ethers.Wallet.createRandom();
   await Promise.all(
     apiTreeValues.map(async ([airnode, url]) => {
-      return airseekerRegistry.connect(api3MarketUser!).setSignedApiUrl(airnode, url);
+      return airseekerRegistry.connect(deployerAndManager!).setSignedApiUrl(airnode, url);
     })
   );
   const dapiInfos = [
@@ -220,15 +220,17 @@ export const deployAndUpdate = async () => {
       airnodes: [binanceAirnodeWallet.address, krakenAirnodeWallet.address],
       templateIds: [binanceBtcBeacon.templateId, krakenBtcBeacon.templateId],
       dapiName: encodeDapiName('BTC/USD'),
+      beaconSetId: btcBeaconSetId,
     },
     {
       airnodes: [binanceAirnodeWallet.address, krakenAirnodeWallet.address],
       templateIds: [binanceEthBeacon.templateId, krakenEthBeacon.templateId],
       dapiName: encodeDapiName('ETH/USD'),
+      beaconSetId: ethBeaconSetId,
     },
   ];
   for (const dapiInfo of dapiInfos) {
-    const { airnodes, templateIds, dapiName } = dapiInfo;
+    const { airnodes, templateIds, dapiName, beaconSetId } = dapiInfo;
 
     const encodedBeaconSetData = ethers.utils.defaultAbiCoder.encode(
       ['address[]', 'bytes32[]'],
@@ -240,7 +242,7 @@ export const deployAndUpdate = async () => {
     const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
     const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
     await airseekerRegistry
-      .connect(api3MarketUser!)
+      .connect(deployerAndManager!)
       .setUpdateParametersWithDapiName(
         dapiName,
         ethers.utils.defaultAbiCoder.encode(
@@ -248,6 +250,8 @@ export const deployAndUpdate = async () => {
           [deviationThresholdInPercentage, deviationReference, heartbeatInterval]
         )
       );
+    await api3ServerV1.setDapiName(dapiName, beaconSetId);
+    await airseekerRegistry.connect(deployerAndManager!).activateDataFeedIdOrDapiName(dapiName);
 
     // Initialize sponsor wallets
     const sponsorWallet = deriveSponsorWallet(airseekerWallet.mnemonic.phrase, dapiName);
