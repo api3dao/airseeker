@@ -715,7 +715,7 @@
           decodedDataFeed: decodeDataFeedDetails(dataFeedDetails),
           signedApiUrls,
         };
-        console.log('Data feed', dataFeed); // For debugging purposes.
+        console.info('Data feed', dataFeed); // For debugging purposes.
 
         let signedDatas = [];
         for (let i = 0; i < signedApiUrls.length; i++) {
@@ -727,7 +727,7 @@
           const signedData = signedApiResponse.data[dataFeed.decodedDataFeed.beacons[i].beaconId];
           signedDatas.push({ ...signedData, value: decodeBeaconValue(signedData.encodedValue).toString() });
         }
-        console.log('Signed datas', signedDatas); // For debugging purposes.
+        console.info('Signed datas', signedDatas); // For debugging purposes.
 
         const newBeaconSetValue = calculateMedian(
           signedDatas.map((signedData) => ethers.BigNumber.from(signedData.value))

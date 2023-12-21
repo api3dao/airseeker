@@ -32,7 +32,11 @@ export const decodeActiveDataFeedCountResponse = (
   return activeDataFeedCount.toNumber();
 };
 
-export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed => {
+export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null => {
+  // The contract returns empty bytes if the data feed is not registered. See:
+  // https://github.com/api3dao/dapi-management/blob/f3d39e4707c33c075a8f07aa8f8369f8dc07736f/contracts/AirseekerRegistry.sol#L209
+  if (dataFeed === '0x') return null;
+
   if (dataFeed.length === 130) {
     // (64 [actual bytes] * 2[hex encoding] ) + 2 [for the '0x' preamble]
     // This is a hex encoded string, the contract works with bytes directly
@@ -63,7 +67,7 @@ export interface DecodedUpdateParameters {
   heartbeatInterval: ethers.BigNumber;
 }
 
-export const decodeUpdateParameters = (updateParameters: string) => {
+export const decodeUpdateParameters = (updateParameters: string): DecodedUpdateParameters => {
   // https://github.com/api3dao/airnode-protocol-v1/blob/5f861715749e182e334c273d6a52c4f2560c7994/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L122
   const [deviationThresholdInPercentage, deviationReference, heartbeatInterval] = ethers.utils.defaultAbiCoder.decode(
     ['uint256', 'int224', 'uint256'],
@@ -77,17 +81,28 @@ export const decodeUpdateParameters = (updateParameters: string) => {
   };
 };
 
+export interface DecodedActiveDataFeedResponse {
+  dapiName: string | null;
+  decodedDapiName: string | null;
+  decodedUpdateParameters: DecodedUpdateParameters;
+  dataFeedValue: ethers.BigNumber;
+  dataFeedTimestamp: number;
+  decodedDataFeed: DecodedDataFeed;
+  signedApiUrls: string[];
+}
+
 export const decodeActiveDataFeedResponse = (
   airseekerRegistry: AirseekerRegistry,
   activeDataFeedReturndata: string
-) => {
+): DecodedActiveDataFeedResponse | null => {
   const { dapiName, updateParameters, dataFeedValue, dataFeedTimestamp, dataFeedDetails, signedApiUrls } =
     airseekerRegistry.interface.decodeFunctionResult('activeDataFeed', activeDataFeedReturndata) as Awaited<
       ReturnType<AirseekerRegistry['activeDataFeed']>
     >;
 
-  // https://github.com/api3dao/dapi-management/pull/3/files#diff-b6941851ebc92dc9691bbf0cb701fe9c4595cb78488c3bb92ad6e4b917719f4fR346
+  // https://github.com/api3dao/dapi-management/blob/f3d39e4707c33c075a8f07aa8f8369f8dc07736f/contracts/AirseekerRegistry.sol#L162
   const decodedDataFeed = decodeDataFeedDetails(dataFeedDetails);
+  if (!decodedDataFeed) return null;
 
   // The dAPI name will be set to zero (in bytes32) in case the data feed is not a dAPI and is identified by a data feed
   // ID.
@@ -103,5 +118,3 @@ export const decodeActiveDataFeedResponse = (
     signedApiUrls,
   };
 };
-
-export type DecodedActiveDataFeedResponse = ReturnType<typeof decodeActiveDataFeedResponse>;
