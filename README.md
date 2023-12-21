@@ -33,12 +33,12 @@ To release a new version:
 2. `contracts:compile:force` - Build the latest Typechain artifacts.
 3. `pnpm version [major|minor|patch]` - Choose the right version bump. This will bump the version, create a git tag and
    commit it.
-4. Build the docker image with tag `api3/signed-api:latest`. If running on Linux, use `pnpm run docker:build` otherwise
+4. Build the docker image with tag `api3/airseeker:latest`. If running on Linux, use `pnpm run docker:build` otherwise
    use `pnpm run docker:build:amd64`.
-5. `docker tag api3/signed-api:latest api3/signed-api:<MAJOR.MINOR.PATCH>` - Tag the image with the version. Replace the
+5. `docker tag api3/airseeker:latest api3/airseeker:<MAJOR.MINOR.PATCH>` - Tag the image with the version. Replace the
    `<MAJOR.MINOR.PATCH>` with the version you just bumped (copy it from `package.json`).
-6. `docker push api3/signed-api:latest && docker push api3/signed-api:<MAJOR.MINOR.PATCH>` - Push the image upstream.
-   Both the latest and the versioned tag should be published.
+6. `docker push api3/airseeker:latest && docker push api3/airseeker:<MAJOR.MINOR.PATCH>` - Push the image upstream. Both
+   the latest and the versioned tag should be published.
 7. `git push --follow-tags` - Push the tagged commit upstream.
 
 ## Configuration
