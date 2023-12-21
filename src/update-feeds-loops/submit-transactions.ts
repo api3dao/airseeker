@@ -5,7 +5,7 @@ import { ethers } from 'ethers';
 import { getRecommendedGasPrice, setSponsorLastUpdateTimestamp } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { ChainId, ProviderName } from '../types';
+import type { ChainId, DapiNameOrDataFeedId, ProviderName } from '../types';
 import { deriveSponsorWallet } from '../utils';
 
 import type { UpdatableDataFeed } from './get-updatable-feeds';
@@ -164,19 +164,19 @@ export const estimateMulticallGasLimit = async (
   return ethers.BigNumber.from(fallbackGasLimit);
 };
 
-export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, sponsorAddress: string) => {
+export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDataFeedId: DapiNameOrDataFeedId) => {
   const { derivedSponsorWallets } = getState();
 
-  const privateKey = derivedSponsorWallets?.[sponsorAddress];
+  const privateKey = derivedSponsorWallets?.[dapiNameOrDataFeedId];
   if (privateKey) {
     return new ethers.Wallet(privateKey);
   }
 
-  const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, sponsorAddress);
+  const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiNameOrDataFeedId);
   logger.debug('Derived new sponsor wallet.', { sponsorWalletAddress: sponsorWallet.address });
 
   updateState((draft) => {
-    draft.derivedSponsorWallets[sponsorAddress] = sponsorWallet.privateKey;
+    draft.derivedSponsorWallets[dapiNameOrDataFeedId] = sponsorWallet.privateKey;
   });
 
   return sponsorWallet;

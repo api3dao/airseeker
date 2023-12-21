@@ -18,7 +18,7 @@ describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
 
     const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
       mockApi3ServerV1 as unknown as Api3ServerV1,
-      ['0xbeaconId1Calldata', '0xbeaconId2Calldata', '0xbeaconSetCalldata'],
+      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
       undefined
     );
 
@@ -31,7 +31,7 @@ describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
 
     const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
       mockApi3ServerV1 as unknown as Api3ServerV1,
-      ['0xbeaconId1Calldata', '0xbeaconId2Calldata', '0xbeaconSetCalldata'],
+      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
       2_000_000
     );
 
@@ -45,7 +45,7 @@ describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
     await expect(async () =>
       submitTransactionsModule.estimateMulticallGasLimit(
         mockApi3ServerV1 as unknown as Api3ServerV1,
-        ['0xbeaconId1Calldata', '0xbeaconId2Calldata', '0xbeaconSetCalldata'],
+        ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
         undefined
       )
     ).rejects.toStrictEqual(new Error('Unable to estimate gas limit'));
@@ -353,7 +353,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
         dataFeedInfo: {
           dapiName,
           decodedDataFeed: {
-            dataFeedId: '0xbeaconSetId',
+            dataFeedId: '0xBeaconSetId',
           },
         },
       })
