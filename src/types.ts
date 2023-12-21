@@ -9,7 +9,7 @@ export type BeaconId = EvmId;
 export type ChainId = string;
 export type ProviderName = string;
 export type SignedApiUrl = string;
-export type SponsorAddress = string;
+export type DapiNameOrDataFeedId = string;
 
 // Taken from https://github.com/api3dao/signed-api/blob/main/packages/api/src/schema.ts
 export const signedDataSchema = z.object({

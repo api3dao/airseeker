@@ -10,7 +10,7 @@ import type {
   ProviderName,
   SignedApiUrl,
   AirnodeAddress,
-  SponsorAddress,
+  DapiNameOrDataFeedId,
 } from '../types';
 
 interface GasState {
@@ -21,7 +21,7 @@ interface GasState {
 export interface State {
   config: Config;
   gasPrices: Record<ChainId, Record<ProviderName, GasState>>;
-  derivedSponsorWallets: Record<SponsorAddress, PrivateKey>;
+  derivedSponsorWallets: Record<DapiNameOrDataFeedId, PrivateKey>;
   signedDatas: Record<BeaconId, SignedData>;
   signedApiUrls: Record<ChainId, Record<ProviderName, Record<AirnodeAddress, SignedApiUrl>>>;
 }
