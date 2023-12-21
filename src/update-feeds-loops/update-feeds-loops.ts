@@ -112,10 +112,11 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
           const firstBatch = activeDataFeedCallsReturndata
             // Because the activeDataFeedCount is not known during the multicall, we may ask for non-existent data feeds. These should be filtered out.
             .slice(0, activeDataFeedCount)
-            .map((dataFeedReturndata) => ({
-              ...decodeActiveDataFeedResponse(airseekerRegistry, dataFeedReturndata),
-              chainId,
-            }));
+            .map((dataFeedReturndata) => decodeActiveDataFeedResponse(airseekerRegistry, dataFeedReturndata))
+            .filter((dataFeed, dataFeedIndex): dataFeed is DecodedActiveDataFeedResponse => {
+              logger.warn(`Data feed not registered.`, { dataFeedIndex });
+              return dataFeed !== null;
+            });
           return {
             firstBatch,
             activeDataFeedCount,
@@ -169,7 +170,12 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
             await airseekerRegistry.callStatic.tryMulticall(activeDataFeedCalldatas)
           );
 
-          return returndata.map((returndata) => decodeActiveDataFeedResponse(airseekerRegistry, returndata));
+          return returndata
+            .map((returndata) => decodeActiveDataFeedResponse(airseekerRegistry, returndata))
+            .filter((dataFeed, index): dataFeed is DecodedActiveDataFeedResponse => {
+              logger.warn(`Data feed not registered.`, { dataFeedIndex: dataFeedBatchIndexStart + index });
+              return dataFeed !== null;
+            });
         });
         if (!goBatch.success) {
           logger.error(`Failed to get active data feeds batch.`, goBatch.error);

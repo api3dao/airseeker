@@ -181,12 +181,12 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     const decodedFirstDataFeed = {
       ...omit(firstDataFeed, ['dataFeedDetails', 'updateParameters']),
       decodedUpdateParameters: contractsModule.decodeUpdateParameters(firstDataFeed.updateParameters),
-      decodedDataFeed: contractsModule.decodeDataFeedDetails(firstDataFeed.dataFeedDetails),
+      decodedDataFeed: contractsModule.decodeDataFeedDetails(firstDataFeed.dataFeedDetails)!,
     };
     const decodedThirdDataFeed = {
       ...omit(thirdDataFeed, ['dataFeedDetails', 'updateParameters']),
       decodedUpdateParameters: contractsModule.decodeUpdateParameters(thirdDataFeed.updateParameters),
-      decodedDataFeed: contractsModule.decodeDataFeedDetails(thirdDataFeed.dataFeedDetails),
+      decodedDataFeed: contractsModule.decodeDataFeedDetails(thirdDataFeed.dataFeedDetails)!,
     };
     const airseekerRegistry = generateMockAirseekerRegistry();
     jest
@@ -343,7 +343,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
 describe(updateFeedsLoopsModule.processBatch.name, () => {
   it('applies deviationThresholdCoefficient from config', async () => {
     const dataFeed = generateActiveDataFeedResponse();
-    const decodedDataFeed = contractsModule.decodeDataFeedDetails(dataFeed.dataFeedDetails);
+    const decodedDataFeed = contractsModule.decodeDataFeedDetails(dataFeed.dataFeedDetails)!;
     const decodedUpdateParameters = contractsModule.decodeUpdateParameters(dataFeed.updateParameters);
     const activeDataFeed = {
       ...omit(dataFeed, ['dataFeedDetails', 'updateParameters']),

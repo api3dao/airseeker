@@ -49,7 +49,7 @@ it('updates blockchain data', async () => {
   initializeGasState(chainId, providerName);
   const btcDataFeed = await airseekerRegistry.activeDataFeed(0);
 
-  const decodedDataFeed = decodeDataFeedDetails(btcDataFeed.dataFeedDetails);
+  const decodedDataFeed = decodeDataFeedDetails(btcDataFeed.dataFeedDetails)!;
   const activeBtcDataFeed = {
     ...omit(btcDataFeed, ['dataFeedDetails', 'updateParameters']),
     decodedUpdateParameters: decodeUpdateParameters(btcDataFeed.updateParameters),
