@@ -206,7 +206,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     await tx.wait();
     tx = await airseekerRegistry
       .connect(deployerAndManager)
-      .setUpdateParametersWithDapiName(
+      .setDapiNameUpdateParameters(
         dapiName,
         ethers.utils.defaultAbiCoder.encode(
           ['uint256', 'uint256', 'uint256'],
