@@ -699,12 +699,13 @@
       document.getElementById('activeDataFeedCount').innerHTML = activeDataFeedCount;
       let newActiveDataFeedsHtml = '';
       for (let i = 0; i < activeDataFeedCount; i++) {
-        const { dapiName, updateParameters, dataFeedValue, dataFeedDetails, signedApiUrls } =
+        const { dataFeedId, dapiName, updateParameters, dataFeedValue, dataFeedDetails, signedApiUrls } =
           await airseekerRegistry.activeDataFeed(i);
         const { deviationReference, deviationThresholdInPercentage, heartbeatInterval } =
           decodeUpdateParameters(updateParameters);
         const { value, timestamp } = dataFeedValue;
         const dataFeed = {
+          dataFeedId,
           dapiName,
           updateParameters: {
             deviationReference: deviationReference.toString(),
