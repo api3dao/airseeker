@@ -149,7 +149,10 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   );
   await api3ServerV1.deployTransaction.wait();
   const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager as Signer);
-  const airseekerRegistry = await airseekerRegistryFactory.deploy(api3ServerV1.address);
+  const airseekerRegistry = await airseekerRegistryFactory.deploy(
+    await (deployerAndManager as Signer).getAddress(),
+    api3ServerV1.address
+  );
   await airseekerRegistry.deployTransaction.wait();
 
   // Create templates
