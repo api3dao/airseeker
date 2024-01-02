@@ -25,551 +25,658 @@
   ></script>
   <script>
     const airseekerRegistryAbi = [
-      {
-        inputs: [
-          {
-            internalType: 'address',
-            name: 'api3ServerV1_',
-            type: 'address',
-          },
-        ],
-        stateMutability: 'nonpayable',
-        type: 'constructor',
-      },
-      {
-        anonymous: false,
-        inputs: [
-          {
-            indexed: true,
-            internalType: 'bytes32',
-            name: 'dataFeedIdOrDapiName',
-            type: 'bytes32',
-          },
-        ],
-        name: 'ActivatedDataFeedIdOrDapiName',
-        type: 'event',
-      },
-      {
-        anonymous: false,
-        inputs: [
-          {
-            indexed: true,
-            internalType: 'bytes32',
-            name: 'dataFeedIdOrDapiName',
-            type: 'bytes32',
-          },
-        ],
-        name: 'DeactivatedDataFeedIdOrDapiName',
-        type: 'event',
-      },
-      {
-        anonymous: false,
-        inputs: [
-          {
-            indexed: true,
-            internalType: 'address',
-            name: 'previousOwner',
-            type: 'address',
-          },
-          {
-            indexed: true,
-            internalType: 'address',
-            name: 'newOwner',
-            type: 'address',
-          },
-        ],
-        name: 'OwnershipTransferred',
-        type: 'event',
-      },
-      {
-        anonymous: false,
-        inputs: [
-          {
-            indexed: true,
-            internalType: 'bytes32',
-            name: 'dataFeedId',
-            type: 'bytes32',
-          },
-          {
-            indexed: false,
-            internalType: 'bytes',
-            name: 'dataFeedDetails',
-            type: 'bytes',
-          },
-        ],
-        name: 'RegisteredDataFeed',
-        type: 'event',
-      },
-      {
-        anonymous: false,
-        inputs: [
-          {
-            indexed: true,
-            internalType: 'address',
-            name: 'airnode',
-            type: 'address',
-          },
-          {
-            indexed: false,
-            internalType: 'string',
-            name: 'signedApiUrl',
-            type: 'string',
-          },
-        ],
-        name: 'SetSignedApiUrl',
-        type: 'event',
-      },
-      {
-        anonymous: false,
-        inputs: [
-          {
-            indexed: true,
-            internalType: 'bytes32',
-            name: 'dapiName',
-            type: 'bytes32',
-          },
-          {
-            indexed: false,
-            internalType: 'bytes',
-            name: 'updateParameters',
-            type: 'bytes',
-          },
-        ],
-        name: 'SetUpdateParametersWithDapiName',
-        type: 'event',
-      },
-      {
-        anonymous: false,
-        inputs: [
-          {
-            indexed: true,
-            internalType: 'bytes32',
-            name: 'dataFeedId',
-            type: 'bytes32',
-          },
-          {
-            indexed: false,
-            internalType: 'bytes',
-            name: 'updateParameters',
-            type: 'bytes',
-          },
-        ],
-        name: 'SetUpdateParametersWithDataFeedId',
-        type: 'event',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'bytes32',
-            name: 'dataFeedIdOrDapiName',
-            type: 'bytes32',
-          },
-        ],
-        name: 'activateDataFeedIdOrDapiName',
-        outputs: [],
-        stateMutability: 'nonpayable',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'uint256',
-            name: 'index',
-            type: 'uint256',
-          },
-        ],
-        name: 'activeDataFeed',
-        outputs: [
-          {
-            internalType: 'bytes32',
-            name: 'dapiName',
-            type: 'bytes32',
-          },
-          {
-            internalType: 'bytes',
-            name: 'dataFeedDetails',
-            type: 'bytes',
-          },
-          {
-            internalType: 'int224',
-            name: 'dataFeedValue',
-            type: 'int224',
-          },
-          {
-            internalType: 'uint32',
-            name: 'dataFeedTimestamp',
-            type: 'uint32',
-          },
-          {
-            internalType: 'bytes',
-            name: 'updateParameters',
-            type: 'bytes',
-          },
-          {
-            internalType: 'string[]',
-            name: 'signedApiUrls',
-            type: 'string[]',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [],
-        name: 'activeDataFeedCount',
-        outputs: [
-          {
-            internalType: 'uint256',
-            name: '',
-            type: 'uint256',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'uint256',
-            name: 'index',
-            type: 'uint256',
-          },
-        ],
-        name: 'activeDataFeedIdOrDapiName',
-        outputs: [
-          {
-            internalType: 'bytes32',
-            name: '',
-            type: 'bytes32',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'address',
-            name: '',
-            type: 'address',
-          },
-        ],
-        name: 'airnodeToSignedApiUrl',
-        outputs: [
-          {
-            internalType: 'string',
-            name: '',
-            type: 'string',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [],
-        name: 'api3ServerV1',
-        outputs: [
-          {
-            internalType: 'address',
-            name: '',
-            type: 'address',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'address',
-            name: 'account',
-            type: 'address',
-          },
-        ],
-        name: 'containsBytecode',
-        outputs: [
-          {
-            internalType: 'bool',
-            name: '',
-            type: 'bool',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'bytes32',
-            name: '',
-            type: 'bytes32',
-          },
-        ],
-        name: 'dataFeedIdOrDapiNameHashToUpdateParameters',
-        outputs: [
-          {
-            internalType: 'bytes',
-            name: '',
-            type: 'bytes',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'bytes32',
-            name: '',
-            type: 'bytes32',
-          },
-        ],
-        name: 'dataFeedIdToDetails',
-        outputs: [
-          {
-            internalType: 'bytes',
-            name: '',
-            type: 'bytes',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'bytes32',
-            name: 'dataFeedIdOrDapiName',
-            type: 'bytes32',
-          },
-        ],
-        name: 'deactivateDataFeedIdOrDapiName',
-        outputs: [],
-        stateMutability: 'nonpayable',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'address',
-            name: 'account',
-            type: 'address',
-          },
-        ],
-        name: 'getBalance',
-        outputs: [
-          {
-            internalType: 'uint256',
-            name: '',
-            type: 'uint256',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [],
-        name: 'getBlockBasefee',
-        outputs: [
-          {
-            internalType: 'uint256',
-            name: '',
-            type: 'uint256',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [],
-        name: 'getBlockNumber',
-        outputs: [
-          {
-            internalType: 'uint256',
-            name: '',
-            type: 'uint256',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [],
-        name: 'getBlockTimestamp',
-        outputs: [
-          {
-            internalType: 'uint256',
-            name: '',
-            type: 'uint256',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [],
-        name: 'getChainId',
-        outputs: [
-          {
-            internalType: 'uint256',
-            name: '',
-            type: 'uint256',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'bytes[]',
-            name: 'data',
-            type: 'bytes[]',
-          },
-        ],
-        name: 'multicall',
-        outputs: [
-          {
-            internalType: 'bytes[]',
-            name: 'returndata',
-            type: 'bytes[]',
-          },
-        ],
-        stateMutability: 'nonpayable',
-        type: 'function',
-      },
-      {
-        inputs: [],
-        name: 'owner',
-        outputs: [
-          {
-            internalType: 'address',
-            name: '',
-            type: 'address',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'bytes',
-            name: 'dataFeedDetails',
-            type: 'bytes',
-          },
-        ],
-        name: 'registerDataFeed',
-        outputs: [
-          {
-            internalType: 'bytes32',
-            name: 'dataFeedId',
-            type: 'bytes32',
-          },
-        ],
-        stateMutability: 'nonpayable',
-        type: 'function',
-      },
-      {
-        inputs: [],
-        name: 'renounceOwnership',
-        outputs: [],
-        stateMutability: 'nonpayable',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'address',
-            name: 'airnode',
-            type: 'address',
-          },
-          {
-            internalType: 'string',
-            name: 'signedApiUrl',
-            type: 'string',
-          },
-        ],
-        name: 'setSignedApiUrl',
-        outputs: [],
-        stateMutability: 'nonpayable',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'bytes32',
-            name: 'dapiName',
-            type: 'bytes32',
-          },
-          {
-            internalType: 'bytes',
-            name: 'updateParameters',
-            type: 'bytes',
-          },
-        ],
-        name: 'setUpdateParametersWithDapiName',
-        outputs: [],
-        stateMutability: 'nonpayable',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'bytes32',
-            name: 'dataFeedId',
-            type: 'bytes32',
-          },
-          {
-            internalType: 'bytes',
-            name: 'updateParameters',
-            type: 'bytes',
-          },
-        ],
-        name: 'setUpdateParametersWithDataFeedId',
-        outputs: [],
-        stateMutability: 'nonpayable',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'address',
-            name: 'newOwner',
-            type: 'address',
-          },
-        ],
-        name: 'transferOwnership',
-        outputs: [],
-        stateMutability: 'nonpayable',
-        type: 'function',
-      },
-      {
-        inputs: [
-          {
-            internalType: 'bytes[]',
-            name: 'data',
-            type: 'bytes[]',
-          },
-        ],
-        name: 'tryMulticall',
-        outputs: [
-          {
-            internalType: 'bool[]',
-            name: 'successes',
-            type: 'bool[]',
-          },
-          {
-            internalType: 'bytes[]',
-            name: 'returndata',
-            type: 'bytes[]',
-          },
-        ],
-        stateMutability: 'nonpayable',
-        type: 'function',
-      },
-    ];
-
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "api3ServerV1_",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "dapiName",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ActivatedDapiName",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "dataFeedId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ActivatedDataFeedId",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "dapiName",
+          "type": "bytes32"
+        }
+      ],
+      "name": "DeactivatedDapiName",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "dataFeedId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "DeactivatedDataFeedId",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "dataFeedId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "dataFeedDetails",
+          "type": "bytes"
+        }
+      ],
+      "name": "RegisteredDataFeed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "dapiName",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "updateParameters",
+          "type": "bytes"
+        }
+      ],
+      "name": "UpdatedDapiNameUpdateParameters",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "dataFeedId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "updateParameters",
+          "type": "bytes"
+        }
+      ],
+      "name": "UpdatedDataFeedIdUpdateParameters",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "airnode",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "signedApiUrl",
+          "type": "string"
+        }
+      ],
+      "name": "UpdatedSignedApiUrl",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "activeDapiNameCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "index",
+          "type": "uint256"
+        }
+      ],
+      "name": "activeDataFeed",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "dataFeedId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "dapiName",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes",
+          "name": "dataFeedDetails",
+          "type": "bytes"
+        },
+        {
+          "internalType": "int224",
+          "name": "dataFeedValue",
+          "type": "int224"
+        },
+        {
+          "internalType": "uint32",
+          "name": "dataFeedTimestamp",
+          "type": "uint32"
+        },
+        {
+          "internalType": "bytes",
+          "name": "updateParameters",
+          "type": "bytes"
+        },
+        {
+          "internalType": "string[]",
+          "name": "signedApiUrls",
+          "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "activeDataFeedCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "activeDataFeedIdCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "airnodeToSignedApiUrl",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "api3ServerV1",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "containsBytecode",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "dapiName",
+          "type": "bytes32"
+        }
+      ],
+      "name": "dapiNameToUpdateParameters",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "updateParameters",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "dataFeedIdToDetails",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "dataFeedId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "dataFeedIdToUpdateParameters",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "updateParameters",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "dataFeedId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "dataFeedIsRegistered",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "getBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getBlockBasefee",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getBlockNumber",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getBlockTimestamp",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getChainId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes[]",
+          "name": "data",
+          "type": "bytes[]"
+        }
+      ],
+      "name": "multicall",
+      "outputs": [
+        {
+          "internalType": "bytes[]",
+          "name": "returndata",
+          "type": "bytes[]"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "dataFeedDetails",
+          "type": "bytes"
+        }
+      ],
+      "name": "registerDataFeed",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "dataFeedId",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "dapiName",
+          "type": "bytes32"
+        }
+      ],
+      "name": "setDapiNameToBeActivated",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "dapiName",
+          "type": "bytes32"
+        }
+      ],
+      "name": "setDapiNameToBeDeactivated",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "dapiName",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes",
+          "name": "updateParameters",
+          "type": "bytes"
+        }
+      ],
+      "name": "setDapiNameUpdateParameters",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "dataFeedId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "setDataFeedIdToBeActivated",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "dataFeedId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "setDataFeedIdToBeDeactivated",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "dataFeedId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes",
+          "name": "updateParameters",
+          "type": "bytes"
+        }
+      ],
+      "name": "setDataFeedIdUpdateParameters",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "airnode",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "signedApiUrl",
+          "type": "string"
+        }
+      ],
+      "name": "setSignedApiUrl",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes[]",
+          "name": "data",
+          "type": "bytes[]"
+        }
+      ],
+      "name": "tryMulticall",
+      "outputs": [
+        {
+          "internalType": "bool[]",
+          "name": "successes",
+          "type": "bool[]"
+        },
+        {
+          "internalType": "bytes[]",
+          "name": "returndata",
+          "type": "bytes[]"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ];
+  
     // Configuration
     const urlParams = new URLSearchParams(window.location.search);
     const rpcUrl = urlParams.get('rpcUrl'),

@@ -141,7 +141,10 @@ export const deployAndUpdate = async () => {
     deployerAndManager!.address
   );
   const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager as Signer);
-  const airseekerRegistry = await airseekerRegistryFactory.deploy(api3ServerV1.address);
+  const airseekerRegistry = await airseekerRegistryFactory.deploy(
+    await (deployerAndManager as Signer).getAddress(),
+    api3ServerV1.address
+  );
 
   // Initialize special wallet for contract initialization
   const airseekerInitializationWallet = ethers.Wallet.createRandom().connect(ethers.provider);
@@ -243,7 +246,7 @@ export const deployAndUpdate = async () => {
     const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
     await airseekerRegistry
       .connect(deployerAndManager!)
-      .setUpdateParametersWithDapiName(
+      .setDapiNameUpdateParameters(
         dapiName,
         ethers.utils.defaultAbiCoder.encode(
           ['uint256', 'uint256', 'uint256'],
@@ -251,7 +254,7 @@ export const deployAndUpdate = async () => {
         )
       );
     await api3ServerV1.connect(deployerAndManager!).setDapiName(dapiName, beaconSetId);
-    await airseekerRegistry.connect(deployerAndManager!).activateDataFeedIdOrDapiName(dapiName);
+    await airseekerRegistry.connect(deployerAndManager!).setDapiNameToBeActivated(dapiName);
 
     // Initialize sponsor wallets
     const sponsorWallet = deriveSponsorWallet(airseekerWallet.mnemonic.phrase, dapiName);
