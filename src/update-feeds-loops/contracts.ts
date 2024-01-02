@@ -37,9 +37,9 @@ export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null 
   // https://github.com/api3dao/dapi-management/blob/f3d39e4707c33c075a8f07aa8f8369f8dc07736f/contracts/AirseekerRegistry.sol#L209
   if (dataFeed === '0x') return null;
 
-  if (dataFeed.length === 130) {
-    // (64 [actual bytes] * 2[hex encoding] ) + 2 [for the '0x' preamble]
-    // This is a hex encoded string, the contract works with bytes directly
+  // This is a hex encoded string, the contract works with bytes directly
+  // 2 characters for the '0x' preamble + 32 * 2 hexadecimals for 32 bytes + 32 * 2 hexadecimals for 32 bytes
+  if (dataFeed.length === 2 + 32 * 2 + 32 * 2) {
     const [airnodeAddress, templateId] = ethers.utils.defaultAbiCoder.decode(['address', 'bytes32'], dataFeed);
 
     const dataFeedId = deriveBeaconId(airnodeAddress, templateId)!;
@@ -73,6 +73,10 @@ export const decodeUpdateParameters = (updateParameters: string): DecodedUpdateP
     ['uint256', 'int224', 'uint256'],
     updateParameters
   );
+  // 2 characters for the '0x' preamble + 3 parameters, 32 * 2 hexadecimals for 32 bytes each
+  if (updateParameters.length !== 2 + 3 * (32 * 2)) {
+    throw new Error(`Unexpected trailing data in update parameters`);
+  }
 
   return {
     deviationReference,

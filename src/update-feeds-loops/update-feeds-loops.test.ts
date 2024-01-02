@@ -160,7 +160,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
         dataFeedUpdateInterval: 10,
         providers: { ['provider-name']: { url: 'provider-url' } },
         contracts: {
-          AirseekerRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
         },
       }),
       '123'
@@ -249,7 +249,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
         dataFeedUpdateInterval: 0.15,
         providers: { ['provider-name']: { url: 'provider-url' } },
         contracts: {
-          AirseekerRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
         },
       }),
       '31337'
@@ -325,7 +325,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
         dataFeedUpdateInterval: 0.1,
         providers: { ['provider-name']: { url: 'provider-url' } },
         contracts: {
-          AirseekerRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
         },
       }),
       '31337'
