@@ -20,6 +20,7 @@ module.exports = {
   rules: {
     'unicorn/prefer-top-level-await': 'off',
     'unicorn/no-process-exit': 'off',
+    '@typescript-eslint/max-params': 'off',
 
     // Typescript
     '@typescript-eslint/no-var-requires': 'off',
