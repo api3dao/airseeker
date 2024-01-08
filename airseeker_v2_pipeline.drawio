@@ -1,13 +1,13 @@
-<mxfile host="app.diagrams.net" modified="2023-11-09T08:39:31.290Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36" etag="yRIwGNZNJzACz53eiixr" version="22.1.0" type="device">
+<mxfile host="app.diagrams.net" modified="2023-12-21T19:45:16.966Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" etag="rNfqhbre3VsZqO3wsoVr" version="22.1.11" type="device">
   <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
-    <mxGraphModel dx="1259" dy="680" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="4681" math="0" shadow="0">
+    <mxGraphModel dx="1259" dy="676" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="4681" math="0" shadow="0">
       <root>
         <mxCell id="WIyWlLk6GJQsqaUBKTNV-0" />
         <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0" />
         <mxCell id="ci7EG28U3f9VGxeywyoC-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-28" target="ci7EG28U3f9VGxeywyoC-34" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="HytMPlxkX1mnba_mCnJT-0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-28" target="ci7EG28U3f9VGxeywyoC-115">
+        <mxCell id="HytMPlxkX1mnba_mCnJT-0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-28" target="ci7EG28U3f9VGxeywyoC-115" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="ci7EG28U3f9VGxeywyoC-28" value="Repeat indefinitely, after every&lt;br&gt;&lt;i&gt;signedDataFetchInterval.&lt;br&gt;&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
@@ -71,7 +71,7 @@
         <mxCell id="ci7EG28U3f9VGxeywyoC-60" value="for each batch&lt;br&gt;in a single RPC call&lt;br&gt;in a staggered way" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-53" target="ci7EG28U3f9VGxeywyoC-57" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="ci7EG28U3f9VGxeywyoC-53" value="Multicall to get the first batch of active dAPIs along with the total count of active dAPIs." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+        <mxCell id="ci7EG28U3f9VGxeywyoC-53" value="Multicall to get the first batch of active data feeds along with their count." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="880" y="1479" width="240" height="80" as="geometry" />
         </mxCell>
         <mxCell id="ci7EG28U3f9VGxeywyoC-55" value="fetch&amp;nbsp;from" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-53" target="ci7EG28U3f9VGxeywyoC-56" edge="1">
@@ -82,7 +82,7 @@
         <mxCell id="ci7EG28U3f9VGxeywyoC-56" value="Chain" style="rhombus;whiteSpace=wrap;html=1;rounded=1;glass=0;strokeWidth=1;shadow=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="960" y="1639" width="80" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="ci7EG28U3f9VGxeywyoC-70" value="for all active dAPIs&lt;br&gt;in the batch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-57" target="ci7EG28U3f9VGxeywyoC-69" edge="1">
+        <mxCell id="ci7EG28U3f9VGxeywyoC-70" value="for all active data&lt;br&gt;feeds in the batch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-57" target="ci7EG28U3f9VGxeywyoC-69" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="ci7EG28U3f9VGxeywyoC-57" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
@@ -102,7 +102,7 @@
         <mxCell id="ci7EG28U3f9VGxeywyoC-62" value="Call signed API URL." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="900" y="820" width="240" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="ci7EG28U3f9VGxeywyoC-69" value="Persist the Airnode addresses, template IDs, signed API URLs and on-chain values for these dAPIs." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+        <mxCell id="ci7EG28U3f9VGxeywyoC-69" value="Persist the Airnode addresses, template IDs, signed API URLs and on-chain values for these data feeds." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="1680" y="1479" width="240" height="80" as="geometry" />
         </mxCell>
         <mxCell id="ci7EG28U3f9VGxeywyoC-74" value="write to" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-69" target="ci7EG28U3f9VGxeywyoC-75" edge="1">
@@ -113,7 +113,7 @@
         <mxCell id="ci7EG28U3f9VGxeywyoC-75" value="State" style="ellipse;whiteSpace=wrap;html=1;rounded=1;glass=0;strokeWidth=1;shadow=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="1760" y="1639" width="80" height="81" as="geometry" />
         </mxCell>
-        <mxCell id="ci7EG28U3f9VGxeywyoC-87" value="for all dAPIs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" target="ci7EG28U3f9VGxeywyoC-86" edge="1">
+        <mxCell id="ci7EG28U3f9VGxeywyoC-87" value="for all data feeds" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" target="ci7EG28U3f9VGxeywyoC-86" edge="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="1920" y="1520" as="sourcePoint" />
           </mxGeometry>
@@ -121,19 +121,19 @@
         <mxCell id="ci7EG28U3f9VGxeywyoC-78" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="1290" y="1490" width="240" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="ci7EG28U3f9VGxeywyoC-79" value="Fetch the rest of the active dAPI batches together with Airnode address, template ID(s), signed API URLs and on chain values." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+        <mxCell id="ci7EG28U3f9VGxeywyoC-79" value="Fetch the rest of the active data feed batches together with Airnode address, template ID(s), signed API URLs and on chain values." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="1300" y="1499" width="240" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="ci7EG28U3f9VGxeywyoC-89" value="if there is any dAPI &lt;br&gt;to be updated" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-86" target="ci7EG28U3f9VGxeywyoC-88" edge="1">
+        <mxCell id="ci7EG28U3f9VGxeywyoC-89" value="if there is any data feed&lt;br&gt;to be updated" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-86" target="ci7EG28U3f9VGxeywyoC-88" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="ci7EG28U3f9VGxeywyoC-86" value="Determine which dAPIs need to &lt;br&gt;be updated." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+        <mxCell id="ci7EG28U3f9VGxeywyoC-86" value="Determine which data feeds need to &lt;br&gt;be updated." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="2080" y="1480" width="240" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="ci7EG28U3f9VGxeywyoC-91" value="for each dAPI that needs &lt;br&gt;to be updated" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-88" target="ci7EG28U3f9VGxeywyoC-90" edge="1">
+        <mxCell id="ci7EG28U3f9VGxeywyoC-91" value="for each data feed that &lt;br&gt;needs to be updated" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-88" target="ci7EG28U3f9VGxeywyoC-90" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="ci7EG28U3f9VGxeywyoC-88" value="Run gas collector and calculate gas price&lt;br&gt;(once for all dAPIs)." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+        <mxCell id="ci7EG28U3f9VGxeywyoC-88" value="Run gas collector and calculate gas price&lt;br&gt;(once for all data feeds)." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="2480" y="1480" width="240" height="80" as="geometry" />
         </mxCell>
         <mxCell id="ci7EG28U3f9VGxeywyoC-97" value="for each update &lt;br&gt;transaction" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-90" target="ci7EG28U3f9VGxeywyoC-96" edge="1">

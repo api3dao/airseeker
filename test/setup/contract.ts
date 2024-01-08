@@ -5,14 +5,10 @@ import {
   Api3ServerV1__factory as Api3ServerV1Factory,
 } from '@api3/airnode-protocol-v1';
 import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import type { Signer, Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 
-import {
-  DapiDataRegistry__factory as DapiDataRegistryFactory,
-  HashRegistry__factory as HashRegistryFactory,
-} from '../../src/typechain-types';
+import { AirseekerRegistry__factory as AirseekerRegistryFactory } from '../../src/typechain-types';
 import { deriveBeaconId, deriveSponsorWallet, encodeDapiName } from '../../src/utils';
 import { generateTestConfig } from '../fixtures/mock-config';
 import { signData } from '../utils';
@@ -132,69 +128,23 @@ const initializeBeacon = async (
 };
 
 export const deployAndUpdate = async () => {
-  const [
-    deployer,
-    manager,
-    registryOwner,
-    api3MarketContract,
-    rootSigner1,
-    rootSigner2,
-    rootSigner3,
-    randomPerson,
-    walletFunder,
-  ] = await ethers.getSigners();
+  const [deployerAndManager, randomPerson, walletFunder] = await ethers.getSigners();
 
   // Deploy contracts
-  const accessControlRegistryFactory = new AccessControlRegistryFactory(deployer as Signer);
+  const accessControlRegistryFactory = new AccessControlRegistryFactory(deployerAndManager as Signer);
   const accessControlRegistry = await accessControlRegistryFactory.deploy();
-  const api3ServerV1Factory = new Api3ServerV1Factory(deployer as Signer);
+  const api3ServerV1Factory = new Api3ServerV1Factory(deployerAndManager as Signer);
   const api3ServerV1AdminRoleDescription = 'Api3ServerV1 admin';
   const api3ServerV1 = await api3ServerV1Factory.deploy(
     accessControlRegistry.address,
     api3ServerV1AdminRoleDescription,
-    manager!.address
+    deployerAndManager!.address
   );
-  const hashRegistryFactory = new HashRegistryFactory(deployer as Signer);
-  const hashRegistry = await hashRegistryFactory.deploy();
-  await hashRegistry.connect(deployer!).transferOwnership(registryOwner!.address);
-  const dapiDataRegistryFactory = new DapiDataRegistryFactory(deployer as Signer);
-  const dapiDataRegistryAdminRoleDescription = 'DapiDataRegistry admin';
-  const dapiDataRegistry = await dapiDataRegistryFactory.deploy(
-    accessControlRegistry.address,
-    dapiDataRegistryAdminRoleDescription,
-    manager!.address,
-    hashRegistry.address,
+  const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager as Signer);
+  const airseekerRegistry = await airseekerRegistryFactory.deploy(
+    await (deployerAndManager as Signer).getAddress(),
     api3ServerV1.address
   );
-
-  // Set up roles
-  const rootRole = deriveRootRole(manager!.address);
-  const dapiDataRegistryAdminRole = deriveRole(rootRole, dapiDataRegistryAdminRoleDescription);
-  const dapiAdderRoleDescription = await dapiDataRegistry.DAPI_ADDER_ROLE_DESCRIPTION();
-  const dapiAdderRole = deriveRole(dapiDataRegistryAdminRole, dapiAdderRoleDescription);
-  const dapiRemoverRoleDescription = await dapiDataRegistry.DAPI_REMOVER_ROLE_DESCRIPTION();
-  await accessControlRegistry
-    .connect(manager!)
-    .initializeRoleAndGrantToSender(rootRole, dapiDataRegistryAdminRoleDescription);
-  await accessControlRegistry
-    .connect(manager!)
-    .initializeRoleAndGrantToSender(dapiDataRegistryAdminRole, dapiAdderRoleDescription);
-  await accessControlRegistry
-    .connect(manager!)
-    .initializeRoleAndGrantToSender(dapiDataRegistryAdminRole, dapiRemoverRoleDescription);
-  await accessControlRegistry.connect(manager!).grantRole(dapiAdderRole, api3MarketContract!.address);
-  await accessControlRegistry
-    .connect(manager!)
-    .initializeRoleAndGrantToSender(rootRole, api3ServerV1AdminRoleDescription);
-  await accessControlRegistry
-    .connect(manager!)
-    .initializeRoleAndGrantToSender(
-      await api3ServerV1.adminRole(),
-      await api3ServerV1.DAPI_NAME_SETTER_ROLE_DESCRIPTION()
-    );
-  await accessControlRegistry
-    .connect(manager!)
-    .grantRole(await api3ServerV1.dapiNameSetterRole(), dapiDataRegistry.address);
 
   // Initialize special wallet for contract initialization
   const airseekerInitializationWallet = ethers.Wallet.createRandom().connect(ethers.provider);
@@ -257,101 +207,57 @@ export const deployAndUpdate = async () => {
     ethers.utils.defaultAbiCoder.encode(['bytes32[]'], [[binanceEthBeacon.beaconId, krakenEthBeacon.beaconId]])
   );
 
-  // Register merkle tree hashes
-  const timestamp = Math.floor(Date.now() / 1000);
+  // Set active data feeds and initialize sponsor wallets
   const apiTreeValues = [
     [krakenAirnodeWallet.address, 'https://kraken.com/'],
     [binanceAirnodeWallet.address, 'https://binance.com/'],
   ] as const;
-  const apiTree = StandardMerkleTree.of(apiTreeValues as any, ['address', 'string']);
-  const apiHashType = ethers.utils.solidityKeccak256(['string'], ['Signed API URL Merkle tree root']);
-  const rootSigners = [rootSigner1!, rootSigner2!, rootSigner3!];
-  const apiMessages = ethers.utils.arrayify(
-    ethers.utils.solidityKeccak256(['bytes32', 'bytes32', 'uint256'], [apiHashType, apiTree.root, timestamp])
-  );
-  const apiTreeRootSignatures = await Promise.all(
-    rootSigners.map(async (rootSigner) => rootSigner.signMessage(apiMessages))
-  );
-  await hashRegistry.connect(registryOwner!).setupSigners(
-    apiHashType,
-    rootSigners.map((rootSigner) => rootSigner.address)
-  );
-  await hashRegistry.registerHash(apiHashType, apiTree.root, timestamp, apiTreeRootSignatures);
-
-  // Add dAPIs hashes
-  const dapiNamesInfo = [
-    ['BTC/USD', btcBeaconSetId, airseekerInitializationWallet.address],
-    ['ETH/USD', ethBeaconSetId, airseekerInitializationWallet.address],
-  ] as const;
-  const dapiTreeValues = dapiNamesInfo.map(([decodedDapiName, beaconSetId, sponsorWalletAddress]) => {
-    return [encodeDapiName(decodedDapiName), beaconSetId, sponsorWalletAddress];
-  });
-  const dapiTree = StandardMerkleTree.of(dapiTreeValues, ['bytes32', 'bytes32', 'address']);
-  const dapiTreeRoot = dapiTree.root;
-  const dapiHashType = ethers.utils.solidityKeccak256(['string'], ['dAPI management Merkle tree root']);
-  const dapiMessages = ethers.utils.arrayify(
-    ethers.utils.solidityKeccak256(['bytes32', 'bytes32', 'uint256'], [dapiHashType, dapiTreeRoot, timestamp])
-  );
-  const dapiTreeRootSignatures = await Promise.all(
-    rootSigners.map(async (rootSigner) => rootSigner.signMessage(dapiMessages))
-  );
-  await hashRegistry.connect(registryOwner!).setupSigners(
-    dapiHashType,
-    rootSigners.map((rootSigner) => rootSigner.address)
-  );
-  await hashRegistry.registerHash(dapiHashType, dapiTreeRoot, timestamp, dapiTreeRootSignatures);
-
-  // Set active dAPIs and initialize sponsor wallets
   const airseekerWallet = ethers.Wallet.createRandom();
-  const apiTreeRoot = apiTree.root;
   await Promise.all(
     apiTreeValues.map(async ([airnode, url]) => {
-      const apiTreeProof = apiTree.getProof([airnode, url]);
-      return dapiDataRegistry
-        .connect(api3MarketContract!)
-        .registerAirnodeSignedApiUrl(airnode, url, apiTreeRoot, apiTreeProof);
+      return airseekerRegistry.connect(deployerAndManager!).setSignedApiUrl(airnode, url);
     })
   );
   const dapiInfos = [
     {
       airnodes: [binanceAirnodeWallet.address, krakenAirnodeWallet.address],
       templateIds: [binanceBtcBeacon.templateId, krakenBtcBeacon.templateId],
-      dapiTreeValue: dapiTreeValues[0]!,
+      dapiName: encodeDapiName('BTC/USD'),
+      beaconSetId: btcBeaconSetId,
     },
     {
       airnodes: [binanceAirnodeWallet.address, krakenAirnodeWallet.address],
       templateIds: [binanceEthBeacon.templateId, krakenEthBeacon.templateId],
-      dapiTreeValue: dapiTreeValues[1]!,
+      dapiName: encodeDapiName('ETH/USD'),
+      beaconSetId: ethBeaconSetId,
     },
   ];
   for (const dapiInfo of dapiInfos) {
-    const { airnodes, templateIds, dapiTreeValue } = dapiInfo;
+    const { airnodes, templateIds, dapiName, beaconSetId } = dapiInfo;
 
     const encodedBeaconSetData = ethers.utils.defaultAbiCoder.encode(
       ['address[]', 'bytes32[]'],
       [airnodes, templateIds]
     );
-    await dapiDataRegistry.connect(randomPerson!).registerDataFeed(encodedBeaconSetData);
+    await airseekerRegistry.connect(randomPerson!).registerDataFeed(encodedBeaconSetData);
     const HUNDRED_PERCENT = 1e8;
     const deviationThresholdInPercentage = ethers.BigNumber.from(HUNDRED_PERCENT / 50); // 2%
     const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
     const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
-    const [dapiName, beaconSetId, sponsorWalletMnemonic] = dapiTreeValue;
-    await dapiDataRegistry
-      .connect(api3MarketContract!)
-      .addDapi(
-        dapiName!,
-        beaconSetId!,
-        sponsorWalletMnemonic!,
-        deviationThresholdInPercentage,
-        deviationReference,
-        heartbeatInterval,
-        dapiTree.root,
-        dapiTree.getProof(dapiTreeValue)
+    await airseekerRegistry
+      .connect(deployerAndManager!)
+      .setDapiNameUpdateParameters(
+        dapiName,
+        ethers.utils.defaultAbiCoder.encode(
+          ['uint256', 'uint256', 'uint256'],
+          [deviationThresholdInPercentage, deviationReference, heartbeatInterval]
+        )
       );
+    await api3ServerV1.connect(deployerAndManager!).setDapiName(dapiName, beaconSetId);
+    await airseekerRegistry.connect(deployerAndManager!).setDapiNameToBeActivated(dapiName);
 
     // Initialize sponsor wallets
-    const sponsorWallet = deriveSponsorWallet(airseekerWallet.mnemonic.phrase, dapiName!);
+    const sponsorWallet = deriveSponsorWallet(airseekerWallet.mnemonic.phrase, dapiName);
     await walletFunder!.sendTransaction({
       to: sponsorWallet.address,
       value: ethers.utils.parseEther('1'),
@@ -362,12 +268,12 @@ export const deployAndUpdate = async () => {
   const config = generateTestConfig();
   config.sponsorWalletMnemonic = airseekerWallet.mnemonic.phrase;
   config.chains[31_337]!.contracts.Api3ServerV1 = api3ServerV1.address;
-  config.chains[31_337]!.contracts.DapiDataRegistry = dapiDataRegistry.address;
+  config.chains[31_337]!.contracts.AirseekerRegistry = airseekerRegistry.address;
 
   return {
     accessControlRegistry,
+    airseekerRegistry,
     api3ServerV1,
-    dapiDataRegistry,
 
     binanceAirnodeWallet,
     krakenAirnodeWallet,

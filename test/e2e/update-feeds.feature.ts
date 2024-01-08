@@ -5,7 +5,7 @@ import { initializeGasState } from '../../src/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
 import { runUpdateFeeds } from '../../src/update-feeds-loops';
-import { decodeDataFeed } from '../../src/update-feeds-loops/contracts';
+import { decodeDataFeedDetails, decodeUpdateParameters } from '../../src/update-feeds-loops/contracts';
 import { submitTransactions } from '../../src/update-feeds-loops/submit-transactions';
 import { decodeDapiName } from '../../src/utils';
 import { initializeState } from '../fixtures/mock-config';
@@ -28,14 +28,14 @@ it('reads blockchain data', async () => {
 
   await runUpdateFeeds(providerName, chain, chainId);
 
-  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active dAPIs.', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active data feeds.', expect.anything());
 });
 
 it('updates blockchain data', async () => {
   const {
     config,
     api3ServerV1,
-    dapiDataRegistry,
+    airseekerRegistry,
     krakenBtcBeacon,
     binanceBtcBeacon,
     krakenAirnodeWallet,
@@ -47,16 +47,17 @@ it('updates blockchain data', async () => {
     draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic.phrase;
   });
   initializeGasState(chainId, providerName);
-  const btcDapi = await dapiDataRegistry.readDapiWithIndex(0);
+  const btcDataFeed = await airseekerRegistry.activeDataFeed(0);
 
-  const decodedDataFeed = decodeDataFeed(btcDapi.dataFeed);
-  const decodedBtcDapi = {
-    ...omit(btcDapi, ['dataFeed']),
+  const decodedDataFeed = decodeDataFeedDetails(btcDataFeed.dataFeedDetails)!;
+  const activeBtcDataFeed = {
+    ...omit(btcDataFeed, ['dataFeedDetails', 'updateParameters']),
+    decodedUpdateParameters: decodeUpdateParameters(btcDataFeed.updateParameters),
     decodedDataFeed,
-    decodedDapiName: decodeDapiName(btcDapi.dapiName),
+    decodedDapiName: decodeDapiName(btcDataFeed.dapiName),
   };
 
-  const currentBlock = await dapiDataRegistry.provider.getBlock('latest');
+  const currentBlock = await airseekerRegistry.provider.getBlock('latest');
   const currentBlockTimestamp = currentBlock.timestamp;
   const binanceBtcSignedData = await generateSignedData(
     binanceAirnodeWallet,
@@ -72,7 +73,7 @@ it('updates blockchain data', async () => {
 
   await submitTransactions(chainId, providerName, provider, api3ServerV1, [
     {
-      dapiInfo: decodedBtcDapi,
+      dataFeedInfo: activeBtcDataFeed,
       updatableBeacons: [
         {
           beaconId: binanceBtcBeacon.beaconId,
@@ -99,5 +100,5 @@ it('updates blockchain data', async () => {
     'No historical gas prices to compute the percentile. Using the provider recommended gas price.'
   );
   expect(logger.debug).toHaveBeenNthCalledWith(9, 'Setting timestamp of the original update transaction.');
-  expect(logger.debug).toHaveBeenNthCalledWith(10, 'Updating dAPI.', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(10, 'Updating data feed.', expect.anything());
 });

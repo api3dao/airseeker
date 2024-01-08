@@ -4,9 +4,10 @@ import { z } from 'zod';
 
 export const evmAddressSchema = z.string().regex(/^0x[\dA-Fa-f]{40}$/, 'Must be a valid EVM address');
 
+export type EvmAddress = z.infer<typeof evmAddressSchema>;
+
 export const evmIdSchema = z.string().regex(/^0x[\dA-Fa-f]{64}$/, 'Must be a valid EVM hash');
 
-export type EvmAddress = z.infer<typeof evmAddressSchema>;
 export type EvmId = z.infer<typeof evmIdSchema>;
 
 export const providerSchema = z
@@ -17,12 +18,11 @@ export const providerSchema = z
 
 export type Provider = z.infer<typeof providerSchema>;
 
-// Contracts are optional. If unspecified, they will be loaded from "airnode-protocol-v1" or error out during
-// validation. We need a chain ID from parent schema to load the contracts.
 export const optionalContractsSchema = z
   .object({
+    // If unspecified, Api3ServerV1 will be loaded from "airnode-protocol-v1" or error out during validation.
     Api3ServerV1: evmAddressSchema.optional(),
-    DapiDataRegistry: evmAddressSchema,
+    AirseekerRegistry: evmAddressSchema,
   })
   .strict();
 
@@ -93,7 +93,7 @@ export const chainsSchema = z
         const { contracts } = chain;
         const parsedContracts = contractsSchema.safeParse({
           Api3ServerV1: contracts.Api3ServerV1 ?? references.Api3ServerV1[chainId],
-          DapiDataRegistry: contracts.DapiDataRegistry,
+          AirseekerRegistry: contracts.AirseekerRegistry,
         });
         if (!parsedContracts.success) {
           ctx.addIssue({

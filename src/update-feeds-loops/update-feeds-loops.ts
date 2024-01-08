@@ -8,14 +8,14 @@ import { clearSponsorLastUpdateTimestamp, initializeGasState } from '../gas-pric
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
-import { sleep, deriveSponsorWallet } from '../utils';
+import { deriveSponsorWallet, sleep } from '../utils';
 
 import {
-  decodeDapisCountResponse,
-  decodeReadDapiWithIndexResponse,
-  getDapiDataRegistry,
+  decodeActiveDataFeedCountResponse,
+  decodeActiveDataFeedResponse,
+  getAirseekerRegistry,
   verifyMulticallResponse,
-  type DecodedReadDapiWithIndexResponse,
+  type DecodedActiveDataFeedResponse,
   getApi3ServerV1,
 } from './contracts';
 import { getUpdatableFeeds } from './get-updatable-feeds';
@@ -86,48 +86,52 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
       const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
-      // Create a provider and connect it to the DapiDataRegistry contract.
+      // Create a provider and connect it to the AirseekerRegistry contract.
       const provider = new ethers.providers.StaticJsonRpcProvider({
         url: providers[providerName]!.url,
         timeout: RPC_PROVIDER_TIMEOUT_MS,
       });
-      const dapiDataRegistry = getDapiDataRegistry(contracts.DapiDataRegistry, provider);
+      const airseekerRegistry = getAirseekerRegistry(contracts.AirseekerRegistry, provider);
 
-      logger.debug(`Fetching first batch of dAPIs batches.`);
+      logger.debug(`Fetching first batch of data feeds batches.`);
       const firstBatchStartTimeMs = Date.now();
       const goFirstBatch = await go(
         async () => {
-          const dapisCountCalldata = dapiDataRegistry.interface.encodeFunctionData('dapisCount');
-          const readDapiWithIndexCalldatas = range(0, dataFeedBatchSize).map((dapiIndex) =>
-            dapiDataRegistry.interface.encodeFunctionData('readDapiWithIndex', [dapiIndex])
+          const activeDataFeedCountCalldata = airseekerRegistry.interface.encodeFunctionData('activeDataFeedCount');
+          const activeDataFeedCalldatas = range(0, dataFeedBatchSize).map((dataFeedIndex) =>
+            airseekerRegistry.interface.encodeFunctionData('activeDataFeed', [dataFeedIndex])
           );
-          const [dapisCountReturndata, ...readDapiWithIndexCallsReturndata] = verifyMulticallResponse(
-            await dapiDataRegistry.callStatic.tryMulticall([dapisCountCalldata, ...readDapiWithIndexCalldatas])
+          const [activeDataFeedCountReturndata, ...activeDataFeedCallsReturndata] = verifyMulticallResponse(
+            await airseekerRegistry.callStatic.tryMulticall([activeDataFeedCountCalldata, ...activeDataFeedCalldatas])
           );
 
-          const dapisCount = decodeDapisCountResponse(dapiDataRegistry, dapisCountReturndata!);
-          const firstBatch = readDapiWithIndexCallsReturndata
-            // Because the dapisCount is not known during the multicall, we may ask for non-existent dAPIs. These should be filtered out.
-            .slice(0, dapisCount)
-            .map((dapiReturndata) => ({
-              ...decodeReadDapiWithIndexResponse(dapiDataRegistry, dapiReturndata),
-              chainId,
-            }));
+          const activeDataFeedCount = decodeActiveDataFeedCountResponse(
+            airseekerRegistry,
+            activeDataFeedCountReturndata!
+          );
+          const firstBatch = activeDataFeedCallsReturndata
+            // Because the activeDataFeedCount is not known during the multicall, we may ask for non-existent data feeds. These should be filtered out.
+            .slice(0, activeDataFeedCount)
+            .map((dataFeedReturndata) => decodeActiveDataFeedResponse(airseekerRegistry, dataFeedReturndata))
+            .filter((dataFeed, dataFeedIndex): dataFeed is DecodedActiveDataFeedResponse => {
+              logger.warn(`Data feed not registered.`, { dataFeedIndex });
+              return dataFeed !== null;
+            });
           return {
             firstBatch,
-            dapisCount,
+            activeDataFeedCount,
           };
         },
         { totalTimeoutMs: dataFeedUpdateIntervalMs }
       );
       if (!goFirstBatch.success) {
-        logger.error(`Failed to get first active dAPIs batch.`, goFirstBatch.error);
+        logger.error(`Failed to get first active data feeds batch.`, goFirstBatch.error);
         return;
       }
 
-      const { firstBatch, dapisCount } = goFirstBatch.data;
-      if (dapisCount === 0) {
-        logger.warn(`No active dAPIs found.`);
+      const { firstBatch, activeDataFeedCount } = goFirstBatch.data;
+      if (activeDataFeedCount === 0) {
+        logger.warn(`No active data feeds found.`);
         return;
       }
       // NOTE: We need to explicitly handle the .catch here because it's possible that the promise settles before it's
@@ -141,7 +145,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       ).catch((error) => error);
 
       // Calculate the stagger time.
-      const batchesCount = Math.ceil(dapisCount / dataFeedBatchSize);
+      const batchesCount = Math.ceil(activeDataFeedCount / dataFeedBatchSize);
       const firstBatchDurationMs = Date.now() - firstBatchStartTimeMs;
       const staggerTimeMs = calculateStaggerTimeMs(batchesCount, firstBatchDurationMs, dataFeedUpdateIntervalMs);
 
@@ -150,26 +154,31 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
 
       // Fetch the rest of the batches in parallel in a staggered way and process them.
       if (batchesCount > 1) {
-        logger.debug('Fetching batches of active dAPIs.', { batchesCount, staggerTimeMs });
+        logger.debug('Fetching batches of active data feeds.', { batchesCount, staggerTimeMs });
       }
       const processOtherBatchesPromises = range(1, batchesCount).map(async (batchIndex) => {
         await sleep((batchIndex - 1) * staggerTimeMs);
 
         const goBatch = await go(async () => {
-          logger.debug(`Fetching batch of active dAPIs.`, { batchIndex });
-          const dapiBatchIndexStart = batchIndex * dataFeedBatchSize;
-          const dapiBatchIndexEnd = Math.min(dapisCount, dapiBatchIndexStart + dataFeedBatchSize);
-          const readDapiWithIndexCalldatas = range(dapiBatchIndexStart, dapiBatchIndexEnd).map((dapiIndex) =>
-            dapiDataRegistry.interface.encodeFunctionData('readDapiWithIndex', [dapiIndex])
+          logger.debug(`Fetching batch of active data feeds.`, { batchIndex });
+          const dataFeedBatchIndexStart = batchIndex * dataFeedBatchSize;
+          const dataFeedBatchIndexEnd = Math.min(activeDataFeedCount, dataFeedBatchIndexStart + dataFeedBatchSize);
+          const activeDataFeedCalldatas = range(dataFeedBatchIndexStart, dataFeedBatchIndexEnd).map((dataFeedIndex) =>
+            airseekerRegistry.interface.encodeFunctionData('activeDataFeed', [dataFeedIndex])
           );
           const returndata = verifyMulticallResponse(
-            await dapiDataRegistry.callStatic.tryMulticall(readDapiWithIndexCalldatas)
+            await airseekerRegistry.callStatic.tryMulticall(activeDataFeedCalldatas)
           );
 
-          return returndata.map((returndata) => decodeReadDapiWithIndexResponse(dapiDataRegistry, returndata));
+          return returndata
+            .map((returndata) => decodeActiveDataFeedResponse(airseekerRegistry, returndata))
+            .filter((dataFeed, index): dataFeed is DecodedActiveDataFeedResponse => {
+              logger.warn(`Data feed not registered.`, { dataFeedIndex: dataFeedBatchIndexStart + index });
+              return dataFeed !== null;
+            });
         });
         if (!goBatch.success) {
-          logger.error(`Failed to get active dAPIs batch.`, goBatch.error);
+          logger.error(`Failed to get active data feeds batch.`, goBatch.error);
           return;
         }
         const batch = goBatch.data;
@@ -192,12 +201,12 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
 
       // Print stats from this run.
       const skippedBatchesCount = processedBatches.filter((batch) => !batch).length;
-      const dapiUpdates = processedBatches.reduce((acc, batch) => acc + (batch ? batch.successCount : 0), 0);
-      const dapiUpdateFailures = processedBatches.reduce((acc, batch) => acc + (batch ? batch.errorCount : 0), 0);
-      logger.debug(`Finished processing batches of active dAPIs.`, {
+      const dataFeedUpdates = processedBatches.reduce((acc, batch) => acc + (batch ? batch.successCount : 0), 0);
+      const dataFeedUpdateFailures = processedBatches.reduce((acc, batch) => acc + (batch ? batch.errorCount : 0), 0);
+      logger.debug(`Finished processing batches of active data feeds.`, {
         skippedBatchesCount,
-        dapiUpdates,
-        dapiUpdateFailures,
+        dataFeedUpdates,
+        dataFeedUpdateFailures,
       });
     });
 
@@ -208,20 +217,23 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
 };
 
 export const processBatch = async (
-  batch: DecodedReadDapiWithIndexResponse[],
+  batch: DecodedActiveDataFeedResponse[],
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
   chainId: ChainId
 ) => {
-  logger.debug('Processing batch of active dAPIs.', { dapiNames: batch.map((dapi) => dapi.decodedDapiName) });
+  logger.debug('Processing batch of active data feeds.', {
+    dapiNames: batch.map((dataFeed) => dataFeed.decodedDapiName),
+    dataFeedIds: batch.map((dataFeed) => dataFeed.decodedDataFeed.dataFeedId),
+  });
   const {
     config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient },
   } = getState();
   const { contracts } = chains[chainId]!;
 
   updateState((draft) => {
-    for (const dapi of batch) {
-      const receivedUrls = zip(dapi.signedApiUrls, dapi.decodedDataFeed.beacons).map(([url, beacon]) => ({
+    for (const dataFeed of batch) {
+      const receivedUrls = zip(dataFeed.signedApiUrls, dataFeed.decodedDataFeed.beacons).map(([url, beacon]) => ({
         url: `${url}/${beacon!.airnodeAddress}`,
         airnodeAddress: beacon!.airnodeAddress,
       }));
@@ -235,27 +247,40 @@ export const processBatch = async (
   });
 
   const feedsToUpdate = await getUpdatableFeeds(batch, deviationThresholdCoefficient, provider, chainId);
-  const dapiNamesToUpdate = new Set(feedsToUpdate.map((feed) => feed.dapiInfo.dapiName));
 
   // Clear last update timestamps for feeds that don't need an update
   for (const feed of batch) {
-    const { dapiName, decodedDapiName } = feed;
+    const {
+      dapiName,
+      decodedDapiName,
+      decodedDataFeed: { dataFeedId },
+    } = feed;
 
-    if (!dapiNamesToUpdate.has(dapiName)) {
-      const sponsorWalletAddress = deriveSponsorWallet(sponsorWalletMnemonic, dapiName).address;
-      const timestampNeedsClearing = hasSponsorPendingTransaction(chainId, providerName, sponsorWalletAddress);
-      if (timestampNeedsClearing) {
-        // NOTE: A dAPI may stop needing an update for two reasons:
-        //  1. It has been updated by a transaction. This could have been done by this Airseeker or some backup.
-        //  2. As a natural price shift in signed API data.
-        //
-        // We can't differentiate between these cases unless we check recent update transactions, which we don't want to
-        // do.
-        logger.debug(`Clearing dAPI update timestamp because it no longer needs an update.`, {
-          dapiName: decodedDapiName,
-        });
-        clearSponsorLastUpdateTimestamp(chainId, providerName, sponsorWalletAddress);
-      }
+    // Skip if the data feed is updatable
+    if (
+      feedsToUpdate.some(
+        (updatableFeed) =>
+          updatableFeed.dataFeedInfo.dapiName === dapiName &&
+          updatableFeed.dataFeedInfo.decodedDataFeed.dataFeedId === dataFeedId
+      )
+    ) {
+      continue;
+    }
+
+    const sponsorWalletAddress = deriveSponsorWallet(sponsorWalletMnemonic, dapiName ?? dataFeedId).address;
+    const timestampNeedsClearing = hasSponsorPendingTransaction(chainId, providerName, sponsorWalletAddress);
+    if (timestampNeedsClearing) {
+      // NOTE: A data feed may stop needing an update for two reasons:
+      //  1. It has been updated by some other transaction. This could have been done by this Airseeker or some backup.
+      //  2. As a natural price shift in signed API data.
+      //
+      // We can't differentiate between these cases unless we check recent update transactions, which we don't want to
+      // do.
+      logger.debug(`Clearing data feed update timestamp because it no longer needs an update.`, {
+        dapiName: decodedDapiName,
+        dataFeedId,
+      });
+      clearSponsorLastUpdateTimestamp(chainId, providerName, sponsorWalletAddress);
     }
   }
 

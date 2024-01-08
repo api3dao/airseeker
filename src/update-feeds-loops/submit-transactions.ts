@@ -5,14 +5,14 @@ import { ethers } from 'ethers';
 import { getRecommendedGasPrice, setSponsorLastUpdateTimestamp } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { ChainId, ProviderName } from '../types';
+import type { ChainId, DapiNameOrDataFeedId, ProviderName } from '../types';
 import { deriveSponsorWallet } from '../utils';
 
-import type { UpdatableDapi } from './get-updatable-feeds';
+import type { UpdatableDataFeed } from './get-updatable-feeds';
 
-export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableDapi: UpdatableDapi) => {
-  const { dapiInfo, updatableBeacons } = updatableDapi;
-  const allBeacons = dapiInfo.decodedDataFeed.beacons;
+export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableDataFeed: UpdatableDataFeed) => {
+  const { dataFeedInfo, updatableBeacons } = updatableDataFeed;
+  const allBeacons = dataFeedInfo.decodedDataFeed.beacons;
 
   // Create calldata for beacons that need to be updated.
   const beaconUpdateCalls = updatableBeacons.map(({ signedData }) =>
@@ -47,19 +47,19 @@ export const submitTransaction = async (
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
   api3ServerV1: Api3ServerV1,
-  updatableDapi: UpdatableDapi
+  updatableDataFeed: UpdatableDataFeed
 ) => {
   const state = getState();
   const {
     config: { chains, sponsorWalletMnemonic },
   } = state;
 
-  const { dapiInfo } = updatableDapi;
+  const { dataFeedInfo } = updatableDataFeed;
   const {
     dapiName,
     decodedDapiName,
     decodedDataFeed: { dataFeedId },
-  } = dapiInfo;
+  } = dataFeedInfo;
   const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
   const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
@@ -69,20 +69,20 @@ export const submitTransaction = async (
     const goUpdate = await go(
       async () => {
         logger.debug('Creating calldatas.');
-        const dataFeedUpdateCalldatas = createUpdateFeedCalldatas(api3ServerV1, updatableDapi);
+        const dataFeedUpdateCalldatas = createUpdateFeedCalldatas(api3ServerV1, updatableDataFeed);
 
         logger.debug('Estimating gas limit.');
         const goEstimateGasLimit = await go(async () =>
           estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas, fallbackGasLimit)
         );
         if (!goEstimateGasLimit.success) {
-          logger.error(`Skipping dAPI update because estimating gas limit failed.`, goEstimateGasLimit.error);
+          logger.error(`Skipping data feed update because estimating gas limit failed.`, goEstimateGasLimit.error);
           return null;
         }
         const gasLimit = goEstimateGasLimit.data;
 
         logger.debug('Getting derived sponsor wallet.');
-        const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName);
+        const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName ?? dataFeedId);
 
         logger.debug('Getting gas price.');
         const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWallet.address);
@@ -90,13 +90,13 @@ export const submitTransaction = async (
 
         // We want to set the timestamp of the first update transaction. We can determine if the transaction is the
         // original one and that it isn't a retry of a pending transaction (if there is no timestamp for the
-        // particular sponsor wallet). This assumes that a single sponsor updates a single dAPI.
+        // particular sponsor wallet). This assumes that a single sponsor updates a single data feed.
         if (!hasSponsorPendingTransaction(chainId, providerName, sponsorWallet.address)) {
           logger.debug('Setting timestamp of the original update transaction.');
           setSponsorLastUpdateTimestamp(chainId, providerName, sponsorWallet.address);
         }
 
-        logger.debug('Updating dAPI.', { gasPrice: gasPrice.toString(), gasLimit: gasLimit.toString() });
+        logger.debug('Updating data feed.', { gasPrice: gasPrice.toString(), gasLimit: gasLimit.toString() });
         const goMulticall = await go(async () => {
           return (
             api3ServerV1
@@ -114,18 +114,18 @@ export const submitTransaction = async (
             logger.info(`Failed to submit replacement transaction because it was underpriced.`);
             return null;
           }
-          logger.error(`Failed to update a dAPI.`, goMulticall.error);
+          logger.error(`Failed to update a data feed.`, goMulticall.error);
           return null;
         }
 
-        logger.info('Successfully updated dAPI.');
+        logger.info('Successfully updated data feed.');
         return goMulticall.data;
       },
       { totalTimeoutMs: dataFeedUpdateIntervalMs }
     );
 
     if (!goUpdate.success) {
-      logger.error(`Unexpected error during updating dAPI.`, goUpdate.error);
+      logger.error(`Unexpected error during updating data feed.`, goUpdate.error);
       return null;
     }
     return goUpdate.data;
@@ -137,10 +137,12 @@ export const submitTransactions = async (
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
   api3ServerV1: Api3ServerV1,
-  updatableDapis: UpdatableDapi[]
+  updatableDataFeeds: UpdatableDataFeed[]
 ) =>
   Promise.all(
-    updatableDapis.map(async (dapi) => submitTransaction(chainId, providerName, provider, api3ServerV1, dapi))
+    updatableDataFeeds.map(async (dataFeed) =>
+      submitTransaction(chainId, providerName, provider, api3ServerV1, dataFeed)
+    )
   );
 
 export const estimateMulticallGasLimit = async (
@@ -162,22 +164,19 @@ export const estimateMulticallGasLimit = async (
   return ethers.BigNumber.from(fallbackGasLimit);
 };
 
-export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiName: string) => {
+export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDataFeedId: DapiNameOrDataFeedId) => {
   const { derivedSponsorWallets } = getState();
 
-  const privateKey = derivedSponsorWallets?.[dapiName];
+  const privateKey = derivedSponsorWallets?.[dapiNameOrDataFeedId];
   if (privateKey) {
     return new ethers.Wallet(privateKey);
   }
 
-  const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
+  const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiNameOrDataFeedId);
   logger.debug('Derived new sponsor wallet.', { sponsorWalletAddress: sponsorWallet.address });
 
   updateState((draft) => {
-    draft.derivedSponsorWallets = {
-      ...draft.derivedSponsorWallets,
-      [dapiName]: sponsorWallet.privateKey,
-    };
+    draft.derivedSponsorWallets[dapiNameOrDataFeedId] = sponsorWallet.privateKey;
   });
 
   return sponsorWallet;

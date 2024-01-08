@@ -2,18 +2,18 @@ import { Api3ServerV1__factory as Api3ServerV1Factory } from '@api3/airnode-prot
 import { ethers } from 'ethers';
 
 // NOTE: The contract is not yet published, so we generate the Typechain artifacts locally and import it from there.
-import { type DapiDataRegistry, DapiDataRegistry__factory as DapiDataRegistryFactory } from '../typechain-types';
+import { type AirseekerRegistry, AirseekerRegistry__factory as AirseekerRegistryFactory } from '../typechain-types';
 import type { DecodedDataFeed } from '../types';
 import { decodeDapiName, deriveBeaconId, deriveBeaconSetId } from '../utils';
 
 export const getApi3ServerV1 = (address: string, provider: ethers.providers.StaticJsonRpcProvider) =>
   Api3ServerV1Factory.connect(address, provider);
 
-export const getDapiDataRegistry = (address: string, provider: ethers.providers.StaticJsonRpcProvider) =>
-  DapiDataRegistryFactory.connect(address, provider);
+export const getAirseekerRegistry = (address: string, provider: ethers.providers.StaticJsonRpcProvider) =>
+  AirseekerRegistryFactory.connect(address, provider);
 
 export const verifyMulticallResponse = (
-  response: Awaited<ReturnType<DapiDataRegistry['callStatic']['tryMulticall']>>
+  response: Awaited<ReturnType<AirseekerRegistry['callStatic']['tryMulticall']>>
 ) => {
   const { successes, returndata } = response;
 
@@ -21,17 +21,25 @@ export const verifyMulticallResponse = (
   return returndata;
 };
 
-export const decodeDapisCountResponse = (dapiDataRegistry: DapiDataRegistry, dapisCountReturndata: string) => {
-  const dapisCount = dapiDataRegistry.interface.decodeFunctionResult('dapisCount', dapisCountReturndata)[0] as Awaited<
-    ReturnType<DapiDataRegistry['dapisCount']>
-  >;
-  return dapisCount.toNumber();
+export const decodeActiveDataFeedCountResponse = (
+  airseekerRegistry: AirseekerRegistry,
+  activeDataFeedCountReturndata: string
+) => {
+  const activeDataFeedCount = airseekerRegistry.interface.decodeFunctionResult(
+    'activeDataFeedCount',
+    activeDataFeedCountReturndata
+  )[0] as Awaited<ReturnType<AirseekerRegistry['activeDataFeedCount']>>;
+  return activeDataFeedCount.toNumber();
 };
 
-export const decodeDataFeed = (dataFeed: string): DecodedDataFeed => {
-  if (dataFeed.length === 130) {
-    // (64 [actual bytes] * 2[hex encoding] ) + 2 [for the '0x' preamble]
-    // This is a hex encoded string, the contract works with bytes directly
+export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null => {
+  // The contract returns empty bytes if the data feed is not registered. See:
+  // https://github.com/api3dao/dapi-management/blob/f3d39e4707c33c075a8f07aa8f8369f8dc07736f/contracts/AirseekerRegistry.sol#L209
+  if (dataFeed === '0x') return null;
+
+  // This is a hex encoded string, the contract works with bytes directly
+  // 2 characters for the '0x' preamble + 32 * 2 hexadecimals for 32 bytes + 32 * 2 hexadecimals for 32 bytes
+  if (dataFeed.length === 2 + 32 * 2 + 32 * 2) {
     const [airnodeAddress, templateId] = ethers.utils.defaultAbiCoder.decode(['address', 'bytes32'], dataFeed);
 
     const dataFeedId = deriveBeaconId(airnodeAddress, templateId)!;
@@ -53,35 +61,64 @@ export const decodeDataFeed = (dataFeed: string): DecodedDataFeed => {
   return { dataFeedId, beacons };
 };
 
-export const decodeReadDapiWithIndexResponse = (
-  dapiDataRegistry: DapiDataRegistry,
-  readDapiWithIndexReturndata: string
-) => {
-  const { dapiName, updateParameters, dataFeedValue, dataFeed, signedApiUrls } =
-    dapiDataRegistry.interface.decodeFunctionResult('readDapiWithIndex', readDapiWithIndexReturndata) as Awaited<
-      ReturnType<DapiDataRegistry['readDapiWithIndex']>
-    >;
+export interface DecodedUpdateParameters {
+  deviationReference: ethers.BigNumber;
+  deviationThresholdInPercentage: ethers.BigNumber;
+  heartbeatInterval: ethers.BigNumber;
+}
 
-  // Ethers responses are returned as a combination of array and object. When such object is logged, only the array part
-  // is logged. To make the logs more readable, we convert the object part to a plain object.
-  const { deviationReference, deviationThresholdInPercentage, heartbeatInterval } = updateParameters;
-  const { value, timestamp } = dataFeedValue;
-
-  // https://github.com/api3dao/dapi-management/pull/3/files#diff-b6941851ebc92dc9691bbf0cb701fe9c4595cb78488c3bb92ad6e4b917719f4fR346
-  const decodedDataFeed = decodeDataFeed(dataFeed);
+export const decodeUpdateParameters = (updateParameters: string): DecodedUpdateParameters => {
+  // https://github.com/api3dao/airnode-protocol-v1/blob/5f861715749e182e334c273d6a52c4f2560c7994/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L122
+  const [deviationThresholdInPercentage, deviationReference, heartbeatInterval] = ethers.utils.defaultAbiCoder.decode(
+    ['uint256', 'int224', 'uint256'],
+    updateParameters
+  );
+  // 2 characters for the '0x' preamble + 3 parameters, 32 * 2 hexadecimals for 32 bytes each
+  if (updateParameters.length !== 2 + 3 * (32 * 2)) {
+    throw new Error(`Unexpected trailing data in update parameters`);
+  }
 
   return {
-    dapiName, // NOTE: Anywhere in the codebase the "dapiName" is the encoded version of the dAPI name.
-    decodedDapiName: decodeDapiName(dapiName),
-    updateParameters: {
-      deviationReference,
-      deviationThresholdInPercentage,
-      heartbeatInterval,
-    },
-    dataFeedValue: { value, timestamp },
+    deviationReference,
+    deviationThresholdInPercentage,
+    heartbeatInterval,
+  };
+};
+
+export interface DecodedActiveDataFeedResponse {
+  dapiName: string | null;
+  decodedDapiName: string | null;
+  decodedUpdateParameters: DecodedUpdateParameters;
+  dataFeedValue: ethers.BigNumber;
+  dataFeedTimestamp: number;
+  decodedDataFeed: DecodedDataFeed;
+  signedApiUrls: string[];
+}
+
+export const decodeActiveDataFeedResponse = (
+  airseekerRegistry: AirseekerRegistry,
+  activeDataFeedReturndata: string
+): DecodedActiveDataFeedResponse | null => {
+  const { dapiName, updateParameters, dataFeedValue, dataFeedTimestamp, dataFeedDetails, signedApiUrls } =
+    airseekerRegistry.interface.decodeFunctionResult('activeDataFeed', activeDataFeedReturndata) as Awaited<
+      ReturnType<AirseekerRegistry['activeDataFeed']>
+    >;
+
+  // https://github.com/api3dao/dapi-management/blob/f3d39e4707c33c075a8f07aa8f8369f8dc07736f/contracts/AirseekerRegistry.sol#L162
+  const decodedDataFeed = decodeDataFeedDetails(dataFeedDetails);
+  if (!decodedDataFeed) return null;
+
+  // The dAPI name will be set to zero (in bytes32) in case the data feed is not a dAPI and is identified by a data feed
+  // ID.
+  const decodedDapiName = decodeDapiName(dapiName);
+
+  return {
+    dapiName: decodedDapiName === '' ? null : dapiName, // NOTE: Anywhere in the codebase the "dapiName" is the encoded version of the dAPI name.
+    decodedDapiName: decodedDapiName === '' ? null : decodedDapiName,
+    decodedUpdateParameters: decodeUpdateParameters(updateParameters),
+    dataFeedValue,
+    dataFeedTimestamp,
     decodedDataFeed,
     signedApiUrls,
   };
 };
-
-export type DecodedReadDapiWithIndexResponse = ReturnType<typeof decodeReadDapiWithIndexResponse>;

@@ -45,7 +45,7 @@ describe('chains schema', () => {
       '31337': {
         contracts: {
           Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
-          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
         },
         providers: {
           hardhat: {
@@ -62,7 +62,7 @@ describe('chains schema', () => {
 
     expect(parsed['31337']!.contracts).toStrictEqual({
       Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
-      DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+      AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
     });
   });
 
@@ -78,7 +78,7 @@ describe('chains schema', () => {
         dataFeedBatchSize: 10,
         dataFeedUpdateInterval: 60,
         contracts: {
-          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
         },
       },
     };
@@ -87,7 +87,7 @@ describe('chains schema', () => {
 
     expect(parsed['1']!.contracts).toStrictEqual({
       Api3ServerV1: '0x709944a48cAf83535e43471680fDA4905FB3920a',
-      DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+      AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
     });
   });
 
@@ -100,7 +100,7 @@ describe('chains schema', () => {
           },
         },
         contracts: {
-          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
         },
         gasSettings,
         dataFeedBatchSize: 10,
@@ -124,7 +124,7 @@ describe('chains schema', () => {
       '31337': {
         contracts: {
           Api3ServerV1: '0xInvalid',
-          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
         },
         providers: {
           hardhat: {
@@ -168,7 +168,7 @@ describe('chains schema', () => {
       '31337': {
         contracts: {
           Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
-          DapiDataRegistry: '0xDD78254f864F97f65e2d86541BdaEf88A504D2B2',
+          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
         },
         providers: {},
         gasSettings,
