@@ -123,7 +123,7 @@ export const submitTransaction = async (
             logger.info(`Failed to submit replacement transaction because it was underpriced.`);
             return null;
           }
-          logger.error(`Failed to update a data feed.`, goMulticall.error);
+          logger.info(`Failed to update a data feed.`, goMulticall.error);
           return null;
         }
 
