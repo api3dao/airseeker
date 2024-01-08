@@ -108,9 +108,10 @@ export const readActiveDataFeedBatch = async (
   // Check that the chain ID is correct and throw an error if it's not because providers may switch chain ID. In case
   // the chain ID is wrong, we want to skip all data feeds in the batch (or all of them in case this is the first
   // batch). Another possibility is a wrong chain ID in the configuration (misconfiguration).
-  const contractChainId = decodeGetChainIdResponse(getChainIdReturndata!);
-  if (contractChainId !== Number(chainId)) {
-    throw new Error(`Chain ID mismatch. Expected ${chainId}, got ${contractChainId}.`);
+  const contractChainId = decodeGetChainIdResponse(getChainIdReturndata!).toString();
+  if (contractChainId !== chainId) {
+    logger.warn(`Chain ID mismatch.`, { chainId, contractChainId });
+    return null;
   }
 
   // In the first batch we may have asked for a non-existent data feed (index out of bounds). We need to slice them off
@@ -163,6 +164,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
         return;
       }
 
+      if (goFirstBatch.data === null) return;
       const { batch: firstBatch, activeDataFeedCount, blockNumber: firstBatchBlockNumber } = goFirstBatch.data;
       if (activeDataFeedCount === 0) {
         logger.warn(`No active data feeds found.`);
@@ -198,18 +200,20 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
           logger.debug(`Fetching batch of active data feeds.`, { batchIndex });
           const dataFeedBatchIndexStart = batchIndex * dataFeedBatchSize;
           const dataFeedBatchIndexEnd = Math.min(activeDataFeedCount!, dataFeedBatchIndexStart + dataFeedBatchSize);
-          const { batch, blockNumber } = await readActiveDataFeedBatch(
+          const activeBatch = await readActiveDataFeedBatch(
             airseekerRegistry,
             chainId,
             dataFeedBatchIndexStart,
             dataFeedBatchIndexEnd
           );
-          return { batch, blockNumber };
+
+          return activeBatch;
         });
         if (!goBatch.success) {
           logger.error(`Failed to get active data feeds batch.`, goBatch.error);
           return;
         }
+        if (goBatch.data === null) return;
         const { batch, blockNumber } = goBatch.data;
 
         return processBatch(batch, providerName, provider, chainId, blockNumber);

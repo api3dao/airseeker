@@ -47,6 +47,7 @@ export const getUpdatableFeeds = async (
     return [];
   }
   const onChainFeedValues = goOnChainFeedValues.data;
+  if (!onChainFeedValues) return [];
 
   return (
     batch
@@ -112,7 +113,7 @@ export const multicallBeaconValues = async (
   batch: BeaconId[],
   provider: ethers.providers.StaticJsonRpcProvider,
   chainId: ChainId
-): Promise<Record<BeaconId, BeaconValue>> => {
+): Promise<Record<BeaconId, BeaconValue> | null> => {
   const { config } = getState();
   const chain = config.chains[chainId]!;
   const { contracts } = chain;
@@ -131,7 +132,8 @@ export const multicallBeaconValues = async (
 
   const contractChainId = decodeGetChainIdResponse(chainIdReturndata!).toString();
   if (contractChainId !== chainId) {
-    throw new Error(`Chain ID mismatch. Expected ${chainId}, got ${contractChainId}`);
+    logger.warn(`Chain ID mismatch.`, { chainId, contractChainId });
+    return null;
   }
 
   const onChainValues: Record<BeaconId, BeaconValue> = {};
