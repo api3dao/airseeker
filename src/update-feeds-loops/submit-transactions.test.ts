@@ -361,7 +361,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
           },
         },
       }),
-      1
+      123_456
     );
 
     // Verify that the data feed was updated successfully.

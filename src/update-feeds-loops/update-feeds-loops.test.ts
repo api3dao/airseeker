@@ -197,7 +197,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     const chainId = ethers.BigNumber.from(31_337);
     airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
       successes: [true, true, true, true],
-      returndata: [ethers.BigNumber.from(3), ethers.BigNumber.from(123), chainId, firstDataFeed],
+      returndata: [ethers.BigNumber.from(3), blockNumber, chainId, firstDataFeed],
     });
     airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
       successes: [true, true, false],

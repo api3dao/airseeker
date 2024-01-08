@@ -105,17 +105,18 @@ export const readActiveDataFeedBatch = async (
   }
   const [getBlockNumberReturndata, getChainIdReturndata, ...activeDataFeedReturndatas] = returndatas;
 
-  // Check that the chain ID is correct and throw an error if it's not because providers may switch chain ID. In case
-  // the chain ID is wrong, we want to skip all data feeds in the batch (or all of them in case this is the first
-  // batch). Another possibility is a wrong chain ID in the configuration (misconfiguration).
+  // Check that the chain ID is correct and log a warning if it's not because it's possible that providers switch chain
+  // ID at runtime by mistake. In case the chain ID is wrong, we want to skip all data feeds in the batch (or all of
+  // them in case this is the first batch). Another possibility of a wrong chain ID is misconfiguration in airseeker
+  // file.
   const contractChainId = decodeGetChainIdResponse(getChainIdReturndata!).toString();
   if (contractChainId !== chainId) {
     logger.warn(`Chain ID mismatch.`, { chainId, contractChainId });
     return null;
   }
 
-  // In the first batch we may have asked for a non-existent data feed (index out of bounds). We need to slice them off
-  // based on the active data feed count.
+  // In the first batch we may have asked for a non-existent data feed. We need to slice them off based on the active
+  // data feed count.
   let activeDataFeedCount: number | undefined;
   let batchReturndata = activeDataFeedReturndatas;
   if (fromIndex === 0) {

@@ -8,7 +8,12 @@ import { getState } from '../state';
 import type { BeaconId, ChainId, SignedData } from '../types';
 import { decodeBeaconValue, multiplyBigNumber } from '../utils';
 
-import { getApi3ServerV1, type DecodedActiveDataFeedResponse, decodeGetChainIdResponse } from './contracts';
+import {
+  getApi3ServerV1,
+  type DecodedActiveDataFeedResponse,
+  decodeGetChainIdResponse,
+  verifyMulticallResponse,
+} from './contracts';
 
 interface BeaconValue {
   timestamp: ethers.BigNumber;
@@ -122,13 +127,15 @@ export const multicallBeaconValues = async (
   // and using returndata directly. If the call fails (e.g. timeout or RPC error) we let the parent handle it.
   const api3ServerV1 = getApi3ServerV1(contracts.Api3ServerV1, provider);
   const voidSigner = new ethers.VoidSigner(ethers.constants.AddressZero, provider);
-  const { returndata } = await api3ServerV1
-    .connect(voidSigner)
-    .callStatic.tryMulticall([
-      api3ServerV1.interface.encodeFunctionData('getChainId'),
-      ...batch.map((beaconId) => api3ServerV1.interface.encodeFunctionData('dataFeeds', [beaconId])),
-    ]);
-  const [chainIdReturndata, ...dataFeedsReturndata] = returndata;
+  const returndatas = verifyMulticallResponse(
+    await api3ServerV1
+      .connect(voidSigner)
+      .callStatic.tryMulticall([
+        api3ServerV1.interface.encodeFunctionData('getChainId'),
+        ...batch.map((beaconId) => api3ServerV1.interface.encodeFunctionData('dataFeeds', [beaconId])),
+      ])
+  );
+  const [chainIdReturndata, ...dataFeedsReturndata] = returndatas;
 
   const contractChainId = decodeGetChainIdResponse(chainIdReturndata!).toString();
   if (contractChainId !== chainId) {
