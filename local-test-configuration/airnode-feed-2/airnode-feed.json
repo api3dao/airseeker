@@ -36,12 +36,13 @@
   "signedApis": [
     {
       "name": "localhost",
-      "url": "http://${LOCALHOST_IP}:4002"
+      "url": "http://${LOCALHOST_IP}:4002",
+      "authToken": null
     }
   ],
   "ois": [
     {
-      "oisFormat": "2.2.0",
+      "oisFormat": "2.3.1",
       "title": "Nodary",
       "version": "0.2.0",
       "apiSpecifications": {
@@ -93,7 +94,7 @@
     }
   ],
   "nodeSettings": {
-    "nodeVersion": "0.1.0",
+    "nodeVersion": "0.2.0",
     "airnodeWalletMnemonic": "${AIRNODE_WALLET_MNEMONIC}",
     "stage": "local-example"
   }

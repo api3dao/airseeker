@@ -2,12 +2,11 @@
   "endpoints": [
     {
       "urlPath": "/default",
-      "delaySeconds": 0
+      "delaySeconds": 0,
+      "authTokens": null
     }
   ],
-  "allowedAirnodes": ["0xaC0653E412acAE526Da3a33af0135205A34E21AF"],
-  "maxBatchSize": 10,
-  "cache": {
-    "maxAgeSeconds": 300
-  }
+  "allowedAirnodes": [{ "address": "0xaC0653E412acAE526Da3a33af0135205A34E21AF", "authTokens": null }],
+  "stage": "signed-api-1",
+  "version": "0.2.0"
 }

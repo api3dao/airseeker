@@ -193,12 +193,20 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
     airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
+    const blockNumber = ethers.BigNumber.from(123);
+    const chainId = ethers.BigNumber.from(31_337);
     airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
-      successes: [true, true],
-      returndata: [[ethers.BigNumber.from(3)], firstDataFeed],
+      successes: [true, true, true, true],
+      returndata: [ethers.BigNumber.from(3), blockNumber, chainId, firstDataFeed],
     });
-    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [false], returndata: [] });
-    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({ successes: [true], returndata: [thirdDataFeed] });
+    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
+      successes: [true, true, false],
+      returndata: [blockNumber, chainId, '0x'],
+    });
+    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
+      successes: [true, true, true],
+      returndata: [blockNumber, chainId, thirdDataFeed],
+    });
     const sleepCalls = [] as number[];
     const originalSleep = utilsModule.sleep;
     jest.spyOn(utilsModule, 'sleep').mockImplementation(async (ms) => {
@@ -299,9 +307,11 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
     airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
+    const blockNumber = ethers.BigNumber.from(123);
+    const chainId = ethers.BigNumber.from(31_337);
     airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
-      successes: [true, true],
-      returndata: [[ethers.BigNumber.from(1)], dataFeed],
+      successes: [true, true, true, true],
+      returndata: [ethers.BigNumber.from(1), blockNumber, chainId, dataFeed],
     });
     const testConfig = generateTestConfig();
     jest.spyOn(stateModule, 'getState').mockReturnValue(

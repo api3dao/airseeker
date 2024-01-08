@@ -186,9 +186,11 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
       airnodes: [airnodeFeed1Beacon!.airnodeAddress, airnodeFeed2Beacon!.airnodeAddress],
       templateIds: [airnodeFeed1Beacon!.templateId, airnodeFeed1Beacon!.templateId],
       dapiName: encodeDapiName(airnodeFeed1Beacon!.parameters[0]!.value),
-      beaconSetId: ethers.utils.defaultAbiCoder.encode(
-        ['bytes32[]'],
-        [[airnodeFeed1Beacon!.beaconId, airnodeFeed2Beacon!.beaconId]]
+      beaconSetId: ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['bytes32[]'],
+          [[airnodeFeed1Beacon!.beaconId, airnodeFeed2Beacon!.beaconId]]
+        )
       ),
     };
   });
@@ -206,6 +208,8 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
     const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
     tx = await api3ServerV1.connect(deployerAndManager).setDapiName(dapiName, beaconSetId);
+    await tx.wait();
+    await airseekerRegistry.connect(deployerAndManager).setDapiNameToBeActivated(dapiName);
     await tx.wait();
     tx = await airseekerRegistry
       .connect(deployerAndManager)
@@ -241,6 +245,7 @@ async function main() {
   const provider = new ethers.providers.StaticJsonRpcProvider(process.env.PROVIDER_URL);
   const funderWallet = ethers.Wallet.fromMnemonic(process.env.FUNDER_MNEMONIC).connect(provider);
 
+  await refundFunder(funderWallet);
   const balance = await funderWallet.getBalance();
   console.info('Funder balance:', ethers.utils.formatEther(balance.toString()));
   console.info();

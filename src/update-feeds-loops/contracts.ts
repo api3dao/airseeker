@@ -21,15 +21,16 @@ export const verifyMulticallResponse = (
   return returndata;
 };
 
-export const decodeActiveDataFeedCountResponse = (
-  airseekerRegistry: AirseekerRegistry,
-  activeDataFeedCountReturndata: string
-) => {
-  const activeDataFeedCount = airseekerRegistry.interface.decodeFunctionResult(
-    'activeDataFeedCount',
-    activeDataFeedCountReturndata
-  )[0] as Awaited<ReturnType<AirseekerRegistry['activeDataFeedCount']>>;
-  return activeDataFeedCount.toNumber();
+export const decodeActiveDataFeedCountResponse = (activeDataFeedCountReturndata: string) => {
+  return ethers.BigNumber.from(activeDataFeedCountReturndata).toNumber();
+};
+
+export const decodeGetBlockNumberResponse = (getBlockNumberReturndata: string) => {
+  return ethers.BigNumber.from(getBlockNumberReturndata).toNumber();
+};
+
+export const decodeGetChainIdResponse = (getChainIdReturndata: string) => {
+  return ethers.BigNumber.from(getChainIdReturndata).toNumber();
 };
 
 export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null => {

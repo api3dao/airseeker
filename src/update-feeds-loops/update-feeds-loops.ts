@@ -7,6 +7,7 @@ import { RPC_PROVIDER_TIMEOUT_MS } from '../constants';
 import { clearSponsorLastUpdateTimestamp, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
+import type { AirseekerRegistry } from '../typechain-types';
 import type { ChainId, ProviderName } from '../types';
 import { deriveSponsorWallet, sleep } from '../utils';
 
@@ -17,6 +18,8 @@ import {
   verifyMulticallResponse,
   type DecodedActiveDataFeedResponse,
   getApi3ServerV1,
+  decodeGetBlockNumberResponse,
+  decodeGetChainIdResponse,
 } from './contracts';
 import { getUpdatableFeeds } from './get-updatable-feeds';
 import { hasSponsorPendingTransaction, submitTransactions } from './submit-transactions';
@@ -78,6 +81,64 @@ export const calculateStaggerTimeMs = (
   return optimalStaggerTimeMs;
 };
 
+export const readActiveDataFeedBatch = async (
+  airseekerRegistry: AirseekerRegistry,
+  chainId: string,
+  fromIndex: number,
+  toIndex: number
+) => {
+  const calldatas: string[] = [];
+  if (fromIndex === 0) calldatas.push(airseekerRegistry.interface.encodeFunctionData('activeDataFeedCount'));
+  calldatas.push(
+    airseekerRegistry.interface.encodeFunctionData('getBlockNumber'),
+    airseekerRegistry.interface.encodeFunctionData('getChainId'),
+    ...range(fromIndex, toIndex).map((dataFeedIndex) =>
+      airseekerRegistry.interface.encodeFunctionData('activeDataFeed', [dataFeedIndex])
+    )
+  );
+
+  let returndatas = verifyMulticallResponse(await airseekerRegistry.callStatic.tryMulticall(calldatas, {}));
+  let activeDataFeedCountReturndata: string | undefined;
+  if (fromIndex === 0) {
+    activeDataFeedCountReturndata = returndatas[0]!;
+    returndatas = returndatas.slice(1);
+  }
+  const [getBlockNumberReturndata, getChainIdReturndata, ...activeDataFeedReturndatas] = returndatas;
+
+  // Check that the chain ID is correct and log a warning if it's not because it's possible that providers switch chain
+  // ID at runtime by mistake. In case the chain ID is wrong, we want to skip all data feeds in the batch (or all of
+  // them in case this is the first batch). Another possibility of a wrong chain ID is misconfiguration in airseeker
+  // file.
+  const contractChainId = decodeGetChainIdResponse(getChainIdReturndata!).toString();
+  if (contractChainId !== chainId) {
+    logger.warn(`Chain ID mismatch.`, { chainId, contractChainId });
+    return null;
+  }
+
+  // In the first batch we may have asked for a non-existent data feed. We need to slice them off based on the active
+  // data feed count.
+  let activeDataFeedCount: number | undefined;
+  let batchReturndata = activeDataFeedReturndatas;
+  if (fromIndex === 0) {
+    activeDataFeedCount = decodeActiveDataFeedCountResponse(activeDataFeedCountReturndata!);
+    batchReturndata = activeDataFeedReturndatas.slice(0, activeDataFeedCount);
+  }
+  const batch = batchReturndata
+    .map((dataFeedReturndata) => decodeActiveDataFeedResponse(airseekerRegistry, dataFeedReturndata))
+    .filter((dataFeed, dataFeedIndex): dataFeed is DecodedActiveDataFeedResponse => {
+      logger.warn(`Data feed not registered.`, { dataFeedIndex });
+      return dataFeed !== null;
+    });
+
+  const blockNumber = decodeGetBlockNumberResponse(getBlockNumberReturndata!);
+
+  return {
+    batch,
+    blockNumber,
+    activeDataFeedCount,
+  };
+};
+
 export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, chainId: ChainId) => {
   await logger.runWithContext({ chainId, providerName, updateFeedsCoordinatorId: Date.now().toString() }, async () => {
     // We do not expect this function to throw, but its possible that some execution path is incorrectly handled and we
@@ -96,32 +157,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       logger.debug(`Fetching first batch of data feeds batches.`);
       const firstBatchStartTimeMs = Date.now();
       const goFirstBatch = await go(
-        async () => {
-          const activeDataFeedCountCalldata = airseekerRegistry.interface.encodeFunctionData('activeDataFeedCount');
-          const activeDataFeedCalldatas = range(0, dataFeedBatchSize).map((dataFeedIndex) =>
-            airseekerRegistry.interface.encodeFunctionData('activeDataFeed', [dataFeedIndex])
-          );
-          const [activeDataFeedCountReturndata, ...activeDataFeedCallsReturndata] = verifyMulticallResponse(
-            await airseekerRegistry.callStatic.tryMulticall([activeDataFeedCountCalldata, ...activeDataFeedCalldatas])
-          );
-
-          const activeDataFeedCount = decodeActiveDataFeedCountResponse(
-            airseekerRegistry,
-            activeDataFeedCountReturndata!
-          );
-          const firstBatch = activeDataFeedCallsReturndata
-            // Because the activeDataFeedCount is not known during the multicall, we may ask for non-existent data feeds. These should be filtered out.
-            .slice(0, activeDataFeedCount)
-            .map((dataFeedReturndata) => decodeActiveDataFeedResponse(airseekerRegistry, dataFeedReturndata))
-            .filter((dataFeed, dataFeedIndex): dataFeed is DecodedActiveDataFeedResponse => {
-              logger.warn(`Data feed not registered.`, { dataFeedIndex });
-              return dataFeed !== null;
-            });
-          return {
-            firstBatch,
-            activeDataFeedCount,
-          };
-        },
+        async () => readActiveDataFeedBatch(airseekerRegistry, chainId, 0, dataFeedBatchSize),
         { totalTimeoutMs: dataFeedUpdateIntervalMs }
       );
       if (!goFirstBatch.success) {
@@ -129,7 +165,8 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
         return;
       }
 
-      const { firstBatch, activeDataFeedCount } = goFirstBatch.data;
+      if (goFirstBatch.data === null) return;
+      const { batch: firstBatch, activeDataFeedCount, blockNumber: firstBatchBlockNumber } = goFirstBatch.data;
       if (activeDataFeedCount === 0) {
         logger.warn(`No active data feeds found.`);
         return;
@@ -141,11 +178,12 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
         firstBatch,
         providerName,
         provider,
-        chainId
+        chainId,
+        firstBatchBlockNumber
       ).catch((error) => error);
 
       // Calculate the stagger time.
-      const batchesCount = Math.ceil(activeDataFeedCount / dataFeedBatchSize);
+      const batchesCount = Math.ceil(activeDataFeedCount! / dataFeedBatchSize);
       const firstBatchDurationMs = Date.now() - firstBatchStartTimeMs;
       const staggerTimeMs = calculateStaggerTimeMs(batchesCount, firstBatchDurationMs, dataFeedUpdateIntervalMs);
 
@@ -162,28 +200,24 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
         const goBatch = await go(async () => {
           logger.debug(`Fetching batch of active data feeds.`, { batchIndex });
           const dataFeedBatchIndexStart = batchIndex * dataFeedBatchSize;
-          const dataFeedBatchIndexEnd = Math.min(activeDataFeedCount, dataFeedBatchIndexStart + dataFeedBatchSize);
-          const activeDataFeedCalldatas = range(dataFeedBatchIndexStart, dataFeedBatchIndexEnd).map((dataFeedIndex) =>
-            airseekerRegistry.interface.encodeFunctionData('activeDataFeed', [dataFeedIndex])
-          );
-          const returndata = verifyMulticallResponse(
-            await airseekerRegistry.callStatic.tryMulticall(activeDataFeedCalldatas)
+          const dataFeedBatchIndexEnd = Math.min(activeDataFeedCount!, dataFeedBatchIndexStart + dataFeedBatchSize);
+          const activeBatch = await readActiveDataFeedBatch(
+            airseekerRegistry,
+            chainId,
+            dataFeedBatchIndexStart,
+            dataFeedBatchIndexEnd
           );
 
-          return returndata
-            .map((returndata) => decodeActiveDataFeedResponse(airseekerRegistry, returndata))
-            .filter((dataFeed, index): dataFeed is DecodedActiveDataFeedResponse => {
-              logger.warn(`Data feed not registered.`, { dataFeedIndex: dataFeedBatchIndexStart + index });
-              return dataFeed !== null;
-            });
+          return activeBatch;
         });
         if (!goBatch.success) {
           logger.error(`Failed to get active data feeds batch.`, goBatch.error);
           return;
         }
-        const batch = goBatch.data;
+        if (goBatch.data === null) return;
+        const { batch, blockNumber } = goBatch.data;
 
-        return processBatch(batch, providerName, provider, chainId);
+        return processBatch(batch, providerName, provider, chainId, blockNumber);
       });
 
       // Wait for all the batches to be processed and print stats from this run.
@@ -220,11 +254,13 @@ export const processBatch = async (
   batch: DecodedActiveDataFeedResponse[],
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
-  chainId: ChainId
+  chainId: ChainId,
+  blockNumber: number
 ) => {
   logger.debug('Processing batch of active data feeds.', {
     dapiNames: batch.map((dataFeed) => dataFeed.decodedDapiName),
     dataFeedIds: batch.map((dataFeed) => dataFeed.decodedDataFeed.dataFeedId),
+    blockNumber,
   });
   const {
     config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient },
@@ -289,7 +325,8 @@ export const processBatch = async (
     providerName,
     provider,
     getApi3ServerV1(contracts.Api3ServerV1, provider),
-    feedsToUpdate
+    feedsToUpdate,
+    blockNumber
   );
   const successCount = updatedFeeds.filter(Boolean).length;
   return { successCount, errorCount: size(feedsToUpdate) - successCount };

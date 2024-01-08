@@ -41,6 +41,7 @@ describe(multicallBeaconValues.name, () => {
     const tryMulticallMock = jest.fn().mockReturnValue({
       successes: [true, true, true],
       returndata: [
+        ethers.utils.defaultAbiCoder.encode(['uint256'], [31_337]),
         ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [100, 105]),
         ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [101, 106]),
         ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [102, 107]),
@@ -48,9 +49,10 @@ describe(multicallBeaconValues.name, () => {
     });
 
     const encodeFunctionDataMock = jest.fn();
-    encodeFunctionDataMock.mockReturnValueOnce('0xfirst');
-    encodeFunctionDataMock.mockReturnValueOnce('0xsecond');
-    encodeFunctionDataMock.mockReturnValueOnce('0xthird');
+    encodeFunctionDataMock.mockReturnValueOnce('0xChain');
+    encodeFunctionDataMock.mockReturnValueOnce('0xFirst');
+    encodeFunctionDataMock.mockReturnValueOnce('0xSecond');
+    encodeFunctionDataMock.mockReturnValueOnce('0xThird');
 
     const mockContract = {
       connect: jest.fn().mockReturnValue({
@@ -79,7 +81,7 @@ describe(multicallBeaconValues.name, () => {
         value: ethers.BigNumber.from(102),
       },
     });
-    expect(tryMulticallMock).toHaveBeenCalledWith(['0xfirst', '0xsecond', '0xthird']);
+    expect(tryMulticallMock).toHaveBeenCalledWith(['0xChain', '0xFirst', '0xSecond', '0xThird']);
   });
 });
 

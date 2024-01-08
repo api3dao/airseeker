@@ -47,7 +47,8 @@ export const submitTransaction = async (
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
   api3ServerV1: Api3ServerV1,
-  updatableDataFeed: UpdatableDataFeed
+  updatableDataFeed: UpdatableDataFeed,
+  blockNumber: number
 ) => {
   const state = getState();
   const {
@@ -63,7 +64,7 @@ export const submitTransaction = async (
   const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
   const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
-  return logger.runWithContext({ dapiName: decodedDapiName, dataFeedId }, async () => {
+  return logger.runWithContext({ dapiName: decodedDapiName, dataFeedId, blockNumber }, async () => {
     // NOTE: We use go mainly to set a timeout for the whole update process. We expect the function not to throw and
     // handle errors internally.
     const goUpdate = await go(
@@ -84,6 +85,9 @@ export const submitTransaction = async (
         logger.debug('Getting derived sponsor wallet.');
         const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName ?? dataFeedId);
 
+        logger.debug('Getting nonce.');
+        const nonce = await provider.getTransactionCount(sponsorWallet.address, blockNumber);
+
         logger.debug('Getting gas price.');
         const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWallet.address);
         if (!gasPrice) return null;
@@ -96,14 +100,19 @@ export const submitTransaction = async (
           setSponsorLastUpdateTimestamp(chainId, providerName, sponsorWallet.address);
         }
 
-        logger.debug('Updating data feed.', { gasPrice: gasPrice.toString(), gasLimit: gasLimit.toString() });
+        logger.info('Updating data feed.', {
+          sponsorAddress: sponsorWallet.address,
+          gasPrice: gasPrice.toString(),
+          gasLimit: gasLimit.toString(),
+          nonce,
+        });
         const goMulticall = await go(async () => {
           return (
             api3ServerV1
               // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
               // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
               .connect(sponsorWallet.connect(api3ServerV1.provider))
-              .tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit })
+              .tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce })
           );
         });
         if (!goMulticall.success) {
@@ -114,7 +123,7 @@ export const submitTransaction = async (
             logger.info(`Failed to submit replacement transaction because it was underpriced.`);
             return null;
           }
-          logger.error(`Failed to update a data feed.`, goMulticall.error);
+          logger.info(`Failed to update a data feed.`, goMulticall.error);
           return null;
         }
 
@@ -137,11 +146,12 @@ export const submitTransactions = async (
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
   api3ServerV1: Api3ServerV1,
-  updatableDataFeeds: UpdatableDataFeed[]
+  updatableDataFeeds: UpdatableDataFeed[],
+  blockNumber: number
 ) =>
   Promise.all(
     updatableDataFeeds.map(async (dataFeed) =>
-      submitTransaction(chainId, providerName, provider, api3ServerV1, dataFeed)
+      submitTransaction(chainId, providerName, provider, api3ServerV1, dataFeed, blockNumber)
     )
   );
 
