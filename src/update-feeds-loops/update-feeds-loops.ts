@@ -133,7 +133,7 @@ export const readActiveDataFeedBatch = async (
   return {
     batch,
     blockNumber,
-    ...(activeDataFeedCount ? { activeDataFeedCount } : {}),
+    activeDataFeedCount,
   };
 };
 
