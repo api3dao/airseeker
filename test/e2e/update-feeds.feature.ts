@@ -71,21 +71,28 @@ it('updates blockchain data', async () => {
   );
   jest.spyOn(logger, 'debug');
 
-  await submitTransactions(chainId, providerName, provider, api3ServerV1, [
-    {
-      dataFeedInfo: activeBtcDataFeed,
-      updatableBeacons: [
-        {
-          beaconId: binanceBtcBeacon.beaconId,
-          signedData: binanceBtcSignedData,
-        },
-        {
-          beaconId: krakenBtcBeacon.beaconId,
-          signedData: krakenBtcSignedData,
-        },
-      ],
-    },
-  ]);
+  await submitTransactions(
+    chainId,
+    providerName,
+    provider,
+    api3ServerV1,
+    [
+      {
+        dataFeedInfo: activeBtcDataFeed,
+        updatableBeacons: [
+          {
+            beaconId: binanceBtcBeacon.beaconId,
+            signedData: binanceBtcSignedData,
+          },
+          {
+            beaconId: krakenBtcBeacon.beaconId,
+            signedData: krakenBtcSignedData,
+          },
+        ],
+      },
+    ],
+    123_456
+  );
 
   expect(logger.debug).toHaveBeenCalledTimes(10);
   expect(logger.debug).toHaveBeenNthCalledWith(1, 'Creating calldatas.');

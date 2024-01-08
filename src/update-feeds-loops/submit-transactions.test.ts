@@ -309,7 +309,8 @@ describe(submitTransactionsModule.submitTransactions.name, () => {
         allowPartial<UpdatableDataFeed>({
           dataFeedInfo: { dapiName: utilsModule.encodeDapiName('BTC/USD') },
         }),
-      ]
+      ],
+      123_456
     );
 
     expect(submitTransactionsModule.submitTransaction).toHaveBeenCalledTimes(2);

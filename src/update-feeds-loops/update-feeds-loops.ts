@@ -97,7 +97,7 @@ export const readActiveDataFeedBatch = async (
     )
   );
 
-  let returndatas = verifyMulticallResponse(await airseekerRegistry.callStatic.tryMulticall(calldatas));
+  let returndatas = verifyMulticallResponse(await airseekerRegistry.callStatic.tryMulticall(calldatas, {}));
   let activeDataFeedCountReturndata: string | undefined;
   if (fromIndex === 0) {
     activeDataFeedCountReturndata = returndatas[0]!;
@@ -129,6 +129,7 @@ export const readActiveDataFeedBatch = async (
     });
 
   const blockNumber = decodeGetBlockNumberResponse(getBlockNumberReturndata!);
+
   return {
     batch,
     blockNumber,
@@ -162,7 +163,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
         return;
       }
 
-      const { batch: firstBatch, activeDataFeedCount } = goFirstBatch.data;
+      const { batch: firstBatch, activeDataFeedCount, blockNumber: firstBatchBlockNumber } = goFirstBatch.data;
       if (activeDataFeedCount === 0) {
         logger.warn(`No active data feeds found.`);
         return;
@@ -174,7 +175,8 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
         firstBatch,
         providerName,
         provider,
-        chainId
+        chainId,
+        firstBatchBlockNumber
       ).catch((error) => error);
 
       // Calculate the stagger time.
@@ -208,9 +210,9 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
           logger.error(`Failed to get active data feeds batch.`, goBatch.error);
           return;
         }
-        const { batch } = goBatch.data;
+        const { batch, blockNumber } = goBatch.data;
 
-        return processBatch(batch, providerName, provider, chainId);
+        return processBatch(batch, providerName, provider, chainId, blockNumber);
       });
 
       // Wait for all the batches to be processed and print stats from this run.
@@ -247,11 +249,13 @@ export const processBatch = async (
   batch: DecodedActiveDataFeedResponse[],
   providerName: ProviderName,
   provider: ethers.providers.StaticJsonRpcProvider,
-  chainId: ChainId
+  chainId: ChainId,
+  blockNumber: number
 ) => {
   logger.debug('Processing batch of active data feeds.', {
     dapiNames: batch.map((dataFeed) => dataFeed.decodedDapiName),
     dataFeedIds: batch.map((dataFeed) => dataFeed.decodedDataFeed.dataFeedId),
+    blockNumber,
   });
   const {
     config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient },
@@ -316,7 +320,8 @@ export const processBatch = async (
     providerName,
     provider,
     getApi3ServerV1(contracts.Api3ServerV1, provider),
-    feedsToUpdate
+    feedsToUpdate,
+    blockNumber
   );
   const successCount = updatedFeeds.filter(Boolean).length;
   return { successCount, errorCount: size(feedsToUpdate) - successCount };

@@ -8,7 +8,7 @@ import { getState } from '../state';
 import type { BeaconId, ChainId, SignedData } from '../types';
 import { decodeBeaconValue, multiplyBigNumber } from '../utils';
 
-import { getApi3ServerV1, type DecodedActiveDataFeedResponse } from './contracts';
+import { getApi3ServerV1, type DecodedActiveDataFeedResponse, decodeGetChainIdResponse } from './contracts';
 
 interface BeaconValue {
   timestamp: ethers.BigNumber;
@@ -34,8 +34,7 @@ export const getUpdatableFeeds = async (
   const uniqueBeaconIds = [
     ...new Set(batch.flatMap((item) => item.decodedDataFeed.beacons.flatMap((beacon) => beacon.beaconId))),
   ];
-  // TODO:
-  const goOnChainFeedValues = await go(async () => multicallBeaconValues(uniqueBeaconIds, provider, chainId, 0));
+  const goOnChainFeedValues = await go(async () => multicallBeaconValues(uniqueBeaconIds, provider, chainId));
   if (!goOnChainFeedValues.success) {
     logger.error(
       `Multicalling on-chain data feed values has failed. Skipping update for all data feeds in a batch`,
@@ -118,22 +117,25 @@ export const multicallBeaconValues = async (
   const chain = config.chains[chainId]!;
   const { contracts } = chain;
 
-  const server = getApi3ServerV1(contracts.Api3ServerV1, provider);
-  const voidSigner = new ethers.VoidSigner(ethers.constants.AddressZero, provider);
-  const feedCalldata = batch.map((beaconId) => ({
-    beaconId,
-    calldata: server.interface.encodeFunctionData('dataFeeds', [beaconId]),
-  }));
+  const api3ServerV1 = getApi3ServerV1(contracts.Api3ServerV1, provider);
+  const dataFeedsCalldata = batch.map((beaconId) => api3ServerV1.interface.encodeFunctionData('dataFeeds', [beaconId]));
 
   // Calling the dataFeeds contract function is guaranteed not to revert, so we are not checking the multicall successes
   // and using returndata directly. If the call fails (e.g. timeout or RPC error) we let the parent handle it.
-  const { returndata } = await server
+  const voidSigner = new ethers.VoidSigner(ethers.constants.AddressZero, provider);
+  const { returndata } = await api3ServerV1
     .connect(voidSigner)
-    .callStatic.tryMulticall(feedCalldata.map((feed) => feed.calldata));
+    .callStatic.tryMulticall([api3ServerV1.interface.encodeFunctionData('getChainId'), ...dataFeedsCalldata]);
+  const [chainIdReturndata, ...dataFeedsReturndata] = returndata;
+
+  const contractChainId = decodeGetChainIdResponse(chainIdReturndata!).toString();
+  if (contractChainId !== chainId) {
+    throw new Error(`Chain ID mismatch. Expected ${chainId}, got ${contractChainId}`);
+  }
 
   const onChainValues: Record<BeaconId, BeaconValue> = {};
   for (const [idx, beaconId] of batch.entries()) {
-    const [value, timestamp] = ethers.utils.defaultAbiCoder.decode(['int224', 'uint32'], returndata[idx]!);
+    const [value, timestamp] = ethers.utils.defaultAbiCoder.decode(['int224', 'uint32'], dataFeedsReturndata[idx]!);
     onChainValues[beaconId] = { timestamp: ethers.BigNumber.from(timestamp), value: ethers.BigNumber.from(value) };
   }
   return onChainValues;
