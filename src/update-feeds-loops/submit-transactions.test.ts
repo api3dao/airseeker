@@ -344,11 +344,14 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
+    const provider = {
+      getTransactionCount: jest.fn().mockResolvedValue(0),
+    } as unknown as ethers.providers.StaticJsonRpcProvider;
 
     await submitTransactionsModule.submitTransaction(
       '31337',
       'evm-local',
-      new ethers.providers.StaticJsonRpcProvider(),
+      provider,
       api3ServerV1 as unknown as Api3ServerV1,
       allowPartial<UpdatableDataFeed>({
         dataFeedInfo: {
@@ -362,8 +365,14 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     );
 
     // Verify that the data feed was updated successfully.
-    expect(logger.info).toHaveBeenCalledTimes(1);
-    expect(logger.info).toHaveBeenCalledWith('Successfully updated data feed.');
+    expect(logger.info).toHaveBeenCalledTimes(2);
+    expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed.', {
+      gasLimit: '500000',
+      gasPrice: '100000000',
+      nonce: 0,
+      sponsorAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
+    });
+    expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully updated data feed.');
 
     // Verify the flow of the update process via the debug logs. Note, that some debug log calls are not here because
     // many functions are mocked.
@@ -374,11 +383,8 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     expect(logger.debug).toHaveBeenNthCalledWith(4, 'Derived new sponsor wallet.', {
       sponsorWalletAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting gas price.');
-    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Setting timestamp of the original update transaction.');
-    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Updating data feed.', {
-      gasLimit: '500000',
-      gasPrice: '100000000',
-    });
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting nonce.');
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Getting gas price.');
+    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Setting timestamp of the original update transaction.');
   });
 });

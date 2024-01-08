@@ -70,6 +70,8 @@ it('updates blockchain data', async () => {
     (currentBlockTimestamp + 2).toString()
   );
   jest.spyOn(logger, 'debug');
+  jest.spyOn(logger, 'info');
+  const blockNumber = await provider.getBlockNumber();
 
   await submitTransactions(
     chainId,
@@ -91,7 +93,7 @@ it('updates blockchain data', async () => {
         ],
       },
     ],
-    123_456
+    blockNumber
   );
 
   expect(logger.debug).toHaveBeenCalledTimes(10);
@@ -99,13 +101,16 @@ it('updates blockchain data', async () => {
   expect(logger.debug).toHaveBeenNthCalledWith(2, 'Estimating gas limit.');
   expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting derived sponsor wallet.');
   expect(logger.debug).toHaveBeenNthCalledWith(4, 'Derived new sponsor wallet.', expect.anything());
-  expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting gas price.');
-  expect(logger.debug).toHaveBeenNthCalledWith(6, 'Fetching gas price and saving it to the state.');
-  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Purging old gas prices.');
+  expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting nonce.');
+  expect(logger.debug).toHaveBeenNthCalledWith(6, 'Getting gas price.');
+  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Fetching gas price and saving it to the state.');
+  expect(logger.debug).toHaveBeenNthCalledWith(8, 'Purging old gas prices.');
   expect(logger.debug).toHaveBeenNthCalledWith(
-    8,
+    9,
     'No historical gas prices to compute the percentile. Using the provider recommended gas price.'
   );
-  expect(logger.debug).toHaveBeenNthCalledWith(9, 'Setting timestamp of the original update transaction.');
-  expect(logger.debug).toHaveBeenNthCalledWith(10, 'Updating data feed.', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(10, 'Setting timestamp of the original update transaction.');
+  expect(logger.info).toHaveBeenCalledTimes(2);
+  expect(logger.info).toHaveBeenNthCalledWith(2, 'Updating data feed.', expect.anything());
+  expect(logger.info).toHaveBeenNthCalledWith(1, 'Successfully updated data feed.');
 });

@@ -117,15 +117,16 @@ export const multicallBeaconValues = async (
   const chain = config.chains[chainId]!;
   const { contracts } = chain;
 
-  const api3ServerV1 = getApi3ServerV1(contracts.Api3ServerV1, provider);
-  const dataFeedsCalldata = batch.map((beaconId) => api3ServerV1.interface.encodeFunctionData('dataFeeds', [beaconId]));
-
   // Calling the dataFeeds contract function is guaranteed not to revert, so we are not checking the multicall successes
   // and using returndata directly. If the call fails (e.g. timeout or RPC error) we let the parent handle it.
+  const api3ServerV1 = getApi3ServerV1(contracts.Api3ServerV1, provider);
   const voidSigner = new ethers.VoidSigner(ethers.constants.AddressZero, provider);
   const { returndata } = await api3ServerV1
     .connect(voidSigner)
-    .callStatic.tryMulticall([api3ServerV1.interface.encodeFunctionData('getChainId'), ...dataFeedsCalldata]);
+    .callStatic.tryMulticall([
+      api3ServerV1.interface.encodeFunctionData('getChainId'),
+      ...batch.map((beaconId) => api3ServerV1.interface.encodeFunctionData('dataFeeds', [beaconId])),
+    ]);
   const [chainIdReturndata, ...dataFeedsReturndata] = returndata;
 
   const contractChainId = decodeGetChainIdResponse(chainIdReturndata!).toString();
