@@ -5,7 +5,7 @@
     "CloudWatchLogsGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "AirseekerLogGroup",
+        "LogGroupName": "AirseekerLogGroup-<SOME_ID>",
         "RetentionInDays": 7
       }
     },
@@ -32,7 +32,7 @@
               },
               {
                 "Name": "LOG_LEVEL",
-                "Value": "debug"
+                "Value": "info"
               }
             ],
             "EntryPoint": [
