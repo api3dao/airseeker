@@ -1,4 +1,3 @@
-import { ethers } from 'ethers';
 import { omit } from 'lodash';
 
 import { initializeGasState } from '../../src/gas-price';
@@ -14,8 +13,6 @@ import { generateSignedData } from '../utils';
 
 const chainId = '31337';
 const providerName = 'localhost';
-const rpcUrl = 'http://127.0.0.1:8545/';
-const provider = new ethers.JsonRpcProvider(rpcUrl);
 
 it('reads blockchain data', async () => {
   const { config } = await deployAndUpdate();
@@ -41,10 +38,11 @@ it('updates blockchain data', async () => {
     krakenAirnodeWallet,
     binanceAirnodeWallet,
     airseekerWallet,
+    provider,
   } = await deployAndUpdate();
   initializeState(config);
   stateModule.updateState((draft) => {
-    draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic.phrase;
+    draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
   });
   initializeGasState(chainId, providerName);
   const btcDataFeed = await airseekerRegistry.activeDataFeed(0);
@@ -57,8 +55,8 @@ it('updates blockchain data', async () => {
     decodedDapiName: decodeDapiName(btcDataFeed.dapiName),
   };
 
-  const currentBlock = await airseekerRegistry.provider.getBlock('latest');
-  const currentBlockTimestamp = currentBlock.timestamp;
+  const currentBlock = await provider.getBlock('latest');
+  const currentBlockTimestamp = currentBlock!.timestamp;
   const binanceBtcSignedData = await generateSignedData(
     binanceAirnodeWallet,
     binanceBtcBeacon.templateId,

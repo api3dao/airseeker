@@ -4,7 +4,7 @@ import {
   type Api3ServerV1,
   Api3ServerV1__factory as Api3ServerV1Factory,
 } from '@api3/airnode-protocol-v1';
-import type { HDNodeWallet, Signer } from 'ethers';
+import type { HDNodeWallet, JsonRpcProvider, Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
 import { AirseekerRegistry__factory as AirseekerRegistryFactory } from '../../src/typechain-types';
@@ -287,5 +287,7 @@ export const deployAndUpdate = async () => {
 
     airseekerWallet,
     config,
+
+    provider: ethers.provider as unknown as JsonRpcProvider,
   };
 };

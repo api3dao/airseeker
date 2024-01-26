@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
-import { type Wallet, ethers } from 'ethers';
+import { ethers, type HDNodeWallet } from 'ethers';
 
 import type { SignedData, Beacon } from '../src/types';
 
@@ -33,7 +33,7 @@ export const encodeBeaconSetDetails = (dataFeed: Beacon[]) =>
   );
 
 export const generateSignedData = async (
-  airnodeWallet: Wallet,
+  airnodeWallet: HDNodeWallet,
   templateId: string,
   dataFeedTimestamp: string,
   apiValue = BigInt(generateRandomBytes(Math.floor(Math.random() * 27) + 1)) // Fits into uint224.
