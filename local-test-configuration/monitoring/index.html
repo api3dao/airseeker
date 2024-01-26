@@ -786,8 +786,8 @@
       const sponsorAddressBN = BigInt(sponsorAddress);
       const paths = [];
       for (let i = 0; i < 6; i++) {
-        const shiftedSponsorAddressBN = sponsorAddressBN.shr(31 * i);
-        paths.push(shiftedSponsorAddressBN.mask(31).toString());
+        const shiftedSponsorAddressBN = sponsorAddressBN >> BigInt(31 * i);
+        paths.push(ethers.toBeHex(shiftedSponsorAddressBN).slice(0, 31));
       }
       const AIRSEEKER_PROTOCOL_ID = '5'; // From: https://github.com/api3dao/airnode/blob/ef16c54f33d455a1794e7886242567fc47ee14ef/packages/airnode-protocol/src/index.ts#L46
       return `${AIRSEEKER_PROTOCOL_ID}/${paths.join('/')}`;

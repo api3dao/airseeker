@@ -21,8 +21,8 @@ export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
   const sponsorAddressBN = BigInt(sponsorAddress);
   const paths = [];
   for (let i = 0; i < 6; i++) {
-    const shiftedSponsorAddressBN = sponsorAddressBN.shr(31 * i);
-    paths.push(shiftedSponsorAddressBN.mask(31).toString());
+    const shiftedSponsorAddressBN = sponsorAddressBN >> BigInt(31 * i);
+    paths.push(ethers.toBeHex(shiftedSponsorAddressBN).slice(0, 31));
   }
   return `${AIRSEEKER_PROTOCOL_ID}/${paths.join('/')}`;
 }
