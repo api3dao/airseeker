@@ -9,8 +9,8 @@ import { deriveBeaconId } from '../utils';
 export const verifySignedData = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
   // Verification is wrapped in goSync, because ethers methods can potentially throw on invalid input.
   const goVerify = goSync(() => {
-    const message = ethers.utils.arrayify(
-      ethers.utils.solidityKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, encodedValue])
+    const message = ethers.getBytes(
+      ethers.solidityPackedKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, encodedValue])
     );
 
     const signerAddr = ethers.utils.verifyMessage(message, signature);

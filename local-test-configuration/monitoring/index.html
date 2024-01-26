@@ -687,7 +687,7 @@
     if (!airseekerMnemonic) throw new Error('airseekerMnemonic must be provided as URL parameter');
 
     function deriveBeaconId(airnodeAddress, templateId) {
-      return ethers.utils.solidityKeccak256(['address', 'bytes32'], [airnodeAddress, templateId]);
+      return ethers.solidityPackedKeccak256(['address', 'bytes32'], [airnodeAddress, templateId]);
     }
 
     function deriveBeaconSetId(beaconIds) {

@@ -29,20 +29,20 @@ const deriveBeaconData = (beaconData: RawBeaconData) => {
   const { endpointId, parameters: parameters, airnodeAddress } = beaconData;
 
   const encodedParameters = encode(parameters);
-  const templateId = ethers.utils.solidityKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]);
+  const templateId = ethers.solidityPackedKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]);
   const beaconId = deriveBeaconId(airnodeAddress, templateId)!;
 
   return { endpointId, templateId, encodedParameters, beaconId, parameters, airnodeAddress };
 };
 
 export const deriveRootRole = (managerAddress: string) => {
-  return ethers.utils.solidityKeccak256(['address'], [managerAddress]);
+  return ethers.solidityPackedKeccak256(['address'], [managerAddress]);
 };
 
 export const deriveRole = (adminRole: string, roleDescription: string) => {
-  return ethers.utils.solidityKeccak256(
+  return ethers.solidityPackedKeccak256(
     ['bytes32', 'bytes32'],
-    [adminRole, ethers.utils.solidityKeccak256(['string'], [roleDescription])]
+    [adminRole, ethers.solidityPackedKeccak256(['string'], [roleDescription])]
   );
 };
 

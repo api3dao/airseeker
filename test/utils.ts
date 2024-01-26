@@ -1,15 +1,15 @@
+import { randomBytes } from 'node:crypto';
+
 import { type Wallet, ethers } from 'ethers';
 
 import type { SignedData, Beacon } from '../src/types';
 
 export const signData = async (signer: ethers.Signer, templateId: string, timestamp: string, data: string) =>
   signer.signMessage(
-    ethers.utils.arrayify(
-      ethers.utils.solidityKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, data])
-    )
+    ethers.getBytes(ethers.solidityPackedKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, data]))
   );
 
-export const generateRandomBytes32 = () => ethers.utils.hexlify(ethers.utils.randomBytes(32));
+export const generateRandomBytes32 = () => ethers.toBeHex(randomBytes(32).toString('hex'));
 
 export type DeepPartial<T> = T extends object
   ? {

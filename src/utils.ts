@@ -6,7 +6,7 @@ import { AIRSEEKER_PROTOCOL_ID, INT224_MAX, INT224_MIN } from './constants';
 export const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function deriveBeaconId(airnodeAddress: string, templateId: string) {
-  return goSync(() => ethers.utils.solidityKeccak256(['address', 'bytes32'], [airnodeAddress, templateId])).data;
+  return goSync(() => ethers.solidityPackedKeccak256(['address', 'bytes32'], [airnodeAddress, templateId])).data;
 }
 
 export function deriveBeaconSetId(beaconIds: string[]) {
