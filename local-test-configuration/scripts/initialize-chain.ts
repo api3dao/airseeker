@@ -2,17 +2,18 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { encode } from '@api3/airnode-abi';
-import {
-  AccessControlRegistry__factory as AccessControlRegistryFactory,
-  Api3ServerV1__factory as Api3ServerV1Factory,
-} from '@api3/airnode-protocol-v1';
+import {} from '@api3/airnode-protocol-v1';
 import dotenv from 'dotenv';
 import type { ContractTransaction, Signer } from 'ethers';
 import { ethers } from 'ethers';
 import { zip } from 'lodash';
 
 import { interpolateSecrets, parseSecrets } from '../../src/config/utils';
-import { AirseekerRegistry__factory as AirseekerRegistryFactory } from '../../src/typechain-types';
+import {
+  AirseekerRegistry__factory as AirseekerRegistryFactory,
+  AccessControlRegistry__factory as AccessControlRegistryFactory,
+  Api3ServerV1__factory as Api3ServerV1Factory,
+} from '../../src/typechain-types';
 import { deriveBeaconId, deriveSponsorWallet, encodeDapiName } from '../../src/utils';
 
 interface RawBeaconData {

@@ -1,13 +1,11 @@
-import { Api3ServerV1__factory as Api3ServerV1Factory } from '@api3/airnode-protocol-v1';
 import { ethers } from 'ethers';
 
-// NOTE: The contract is not yet published, so we generate the Typechain artifacts locally and import it from there.
+import { Api3ServerV1__factory as Api3ServerV1Factory } from '../../src/typechain-types';
 import { type AirseekerRegistry, AirseekerRegistry__factory as AirseekerRegistryFactory } from '../typechain-types';
 import type { DecodedDataFeed } from '../types';
 import { decodeDapiName, deriveBeaconId, deriveBeaconSetId } from '../utils';
 
 export const getApi3ServerV1 = (address: string, provider: ethers.JsonRpcProvider) =>
-  // @ts-expect-error TODO: Api3ServerV1Factory exports ether@5 factories. We need to build the contract outselves.
   Api3ServerV1Factory.connect(address, provider);
 
 export const getAirseekerRegistry = (address: string, provider: ethers.JsonRpcProvider) =>
