@@ -3,6 +3,8 @@ import { ethers } from 'ethers';
 
 import { AIRSEEKER_PROTOCOL_ID, INT224_MAX, INT224_MIN } from './constants';
 
+export const abs = (n: bigint) => (n < 0n ? -n : n);
+
 export const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function deriveBeaconId(airnodeAddress: string, templateId: string) {

@@ -91,7 +91,7 @@ export interface DecodedActiveDataFeedResponse {
   decodedDapiName: string | null;
   decodedUpdateParameters: DecodedUpdateParameters;
   dataFeedValue: bigint;
-  dataFeedTimestamp: number;
+  dataFeedTimestamp: bigint;
   decodedDataFeed: DecodedDataFeed;
   signedApiUrls: string[];
 }
@@ -118,8 +118,7 @@ export const decodeActiveDataFeedResponse = (
     decodedDapiName: decodedDapiName === '' ? null : decodedDapiName,
     decodedUpdateParameters: decodeUpdateParameters(updateParameters),
     dataFeedValue,
-    // TODO: Consider working with BigInts everywhere.
-    dataFeedTimestamp: Number(dataFeedTimestamp),
+    dataFeedTimestamp,
     decodedDataFeed,
     signedApiUrls,
   };

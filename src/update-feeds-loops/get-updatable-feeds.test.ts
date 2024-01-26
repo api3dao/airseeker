@@ -147,7 +147,7 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: BigInt(100),
         },
         dataFeedValue: BigInt(10),
-        dataFeedTimestamp: 95,
+        dataFeedTimestamp: 95n,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
@@ -243,7 +243,7 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: BigInt(1),
         },
         dataFeedValue: BigInt(400),
-        dataFeedTimestamp: 90,
+        dataFeedTimestamp: 90n,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
@@ -323,7 +323,7 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: BigInt(100),
         },
         dataFeedValue: BigInt(200),
-        dataFeedTimestamp: 160,
+        dataFeedTimestamp: 160n,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
@@ -401,7 +401,7 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: BigInt(100),
         },
         dataFeedValue: BigInt(400),
-        dataFeedTimestamp: 140,
+        dataFeedTimestamp: 140n,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
@@ -425,7 +425,7 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: BigInt(100),
         },
         dataFeedValue: BigInt(10),
-        dataFeedTimestamp: 95,
+        dataFeedTimestamp: 95n,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],

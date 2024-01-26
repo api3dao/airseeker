@@ -79,7 +79,7 @@ export const clearSponsorLastUpdateTimestamp = (chainId: string, providerName: s
 export const getPercentile = (percentile: number, array: bigint[]) => {
   if (array.length === 0) return;
 
-  array.sort((a, b) => (a.gt(b) ? 1 : -1));
+  array.sort((a, b) => (a > b ? 1 : -1));
   const index = Math.max(0, Math.ceil(array.length * (percentile / 100)) - 1);
   return array[index];
 };
@@ -189,7 +189,7 @@ export const getRecommendedGasPrice = async (
   }
 
   // Log a warning if there is not enough historical data to sanitize the gas price but the price could be sanitized
-  if (!hasSufficientSanitizationData && gasPrice.gt(percentileGasPrice)) {
+  if (!hasSufficientSanitizationData && gasPrice > percentileGasPrice) {
     logger.warn('Gas price could be sanitized but there is not enough historical data.', {
       gasPrice: gasPrice.toString(),
       percentileGasPrice: percentileGasPrice.toString(),
@@ -197,7 +197,7 @@ export const getRecommendedGasPrice = async (
   }
 
   // If necessary, sanitize the gas price and log a warning because this should not happen under normal circumstances
-  if (hasSufficientSanitizationData && gasPrice.gt(percentileGasPrice)) {
+  if (hasSufficientSanitizationData && gasPrice > percentileGasPrice) {
     logger.warn('Sanitizing gas price.', {
       gasPrice: gasPrice.toString(),
       percentileGasPrice: percentileGasPrice.toString(),

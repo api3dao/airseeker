@@ -1,5 +1,3 @@
-import { BigNumber } from 'ethers';
-
 import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
 import { deriveBeaconId } from '../utils';
 
@@ -11,7 +9,7 @@ const stateMock: State = {
   gasPrices: {
     '31337': {
       localhost: {
-        gasPrices: [{ price: BigNumber.from(10), timestamp: timestampMock }],
+        gasPrices: [{ price: 10n, timestamp: timestampMock }],
         sponsorLastUpdateTimestamp: { '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266': timestampMock },
       },
     },

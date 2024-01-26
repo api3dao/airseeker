@@ -1,16 +1,15 @@
-import type { BigNumber, ethers } from 'ethers';
-
 import { HUNDRED_PERCENT } from '../constants';
 import { logger } from '../logger';
+import { abs } from '../utils';
 
 export const calculateDeviationPercentage = (initialValue: bigint, updatedValue: bigint) => {
-  const delta = updatedValue.sub(initialValue);
-  const absoluteDelta = delta.abs();
+  const delta = updatedValue - initialValue;
+  const absoluteDelta = abs(delta);
 
   // Avoid division by 0
-  const absoluteInitialValue = initialValue.isZero() ? BigInt(1) : initialValue.abs();
+  const absoluteInitialValue = initialValue === 0n ? BigInt(1) : abs(initialValue);
 
-  return absoluteDelta.mul(BigInt(HUNDRED_PERCENT)).div(absoluteInitialValue);
+  return (absoluteDelta * BigInt(HUNDRED_PERCENT)) / absoluteInitialValue;
 };
 
 export const calculateMedian = (arr: bigint[]) => {
@@ -18,33 +17,33 @@ export const calculateMedian = (arr: bigint[]) => {
   const mid = Math.floor(arr.length / 2);
 
   const nums = [...arr].sort((a, b) => {
-    if (a.lt(b)) return -1;
-    else if (a.gt(b)) return 1;
+    if (a < b) return -1;
+    else if (a > b) return 1;
     else return 0;
   });
 
-  return arr.length % 2 === 0 ? nums[mid - 1]!.add(nums[mid]!).div(2) : nums[mid]!;
+  return arr.length % 2 === 0 ? nums[mid - 1]! + nums[mid]! / 2n : nums[mid]!;
 };
 
 export const isDeviationThresholdExceeded = (onChainValue: bigint, deviationThreshold: bigint, apiValue: bigint) => {
   const updateInPercentage = calculateDeviationPercentage(onChainValue, apiValue);
 
-  return updateInPercentage.gt(deviationThreshold);
+  return updateInPercentage > deviationThreshold;
 };
 
 /**
  * Returns true when the on chain data timestamp is newer than the heartbeat interval.
  */
-export const isOnChainDataFresh = (timestamp: number, heartbeatInterval: BigNumber) =>
-  timestamp > Date.now() / 1000 - heartbeatInterval.toNumber();
+export const isOnChainDataFresh = (timestamp: bigint, heartbeatInterval: bigint) =>
+  BigInt(timestamp) > BigInt(Date.now() / 1000) - heartbeatInterval;
 
 export const isDataFeedUpdatable = (
   onChainValue: bigint,
-  onChainTimestamp: number,
+  onChainTimestamp: bigint,
   offChainValue: bigint,
-  offChainTimestamp: number,
-  heartbeatInterval: BigNumber,
-  deviationThreshold: BigNumber
+  offChainTimestamp: bigint,
+  heartbeatInterval: bigint,
+  deviationThreshold: bigint
 ): boolean => {
   // Check that fulfillment data is newer than on chain data. Update transaction with stale data would revert on chain,
   // draining the sponsor wallet. See:

@@ -361,7 +361,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
       decodedDataFeed,
       decodedDapiName: utilsModule.decodeDapiName(dataFeed.dapiName),
     };
-    jest.spyOn(Date, 'now').mockReturnValue(dataFeed.dataFeedTimestamp * 1000);
+    jest.spyOn(Date, 'now').mockReturnValue(Number(dataFeed.dataFeedTimestamp) * 1000);
     const testConfig = generateTestConfig();
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
@@ -384,7 +384,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
             ),
             signature:
               '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
-            timestamp: (dataFeed.dataFeedTimestamp + 1).toString(),
+            timestamp: (dataFeed.dataFeedTimestamp + 1n).toString(),
           },
         },
         gasPrices: {},

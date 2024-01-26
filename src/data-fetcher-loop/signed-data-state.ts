@@ -1,5 +1,5 @@
 import { goSync } from '@api3/promise-utils';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
@@ -95,7 +95,7 @@ export const saveSignedData = (signedData: SignedData) => {
 export const getSignedData = (dataFeedId: BeaconId) => getState().signedDatas[dataFeedId];
 
 export const isSignedDataFresh = (signedData: SignedData) =>
-  BigNumber.from(signedData.timestamp).gt(Math.ceil(Date.now() / 1000 - 24 * 60 * 60));
+  BigInt(signedData.timestamp) > BigInt(Math.ceil(Date.now() / 1000 - 24 * 60 * 60));
 
 export const purgeOldSignedData = () => {
   const state = getState();

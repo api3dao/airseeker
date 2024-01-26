@@ -1,5 +1,3 @@
-import { ethers } from 'ethers';
-
 import { HUNDRED_PERCENT } from '../constants';
 
 import {
@@ -10,8 +8,7 @@ import {
   isDataFeedUpdatable,
 } from './deviation-check';
 
-const getDeviationThresholdAsBigNumber = (input: number) =>
-  BigInt(Math.trunc(input * HUNDRED_PERCENT)).div(BigInt(100));
+const getDeviationThresholdAsBigNumber = (input: number) => BigInt(Math.trunc(input * HUNDRED_PERCENT)) / BigInt(100);
 
 describe(isDeviationThresholdExceeded.name, () => {
   const onChainValue = BigInt(500);
@@ -43,9 +40,9 @@ describe(isDeviationThresholdExceeded.name, () => {
   it('checks all update conditions | heartbeat exceeded', () => {
     const result = isDataFeedUpdatable(
       BigInt(10),
-      Date.now() / 1000 - 60 * 60 * 24,
+      BigInt(Date.now() / 1000 - 60 * 60 * 24),
       BigInt(10),
-      Date.now() / 1000,
+      BigInt(Date.now() / 1000),
       BigInt(60 * 60 * 23),
       getDeviationThresholdAsBigNumber(2)
     );
@@ -56,9 +53,9 @@ describe(isDeviationThresholdExceeded.name, () => {
   it('checks all update conditions | no update', () => {
     const result = isDataFeedUpdatable(
       BigInt(10),
-      Date.now() / 1000,
+      BigInt(Date.now() / 1000),
       BigInt(10),
-      Date.now() + 60 * 60 * 23,
+      BigInt(Date.now() + 60 * 60 * 23),
       BigInt(60 * 60 * 24),
       getDeviationThresholdAsBigNumber(2)
     );
@@ -69,13 +66,13 @@ describe(isDeviationThresholdExceeded.name, () => {
 
 describe(isOnChainDataFresh.name, () => {
   it('returns true if on chain data timestamp is newer than heartbeat interval', () => {
-    const isFresh = isOnChainDataFresh(Date.now() / 1000 - 100, BigInt(200));
+    const isFresh = isOnChainDataFresh(BigInt(Date.now() / 1000 - 100), BigInt(200));
 
     expect(isFresh).toBe(true);
   });
 
   it('returns false if on chain data timestamp is older than heartbeat interval', () => {
-    const isFresh = isOnChainDataFresh(Date.now() / 1000 - 300, BigInt(200));
+    const isFresh = isOnChainDataFresh(BigInt(Date.now() / 1000 - 300), BigInt(200));
 
     expect(isFresh).toBe(false);
   });
