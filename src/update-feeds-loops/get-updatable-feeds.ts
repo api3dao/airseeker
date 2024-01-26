@@ -63,7 +63,7 @@ export const getUpdatableFeeds = async (
           const signedData = getSignedData(beaconId);
           const offChainValue: BeaconValue | undefined = signedData
             ? {
-                timestamp: ethers.BigNumber.from(signedData.timestamp),
+                timestamp: BigInt(signedData.timestamp),
                 value: decodeBeaconValue(signedData.encodedValue)!,
               }
             : undefined;
@@ -149,7 +149,7 @@ export const multicallBeaconValues = async (
       ['int224', 'uint32'],
       dataFeedsReturndata[idx]!
     );
-    onChainValues[beaconId] = { timestamp: ethers.BigNumber.from(timestamp), value: ethers.BigNumber.from(value) };
+    onChainValues[beaconId] = { timestamp: BigInt(timestamp), value: BigInt(value) };
   }
   return onChainValues;
 };

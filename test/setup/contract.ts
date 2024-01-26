@@ -119,7 +119,7 @@ const initializeBeacon = async (
 ) => {
   const block = await api3ServerV1.provider.getBlock('latest');
   const dataFeedTimestamp = (block.timestamp + 1).toString();
-  const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['uint224'], [ethers.BigNumber.from(apiValue)]);
+  const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['uint224'], [BigInt(apiValue)]);
   const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
 
   await api3ServerV1
@@ -241,9 +241,9 @@ export const deployAndUpdate = async () => {
     );
     await airseekerRegistry.connect(randomPerson!).registerDataFeed(encodedBeaconSetData);
     const HUNDRED_PERCENT = 1e8;
-    const deviationThresholdInPercentage = ethers.BigNumber.from(HUNDRED_PERCENT / 50); // 2%
+    const deviationThresholdInPercentage = BigInt(HUNDRED_PERCENT / 50); // 2%
     const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
-    const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
+    const heartbeatInterval = BigInt(86_400); // 24 hrs
     await airseekerRegistry
       .connect(deployerAndManager!)
       .setDapiNameUpdateParameters(

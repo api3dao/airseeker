@@ -22,15 +22,15 @@ export const verifyMulticallResponse = (
 };
 
 export const decodeActiveDataFeedCountResponse = (activeDataFeedCountReturndata: string) => {
-  return ethers.BigNumber.from(activeDataFeedCountReturndata).toNumber();
+  return BigInt(activeDataFeedCountReturndata).toNumber();
 };
 
 export const decodeGetBlockNumberResponse = (getBlockNumberReturndata: string) => {
-  return ethers.BigNumber.from(getBlockNumberReturndata).toNumber();
+  return BigInt(getBlockNumberReturndata).toNumber();
 };
 
 export const decodeGetChainIdResponse = (getChainIdReturndata: string) => {
-  return ethers.BigNumber.from(getChainIdReturndata).toNumber();
+  return BigInt(getChainIdReturndata).toNumber();
 };
 
 export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null => {

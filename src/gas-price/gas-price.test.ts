@@ -105,19 +105,19 @@ describe(clearSponsorLastUpdateTimestamp.name, () => {
 describe(getPercentile.name, () => {
   it('returns correct percentile', () => {
     const percentile = getPercentile(80, [
-      ethers.BigNumber.from('1'),
-      ethers.BigNumber.from('2'),
-      ethers.BigNumber.from('3'),
-      ethers.BigNumber.from('4'),
-      ethers.BigNumber.from('5'),
-      ethers.BigNumber.from('6'),
-      ethers.BigNumber.from('7'),
-      ethers.BigNumber.from('8'),
-      ethers.BigNumber.from('9'),
-      ethers.BigNumber.from('10'),
+      BigInt('1'),
+      BigInt('2'),
+      BigInt('3'),
+      BigInt('4'),
+      BigInt('5'),
+      BigInt('6'),
+      BigInt('7'),
+      BigInt('8'),
+      BigInt('9'),
+      BigInt('10'),
     ]);
 
-    expect(percentile).toStrictEqual(ethers.BigNumber.from('8'));
+    expect(percentile).toStrictEqual(BigInt('8'));
   });
 
   it('returns correct percentile for empty array', () => {
@@ -127,15 +127,11 @@ describe(getPercentile.name, () => {
   });
 
   it('edge cases', () => {
-    expect(
-      getPercentile(100, [ethers.BigNumber.from('10'), ethers.BigNumber.from('20'), ethers.BigNumber.from('30')])
-    ).toStrictEqual(ethers.BigNumber.from('30'));
+    expect(getPercentile(100, [BigInt('10'), BigInt('20'), BigInt('30')])).toStrictEqual(BigInt('30'));
 
-    expect(getPercentile(0, [ethers.BigNumber.from('10'), ethers.BigNumber.from('20')])).toStrictEqual(
-      ethers.BigNumber.from('10')
-    );
+    expect(getPercentile(0, [BigInt('10'), BigInt('20')])).toStrictEqual(BigInt('10'));
 
-    expect(getPercentile(50, [ethers.BigNumber.from('10')])).toStrictEqual(ethers.BigNumber.from('10'));
+    expect(getPercentile(50, [BigInt('10')])).toStrictEqual(BigInt('10'));
   });
 });
 

@@ -193,11 +193,11 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
     airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
-    const blockNumber = ethers.BigNumber.from(123);
-    const chainId = ethers.BigNumber.from(31_337);
+    const blockNumber = BigInt(123);
+    const chainId = BigInt(31_337);
     airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
       successes: [true, true, true, true],
-      returndata: [ethers.BigNumber.from(3), blockNumber, chainId, firstDataFeed],
+      returndata: [BigInt(3), blockNumber, chainId, firstDataFeed],
     });
     airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
       successes: [true, true, false],
@@ -307,11 +307,11 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
     airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
-    const blockNumber = ethers.BigNumber.from(123);
-    const chainId = ethers.BigNumber.from(31_337);
+    const blockNumber = BigInt(123);
+    const chainId = BigInt(31_337);
     airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
       successes: [true, true, true, true],
-      returndata: [ethers.BigNumber.from(1), blockNumber, chainId, dataFeed],
+      returndata: [BigInt(1), blockNumber, chainId, dataFeed],
     });
     const testConfig = generateTestConfig();
     jest.spyOn(stateModule, 'getState').mockReturnValue(
@@ -374,7 +374,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
             encodedValue: ethers.AbiCoder.defaultAbiCoder().encode(
               ['int256'],
               [
-                ethers.BigNumber.from(
+                BigInt(
                   dataFeed.dataFeedValue
                     // Multiply the new value by the on chain deviationThresholdInPercentage
                     .mul(decodedUpdateParameters.deviationThresholdInPercentage.add(1 * 1e8))
@@ -394,16 +394,16 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     jest.spyOn(logger, 'info');
     jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
-        timestamp: ethers.BigNumber.from(150),
-        value: ethers.BigNumber.from('400'),
+        timestamp: BigInt(150),
+        value: BigInt('400'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: ethers.BigNumber.from(160),
-        value: ethers.BigNumber.from('500'),
+        timestamp: BigInt(160),
+        value: BigInt('500'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
-        timestamp: ethers.BigNumber.from(170),
-        value: ethers.BigNumber.from('600'),
+        timestamp: BigInt(170),
+        value: BigInt('600'),
       },
     });
 

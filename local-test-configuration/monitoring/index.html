@@ -754,13 +754,11 @@
 
     const decodeBeaconValue = (encodedBeaconValue) => {
       // Solidity type(int224).min
-      const INT224_MIN = ethers.BigNumber.from(2).pow(ethers.BigNumber.from(223)).mul(ethers.BigNumber.from(-1));
+      const INT224_MIN = BigInt(2).pow(BigInt(223)).mul(BigInt(-1));
       // Solidity type(int224).max
-      const INT224_MAX = ethers.BigNumber.from(2).pow(ethers.BigNumber.from(223)).sub(ethers.BigNumber.from(1));
+      const INT224_MAX = BigInt(2).pow(BigInt(223)).sub(BigInt(1));
 
-      const decodedBeaconValue = ethers.BigNumber.from(
-        ethers.AbiCoder.defaultAbiCoder().decode(['int256'], encodedBeaconValue)[0]
-      );
+      const decodedBeaconValue = BigInt(ethers.AbiCoder.defaultAbiCoder().decode(['int256'], encodedBeaconValue)[0]);
       if (decodedBeaconValue.gt(INT224_MAX) || decodedBeaconValue.lt(INT224_MIN)) {
         return null;
       }
@@ -773,9 +771,9 @@
       const absoluteDelta = delta.abs();
 
       // Avoid division by 0
-      const absoluteInitialValue = initialValue.isZero() ? ethers.BigNumber.from(1) : initialValue.abs();
+      const absoluteInitialValue = initialValue.isZero() ? BigInt(1) : initialValue.abs();
 
-      return absoluteDelta.mul(ethers.BigNumber.from(1e8)).div(absoluteInitialValue);
+      return absoluteDelta.mul(BigInt(1e8)).div(absoluteInitialValue);
     };
 
     const checkDeviationThresholdExceeded = (onChainValue, deviationThreshold, apiValue) => {
@@ -785,7 +783,7 @@
     };
 
     function deriveWalletPathFromSponsorAddress(sponsorAddress) {
-      const sponsorAddressBN = ethers.BigNumber.from(sponsorAddress);
+      const sponsorAddressBN = BigInt(sponsorAddress);
       const paths = [];
       for (let i = 0; i < 6; i++) {
         const shiftedSponsorAddressBN = sponsorAddressBN.shr(31 * i);
@@ -854,11 +852,9 @@
         }
         console.info('Signed datas', signedDatas); // For debugging purposes.
 
-        const newBeaconSetValue = calculateMedian(
-          signedDatas.map((signedData) => ethers.BigNumber.from(signedData.value))
-        );
+        const newBeaconSetValue = calculateMedian(signedDatas.map((signedData) => BigInt(signedData.value)));
         const newBeaconSetTimestamp = calculateMedian(
-          signedDatas.map((signedData) => ethers.BigNumber.from(signedData.timestamp))
+          signedDatas.map((signedData) => BigInt(signedData.timestamp))
         ).toNumber();
 
         const deviationPercentage = calculateUpdateInPercentage(dataFeedValue, newBeaconSetValue).toNumber() / 1e6;

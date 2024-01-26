@@ -36,9 +36,9 @@ export const generateSignedData = async (
   airnodeWallet: Wallet,
   templateId: string,
   dataFeedTimestamp: string,
-  apiValue = ethers.BigNumber.from(ethers.utils.randomBytes(Math.floor(Math.random() * 27) + 1)) // Fits into uint224.
+  apiValue = BigInt(randomBytes(Math.floor(Math.random() * 27) + 1)) // Fits into uint224.
 ): Promise<SignedData> => {
-  const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['uint224'], [ethers.BigNumber.from(apiValue)]);
+  const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['uint224'], [BigInt(apiValue)]);
   const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
 
   return { airnode: airnodeWallet.address, templateId, timestamp: dataFeedTimestamp, encodedValue, signature };

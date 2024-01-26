@@ -62,7 +62,7 @@ export const refundFunder = async (funderWallet: ethers.Wallet) => {
     console.info('Sponsor wallet balance:', ethers.utils.formatEther(sponsorWalletBalance.toString()));
 
     const gasPrice = await sponsorWallet.provider.getGasPrice();
-    const gasFee = gasPrice.mul(ethers.BigNumber.from(21_000));
+    const gasFee = gasPrice.mul(BigInt(21_000));
     if (sponsorWalletBalance.sub(gasFee).lt(ethers.constants.Zero)) {
       console.info('Sponsor wallet balance is too low, skipping refund');
       continue;
@@ -70,7 +70,7 @@ export const refundFunder = async (funderWallet: ethers.Wallet) => {
     const tx = await sponsorWallet.sendTransaction({
       to: funderWallet.address,
       gasPrice,
-      gasLimit: ethers.BigNumber.from(21_000),
+      gasLimit: BigInt(21_000),
       value: sponsorWalletBalance.sub(gasFee),
     });
     await tx.wait();
@@ -204,9 +204,9 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     tx = await airseekerRegistry.connect(randomPerson).registerDataFeed(encodedBeaconSetData);
     await tx.wait();
     const HUNDRED_PERCENT = 1e8;
-    const deviationThresholdInPercentage = ethers.BigNumber.from(HUNDRED_PERCENT / 100); // 1%
+    const deviationThresholdInPercentage = BigInt(HUNDRED_PERCENT / 100); // 1%
     const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
-    const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
+    const heartbeatInterval = BigInt(86_400); // 24 hrs
     tx = await api3ServerV1.connect(deployerAndManager).setDapiName(dapiName, beaconSetId);
     await tx.wait();
     await airseekerRegistry.connect(deployerAndManager).setDapiNameToBeActivated(dapiName);

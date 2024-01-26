@@ -163,7 +163,7 @@ export const estimateMulticallGasLimit = async (
   const goEstimateGas = await go(async () => api3ServerV1.estimateGas.multicall(calldatas));
   if (goEstimateGas.success) {
     // Adding a extra 10% because multicall consumes less gas than tryMulticall
-    return goEstimateGas.data.mul(ethers.BigNumber.from(Math.round(1.1 * 100))).div(ethers.BigNumber.from(100));
+    return goEstimateGas.data.mul(BigInt(Math.round(1.1 * 100))).div(BigInt(100));
   }
   logger.warn(`Unable to estimate gas for multicall using provider.`, goEstimateGas.error);
 
@@ -171,7 +171,7 @@ export const estimateMulticallGasLimit = async (
     throw new Error('Unable to estimate gas limit');
   }
 
-  return ethers.BigNumber.from(fallbackGasLimit);
+  return BigInt(fallbackGasLimit);
 };
 
 export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDataFeedId: DapiNameOrDataFeedId) => {

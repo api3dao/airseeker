@@ -14,7 +14,7 @@ import * as submitTransactionsModule from './submit-transactions';
 describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
   it('estimates the gas limit for a multicall', async () => {
     const mockApi3ServerV1 = generateMockApi3ServerV1();
-    mockApi3ServerV1.estimateGas.multicall.mockResolvedValueOnce(ethers.BigNumber.from(500_000));
+    mockApi3ServerV1.estimateGas.multicall.mockResolvedValueOnce(BigInt(500_000));
 
     const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
       mockApi3ServerV1 as unknown as Api3ServerV1,
@@ -22,7 +22,7 @@ describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
       undefined
     );
 
-    expect(gasLimit).toStrictEqual(ethers.BigNumber.from(550_000)); // Note that the gas limit is increased by 10%.
+    expect(gasLimit).toStrictEqual(BigInt(550_000)); // Note that the gas limit is increased by 10%.
   });
 
   it('uses fallback gas limit when dummy data estimation fails', async () => {
@@ -35,7 +35,7 @@ describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
       2_000_000
     );
 
-    expect(gasLimit).toStrictEqual(ethers.BigNumber.from(2_000_000));
+    expect(gasLimit).toStrictEqual(BigInt(2_000_000));
   });
 
   it('throws an error if no fallback is provided', async () => {
@@ -324,8 +324,8 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     jest.spyOn(submitTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'info');
-    jest.spyOn(submitTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(ethers.BigNumber.from(500_000));
-    jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockResolvedValue(ethers.BigNumber.from(100_000_000));
+    jest.spyOn(submitTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
+    jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockResolvedValue(BigInt(100_000_000));
     jest.spyOn(submitTransactionsModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);

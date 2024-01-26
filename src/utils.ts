@@ -19,7 +19,7 @@ export const encodeDapiName = (decodedDapiName: string) => ethers.utils.formatBy
 export const decodeDapiName = (encodedDapiName: string) => ethers.utils.parseBytes32String(encodedDapiName);
 
 export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
-  const sponsorAddressBN = ethers.BigNumber.from(sponsorAddress);
+  const sponsorAddressBN = BigInt(sponsorAddress);
   const paths = [];
   for (let i = 0; i < 6; i++) {
     const shiftedSponsorAddressBN = sponsorAddressBN.shr(31 * i);
@@ -44,13 +44,11 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDat
 };
 
 export const multiplyBigNumber = (bigNumber: ethers.BigNumber, multiplier: number) =>
-  bigNumber.mul(ethers.BigNumber.from(Math.round(multiplier * 100))).div(ethers.BigNumber.from(100));
+  bigNumber.mul(BigInt(Math.round(multiplier * 100))).div(BigInt(100));
 
 // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
 export const decodeBeaconValue = (encodedBeaconValue: string) => {
-  const decodedBeaconValue = ethers.BigNumber.from(
-    ethers.AbiCoder.defaultAbiCoder().decode(['int256'], encodedBeaconValue)[0]
-  );
+  const decodedBeaconValue = BigInt(ethers.AbiCoder.defaultAbiCoder().decode(['int256'], encodedBeaconValue)[0]);
   if (decodedBeaconValue.gt(INT224_MAX) || decodedBeaconValue.lt(INT224_MIN)) {
     return null;
   }

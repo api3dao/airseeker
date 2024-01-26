@@ -1,4 +1,4 @@
-import { type BigNumber, ethers } from 'ethers';
+import type { BigNumber, ethers } from 'ethers';
 
 import { HUNDRED_PERCENT } from '../constants';
 import { logger } from '../logger';
@@ -8,9 +8,9 @@ export const calculateDeviationPercentage = (initialValue: ethers.BigNumber, upd
   const absoluteDelta = delta.abs();
 
   // Avoid division by 0
-  const absoluteInitialValue = initialValue.isZero() ? ethers.BigNumber.from(1) : initialValue.abs();
+  const absoluteInitialValue = initialValue.isZero() ? BigInt(1) : initialValue.abs();
 
-  return absoluteDelta.mul(ethers.BigNumber.from(HUNDRED_PERCENT)).div(absoluteInitialValue);
+  return absoluteDelta.mul(BigInt(HUNDRED_PERCENT)).div(absoluteInitialValue);
 };
 
 export const calculateMedian = (arr: ethers.BigNumber[]) => {
