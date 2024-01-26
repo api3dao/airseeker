@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
 import { initializeState } from '../../test/fixtures/mock-config';
-import { allowPartial, generateRandomBytes32, signData } from '../../test/utils';
+import { allowPartial, generateRandomBytes, signData } from '../../test/utils';
 import { getState, updateState } from '../state';
 import type { SignedData } from '../types';
 import { deriveBeaconId } from '../utils';
@@ -14,7 +14,7 @@ describe('signed data state', () => {
 
   beforeAll(async () => {
     initializeState();
-    const templateId = generateRandomBytes32();
+    const templateId = generateRandomBytes(32);
     const timestamp = Math.floor((Date.now() - 25 * 60 * 60 * 1000) / 1000).toString();
     const airnode = signer.address;
     const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [BigInt(1)]);
@@ -41,7 +41,7 @@ describe('signed data state', () => {
   });
 
   it('checks that the timestamp on signed data is not in the future', async () => {
-    const templateId = generateRandomBytes32();
+    const templateId = generateRandomBytes(32);
     const timestamp = Math.floor((Date.now() + 61 * 60 * 1000) / 1000).toString();
     const airnode = signer.address;
     const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [BigInt(1)]);
@@ -59,7 +59,7 @@ describe('signed data state', () => {
   });
 
   it('checks the signature on signed data', async () => {
-    const templateId = generateRandomBytes32();
+    const templateId = generateRandomBytes(32);
     const timestamp = Math.floor((Date.now() + 60 * 60 * 1000) / 1000).toString();
     const airnode = ethers.Wallet.createRandom().address;
     const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [BigInt(1)]);

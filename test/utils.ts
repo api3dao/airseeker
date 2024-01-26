@@ -9,7 +9,7 @@ export const signData = async (signer: ethers.Signer, templateId: string, timest
     ethers.getBytes(ethers.solidityPackedKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, data]))
   );
 
-export const generateRandomBytes32 = () => `0x${randomBytes(32).toString('hex')}`;
+export const generateRandomBytes = (length: number) => `0x${randomBytes(length).toString('hex')}`;
 
 export type DeepPartial<T> = T extends object
   ? {
@@ -36,7 +36,7 @@ export const generateSignedData = async (
   airnodeWallet: Wallet,
   templateId: string,
   dataFeedTimestamp: string,
-  apiValue = BigInt(randomBytes(Math.floor(Math.random() * 27) + 1)) // Fits into uint224.
+  apiValue = BigInt(generateRandomBytes(Math.floor(Math.random() * 27) + 1)) // Fits into uint224.
 ): Promise<SignedData> => {
   const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['uint224'], [BigInt(apiValue)]);
   const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
