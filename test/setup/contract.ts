@@ -116,8 +116,8 @@ const initializeBeacon = async (
   templateId: string,
   apiValue: number
 ) => {
-  const block = await api3ServerV1.provider.getBlock('latest');
-  const dataFeedTimestamp = (block.timestamp + 1).toString();
+  const block = await ethers.provider.getBlock('latest');
+  const dataFeedTimestamp = (block!.timestamp + 1).toString();
   const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['uint224'], [BigInt(apiValue)]);
   const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
 
@@ -135,14 +135,14 @@ export const deployAndUpdate = async () => {
   const api3ServerV1Factory = new Api3ServerV1Factory(deployerAndManager as Signer);
   const api3ServerV1AdminRoleDescription = 'Api3ServerV1 admin';
   const api3ServerV1 = await api3ServerV1Factory.deploy(
-    accessControlRegistry.address,
+    accessControlRegistry.getAddress(),
     api3ServerV1AdminRoleDescription,
     deployerAndManager!.address
   );
   const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager as Signer);
   const airseekerRegistry = await airseekerRegistryFactory.deploy(
     await (deployerAndManager as Signer).getAddress(),
-    api3ServerV1.address
+    api3ServerV1.getAddress()
   );
 
   // Initialize special wallet for contract initialization
@@ -256,7 +256,7 @@ export const deployAndUpdate = async () => {
     await airseekerRegistry.connect(deployerAndManager).setDapiNameToBeActivated(dapiName);
 
     // Initialize sponsor wallets
-    const sponsorWallet = deriveSponsorWallet(airseekerWallet.mnemonic.phrase, dapiName);
+    const sponsorWallet = deriveSponsorWallet(airseekerWallet.mnemonic!.phrase, dapiName);
     await walletFunder!.sendTransaction({
       to: sponsorWallet.address,
       value: ethers.parseEther('1'),
@@ -265,9 +265,9 @@ export const deployAndUpdate = async () => {
 
   // Set up config
   const config = generateTestConfig();
-  config.sponsorWalletMnemonic = airseekerWallet.mnemonic.phrase;
-  config.chains[31_337]!.contracts.Api3ServerV1 = api3ServerV1.address;
-  config.chains[31_337]!.contracts.AirseekerRegistry = airseekerRegistry.address;
+  config.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
+  config.chains[31_337]!.contracts.Api3ServerV1 = await api3ServerV1.getAddress();
+  config.chains[31_337]!.contracts.AirseekerRegistry = await airseekerRegistry.getAddress();
 
   return {
     accessControlRegistry,
