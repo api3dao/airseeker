@@ -14,7 +14,7 @@ const config: HardhatUserConfig = {
     // flattened version (only the contents of the "src" folder). This is also in anticipation of importing the
     // Typechain types instead of generating them at build time.
     outDir: 'src/typechain-types',
-    target: 'ethers-v5',
+    target: 'ethers-v6',
   },
   defaultNetwork: 'localhost',
 };
