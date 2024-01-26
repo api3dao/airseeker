@@ -14,10 +14,14 @@ import * as getUpdatableFeedsModule from './get-updatable-feeds';
 
 const chainId = '31337';
 const rpcUrl = 'http://127.0.0.1:8545/';
-const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
-  chainId: Number.parseInt(chainId, 10),
-  name: chainId,
-});
+const provider = new ethers.JsonRpcProvider(
+  rpcUrl,
+  {
+    chainId: Number.parseInt(chainId, 10),
+    name: chainId,
+  },
+  { staticNetwork: true }
+);
 
 // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
 const encodeBeaconValue = (numericValue: string) => {

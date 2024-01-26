@@ -33,7 +33,7 @@ export interface UpdatableDataFeed {
 export const getUpdatableFeeds = async (
   batch: DecodedActiveDataFeedResponse[],
   deviationThresholdCoefficient: number,
-  provider: ethers.providers.StaticJsonRpcProvider,
+  provider: ethers.JsonRpcProvider,
   chainId: ChainId
 ): Promise<UpdatableDataFeed[]> => {
   const uniqueBeaconIds = [
@@ -116,7 +116,7 @@ export const getUpdatableFeeds = async (
 
 export const multicallBeaconValues = async (
   batch: BeaconId[],
-  provider: ethers.providers.StaticJsonRpcProvider,
+  provider: ethers.JsonRpcProvider,
   chainId: ChainId
 ): Promise<Record<BeaconId, BeaconValue> | null> => {
   const { config } = getState();

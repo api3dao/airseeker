@@ -17,7 +17,7 @@ import * as updateFeedsLoopsModule from './update-feeds-loops';
 
 const chainId = '31337';
 const rpcUrl = 'http://127.0.0.1:8545/';
-const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
+const provider = new ethers.JsonRpcProvider(rpcUrl, {
   chainId: Number.parseInt(chainId, 10),
   name: chainId,
 });

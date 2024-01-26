@@ -242,7 +242,7 @@ async function main() {
   if (!process.env.FUNDER_MNEMONIC) throw new Error('FUNDER_MNEMONIC not found');
   if (!process.env.PROVIDER_URL) throw new Error('PROVIDER_URL not found');
 
-  const provider = new ethers.providers.StaticJsonRpcProvider(process.env.PROVIDER_URL);
+  const provider = new ethers.JsonRpcProvider(process.env.PROVIDER_URL, undefined, { staticNetwork: true });
   const funderWallet = ethers.Wallet.fromMnemonic(process.env.FUNDER_MNEMONIC).connect(provider);
 
   await refundFunder(funderWallet);

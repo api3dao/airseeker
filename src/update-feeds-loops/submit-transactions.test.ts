@@ -300,7 +300,7 @@ describe(submitTransactionsModule.submitTransactions.name, () => {
     await submitTransactionsModule.submitTransactions(
       '31337',
       'evm-local',
-      new ethers.providers.StaticJsonRpcProvider(),
+      new ethers.JsonRpcProvider(),
       generateMockApi3ServerV1() as unknown as Api3ServerV1,
       [
         allowPartial<UpdatableDataFeed>({
@@ -346,7 +346,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     jest.spyOn(stateModule, 'updateState').mockImplementation();
     const provider = {
       getTransactionCount: jest.fn().mockResolvedValue(0),
-    } as unknown as ethers.providers.StaticJsonRpcProvider;
+    } as unknown as ethers.JsonRpcProvider;
 
     await submitTransactionsModule.submitTransaction(
       '31337',

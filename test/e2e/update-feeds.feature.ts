@@ -15,7 +15,7 @@ import { generateSignedData } from '../utils';
 const chainId = '31337';
 const providerName = 'localhost';
 const rpcUrl = 'http://127.0.0.1:8545/';
-const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl);
+const provider = new ethers.JsonRpcProvider(rpcUrl);
 
 it('reads blockchain data', async () => {
   const { config } = await deployAndUpdate();

@@ -113,7 +113,7 @@ export const calculateScalingMultiplier = (
 export const getRecommendedGasPrice = async (
   chainId: string,
   providerName: string,
-  provider: ethers.providers.StaticJsonRpcProvider,
+  provider: ethers.JsonRpcProvider,
   sponsorWalletAddress: string
 ) => {
   const state = getState();

@@ -45,7 +45,7 @@ export const hasSponsorPendingTransaction = (chainId: string, providerName: stri
 export const submitTransaction = async (
   chainId: ChainId,
   providerName: ProviderName,
-  provider: ethers.providers.StaticJsonRpcProvider,
+  provider: ethers.JsonRpcProvider,
   api3ServerV1: Api3ServerV1,
   updatableDataFeed: UpdatableDataFeed,
   blockNumber: number
@@ -144,7 +144,7 @@ export const submitTransaction = async (
 export const submitTransactions = async (
   chainId: ChainId,
   providerName: ProviderName,
-  provider: ethers.providers.StaticJsonRpcProvider,
+  provider: ethers.JsonRpcProvider,
   api3ServerV1: Api3ServerV1,
   updatableDataFeeds: UpdatableDataFeed[],
   blockNumber: number

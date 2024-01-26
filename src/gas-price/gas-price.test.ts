@@ -18,10 +18,14 @@ import {
 const chainId = '31337';
 const providerName = 'localhost';
 const rpcUrl = 'http://127.0.0.1:8545/';
-const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
-  chainId: Number.parseInt(chainId, 10),
-  name: chainId,
-});
+const provider = new ethers.JsonRpcProvider(
+  rpcUrl,
+  {
+    chainId: Number.parseInt(chainId, 10),
+    name: chainId,
+  },
+  { staticNetwork: true }
+);
 const dateNowMock = 1_696_930_907_351;
 const timestampMock = Math.floor(dateNowMock / 1000);
 const sponsorWalletAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';

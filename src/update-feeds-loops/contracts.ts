@@ -6,10 +6,10 @@ import { type AirseekerRegistry, AirseekerRegistry__factory as AirseekerRegistry
 import type { DecodedDataFeed } from '../types';
 import { decodeDapiName, deriveBeaconId, deriveBeaconSetId } from '../utils';
 
-export const getApi3ServerV1 = (address: string, provider: ethers.providers.StaticJsonRpcProvider) =>
+export const getApi3ServerV1 = (address: string, provider: ethers.JsonRpcProvider) =>
   Api3ServerV1Factory.connect(address, provider);
 
-export const getAirseekerRegistry = (address: string, provider: ethers.providers.StaticJsonRpcProvider) =>
+export const getAirseekerRegistry = (address: string, provider: ethers.JsonRpcProvider) =>
   AirseekerRegistryFactory.connect(address, provider);
 
 export const verifyMulticallResponse = (

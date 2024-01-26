@@ -109,7 +109,7 @@ export const readActiveDataFeedBatch = async (
   // ID at runtime by mistake. In case the chain ID is wrong, we want to skip all data feeds in the batch (or all of
   // them in case this is the first batch). Another possibility of a wrong chain ID is misconfiguration in airseeker
   // file.
-  const contractChainId = decodeGetChainIdResponse(getChainIdReturndata!).toString();
+  const contractChainId = decodeGetChainIdResponse(getChainIdReturndata).toString();
   if (contractChainId !== chainId) {
     logger.warn(`Chain ID mismatch.`, { chainId, contractChainId });
     return null;
@@ -130,7 +130,7 @@ export const readActiveDataFeedBatch = async (
       return dataFeed !== null;
     });
 
-  const blockNumber = decodeGetBlockNumberResponse(getBlockNumberReturndata!);
+  const blockNumber = decodeGetBlockNumberResponse(getBlockNumberReturndata);
 
   return {
     batch,
@@ -148,9 +148,9 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
       // Create a provider and connect it to the AirseekerRegistry contract.
-      const provider = new ethers.providers.StaticJsonRpcProvider({
-        url: providers[providerName]!.url,
-        timeout: RPC_PROVIDER_TIMEOUT_MS,
+      // TODO: set RPC_PROVIDER_TIMEOUT_MS
+      const provider = new ethers.JsonRpcProvider(providers[providerName]!.url, undefined, {
+        staticNetwork: true,
       });
       const airseekerRegistry = getAirseekerRegistry(contracts.AirseekerRegistry, provider);
 
@@ -253,7 +253,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
 export const processBatch = async (
   batch: DecodedActiveDataFeedResponse[],
   providerName: ProviderName,
-  provider: ethers.providers.StaticJsonRpcProvider,
+  provider: ethers.JsonRpcProvider,
   chainId: ChainId,
   blockNumber: number
 ) => {
