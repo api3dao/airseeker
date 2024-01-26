@@ -4,8 +4,7 @@ import {
   type Api3ServerV1,
   Api3ServerV1__factory as Api3ServerV1Factory,
 } from '@api3/airnode-protocol-v1';
-import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import type { Signer, Wallet } from 'ethers';
+import type { HDNodeWallet, Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
 import { AirseekerRegistry__factory as AirseekerRegistryFactory } from '../../src/typechain-types';
@@ -112,8 +111,8 @@ export const deriveRole = (adminRole: string, roleDescription: string) => {
 
 const initializeBeacon = async (
   api3ServerV1: Api3ServerV1,
-  airnodeWallet: Wallet,
-  sponsorWalletMnemonic: SignerWithAddress | Wallet,
+  airnodeWallet: HDNodeWallet,
+  sponsorWalletMnemonic: HDNodeWallet,
   templateId: string,
   apiValue: number
 ) => {
@@ -215,7 +214,7 @@ export const deployAndUpdate = async () => {
   const airseekerWallet = ethers.Wallet.createRandom();
   await Promise.all(
     apiTreeValues.map(async ([airnode, url]) => {
-      return airseekerRegistry.connect(deployerAndManager!).setSignedApiUrl(airnode, url);
+      return airseekerRegistry.connect(deployerAndManager).setSignedApiUrl(airnode, url);
     })
   );
   const dapiInfos = [
@@ -239,13 +238,13 @@ export const deployAndUpdate = async () => {
       ['address[]', 'bytes32[]'],
       [airnodes, templateIds]
     );
-    await airseekerRegistry.connect(randomPerson!).registerDataFeed(encodedBeaconSetData);
+    await airseekerRegistry.connect(randomPerson).registerDataFeed(encodedBeaconSetData);
     const HUNDRED_PERCENT = 1e8;
     const deviationThresholdInPercentage = BigInt(HUNDRED_PERCENT / 50); // 2%
     const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
     const heartbeatInterval = BigInt(86_400); // 24 hrs
     await airseekerRegistry
-      .connect(deployerAndManager!)
+      .connect(deployerAndManager)
       .setDapiNameUpdateParameters(
         dapiName,
         ethers.AbiCoder.defaultAbiCoder().encode(
@@ -254,7 +253,7 @@ export const deployAndUpdate = async () => {
         )
       );
     await api3ServerV1.connect(deployerAndManager!).setDapiName(dapiName, beaconSetId);
-    await airseekerRegistry.connect(deployerAndManager!).setDapiNameToBeActivated(dapiName);
+    await airseekerRegistry.connect(deployerAndManager).setDapiNameToBeActivated(dapiName);
 
     // Initialize sponsor wallets
     const sponsorWallet = deriveSponsorWallet(airseekerWallet.mnemonic.phrase, dapiName);

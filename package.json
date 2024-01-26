@@ -32,6 +32,7 @@
   "devDependencies": {
     "@api3/airnode-abi": "^0.13.0",
     "@api3/ois": "^2.3.1",
+    "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@openzeppelin/contracts": "4.9.5",
     "@typechain/hardhat": "^9.1.0",
