@@ -10,8 +10,7 @@ export function deriveBeaconId(airnodeAddress: string, templateId: string) {
 }
 
 export function deriveBeaconSetId(beaconIds: string[]) {
-  return goSync(() => ethers.utils.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(['bytes32[]'], [beaconIds])))
-    .data;
+  return goSync(() => ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(['bytes32[]'], [beaconIds]))).data;
 }
 
 export const encodeDapiName = (decodedDapiName: string) => ethers.utils.formatBytes32String(decodedDapiName);
@@ -31,7 +30,7 @@ export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
 export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDataFeedId: string) => {
   // Hash the dAPI name or data feed ID because we need to take the first 20 bytes of it which could result in
   // collisions for dAPIs with the same prefix.
-  const hashedDapiNameOrDataFeedId = ethers.utils.keccak256(dapiNameOrDataFeedId);
+  const hashedDapiNameOrDataFeedId = ethers.keccak256(dapiNameOrDataFeedId);
 
   // Take first 20 bytes of the hashed dapiName or data feed ID as sponsor address together with the "0x" prefix.
   const sponsorAddress = ethers.utils.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));

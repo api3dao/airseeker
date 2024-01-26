@@ -88,7 +88,7 @@ interface RawBeaconData {
 const deriveBeaconData = (beaconData: RawBeaconData) => {
   const { endpoint, templateParameters, airnodeAddress } = beaconData;
 
-  const endpointId = ethers.utils.keccak256(
+  const endpointId = ethers.keccak256(
     ethers.AbiCoder.defaultAbiCoder().encode(['string', 'string'], [endpoint.oisTitle, endpoint.endpointName])
   );
   const encodedParameters = encode(templateParameters);
@@ -149,7 +149,7 @@ export const deployAndUpdate = async () => {
   const airseekerInitializationWallet = ethers.Wallet.createRandom().connect(ethers.provider);
   await walletFunder!.sendTransaction({
     to: airseekerInitializationWallet.address,
-    value: ethers.utils.parseEther('1'),
+    value: ethers.parseEther('1'),
   });
 
   // Create templates
@@ -199,10 +199,10 @@ export const deployAndUpdate = async () => {
     .updateBeaconSetWithBeacons([binanceEthBeacon.beaconId, krakenEthBeacon.beaconId], { gasLimit: 500_000 });
 
   // Derive beacon set IDs
-  const btcBeaconSetId = ethers.utils.keccak256(
+  const btcBeaconSetId = ethers.keccak256(
     ethers.AbiCoder.defaultAbiCoder().encode(['bytes32[]'], [[binanceBtcBeacon.beaconId, krakenBtcBeacon.beaconId]])
   );
-  const ethBeaconSetId = ethers.utils.keccak256(
+  const ethBeaconSetId = ethers.keccak256(
     ethers.AbiCoder.defaultAbiCoder().encode(['bytes32[]'], [[binanceEthBeacon.beaconId, krakenEthBeacon.beaconId]])
   );
 
@@ -241,7 +241,7 @@ export const deployAndUpdate = async () => {
     await airseekerRegistry.connect(randomPerson).registerDataFeed(encodedBeaconSetData);
     const HUNDRED_PERCENT = 1e8;
     const deviationThresholdInPercentage = BigInt(HUNDRED_PERCENT / 50); // 2%
-    const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
+    const deviationReference = 0n; // Not used in Airseeker V2
     const heartbeatInterval = BigInt(86_400); // 24 hrs
     await airseekerRegistry
       .connect(deployerAndManager)
@@ -259,7 +259,7 @@ export const deployAndUpdate = async () => {
     const sponsorWallet = deriveSponsorWallet(airseekerWallet.mnemonic.phrase, dapiName);
     await walletFunder!.sendTransaction({
       to: sponsorWallet.address,
-      value: ethers.utils.parseEther('1'),
+      value: ethers.parseEther('1'),
     });
   }
 

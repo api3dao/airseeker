@@ -63,7 +63,7 @@ export const refundFunder = async (funderWallet: ethers.Wallet) => {
 
     const gasPrice = await sponsorWallet.provider.getGasPrice();
     const gasFee = gasPrice.mul(BigInt(21_000));
-    if (sponsorWalletBalance.sub(gasFee).lt(ethers.constants.Zero)) {
+    if (sponsorWalletBalance.sub(gasFee).lt(0n)) {
       console.info('Sponsor wallet balance is too low, skipping refund');
       continue;
     }
@@ -120,7 +120,7 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.Wallet) =>
 
     const tx = await funderWallet.sendTransaction({
       to: sponsorWallet.address,
-      value: ethers.utils.parseEther('1'),
+      value: ethers.parseEther('1'),
     });
     await tx.wait();
 
@@ -186,7 +186,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
       airnodes: [airnodeFeed1Beacon!.airnodeAddress, airnodeFeed2Beacon!.airnodeAddress],
       templateIds: [airnodeFeed1Beacon!.templateId, airnodeFeed1Beacon!.templateId],
       dapiName: encodeDapiName(airnodeFeed1Beacon!.parameters[0]!.value),
-      beaconSetId: ethers.utils.keccak256(
+      beaconSetId: ethers.keccak256(
         ethers.AbiCoder.defaultAbiCoder().encode(
           ['bytes32[]'],
           [[airnodeFeed1Beacon!.beaconId, airnodeFeed2Beacon!.beaconId]]
@@ -205,7 +205,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     await tx.wait();
     const HUNDRED_PERCENT = 1e8;
     const deviationThresholdInPercentage = BigInt(HUNDRED_PERCENT / 100); // 1%
-    const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
+    const deviationReference = 0n; // Not used in Airseeker V2
     const heartbeatInterval = BigInt(86_400); // 24 hrs
     tx = await api3ServerV1.connect(deployerAndManager).setDapiName(dapiName, beaconSetId);
     await tx.wait();
