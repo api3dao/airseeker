@@ -150,7 +150,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     jest
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
-    airseekerRegistry.callStatic.tryMulticall.mockRejectedValueOnce(new Error('provider-error'));
+    airseekerRegistry.tryMulticall.staticCall.mockRejectedValueOnce(new Error('provider-error'));
     jest.spyOn(logger, 'error');
 
     await updateFeedsLoopsModule.runUpdateFeeds(
@@ -195,15 +195,15 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
     const blockNumber = BigInt(123);
     const chainId = BigInt(31_337);
-    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
+    airseekerRegistry.tryMulticall.staticCall.mockResolvedValueOnce({
       successes: [true, true, true, true],
       returndata: [BigInt(3), blockNumber, chainId, firstDataFeed],
     });
-    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
+    airseekerRegistry.tryMulticall.staticCall.mockResolvedValueOnce({
       successes: [true, true, false],
       returndata: [blockNumber, chainId, '0x'],
     });
-    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
+    airseekerRegistry.tryMulticall.staticCall.mockResolvedValueOnce({
       successes: [true, true, true],
       returndata: [blockNumber, chainId, thirdDataFeed],
     });
@@ -309,7 +309,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
     const blockNumber = BigInt(123);
     const chainId = BigInt(31_337);
-    airseekerRegistry.callStatic.tryMulticall.mockResolvedValueOnce({
+    airseekerRegistry.tryMulticall.staticCall.mockResolvedValueOnce({
       successes: [true, true, true, true],
       returndata: [BigInt(1), blockNumber, chainId, dataFeed],
     });

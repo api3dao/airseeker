@@ -14,7 +14,7 @@ import * as submitTransactionsModule from './submit-transactions';
 describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
   it('estimates the gas limit for a multicall', async () => {
     const mockApi3ServerV1 = generateMockApi3ServerV1();
-    mockApi3ServerV1.estimateGas.multicall.mockResolvedValueOnce(BigInt(500_000));
+    mockApi3ServerV1.multicall.estimateGas.mockResolvedValueOnce(BigInt(500_000));
 
     const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
       mockApi3ServerV1 as unknown as Api3ServerV1,
@@ -27,7 +27,7 @@ describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
 
   it('uses fallback gas limit when dummy data estimation fails', async () => {
     const mockApi3ServerV1 = generateMockApi3ServerV1();
-    mockApi3ServerV1.estimateGas.multicall.mockRejectedValue(new Error('some-error'));
+    mockApi3ServerV1.multicall.estimateGas.mockRejectedValue(new Error('some-error'));
 
     const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
       mockApi3ServerV1 as unknown as Api3ServerV1,
@@ -40,7 +40,7 @@ describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
 
   it('throws an error if no fallback is provided', async () => {
     const mockApi3ServerV1 = generateMockApi3ServerV1();
-    mockApi3ServerV1.estimateGas.multicall.mockRejectedValue(new Error('some-error'));
+    mockApi3ServerV1.multicall.estimateGas.mockRejectedValue(new Error('some-error'));
 
     await expect(async () =>
       submitTransactionsModule.estimateMulticallGasLimit(

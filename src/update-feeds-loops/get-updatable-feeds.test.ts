@@ -60,8 +60,8 @@ describe(multicallBeaconValues.name, () => {
 
     const mockContract = {
       connect: jest.fn().mockReturnValue({
-        callStatic: {
-          tryMulticall: tryMulticallMock,
+        tryMulticall: {
+          staticCall: tryMulticallMock,
         },
       }),
       interface: { encodeFunctionData: encodeFunctionDataMock },

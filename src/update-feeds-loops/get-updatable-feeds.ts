@@ -67,7 +67,7 @@ export const getUpdatableFeeds = async (
                 value: decodeBeaconValue(signedData.encodedValue)!,
               }
             : undefined;
-          const isUpdatable = offChainValue?.timestamp.gt(onChainValue.timestamp);
+          const isUpdatable = offChainValue && offChainValue?.timestamp > onChainValue.timestamp;
 
           return { onChainValue, offChainValue, isUpdatable, signedData, beaconId };
         });
@@ -84,7 +84,7 @@ export const getUpdatableFeeds = async (
         );
 
         const newBeaconSetValue = calculateMedian(beaconValues.map(({ value }) => value));
-        const newBeaconSetTimestamp = calculateMedian(beaconValues.map(({ timestamp }) => timestamp))!.toNumber();
+        const newBeaconSetTimestamp = calculateMedian(beaconValues.map(({ timestamp }) => timestamp));
 
         const { decodedUpdateParameters, dataFeedValue, dataFeedTimestamp } = dataFeedInfo;
         const adjustedDeviationThresholdCoefficient = multiplyBigNumber(
@@ -126,18 +126,18 @@ export const multicallBeaconValues = async (
   // Calling the dataFeeds contract function is guaranteed not to revert, so we are not checking the multicall successes
   // and using returndata directly. If the call fails (e.g. timeout or RPC error) we let the parent handle it.
   const api3ServerV1 = getApi3ServerV1(contracts.Api3ServerV1, provider);
-  const voidSigner = new ethers.VoidSigner(ethers.constants.AddressZero, provider);
+  const voidSigner = new ethers.VoidSigner(ethers.ZeroAddress, provider);
   const returndatas = verifyMulticallResponse(
     await api3ServerV1
       .connect(voidSigner)
-      .callStatic.tryMulticall([
+      .tryMulticall.staticCall([
         api3ServerV1.interface.encodeFunctionData('getChainId'),
         ...batch.map((beaconId) => api3ServerV1.interface.encodeFunctionData('dataFeeds', [beaconId])),
       ])
   );
   const [chainIdReturndata, ...dataFeedsReturndata] = returndatas;
 
-  const contractChainId = decodeGetChainIdResponse(chainIdReturndata).toString();
+  const contractChainId = decodeGetChainIdResponse(chainIdReturndata!).toString();
   if (contractChainId !== chainId) {
     logger.warn(`Chain ID mismatch.`, { chainId, contractChainId });
     return null;

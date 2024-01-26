@@ -26,10 +26,7 @@ export const generateMockAirseekerRegistry = () => {
       encodeFunctionData: jest.fn(),
       decodeFunctionResult: jest.fn(),
     },
-    callStatic: {
-      tryMulticall: jest.fn(),
-    },
-    tryMulticall: jest.fn(),
+    tryMulticall: { staticCall: jest.fn(), send: jest.fn() },
     activeDataFeed: jest.fn(),
     activeDataFeedCount: jest.fn(),
   } satisfies DeepPartial<AirseekerRegistry>;
@@ -37,11 +34,9 @@ export const generateMockAirseekerRegistry = () => {
 
 export const generateMockApi3ServerV1 = () => {
   return {
-    estimateGas: {
-      multicall: jest.fn(),
-      updateBeaconWithSignedData: jest.fn(),
-      updateBeaconSetWithBeacons: jest.fn(),
-    },
+    multicall: { estimateGas: jest.fn() },
+    updateBeaconWithSignedData: { estimateGas: jest.fn() },
+    updateBeaconSetWithBeacons: { estimateGas: jest.fn() },
     interface: {
       encodeFunctionData: jest.fn(),
     },

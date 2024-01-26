@@ -111,8 +111,8 @@ export const submitTransaction = async (
             api3ServerV1
               // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
               // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
-              .connect(sponsorWallet.connect(api3ServerV1.provider))
-              .tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce })
+              .connect(sponsorWallet.connect(provider))
+              .tryMulticall.send(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce })
           );
         });
         if (!goMulticall.success) {
@@ -160,10 +160,10 @@ export const estimateMulticallGasLimit = async (
   calldatas: string[],
   fallbackGasLimit: number | undefined
 ) => {
-  const goEstimateGas = await go(async () => api3ServerV1.estimateGas.multicall(calldatas));
+  const goEstimateGas = await go(async () => api3ServerV1.multicall.estimateGas(calldatas));
   if (goEstimateGas.success) {
     // Adding a extra 10% because multicall consumes less gas than tryMulticall
-    return goEstimateGas.data.mul(BigInt(Math.round(1.1 * 100))).div(BigInt(100));
+    return (goEstimateGas.data * BigInt(Math.round(1.1 * 100))) / BigInt(100);
   }
   logger.warn(`Unable to estimate gas for multicall using provider.`, goEstimateGas.error);
 
