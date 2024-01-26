@@ -1,10 +1,10 @@
-import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
 import { getRecommendedGasPrice, setSponsorLastUpdateTimestamp } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
+import type { Api3ServerV1 } from '../typechain-types';
 import type { ChainId, DapiNameOrDataFeedId, ProviderName } from '../types';
 import { deriveSponsorWallet } from '../utils';
 

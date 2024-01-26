@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { encode } from '@api3/airnode-abi';
-import {} from '@api3/airnode-protocol-v1';
 import dotenv from 'dotenv';
 import type { ContractTransactionResponse, Signer } from 'ethers';
 import { ethers } from 'ethers';

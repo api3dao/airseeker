@@ -1,4 +1,3 @@
-import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { ethers } from 'ethers';
 
 import { generateMockApi3ServerV1 } from '../../test/fixtures/mock-contract';
@@ -6,6 +5,7 @@ import { allowPartial } from '../../test/utils';
 import * as gasPriceModule from '../gas-price';
 import { logger } from '../logger';
 import * as stateModule from '../state';
+import type { Api3ServerV1 } from '../typechain-types';
 import * as utilsModule from '../utils';
 
 import type { UpdatableDataFeed } from './get-updatable-feeds';
