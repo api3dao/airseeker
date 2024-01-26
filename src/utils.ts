@@ -34,8 +34,7 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDat
 
   // Take first 20 bytes of the hashed dapiName or data feed ID as sponsor address together with the "0x" prefix.
   const sponsorAddress = ethers.utils.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));
-  const sponsorWallet = ethers.Wallet.fromMnemonic(
-    sponsorWalletMnemonic,
+  const sponsorWallet = ethers.Wallet.fromPhrase(sponsorWalletMnemonic).derivePath(
     `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
   );
 

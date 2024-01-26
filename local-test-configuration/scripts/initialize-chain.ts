@@ -97,7 +97,7 @@ const loadAirnodeFeedConfig = (airnodeFeedDir: 'airnode-feed-1' | 'airnode-feed-
 
 const getBeaconSetNames = () => {
   const airnodeFeed = loadAirnodeFeedConfig('airnode-feed-1');
-  const airnodeFeedWallet = ethers.Wallet.fromMnemonic(airnodeFeed.nodeSettings.airnodeWalletMnemonic);
+  const airnodeFeedWallet = ethers.Wallet.fromPhrase(airnodeFeed.nodeSettings.airnodeWalletMnemonic);
   const airnodeFeedBeacons = Object.values(airnodeFeed.templates).map((template: any) => {
     return deriveBeaconData({ ...template, airnodeAddress: airnodeFeedWallet.address });
   });
@@ -158,10 +158,10 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   // Create templates
   const airnodeFeed1 = loadAirnodeFeedConfig('airnode-feed-1');
   const airnodeFeed2 = loadAirnodeFeedConfig('airnode-feed-2');
-  const airnodeFeed1Wallet = ethers.Wallet.fromMnemonic(airnodeFeed1.nodeSettings.airnodeWalletMnemonic).connect(
+  const airnodeFeed1Wallet = ethers.Wallet.fromPhrase(airnodeFeed1.nodeSettings.airnodeWalletMnemonic).connect(
     provider
   );
-  const airnodeFeed2Wallet = ethers.Wallet.fromMnemonic(airnodeFeed2.nodeSettings.airnodeWalletMnemonic).connect(
+  const airnodeFeed2Wallet = ethers.Wallet.fromPhrase(airnodeFeed2.nodeSettings.airnodeWalletMnemonic).connect(
     provider
   );
   const airnodeFeed1Beacons = Object.values(airnodeFeed1.templates).map((template: any) => {
@@ -243,7 +243,7 @@ async function main() {
   if (!process.env.PROVIDER_URL) throw new Error('PROVIDER_URL not found');
 
   const provider = new ethers.JsonRpcProvider(process.env.PROVIDER_URL, undefined, { staticNetwork: true });
-  const funderWallet = ethers.Wallet.fromMnemonic(process.env.FUNDER_MNEMONIC).connect(provider);
+  const funderWallet = ethers.Wallet.fromPhrase(process.env.FUNDER_MNEMONIC).connect(provider);
 
   await refundFunder(funderWallet);
   const balance = await funderWallet.getBalance();

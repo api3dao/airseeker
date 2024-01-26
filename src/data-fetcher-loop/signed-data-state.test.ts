@@ -10,7 +10,7 @@ import * as signedDataStateModule from './signed-data-state';
 
 describe('signed data state', () => {
   let testDataPoint: SignedData;
-  const signer = ethers.Wallet.fromMnemonic('test test test test test test test test test test test junk');
+  const signer = ethers.Wallet.fromPhrase('test test test test test test test test test test test junk');
 
   beforeAll(async () => {
     initializeState();
