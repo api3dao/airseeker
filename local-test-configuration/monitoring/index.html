@@ -872,7 +872,7 @@
             deviationPercentage > deviationThresholdPercentage ? `<b>${deviationPercentage}</b>` : deviationPercentage,
           deviationThresholdPercentage: deviationThresholdPercentage,
           sponsorWalletAddress: sponsorWallet.address,
-          sponsorWalletBalance: ethers.utils.formatEther(await provider.getBalance(sponsorWallet.address)),
+          sponsorWalletBalance: ethers.formatEther(await provider.getBalance(sponsorWallet.address)),
         };
 
         newActiveDataFeedsHtml += JSON.stringify(dataFeedInfo, null, 2) + '\n\n';

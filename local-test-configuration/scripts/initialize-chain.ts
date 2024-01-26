@@ -60,7 +60,7 @@ export const refundFunder = async (funderWallet: ethers.Wallet) => {
 
     const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName).connect(funderWallet.provider);
     const sponsorWalletBalance = await funderWallet.provider.getBalance(sponsorWallet.address);
-    console.info('Sponsor wallet balance:', ethers.utils.formatEther(sponsorWalletBalance.toString()));
+    console.info('Sponsor wallet balance:', ethers.formatEther(sponsorWalletBalance.toString()));
 
     const gasPrice = await sponsorWallet.provider.getGasPrice();
     const gasFee = gasPrice.mul(BigInt(21_000));
@@ -117,7 +117,7 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.Wallet) =>
 
     const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName);
     const sponsorWalletBalance = await funderWallet.provider.getBalance(sponsorWallet.address);
-    console.info('Sponsor wallet balance:', ethers.utils.formatEther(sponsorWalletBalance.toString()));
+    console.info('Sponsor wallet balance:', ethers.formatEther(sponsorWalletBalance.toString()));
 
     const tx = await funderWallet.sendTransaction({
       to: sponsorWallet.address,
@@ -248,7 +248,7 @@ async function main() {
 
   await refundFunder(funderWallet);
   const balance = await funderWallet.getBalance();
-  console.info('Funder balance:', ethers.utils.formatEther(balance.toString()));
+  console.info('Funder balance:', ethers.formatEther(balance.toString()));
   console.info();
 
   const { api3ServerV1, airseekerRegistry } = await deploy(funderWallet, provider);

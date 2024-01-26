@@ -13,7 +13,7 @@ export const verifySignedData = ({ airnode, templateId, timestamp, signature, en
       ethers.solidityPackedKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, encodedValue])
     );
 
-    const signerAddr = ethers.utils.verifyMessage(message, signature);
+    const signerAddr = ethers.verifyMessage(message, signature);
     if (signerAddr !== airnode) throw new Error('Signer address does not match');
   });
 
