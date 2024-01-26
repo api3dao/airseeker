@@ -9,7 +9,7 @@ export const signData = async (signer: ethers.Signer, templateId: string, timest
     ethers.getBytes(ethers.solidityPackedKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, data]))
   );
 
-export const generateRandomBytes32 = () => ethers.toBeHex(randomBytes(32).toString('hex'));
+export const generateRandomBytes32 = () => `0x${randomBytes(32).toString('hex')}`;
 
 export type DeepPartial<T> = T extends object
   ? {
