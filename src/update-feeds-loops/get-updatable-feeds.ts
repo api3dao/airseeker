@@ -16,8 +16,8 @@ import {
 } from './contracts';
 
 interface BeaconValue {
-  timestamp: ethers.BigNumber;
-  value: ethers.BigNumber;
+  timestamp: bigint;
+  value: bigint;
 }
 
 export interface UpdatableBeacon {

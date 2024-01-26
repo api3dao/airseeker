@@ -21,7 +21,7 @@ export const initializeGasState = (chainId: string, providerName: string) =>
  * @param providerName
  * @param gasPrice
  */
-export const saveGasPrice = (chainId: string, providerName: string, gasPrice: ethers.BigNumber) =>
+export const saveGasPrice = (chainId: string, providerName: string, gasPrice: bigint) =>
   updateState((draft) => {
     draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({
       price: gasPrice,
@@ -76,7 +76,7 @@ export const clearSponsorLastUpdateTimestamp = (chainId: string, providerName: s
     }
   });
 
-export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => {
+export const getPercentile = (percentile: number, array: bigint[]) => {
   if (array.length === 0) return;
 
   array.sort((a, b) => (a.gt(b) ? 1 : -1));

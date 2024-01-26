@@ -3,7 +3,7 @@ import type { BigNumber, ethers } from 'ethers';
 import { HUNDRED_PERCENT } from '../constants';
 import { logger } from '../logger';
 
-export const calculateDeviationPercentage = (initialValue: ethers.BigNumber, updatedValue: ethers.BigNumber) => {
+export const calculateDeviationPercentage = (initialValue: bigint, updatedValue: bigint) => {
   const delta = updatedValue.sub(initialValue);
   const absoluteDelta = delta.abs();
 
@@ -13,7 +13,7 @@ export const calculateDeviationPercentage = (initialValue: ethers.BigNumber, upd
   return absoluteDelta.mul(BigInt(HUNDRED_PERCENT)).div(absoluteInitialValue);
 };
 
-export const calculateMedian = (arr: ethers.BigNumber[]) => {
+export const calculateMedian = (arr: bigint[]) => {
   if (arr.length === 0) throw new Error('Cannot calculate median of empty array');
   const mid = Math.floor(arr.length / 2);
 
@@ -26,11 +26,7 @@ export const calculateMedian = (arr: ethers.BigNumber[]) => {
   return arr.length % 2 === 0 ? nums[mid - 1]!.add(nums[mid]!).div(2) : nums[mid]!;
 };
 
-export const isDeviationThresholdExceeded = (
-  onChainValue: ethers.BigNumber,
-  deviationThreshold: ethers.BigNumber,
-  apiValue: ethers.BigNumber
-) => {
+export const isDeviationThresholdExceeded = (onChainValue: bigint, deviationThreshold: bigint, apiValue: bigint) => {
   const updateInPercentage = calculateDeviationPercentage(onChainValue, apiValue);
 
   return updateInPercentage.gt(deviationThreshold);
@@ -43,9 +39,9 @@ export const isOnChainDataFresh = (timestamp: number, heartbeatInterval: BigNumb
   timestamp > Date.now() / 1000 - heartbeatInterval.toNumber();
 
 export const isDataFeedUpdatable = (
-  onChainValue: ethers.BigNumber,
+  onChainValue: bigint,
   onChainTimestamp: number,
-  offChainValue: ethers.BigNumber,
+  offChainValue: bigint,
   offChainTimestamp: number,
   heartbeatInterval: BigNumber,
   deviationThreshold: BigNumber
