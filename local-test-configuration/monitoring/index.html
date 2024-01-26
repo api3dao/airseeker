@@ -863,7 +863,7 @@
         const dataFeedInfo = {
           dapiName: dapiName,
           dataFeedId: dataFeed.decodedDataFeed.dataFeedId,
-          decodedDapiName: ethers.utils.parseBytes32String(dapiName),
+          decodedDapiName: ethers.decodeBytes32String(dapiName),
           dataFeedValue: dataFeed.dataFeedValue,
           offChainValue: {
             value: newBeaconSetValue.toString(),
