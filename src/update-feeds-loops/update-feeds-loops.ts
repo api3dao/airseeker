@@ -3,7 +3,6 @@ import { ethers } from 'ethers';
 import { isError, range, size, zip } from 'lodash';
 
 import type { Chain } from '../config/schema';
-import { RPC_PROVIDER_TIMEOUT_MS } from '../constants';
 import { clearSponsorLastUpdateTimestamp, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
@@ -97,7 +96,7 @@ export const readActiveDataFeedBatch = async (
     )
   );
 
-  let returndatas = verifyMulticallResponse(await airseekerRegistry.callStatic.tryMulticall(calldatas, {}));
+  let returndatas = verifyMulticallResponse(await airseekerRegistry.tryMulticall.staticCall(calldatas));
   let activeDataFeedCountReturndata: string | undefined;
   if (fromIndex === 0) {
     activeDataFeedCountReturndata = returndatas[0]!;
@@ -109,7 +108,7 @@ export const readActiveDataFeedBatch = async (
   // ID at runtime by mistake. In case the chain ID is wrong, we want to skip all data feeds in the batch (or all of
   // them in case this is the first batch). Another possibility of a wrong chain ID is misconfiguration in airseeker
   // file.
-  const contractChainId = decodeGetChainIdResponse(getChainIdReturndata).toString();
+  const contractChainId = decodeGetChainIdResponse(getChainIdReturndata!).toString();
   if (contractChainId !== chainId) {
     logger.warn(`Chain ID mismatch.`, { chainId, contractChainId });
     return null;
@@ -130,7 +129,7 @@ export const readActiveDataFeedBatch = async (
       return dataFeed !== null;
     });
 
-  const blockNumber = decodeGetBlockNumberResponse(getBlockNumberReturndata);
+  const blockNumber = decodeGetBlockNumberResponse(getBlockNumberReturndata!);
 
   return {
     batch,

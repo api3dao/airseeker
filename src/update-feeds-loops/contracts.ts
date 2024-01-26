@@ -7,13 +7,14 @@ import type { DecodedDataFeed } from '../types';
 import { decodeDapiName, deriveBeaconId, deriveBeaconSetId } from '../utils';
 
 export const getApi3ServerV1 = (address: string, provider: ethers.JsonRpcProvider) =>
+  // @ts-expect-error TODO: Api3ServerV1Factory exports ether@5 factories. We need to build the contract outselves.
   Api3ServerV1Factory.connect(address, provider);
 
 export const getAirseekerRegistry = (address: string, provider: ethers.JsonRpcProvider) =>
   AirseekerRegistryFactory.connect(address, provider);
 
 export const verifyMulticallResponse = (
-  response: Awaited<ReturnType<AirseekerRegistry['callStatic']['tryMulticall']>>
+  response: Awaited<ReturnType<AirseekerRegistry['tryMulticall']['staticCall']>>
 ) => {
   const { successes, returndata } = response;
 
@@ -22,15 +23,15 @@ export const verifyMulticallResponse = (
 };
 
 export const decodeActiveDataFeedCountResponse = (activeDataFeedCountReturndata: string) => {
-  return BigInt(activeDataFeedCountReturndata).toNumber();
+  return Number(BigInt(activeDataFeedCountReturndata));
 };
 
 export const decodeGetBlockNumberResponse = (getBlockNumberReturndata: string) => {
-  return BigInt(getBlockNumberReturndata).toNumber();
+  return Number(BigInt(getBlockNumberReturndata));
 };
 
 export const decodeGetChainIdResponse = (getChainIdReturndata: string) => {
-  return BigInt(getChainIdReturndata).toNumber();
+  return Number(BigInt(getChainIdReturndata));
 };
 
 export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null => {
@@ -66,9 +67,9 @@ export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null 
 };
 
 export interface DecodedUpdateParameters {
-  deviationReference: ethers.BigNumber;
-  deviationThresholdInPercentage: ethers.BigNumber;
-  heartbeatInterval: ethers.BigNumber;
+  deviationReference: bigint;
+  deviationThresholdInPercentage: bigint;
+  heartbeatInterval: bigint;
 }
 
 export const decodeUpdateParameters = (updateParameters: string): DecodedUpdateParameters => {
@@ -91,7 +92,7 @@ export interface DecodedActiveDataFeedResponse {
   dapiName: string | null;
   decodedDapiName: string | null;
   decodedUpdateParameters: DecodedUpdateParameters;
-  dataFeedValue: ethers.BigNumber;
+  dataFeedValue: bigint;
   dataFeedTimestamp: number;
   decodedDataFeed: DecodedDataFeed;
   signedApiUrls: string[];
@@ -102,8 +103,8 @@ export const decodeActiveDataFeedResponse = (
   activeDataFeedReturndata: string
 ): DecodedActiveDataFeedResponse | null => {
   const { dapiName, updateParameters, dataFeedValue, dataFeedTimestamp, dataFeedDetails, signedApiUrls } =
-    airseekerRegistry.interface.decodeFunctionResult('activeDataFeed', activeDataFeedReturndata) as Awaited<
-      ReturnType<AirseekerRegistry['activeDataFeed']>
+    airseekerRegistry.interface.decodeFunctionResult('activeDataFeed', activeDataFeedReturndata) as unknown as Awaited<
+      ReturnType<AirseekerRegistry['activeDataFeed']['staticCall']>
     >;
 
   // https://github.com/api3dao/dapi-management/blob/f3d39e4707c33c075a8f07aa8f8369f8dc07736f/contracts/AirseekerRegistry.sol#L162
@@ -119,7 +120,8 @@ export const decodeActiveDataFeedResponse = (
     decodedDapiName: decodedDapiName === '' ? null : decodedDapiName,
     decodedUpdateParameters: decodeUpdateParameters(updateParameters),
     dataFeedValue,
-    dataFeedTimestamp,
+    // TODO: Consider working with BigInts everywhere.
+    dataFeedTimestamp: Number(dataFeedTimestamp),
     decodedDataFeed,
     signedApiUrls,
   };
