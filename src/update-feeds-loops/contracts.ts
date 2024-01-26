@@ -41,14 +41,17 @@ export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null 
   // This is a hex encoded string, the contract works with bytes directly
   // 2 characters for the '0x' preamble + 32 * 2 hexadecimals for 32 bytes + 32 * 2 hexadecimals for 32 bytes
   if (dataFeed.length === 2 + 32 * 2 + 32 * 2) {
-    const [airnodeAddress, templateId] = ethers.utils.defaultAbiCoder.decode(['address', 'bytes32'], dataFeed);
+    const [airnodeAddress, templateId] = ethers.AbiCoder.defaultAbiCoder().decode(['address', 'bytes32'], dataFeed);
 
     const dataFeedId = deriveBeaconId(airnodeAddress, templateId)!;
 
     return { dataFeedId, beacons: [{ beaconId: dataFeedId, airnodeAddress, templateId }] };
   }
 
-  const [airnodeAddresses, templateIds] = ethers.utils.defaultAbiCoder.decode(['address[]', 'bytes32[]'], dataFeed);
+  const [airnodeAddresses, templateIds] = ethers.AbiCoder.defaultAbiCoder().decode(
+    ['address[]', 'bytes32[]'],
+    dataFeed
+  );
 
   const beacons = (airnodeAddresses as string[]).map((airnodeAddress: string, idx: number) => {
     const templateId = templateIds[idx] as string;
@@ -70,10 +73,8 @@ export interface DecodedUpdateParameters {
 
 export const decodeUpdateParameters = (updateParameters: string): DecodedUpdateParameters => {
   // https://github.com/api3dao/airnode-protocol-v1/blob/5f861715749e182e334c273d6a52c4f2560c7994/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L122
-  const [deviationThresholdInPercentage, deviationReference, heartbeatInterval] = ethers.utils.defaultAbiCoder.decode(
-    ['uint256', 'int224', 'uint256'],
-    updateParameters
-  );
+  const [deviationThresholdInPercentage, deviationReference, heartbeatInterval] =
+    ethers.AbiCoder.defaultAbiCoder().decode(['uint256', 'int224', 'uint256'], updateParameters);
   // 2 characters for the '0x' preamble + 3 parameters, 32 * 2 hexadecimals for 32 bytes each
   if (updateParameters.length !== 2 + 3 * (32 * 2)) {
     throw new Error(`Unexpected trailing data in update parameters`);

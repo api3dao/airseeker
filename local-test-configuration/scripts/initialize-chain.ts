@@ -187,7 +187,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
       templateIds: [airnodeFeed1Beacon!.templateId, airnodeFeed1Beacon!.templateId],
       dapiName: encodeDapiName(airnodeFeed1Beacon!.parameters[0]!.value),
       beaconSetId: ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(
+        ethers.AbiCoder.defaultAbiCoder().encode(
           ['bytes32[]'],
           [[airnodeFeed1Beacon!.beaconId, airnodeFeed2Beacon!.beaconId]]
         )
@@ -197,7 +197,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   for (const dapiInfo of dapiInfos) {
     const { airnodes, templateIds, dapiName, beaconSetId } = dapiInfo;
 
-    const encodedBeaconSetData = ethers.utils.defaultAbiCoder.encode(
+    const encodedBeaconSetData = ethers.AbiCoder.defaultAbiCoder().encode(
       ['address[]', 'bytes32[]'],
       [airnodes, templateIds]
     );
@@ -215,7 +215,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
       .connect(deployerAndManager)
       .setDapiNameUpdateParameters(
         dapiName,
-        ethers.utils.defaultAbiCoder.encode(
+        ethers.AbiCoder.defaultAbiCoder().encode(
           ['uint256', 'uint256', 'uint256'],
           [deviationThresholdInPercentage, deviationReference, heartbeatInterval]
         )

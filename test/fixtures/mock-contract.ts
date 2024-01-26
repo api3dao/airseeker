@@ -7,7 +7,7 @@ import { type DeepPartial, encodeBeaconDetails } from '../utils';
 
 export const generateActiveDataFeedResponse = () => ({
   dapiName: encodeDapiName('MOCK_FEED'),
-  updateParameters: ethers.utils.defaultAbiCoder.encode(
+  updateParameters: ethers.AbiCoder.defaultAbiCoder().encode(
     ['uint256', 'int224', 'uint256'],
     [0.5 * 1e8, 0.5 * 1e8, 100] // deviationThresholdInPercentage, deviationReference, heartbeatInterval
   ),

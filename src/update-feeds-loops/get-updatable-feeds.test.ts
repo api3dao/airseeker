@@ -23,7 +23,7 @@ const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
 const encodeBeaconValue = (numericValue: string) => {
   const numericValueAsBigNumber = ethers.BigNumber.from(numericValue);
 
-  return ethers.utils.defaultAbiCoder.encode(['int256'], [numericValueAsBigNumber]);
+  return ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [numericValueAsBigNumber]);
 };
 
 const feedIds = [
@@ -41,10 +41,10 @@ describe(multicallBeaconValues.name, () => {
     const tryMulticallMock = jest.fn().mockReturnValue({
       successes: [true, true, true],
       returndata: [
-        ethers.utils.defaultAbiCoder.encode(['uint256'], [31_337]),
-        ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [100, 105]),
-        ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [101, 106]),
-        ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [102, 107]),
+        ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [31_337]),
+        ethers.AbiCoder.defaultAbiCoder().encode(['int224', 'uint32'], [100, 105]),
+        ethers.AbiCoder.defaultAbiCoder().encode(['int224', 'uint32'], [101, 106]),
+        ethers.AbiCoder.defaultAbiCoder().encode(['int224', 'uint32'], [102, 107]),
       ],
     });
 

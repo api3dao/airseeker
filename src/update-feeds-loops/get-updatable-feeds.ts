@@ -137,7 +137,7 @@ export const multicallBeaconValues = async (
   );
   const [chainIdReturndata, ...dataFeedsReturndata] = returndatas;
 
-  const contractChainId = decodeGetChainIdResponse(chainIdReturndata!).toString();
+  const contractChainId = decodeGetChainIdResponse(chainIdReturndata).toString();
   if (contractChainId !== chainId) {
     logger.warn(`Chain ID mismatch.`, { chainId, contractChainId });
     return null;
@@ -145,7 +145,10 @@ export const multicallBeaconValues = async (
 
   const onChainValues: Record<BeaconId, BeaconValue> = {};
   for (const [idx, beaconId] of batch.entries()) {
-    const [value, timestamp] = ethers.utils.defaultAbiCoder.decode(['int224', 'uint32'], dataFeedsReturndata[idx]!);
+    const [value, timestamp] = ethers.AbiCoder.defaultAbiCoder().decode(
+      ['int224', 'uint32'],
+      dataFeedsReturndata[idx]!
+    );
     onChainValues[beaconId] = { timestamp: ethers.BigNumber.from(timestamp), value: ethers.BigNumber.from(value) };
   }
   return onChainValues;

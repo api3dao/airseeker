@@ -17,7 +17,7 @@ describe('signed data state', () => {
     const templateId = generateRandomBytes32();
     const timestamp = Math.floor((Date.now() - 25 * 60 * 60 * 1000) / 1000).toString();
     const airnode = signer.address;
-    const encodedValue = ethers.utils.defaultAbiCoder.encode(['int256'], [ethers.BigNumber.from(1)]);
+    const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [ethers.BigNumber.from(1)]);
 
     testDataPoint = {
       airnode,
@@ -44,7 +44,7 @@ describe('signed data state', () => {
     const templateId = generateRandomBytes32();
     const timestamp = Math.floor((Date.now() + 61 * 60 * 1000) / 1000).toString();
     const airnode = signer.address;
-    const encodedValue = ethers.utils.defaultAbiCoder.encode(['int256'], [ethers.BigNumber.from(1)]);
+    const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [ethers.BigNumber.from(1)]);
 
     const futureTestDataPoint = {
       airnode,
@@ -62,7 +62,7 @@ describe('signed data state', () => {
     const templateId = generateRandomBytes32();
     const timestamp = Math.floor((Date.now() + 60 * 60 * 1000) / 1000).toString();
     const airnode = ethers.Wallet.createRandom().address;
-    const encodedValue = ethers.utils.defaultAbiCoder.encode(['int256'], [ethers.BigNumber.from(1)]);
+    const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [ethers.BigNumber.from(1)]);
 
     const badTestDataPoint = {
       airnode,

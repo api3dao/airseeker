@@ -10,7 +10,8 @@ export function deriveBeaconId(airnodeAddress: string, templateId: string) {
 }
 
 export function deriveBeaconSetId(beaconIds: string[]) {
-  return goSync(() => ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['bytes32[]'], [beaconIds]))).data;
+  return goSync(() => ethers.utils.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(['bytes32[]'], [beaconIds])))
+    .data;
 }
 
 export const encodeDapiName = (decodedDapiName: string) => ethers.utils.formatBytes32String(decodedDapiName);
@@ -48,7 +49,7 @@ export const multiplyBigNumber = (bigNumber: ethers.BigNumber, multiplier: numbe
 // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
 export const decodeBeaconValue = (encodedBeaconValue: string) => {
   const decodedBeaconValue = ethers.BigNumber.from(
-    ethers.utils.defaultAbiCoder.decode(['int256'], encodedBeaconValue)[0]
+    ethers.AbiCoder.defaultAbiCoder().decode(['int256'], encodedBeaconValue)[0]
   );
   if (decodedBeaconValue.gt(INT224_MAX) || decodedBeaconValue.lt(INT224_MIN)) {
     return null;

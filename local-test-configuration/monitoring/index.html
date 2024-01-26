@@ -691,21 +691,24 @@
     }
 
     function deriveBeaconSetId(beaconIds) {
-      return ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['bytes32[]'], [beaconIds]));
+      return ethers.utils.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(['bytes32[]'], [beaconIds]));
     }
 
     const decodeDataFeedDetails = (dataFeed) => {
       if (dataFeed.length === 130) {
         // (64 [actual bytes] * 2[hex encoding] ) + 2 [for the '0x' preamble]
         // This is a hex encoded string, the contract works with bytes directly
-        const [airnodeAddress, templateId] = ethers.utils.defaultAbiCoder.decode(['address', 'bytes32'], dataFeed);
+        const [airnodeAddress, templateId] = ethers.AbiCoder.defaultAbiCoder().decode(['address', 'bytes32'], dataFeed);
 
         const dataFeedId = deriveBeaconId(airnodeAddress, templateId);
 
         return { dataFeedId, beacons: [{ beaconId: dataFeedId, airnodeAddress, templateId }] };
       }
 
-      const [airnodeAddresses, templateIds] = ethers.utils.defaultAbiCoder.decode(['address[]', 'bytes32[]'], dataFeed);
+      const [airnodeAddresses, templateIds] = ethers.AbiCoder.defaultAbiCoder().decode(
+        ['address[]', 'bytes32[]'],
+        dataFeed
+      );
 
       const beacons = airnodeAddresses.map((airnodeAddress, idx) => {
         const templateId = templateIds[idx];
@@ -722,7 +725,7 @@
     const decodeUpdateParameters = (updateParameters) => {
       // https://github.com/api3dao/airnode-protocol-v1/blob/5f861715749e182e334c273d6a52c4f2560c7994/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L122
       const [deviationThresholdInPercentage, deviationReference, heartbeatInterval] =
-        ethers.utils.defaultAbiCoder.decode(['uint256', 'int224', 'uint256'], updateParameters);
+        ethers.AbiCoder.defaultAbiCoder().decode(['uint256', 'int224', 'uint256'], updateParameters);
 
       // 2 characters for the '0x' preamble + 3 parameters, 32 * 2 hexadecimals for 32 bytes each
       if (updateParameters.length !== 2 + 3 * (32 * 2)) {
@@ -756,7 +759,7 @@
       const INT224_MAX = ethers.BigNumber.from(2).pow(ethers.BigNumber.from(223)).sub(ethers.BigNumber.from(1));
 
       const decodedBeaconValue = ethers.BigNumber.from(
-        ethers.utils.defaultAbiCoder.decode(['int256'], encodedBeaconValue)[0]
+        ethers.AbiCoder.defaultAbiCoder().decode(['int256'], encodedBeaconValue)[0]
       );
       if (decodedBeaconValue.gt(INT224_MAX) || decodedBeaconValue.lt(INT224_MIN)) {
         return null;

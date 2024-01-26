@@ -90,7 +90,7 @@ const deriveBeaconData = (beaconData: RawBeaconData) => {
   const { endpoint, templateParameters, airnodeAddress } = beaconData;
 
   const endpointId = ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(['string', 'string'], [endpoint.oisTitle, endpoint.endpointName])
+    ethers.AbiCoder.defaultAbiCoder().encode(['string', 'string'], [endpoint.oisTitle, endpoint.endpointName])
   );
   const encodedParameters = encode(templateParameters);
   const templateId = ethers.solidityPackedKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]);
@@ -119,7 +119,7 @@ const initializeBeacon = async (
 ) => {
   const block = await api3ServerV1.provider.getBlock('latest');
   const dataFeedTimestamp = (block.timestamp + 1).toString();
-  const encodedValue = ethers.utils.defaultAbiCoder.encode(['uint224'], [ethers.BigNumber.from(apiValue)]);
+  const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['uint224'], [ethers.BigNumber.from(apiValue)]);
   const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
 
   await api3ServerV1
@@ -201,10 +201,10 @@ export const deployAndUpdate = async () => {
 
   // Derive beacon set IDs
   const btcBeaconSetId = ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(['bytes32[]'], [[binanceBtcBeacon.beaconId, krakenBtcBeacon.beaconId]])
+    ethers.AbiCoder.defaultAbiCoder().encode(['bytes32[]'], [[binanceBtcBeacon.beaconId, krakenBtcBeacon.beaconId]])
   );
   const ethBeaconSetId = ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(['bytes32[]'], [[binanceEthBeacon.beaconId, krakenEthBeacon.beaconId]])
+    ethers.AbiCoder.defaultAbiCoder().encode(['bytes32[]'], [[binanceEthBeacon.beaconId, krakenEthBeacon.beaconId]])
   );
 
   // Set active data feeds and initialize sponsor wallets
@@ -235,7 +235,7 @@ export const deployAndUpdate = async () => {
   for (const dapiInfo of dapiInfos) {
     const { airnodes, templateIds, dapiName, beaconSetId } = dapiInfo;
 
-    const encodedBeaconSetData = ethers.utils.defaultAbiCoder.encode(
+    const encodedBeaconSetData = ethers.AbiCoder.defaultAbiCoder().encode(
       ['address[]', 'bytes32[]'],
       [airnodes, templateIds]
     );
@@ -248,7 +248,7 @@ export const deployAndUpdate = async () => {
       .connect(deployerAndManager!)
       .setDapiNameUpdateParameters(
         dapiName,
-        ethers.utils.defaultAbiCoder.encode(
+        ethers.AbiCoder.defaultAbiCoder().encode(
           ['uint256', 'uint256', 'uint256'],
           [deviationThresholdInPercentage, deviationReference, heartbeatInterval]
         )
