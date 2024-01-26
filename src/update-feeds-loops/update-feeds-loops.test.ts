@@ -375,10 +375,10 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
               ['int256'],
               [
                 BigInt(
-                  dataFeed.dataFeedValue
+                  (dataFeed.dataFeedValue *
                     // Multiply the new value by the on chain deviationThresholdInPercentage
-                    .mul(decodedUpdateParameters.deviationThresholdInPercentage.add(1 * 1e8))
-                    .div(1e8)
+                    (decodedUpdateParameters.deviationThresholdInPercentage + 10n ** 18n)) /
+                    10n ** 18n
                 ),
               ]
             ),

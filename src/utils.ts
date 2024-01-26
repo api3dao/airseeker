@@ -33,7 +33,7 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDat
   const hashedDapiNameOrDataFeedId = ethers.keccak256(dapiNameOrDataFeedId);
 
   // Take first 20 bytes of the hashed dapiName or data feed ID as sponsor address together with the "0x" prefix.
-  const sponsorAddress = ethers.utils.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));
+  const sponsorAddress = ethers.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));
   const sponsorWallet = ethers.Wallet.fromPhrase(sponsorWalletMnemonic).derivePath(
     `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
   );
@@ -41,13 +41,13 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDat
   return sponsorWallet;
 };
 
-export const multiplyBigNumber = (bigNumber: ethers.BigNumber, multiplier: number) =>
-  bigNumber.mul(BigInt(Math.round(multiplier * 100))).div(BigInt(100));
+export const multiplyBigNumber = (bigNumber: bigint, multiplier: number) =>
+  (bigNumber * BigInt(Math.round(multiplier * 100))) / BigInt(100);
 
 // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
 export const decodeBeaconValue = (encodedBeaconValue: string) => {
   const decodedBeaconValue = BigInt(ethers.AbiCoder.defaultAbiCoder().decode(['int256'], encodedBeaconValue)[0]);
-  if (decodedBeaconValue.gt(INT224_MAX) || decodedBeaconValue.lt(INT224_MIN)) {
+  if (decodedBeaconValue > INT224_MAX || decodedBeaconValue < INT224_MIN) {
     return null;
   }
 

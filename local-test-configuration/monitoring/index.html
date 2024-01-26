@@ -799,7 +799,7 @@
       const hashedDapiNameOrDataFeedId = ethers.keccak256(dapiNameOrDataFeedId);
 
       // Take first 20 bytes of the hashed dapiName or data feed ID as sponsor address together with the "0x" prefix.
-      const sponsorAddress = ethers.utils.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));
+      const sponsorAddress = ethers.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));
       const sponsorWallet = ethers.Wallet.fromPhrase(sponsorWalletMnemonic).derivePath(
         `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
       );
