@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { encode } from '@api3/airnode-abi';
 import {} from '@api3/airnode-protocol-v1';
 import dotenv from 'dotenv';
-import type { ContractTransaction, Signer } from 'ethers';
+import type { ContractTransactionResponse, Signer } from 'ethers';
 import { ethers } from 'ethers';
 import { zip } from 'lodash';
 
@@ -49,7 +49,7 @@ export const deriveRole = (adminRole: string, roleDescription: string) => {
 
 // NOTE: This function is not used by the initialization script, but you can use it after finishing Airseeker test on a
 // public testnet to refund test ETH from sponsor wallets to the funder wallet.
-export const refundFunder = async (funderWallet: ethers.Wallet) => {
+export const refundFunder = async (funderWallet: ethers.HDNodeWallet) => {
   const airseekerSecrets = dotenv.parse(readFileSync(join(__dirname, `/../airseeker`, 'secrets.env'), 'utf8'));
   const airseekerWalletMnemonic = airseekerSecrets.SPONSOR_WALLET_MNEMONIC;
   if (!airseekerWalletMnemonic) throw new Error('SPONSOR_WALLET_MNEMONIC not found in Airseeker secrets');
@@ -59,12 +59,14 @@ export const refundFunder = async (funderWallet: ethers.Wallet) => {
     const dapiName = encodeDapiName(beaconSetName);
 
     const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName).connect(funderWallet.provider);
-    const sponsorWalletBalance = await funderWallet.provider.getBalance(sponsorWallet.address);
+    const sponsorWalletBalance = await funderWallet.provider!.getBalance(sponsorWallet.address);
     console.info('Sponsor wallet balance:', ethers.formatEther(sponsorWalletBalance.toString()));
 
-    const gasPrice = await sponsorWallet.provider.getGasPrice();
-    const gasFee = gasPrice.mul(BigInt(21_000));
-    if (sponsorWalletBalance.sub(gasFee).lt(0n)) {
+    const feeData = await sponsorWallet.provider!.getFeeData();
+    const { gasPrice } = feeData;
+    // TODO: Will this be null on EIP-1559 networks?
+    const gasFee = gasPrice! * BigInt(21_000);
+    if (sponsorWalletBalance < gasFee) {
       console.info('Sponsor wallet balance is too low, skipping refund');
       continue;
     }
@@ -72,7 +74,7 @@ export const refundFunder = async (funderWallet: ethers.Wallet) => {
       to: funderWallet.address,
       gasPrice,
       gasLimit: BigInt(21_000),
-      value: sponsorWalletBalance.sub(gasFee),
+      value: sponsorWalletBalance - gasFee,
     });
     await tx.wait();
 
@@ -106,7 +108,7 @@ const getBeaconSetNames = () => {
   return airnodeFeedBeacons.map((beacon) => beacon.parameters[0]!.value);
 };
 
-export const fundAirseekerSponsorWallet = async (funderWallet: ethers.Wallet) => {
+export const fundAirseekerSponsorWallet = async (funderWallet: ethers.HDNodeWallet) => {
   const airseekerSecrets = dotenv.parse(readFileSync(join(__dirname, `/../airseeker`, 'secrets.env'), 'utf8'));
   const airseekerWalletMnemonic = airseekerSecrets.SPONSOR_WALLET_MNEMONIC;
   if (!airseekerWalletMnemonic) throw new Error('SPONSOR_WALLET_MNEMONIC not found in Airseeker secrets');
@@ -116,7 +118,7 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.Wallet) =>
     const dapiName = encodeDapiName(beaconSetName);
 
     const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName);
-    const sponsorWalletBalance = await funderWallet.provider.getBalance(sponsorWallet.address);
+    const sponsorWalletBalance = await funderWallet.provider!.getBalance(sponsorWallet.address);
     console.info('Sponsor wallet balance:', ethers.formatEther(sponsorWalletBalance.toString()));
 
     const tx = await funderWallet.sendTransaction({
@@ -132,7 +134,7 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.Wallet) =>
   }
 };
 
-export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.providers.JsonRpcProvider) => {
+export const deploy = async (funderWallet: ethers.HDNodeWallet, provider: ethers.JsonRpcProvider) => {
   // NOTE: It is OK if all of these roles are done via the funder wallet.
   const deployerAndManager = funderWallet,
     randomPerson = funderWallet;
@@ -140,21 +142,21 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   // Deploy contracts
   const accessControlRegistryFactory = new AccessControlRegistryFactory(deployerAndManager as Signer);
   const accessControlRegistry = await accessControlRegistryFactory.deploy();
-  await accessControlRegistry.deployTransaction.wait();
+  await accessControlRegistry.waitForDeployment();
   const api3ServerV1Factory = new Api3ServerV1Factory(deployerAndManager as Signer);
   const api3ServerV1AdminRoleDescription = 'Api3ServerV1 admin';
   const api3ServerV1 = await api3ServerV1Factory.deploy(
-    accessControlRegistry.address,
+    accessControlRegistry.getAddress(),
     api3ServerV1AdminRoleDescription,
     deployerAndManager.address
   );
-  await api3ServerV1.deployTransaction.wait();
+  await api3ServerV1.waitForDeployment();
   const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager as Signer);
   const airseekerRegistry = await airseekerRegistryFactory.deploy(
     await (deployerAndManager as Signer).getAddress(),
-    api3ServerV1.address
+    api3ServerV1.getAddress()
   );
-  await airseekerRegistry.deployTransaction.wait();
+  await airseekerRegistry.waitForDeployment();
 
   // Create templates
   const airnodeFeed1 = loadAirnodeFeedConfig('airnode-feed-1');
@@ -177,7 +179,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     [airnodeFeed1Wallet.address, joinUrl(airnodeFeed1.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the signed API, but we need to query it additional path.
     [airnodeFeed2Wallet.address, joinUrl(airnodeFeed2.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the signed API, but we need to query it additional path.
   ] as const;
-  let tx: ContractTransaction;
+  let tx: ContractTransactionResponse;
   for (const [airnode, url] of apiTreeValues) {
     tx = await airseekerRegistry.connect(deployerAndManager).setSignedApiUrl(airnode, url);
     await tx.wait();
@@ -247,13 +249,13 @@ async function main() {
   const funderWallet = ethers.Wallet.fromPhrase(process.env.FUNDER_MNEMONIC).connect(provider);
 
   await refundFunder(funderWallet);
-  const balance = await funderWallet.getBalance();
+  const balance = await provider.getBalance(funderWallet.address);
   console.info('Funder balance:', ethers.formatEther(balance.toString()));
   console.info();
 
   const { api3ServerV1, airseekerRegistry } = await deploy(funderWallet, provider);
-  console.info('Api3ServerV1 deployed at:', api3ServerV1.address);
-  console.info('AirseekerRegistry deployed at:', airseekerRegistry.address);
+  console.info('Api3ServerV1 deployed at:', await api3ServerV1.getAddress());
+  console.info('AirseekerRegistry deployed at:', await airseekerRegistry.getAddress());
   console.info();
 
   await fundAirseekerSponsorWallet(funderWallet);

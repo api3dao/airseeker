@@ -142,7 +142,7 @@ describe(getPercentile.name, () => {
 describe(getRecommendedGasPrice.name, () => {
   it('uses provider recommended gas price when there are no historical prices', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
-    jest.spyOn(provider, 'getGasPrice').mockResolvedValueOnce(ethers.parseUnits('10', 'gwei'));
+    jest.spyOn(provider, 'getFeeData').mockResolvedValueOnce({ gasPrice: ethers.parseUnits('10', 'gwei') } as any);
     jest.spyOn(logger, 'debug');
 
     const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWalletAddress);
@@ -167,7 +167,7 @@ describe(getRecommendedGasPrice.name, () => {
       timestamp: timestampMock - 0.9 * gasSettings.sanitizationSamplingWindow - 1,
     }));
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
-    jest.spyOn(provider, 'getGasPrice').mockResolvedValueOnce(ethers.parseUnits('10', 'gwei'));
+    jest.spyOn(provider, 'getFeeData').mockResolvedValueOnce({ gasPrice: ethers.parseUnits('10', 'gwei') } as any);
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName]!.gasPrices = gasPricesMock;
     });
@@ -199,7 +199,7 @@ describe(getRecommendedGasPrice.name, () => {
       timestamp: timestampMock,
     };
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
-    jest.spyOn(provider, 'getGasPrice').mockResolvedValueOnce(ethers.parseUnits('10', 'gwei'));
+    jest.spyOn(provider, 'getFeeData').mockResolvedValueOnce({ gasPrice: ethers.parseUnits('10', 'gwei') } as any);
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
     });
@@ -225,7 +225,7 @@ describe(getRecommendedGasPrice.name, () => {
       timestamp: timestampMock,
     };
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
-    jest.spyOn(provider, 'getGasPrice').mockResolvedValueOnce(ethers.parseUnits('10', 'gwei'));
+    jest.spyOn(provider, 'getFeeData').mockResolvedValueOnce({ gasPrice: ethers.parseUnits('10', 'gwei') } as any);
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
       draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress] =
@@ -256,7 +256,7 @@ describe(getRecommendedGasPrice.name, () => {
       timestamp: timestampMock,
     };
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
-    jest.spyOn(provider, 'getGasPrice').mockResolvedValueOnce(ethers.parseUnits('10', 'gwei'));
+    jest.spyOn(provider, 'getFeeData').mockResolvedValueOnce({ gasPrice: ethers.parseUnits('10', 'gwei') } as any);
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
       draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress] =
@@ -285,7 +285,7 @@ describe(getRecommendedGasPrice.name, () => {
   });
 
   it('throws and error when getting gas price from RPC provider fails', async () => {
-    jest.spyOn(provider, 'getGasPrice').mockRejectedValueOnce(new Error('Provider error'));
+    jest.spyOn(provider, 'getFeeData').mockRejectedValueOnce(new Error('Provider error'));
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'warn');
 

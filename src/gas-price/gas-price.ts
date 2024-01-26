@@ -131,7 +131,10 @@ export const getRecommendedGasPrice = async (
 
   // Get the provider recommended gas price and save it to the state
   logger.debug('Fetching gas price and saving it to the state.');
-  const goGasPrice = await go(async () => provider.getGasPrice());
+  const goGasPrice = await go(async () => {
+    const feeData = await provider.getFeeData();
+    return feeData.gasPrice;
+  });
   let gasPrice = goGasPrice.data;
   if (!goGasPrice.success) logger.error('Failed to fetch gas price from RPC provider.', goGasPrice.error);
   if (gasPrice) saveGasPrice(chainId, providerName, gasPrice);
