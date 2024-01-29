@@ -173,7 +173,7 @@ describe(getUpdatableFeeds.name, () => {
         dataFeedInfo: {
           dapiName: encodeDapiName('test'),
           dataFeedValue: BigInt('10'),
-          dataFeedTimestamp: 95,
+          dataFeedTimestamp: 95n,
           decodedDataFeed: {
             beacons: [
               expect.objectContaining({
@@ -269,7 +269,7 @@ describe(getUpdatableFeeds.name, () => {
         dataFeedInfo: {
           dapiName: encodeDapiName('test'),
           dataFeedValue: BigInt('400'),
-          dataFeedTimestamp: 90,
+          dataFeedTimestamp: 90n,
           decodedDataFeed: {
             beacons: [
               expect.objectContaining({
