@@ -329,7 +329,6 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     jest.spyOn(submitTransactionsModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
-    jest.spyOn(api3ServerV1, 'tryMulticall');
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: {

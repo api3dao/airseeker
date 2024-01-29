@@ -41,6 +41,6 @@ export const generateMockApi3ServerV1 = () => {
       encodeFunctionData: jest.fn(),
     },
     connect: jest.fn(),
-    tryMulticall: jest.fn(),
+    tryMulticall: { staticCall: jest.fn(), send: jest.fn() },
   } satisfies DeepPartial<Api3ServerV1>;
 };
