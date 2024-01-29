@@ -24,7 +24,7 @@ export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
   const paths = [];
   for (let i = 0; i < 6; i++) {
     const shiftedSponsorAddressBN = sponsorAddressBN >> BigInt(31 * i);
-    paths.push(ethers.toBeHex(shiftedSponsorAddressBN).slice(0, 31));
+    paths.push((shiftedSponsorAddressBN % 2n ** 31n).toString());
   }
   return `${AIRSEEKER_PROTOCOL_ID}/${paths.join('/')}`;
 }
@@ -36,7 +36,11 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDat
 
   // Take first 20 bytes of the hashed dapiName or data feed ID as sponsor address together with the "0x" prefix.
   const sponsorAddress = ethers.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));
-  const sponsorWallet = ethers.Wallet.fromPhrase(sponsorWalletMnemonic).derivePath(
+  // NOTE: Be sure not to use "ethers.Wallet.fromPhrase(sponsorWalletMnemonic).derivePath" because that produces a
+  // different result.
+  const sponsorWallet = ethers.HDNodeWallet.fromPhrase(
+    sponsorWalletMnemonic,
+    undefined,
     `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
   );
 
