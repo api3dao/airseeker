@@ -22,7 +22,7 @@ export const calculateMedian = (arr: bigint[]) => {
     else return 0;
   });
 
-  return arr.length % 2 === 0 ? nums[mid - 1]! + nums[mid]! / 2n : nums[mid]!;
+  return arr.length % 2 === 0 ? (nums[mid - 1]! + nums[mid]!) / 2n : nums[mid]!;
 };
 
 export const isDeviationThresholdExceeded = (onChainValue: bigint, deviationThreshold: bigint, apiValue: bigint) => {
@@ -35,7 +35,7 @@ export const isDeviationThresholdExceeded = (onChainValue: bigint, deviationThre
  * Returns true when the on chain data timestamp is newer than the heartbeat interval.
  */
 export const isOnChainDataFresh = (timestamp: bigint, heartbeatInterval: bigint) =>
-  BigInt(timestamp) > BigInt(Date.now() / 1000) - heartbeatInterval;
+  BigInt(timestamp) > BigInt(Math.floor(Date.now() / 1000)) - heartbeatInterval;
 
 export const isDataFeedUpdatable = (
   onChainValue: bigint,

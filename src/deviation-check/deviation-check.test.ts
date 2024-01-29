@@ -40,9 +40,9 @@ describe(isDeviationThresholdExceeded.name, () => {
   it('checks all update conditions | heartbeat exceeded', () => {
     const result = isDataFeedUpdatable(
       BigInt(10),
-      BigInt(Date.now() / 1000 - 60 * 60 * 24),
+      BigInt(Math.floor(Date.now() / 1000) - 60 * 60 * 24),
       BigInt(10),
-      BigInt(Date.now() / 1000),
+      BigInt(Math.floor(Date.now() / 1000)),
       BigInt(60 * 60 * 23),
       getDeviationThresholdAsBigNumber(2)
     );
@@ -53,7 +53,7 @@ describe(isDeviationThresholdExceeded.name, () => {
   it('checks all update conditions | no update', () => {
     const result = isDataFeedUpdatable(
       BigInt(10),
-      BigInt(Date.now() / 1000),
+      BigInt(Math.floor(Date.now() / 1000)),
       BigInt(10),
       BigInt(Date.now() + 60 * 60 * 23),
       BigInt(60 * 60 * 24),
@@ -66,13 +66,13 @@ describe(isDeviationThresholdExceeded.name, () => {
 
 describe(isOnChainDataFresh.name, () => {
   it('returns true if on chain data timestamp is newer than heartbeat interval', () => {
-    const isFresh = isOnChainDataFresh(BigInt(Date.now() / 1000 - 100), BigInt(200));
+    const isFresh = isOnChainDataFresh(BigInt(Math.floor(Date.now() / 1000) - 100), BigInt(200));
 
     expect(isFresh).toBe(true);
   });
 
   it('returns false if on chain data timestamp is older than heartbeat interval', () => {
-    const isFresh = isOnChainDataFresh(BigInt(Date.now() / 1000 - 300), BigInt(200));
+    const isFresh = isOnChainDataFresh(BigInt(Math.floor(Date.now() / 1000) - 300), BigInt(200));
 
     expect(isFresh).toBe(false);
   });
