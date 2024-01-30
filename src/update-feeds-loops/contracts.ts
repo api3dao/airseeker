@@ -20,17 +20,11 @@ export const verifyMulticallResponse = (
   return returndata;
 };
 
-export const decodeActiveDataFeedCountResponse = (activeDataFeedCountReturndata: string) => {
-  return Number(BigInt(activeDataFeedCountReturndata));
-};
+export const decodeActiveDataFeedCountResponse = Number;
 
-export const decodeGetBlockNumberResponse = (getBlockNumberReturndata: string) => {
-  return Number(BigInt(getBlockNumberReturndata));
-};
+export const decodeGetBlockNumberResponse = Number;
 
-export const decodeGetChainIdResponse = (getChainIdReturndata: string) => {
-  return Number(BigInt(getChainIdReturndata));
-};
+export const decodeGetChainIdResponse = Number;
 
 export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null => {
   // The contract returns empty bytes if the data feed is not registered. See:

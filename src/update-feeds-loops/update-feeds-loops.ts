@@ -147,7 +147,6 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
       // Create a provider and connect it to the AirseekerRegistry contract.
-      // TODO: set RPC_PROVIDER_TIMEOUT_MS
       const provider = new ethers.JsonRpcProvider(providers[providerName]!.url, undefined, {
         staticNetwork: true,
       });

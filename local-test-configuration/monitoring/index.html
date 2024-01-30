@@ -754,9 +754,9 @@
 
     const decodeBeaconValue = (encodedBeaconValue) => {
       // Solidity type(int224).min
-      const INT224_MIN = BigInt(2).pow(BigInt(223)).mul(BigInt(-1));
+      const INT224_MIN = 2n ** 223n * -1n;
       // Solidity type(int224).max
-      const INT224_MAX = BigInt(2).pow(BigInt(223)).sub(BigInt(1));
+      const INT224_MAX = 2n ** 223n * 1n;
 
       const decodedBeaconValue = BigInt(ethers.AbiCoder.defaultAbiCoder().decode(['int256'], encodedBeaconValue)[0]);
       if (decodedBeaconValue.gt(INT224_MAX) || decodedBeaconValue.lt(INT224_MIN)) {
@@ -800,7 +800,11 @@
 
       // Take first 20 bytes of the hashed dapiName or data feed ID as sponsor address together with the "0x" prefix.
       const sponsorAddress = ethers.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));
-      const sponsorWallet = ethers.Wallet.fromPhrase(sponsorWalletMnemonic).derivePath(
+      // NOTE: Be sure not to use "ethers.Wallet.fromPhrase(sponsorWalletMnemonic).derivePath" because that produces a
+      // different result.
+      const sponsorWallet = ethers.HDNodeWallet.fromPhrase(
+        sponsorWalletMnemonic,
+        undefined,
         `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
       );
 

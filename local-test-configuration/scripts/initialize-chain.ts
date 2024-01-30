@@ -63,7 +63,8 @@ export const refundFunder = async (funderWallet: ethers.HDNodeWallet) => {
 
     const feeData = await sponsorWallet.provider!.getFeeData();
     const { gasPrice } = feeData;
-    // TODO: Will this be null on EIP-1559 networks?
+    // We assume the legacy gas price will always exist. See:
+    // https://api3workspace.slack.com/archives/C05TQPT7PNJ/p1699098552350519
     const gasFee = gasPrice! * BigInt(21_000);
     if (sponsorWalletBalance < gasFee) {
       console.info('Sponsor wallet balance is too low, skipping refund');
