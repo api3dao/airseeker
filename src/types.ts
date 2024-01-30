@@ -26,13 +26,3 @@ export const signedApiResponseSchema = z.object({
   count: z.number().positive(),
   data: z.record(signedDataSchema),
 });
-
-export interface Beacon {
-  airnodeAddress: AirnodeAddress;
-  templateId: TemplateId;
-  beaconId: string;
-}
-
-export interface DecodedDataFeed {
-  beacons: Beacon[];
-}

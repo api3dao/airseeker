@@ -12,7 +12,7 @@ import type { UpdatableDataFeed } from './get-updatable-feeds';
 
 export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableDataFeed: UpdatableDataFeed) => {
   const { dataFeedInfo, updatableBeacons } = updatableDataFeed;
-  const allBeacons = dataFeedInfo.decodedDataFeed.beacons;
+  const allBeacons = dataFeedInfo.beaconsWithData;
 
   // Create calldata for beacons that need to be updated.
   const beaconUpdateCalls = updatableBeacons.map(({ signedData }) =>

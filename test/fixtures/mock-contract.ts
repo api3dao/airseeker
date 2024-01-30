@@ -18,6 +18,8 @@ export const generateActiveDataFeedResponse = () => ({
     airnodeAddress: '0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4',
     templateId: '0x457a3b3da67e394a895ea49e534a4d91b2d009477bef15eab8cbed313925b010',
   }),
+  beaconValues: [BigInt(123 * 1e6)],
+  beaconTimestamps: [1_629_811_200n],
   signedApiUrls: ['http://localhost:8080'],
 });
 
