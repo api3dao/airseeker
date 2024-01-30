@@ -212,7 +212,7 @@ export const deploy = async (funderWallet: ethers.HDNodeWallet, provider: ethers
     const heartbeatInterval = BigInt(86_400); // 24 hrs
     tx = await api3ServerV1.connect(deployerAndManager).setDapiName(dapiName, beaconSetId);
     await tx.wait();
-    await airseekerRegistry.connect(deployerAndManager).setDapiNameToBeActivated(dapiName);
+    tx = await airseekerRegistry.connect(deployerAndManager).setDapiNameToBeActivated(dapiName);
     await tx.wait();
     tx = await airseekerRegistry
       .connect(deployerAndManager)
@@ -245,7 +245,11 @@ async function main() {
   if (!process.env.FUNDER_MNEMONIC) throw new Error('FUNDER_MNEMONIC not found');
   if (!process.env.PROVIDER_URL) throw new Error('PROVIDER_URL not found');
 
-  const provider = new ethers.JsonRpcProvider(process.env.PROVIDER_URL, undefined, { staticNetwork: true });
+  const provider = new ethers.JsonRpcProvider(process.env.PROVIDER_URL, undefined, {
+    staticNetwork: true,
+    polling: true,
+    pollingInterval: 100,
+  });
   const funderWallet = ethers.Wallet.fromPhrase(process.env.FUNDER_MNEMONIC).connect(provider);
 
   await refundFunder(funderWallet);

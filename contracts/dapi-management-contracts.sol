@@ -1,4 +1,4 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
-import "@api3/dapi-management/contracts/AirseekerRegistry.sol";
+import "api3-contracts/contracts/AirseekerRegistry.sol";

@@ -1,7 +1,10 @@
 import { ethers } from 'ethers';
 
-import { Api3ServerV1__factory as Api3ServerV1Factory } from '../../src/typechain-types';
-import { type AirseekerRegistry, AirseekerRegistry__factory as AirseekerRegistryFactory } from '../typechain-types';
+import {
+  Api3ServerV1__factory as Api3ServerV1Factory,
+  type AirseekerRegistry,
+  AirseekerRegistry__factory as AirseekerRegistryFactory,
+} from '../typechain-types';
 import type { DecodedDataFeed } from '../types';
 import { decodeDapiName, deriveBeaconId, deriveBeaconSetId } from '../utils';
 

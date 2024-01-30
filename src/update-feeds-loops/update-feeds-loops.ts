@@ -125,8 +125,9 @@ export const readActiveDataFeedBatch = async (
   const batch = batchReturndata
     .map((dataFeedReturndata) => decodeActiveDataFeedResponse(airseekerRegistry, dataFeedReturndata))
     .filter((dataFeed, dataFeedIndex): dataFeed is DecodedActiveDataFeedResponse => {
-      logger.warn(`Data feed not registered.`, { dataFeedIndex });
-      return dataFeed !== null;
+      const isRegistered = dataFeed !== null;
+      if (!isRegistered) logger.warn(`Data feed not registered.`, { dataFeedIndex });
+      return isRegistered;
     });
 
   const blockNumber = decodeGetBlockNumberResponse(getBlockNumberReturndata!);
