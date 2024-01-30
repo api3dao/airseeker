@@ -377,8 +377,8 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
                 BigInt(
                   (dataFeed.dataFeedValue *
                     // Multiply the new value by the on chain deviationThresholdInPercentage
-                    (decodedUpdateParameters.deviationThresholdInPercentage + 10n ** 18n)) /
-                    10n ** 18n
+                    (decodedUpdateParameters.deviationThresholdInPercentage + 10n ** 8n)) /
+                    10n ** 8n
                 ),
               ]
             ),

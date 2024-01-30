@@ -8,32 +8,32 @@ import {
   isDataFeedUpdatable,
 } from './deviation-check';
 
-const getDeviationThresholdAsBigNumber = (input: number) => BigInt(Math.trunc(input * HUNDRED_PERCENT)) / BigInt(100);
+const getDeviationThresholdAsBigInt = (input: number) => BigInt(Math.trunc(input * HUNDRED_PERCENT)) / BigInt(100);
 
 describe(isDeviationThresholdExceeded.name, () => {
   const onChainValue = BigInt(500);
 
   it('returns true when api value is higher and deviation threshold is reached', () => {
-    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigNumber(10), BigInt(560));
+    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigInt(10), BigInt(560));
 
     expect(shouldUpdate).toBe(true);
   });
 
   it('returns true when api value is lower and deviation threshold is reached', () => {
-    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigNumber(10), BigInt(440));
+    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigInt(10), BigInt(440));
 
     expect(shouldUpdate).toBe(true);
   });
 
   it('returns false when deviation threshold is not reached', () => {
-    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigNumber(10), BigInt(480));
+    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigInt(10), BigInt(480));
 
     expect(shouldUpdate).toBe(false);
   });
 
   it('handles correctly bad JS math', () => {
     expect(() =>
-      isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigNumber(0.14), BigInt(560))
+      isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigInt(0.14), BigInt(560))
     ).not.toThrow();
   });
 
@@ -44,7 +44,7 @@ describe(isDeviationThresholdExceeded.name, () => {
       BigInt(10),
       BigInt(Math.floor(Date.now() / 1000)),
       BigInt(60 * 60 * 23),
-      getDeviationThresholdAsBigNumber(2)
+      getDeviationThresholdAsBigInt(2)
     );
 
     expect(result).toBe(true);
@@ -57,7 +57,7 @@ describe(isDeviationThresholdExceeded.name, () => {
       BigInt(10),
       BigInt(Date.now() + 60 * 60 * 23),
       BigInt(60 * 60 * 24),
-      getDeviationThresholdAsBigNumber(2)
+      getDeviationThresholdAsBigInt(2)
     );
 
     expect(result).toBe(false);

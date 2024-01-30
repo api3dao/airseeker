@@ -10,4 +10,4 @@ export const AIRSEEKER_PROTOCOL_ID = '5'; // From: https://github.com/api3dao/ai
 export const INT224_MIN = 2n ** 223n * -1n;
 
 // Solidity type(int224).max
-export const INT224_MAX = 2n ** 223n * 1n;
+export const INT224_MAX = 2n ** 223n - 1n;

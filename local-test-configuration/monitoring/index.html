@@ -809,7 +809,7 @@
       // Solidity type(int224).min
       const INT224_MIN = 2n ** 223n * -1n;
       // Solidity type(int224).max
-      const INT224_MAX = 2n ** 223n * 1n;
+      const INT224_MAX = 2n ** 223n - 1n;
 
       const decodedBeaconValue = BigInt(ethers.AbiCoder.defaultAbiCoder().decode(['int256'], encodedBeaconValue)[0]);
       if (decodedBeaconValue > INT224_MAX || decodedBeaconValue < INT224_MIN) {

@@ -43,7 +43,7 @@ it('updates blockchain data', async () => {
     draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
   });
   initializeGasState(chainId, providerName);
-  const [dataFeedId, dapiName, dataFeedDetails, dataFeedValue, dataFeedTimestamp, updateParameters, signedApiUrls] =
+  const { dataFeedId, dapiName, dataFeedDetails, dataFeedValue, dataFeedTimestamp, updateParameters, signedApiUrls } =
     await airseekerRegistry.activeDataFeed(0);
 
   const decodedDataFeed = decodeDataFeedDetails(dataFeedDetails)!;

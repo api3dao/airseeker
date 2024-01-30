@@ -133,6 +133,8 @@ export const getRecommendedGasPrice = async (
   logger.debug('Fetching gas price and saving it to the state.');
   const goGasPrice = await go(async () => {
     const feeData = await provider.getFeeData();
+    // We assume the legacy gas price will always exist. See:
+    // https://api3workspace.slack.com/archives/C05TQPT7PNJ/p1699098552350519
     return feeData.gasPrice;
   });
   let gasPrice = goGasPrice.data;
