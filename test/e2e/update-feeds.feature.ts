@@ -1,5 +1,3 @@
-import { omit } from 'lodash';
-
 import { initializeGasState } from '../../src/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
@@ -45,14 +43,19 @@ it('updates blockchain data', async () => {
     draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
   });
   initializeGasState(chainId, providerName);
-  const btcDataFeed = await airseekerRegistry.activeDataFeed(0);
+  const [dataFeedId, dapiName, dataFeedDetails, dataFeedValue, dataFeedTimestamp, updateParameters, signedApiUrls] =
+    await airseekerRegistry.activeDataFeed(0);
 
-  const decodedDataFeed = decodeDataFeedDetails(btcDataFeed.dataFeedDetails)!;
+  const decodedDataFeed = decodeDataFeedDetails(dataFeedDetails)!;
   const activeBtcDataFeed = {
-    ...omit(btcDataFeed, ['dataFeedDetails', 'updateParameters']),
-    decodedUpdateParameters: decodeUpdateParameters(btcDataFeed.updateParameters),
+    dapiName,
+    dataFeedId,
+    dataFeedValue,
+    dataFeedTimestamp,
+    signedApiUrls,
+    decodedUpdateParameters: decodeUpdateParameters(updateParameters),
     decodedDataFeed,
-    decodedDapiName: decodeDapiName(btcDataFeed.dapiName),
+    decodedDapiName: decodeDapiName(dapiName),
   };
 
   const currentBlock = await provider.getBlock('latest');
