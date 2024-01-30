@@ -29,6 +29,19 @@
     "test": "jest --config=jest-unit.config.js",
     "tsc": "tsc --project ."
   },
+  "dependencies": {
+    "@api3/airnode-protocol-v1": "^3.1.0",
+    "@api3/commons": "^0.6.0",
+    "@api3/dapi-management": "github:api3dao/dapi-management#bb-edition",
+    "@api3/promise-utils": "^0.4.0",
+    "api3-contracts": "^0.0.2",
+    "axios": "^1.6.5",
+    "dotenv": "^16.3.1",
+    "ethers": "^6.10.0",
+    "immer": "^10.0.3",
+    "lodash": "^4.17.21",
+    "zod": "^3.22.4"
+  },
   "devDependencies": {
     "@api3/airnode-abi": "^0.13.0",
     "@api3/ois": "^2.3.1",
@@ -55,18 +68,5 @@
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
     "typescript": "^5.3.3"
-  },
-  "dependencies": {
-    "@api3/airnode-protocol-v1": "^3.1.0",
-    "@api3/commons": "^0.6.0",
-    "@api3/dapi-management": "github:api3dao/dapi-management#bb-edition",
-    "@api3/promise-utils": "^0.4.0",
-    "api3-contracts": "^0.0.2",
-    "axios": "^1.6.5",
-    "dotenv": "^16.3.1",
-    "ethers": "^6.10.0",
-    "immer": "^10.0.3",
-    "lodash": "^4.17.21",
-    "zod": "^3.22.4"
   }
 }
