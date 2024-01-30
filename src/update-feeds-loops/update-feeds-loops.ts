@@ -258,7 +258,7 @@ export const processBatch = async (
 ) => {
   logger.debug('Processing batch of active data feeds.', {
     dapiNames: batch.map((dataFeed) => dataFeed.decodedDapiName),
-    dataFeedIds: batch.map((dataFeed) => dataFeed.decodedDataFeed.dataFeedId),
+    dataFeedIds: batch.map((dataFeed) => dataFeed.dataFeedId),
     blockNumber,
   });
   const {
@@ -285,18 +285,13 @@ export const processBatch = async (
 
   // Clear last update timestamps for feeds that don't need an update
   for (const feed of batch) {
-    const {
-      dapiName,
-      decodedDapiName,
-      decodedDataFeed: { dataFeedId },
-    } = feed;
+    const { dapiName, dataFeedId, decodedDapiName } = feed;
 
     // Skip if the data feed is updatable
     if (
       feedsToUpdate.some(
         (updatableFeed) =>
-          updatableFeed.dataFeedInfo.dapiName === dapiName &&
-          updatableFeed.dataFeedInfo.decodedDataFeed.dataFeedId === dataFeedId
+          updatableFeed.dataFeedInfo.dapiName === dapiName && updatableFeed.dataFeedInfo.dataFeedId === dataFeedId
       )
     ) {
       continue;

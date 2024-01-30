@@ -46,7 +46,7 @@ export const getUpdatableFeeds = async (
       goOnChainFeedValues.error,
       {
         dapiNames: batch.map((dataFeed) => dataFeed.decodedDapiName),
-        dataFeedIds: batch.map((dataFeed) => dataFeed.decodedDataFeed.dataFeedId),
+        dataFeedIds: batch.map((dataFeed) => dataFeed.dataFeedId),
       }
     );
     return [];

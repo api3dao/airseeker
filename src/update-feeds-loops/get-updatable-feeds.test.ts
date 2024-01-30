@@ -149,9 +149,9 @@ describe(getUpdatableFeeds.name, () => {
         dataFeedValue: BigInt(10),
         dataFeedTimestamp: 95n,
         decodedDataFeed: {
-          dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
         },
+        dataFeedId: '0x000',
         dapiName: encodeDapiName('test'),
       },
     ]);
@@ -172,6 +172,7 @@ describe(getUpdatableFeeds.name, () => {
         ],
         dataFeedInfo: {
           dapiName: encodeDapiName('test'),
+          dataFeedId: '0x000',
           dataFeedValue: BigInt('10'),
           dataFeedTimestamp: 95n,
           decodedDataFeed: {
@@ -186,7 +187,6 @@ describe(getUpdatableFeeds.name, () => {
                 beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
               }),
             ],
-            dataFeedId: '0x000',
           },
           decodedUpdateParameters: {
             deviationThresholdInPercentage: BigInt(1),
@@ -245,9 +245,9 @@ describe(getUpdatableFeeds.name, () => {
         dataFeedValue: BigInt(400),
         dataFeedTimestamp: 90n,
         decodedDataFeed: {
-          dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
         },
+        dataFeedId: '0x000',
         dapiName: encodeDapiName('test'),
       },
     ]);
@@ -268,6 +268,7 @@ describe(getUpdatableFeeds.name, () => {
         ],
         dataFeedInfo: {
           dapiName: encodeDapiName('test'),
+          dataFeedId: '0x000',
           dataFeedValue: BigInt('400'),
           dataFeedTimestamp: 90n,
           decodedDataFeed: {
@@ -282,7 +283,6 @@ describe(getUpdatableFeeds.name, () => {
                 beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
               }),
             ],
-            dataFeedId: '0x000',
           },
           decodedUpdateParameters: {
             deviationThresholdInPercentage: BigInt(1),
@@ -325,9 +325,9 @@ describe(getUpdatableFeeds.name, () => {
         dataFeedValue: BigInt(200),
         dataFeedTimestamp: 160n,
         decodedDataFeed: {
-          dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
         },
+        dataFeedId: '0x000',
         dapiName: encodeDapiName('test'),
       },
     ]);
@@ -403,9 +403,9 @@ describe(getUpdatableFeeds.name, () => {
         dataFeedValue: BigInt(400),
         dataFeedTimestamp: 140n,
         decodedDataFeed: {
-          dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
         },
+        dataFeedId: '0x000',
         dapiName: encodeDapiName('test'),
       },
     ]);
@@ -427,10 +427,10 @@ describe(getUpdatableFeeds.name, () => {
         dataFeedValue: BigInt(10),
         dataFeedTimestamp: 95n,
         decodedDataFeed: {
-          dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
         },
         dapiName: encodeDapiName('test'),
+        dataFeedId: '0x000',
         decodedDapiName: 'test',
       },
     ]);
