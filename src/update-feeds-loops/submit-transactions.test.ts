@@ -355,9 +355,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
       allowPartial<UpdatableDataFeed>({
         dataFeedInfo: {
           dapiName,
-          decodedDataFeed: {
-            dataFeedId: '0xBeaconSetId',
-          },
+          dataFeedId: '0xBeaconSetId',
         },
       }),
       123_456

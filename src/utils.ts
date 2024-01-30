@@ -11,10 +11,6 @@ export function deriveBeaconId(airnodeAddress: string, templateId: string) {
   return goSync(() => ethers.solidityPackedKeccak256(['address', 'bytes32'], [airnodeAddress, templateId])).data;
 }
 
-export function deriveBeaconSetId(beaconIds: string[]) {
-  return goSync(() => ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(['bytes32[]'], [beaconIds]))).data;
-}
-
 export const encodeDapiName = (decodedDapiName: string) => ethers.encodeBytes32String(decodedDapiName);
 
 export const decodeDapiName = (encodedDapiName: string) => ethers.decodeBytes32String(encodedDapiName);

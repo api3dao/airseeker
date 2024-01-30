@@ -743,10 +743,6 @@
       return ethers.solidityPackedKeccak256(['address', 'bytes32'], [airnodeAddress, templateId]);
     }
 
-    function deriveBeaconSetId(beaconIds) {
-      return ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(['bytes32[]'], [beaconIds]));
-    }
-
     const decodeDataFeedDetails = (dataFeed) => {
       if (dataFeed.length === 130) {
         // (64 [actual bytes] * 2[hex encoding] ) + 2 [for the '0x' preamble]
@@ -755,7 +751,7 @@
 
         const dataFeedId = deriveBeaconId(airnodeAddress, templateId);
 
-        return { dataFeedId, beacons: [{ beaconId: dataFeedId, airnodeAddress, templateId }] };
+        return { beacons: [{ beaconId: dataFeedId, airnodeAddress, templateId }] };
       }
 
       const [airnodeAddresses, templateIds] = ethers.AbiCoder.defaultAbiCoder().decode(
@@ -770,9 +766,7 @@
         return { beaconId, airnodeAddress, templateId };
       });
 
-      const dataFeedId = deriveBeaconSetId(beacons.map((b) => b.beaconId));
-
-      return { dataFeedId, beacons };
+      return { beacons };
     };
 
     const decodeUpdateParameters = (updateParameters) => {
@@ -909,7 +903,7 @@
 
         const deviationPercentage = Number(calculateUpdateInPercentage(dataFeedValue, newBeaconSetValue)) / 1e6;
         const deviationThresholdPercentage = Number(deviationThresholdInPercentage) / 1e6;
-        const sponsorWallet = deriveSponsorWallet(airseekerMnemonic, dapiName ?? dataFeed.decodedDataFeed.dataFeedId);
+        const sponsorWallet = deriveSponsorWallet(airseekerMnemonic, dapiName ?? dataFeed.dataFeedId);
         const dataFeedInfo = {
           dapiName: dapiName,
           dataFeedId: dataFeed.decodedDataFeed.dataFeedId,

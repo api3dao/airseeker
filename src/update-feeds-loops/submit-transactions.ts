@@ -56,11 +56,7 @@ export const submitTransaction = async (
   } = state;
 
   const { dataFeedInfo } = updatableDataFeed;
-  const {
-    dapiName,
-    decodedDapiName,
-    decodedDataFeed: { dataFeedId },
-  } = dataFeedInfo;
+  const { dapiName, dataFeedId, decodedDapiName } = dataFeedInfo;
   const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
   const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 

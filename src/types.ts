@@ -34,6 +34,5 @@ export interface Beacon {
 }
 
 export interface DecodedDataFeed {
-  dataFeedId: string;
   beacons: Beacon[];
 }

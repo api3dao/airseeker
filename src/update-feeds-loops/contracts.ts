@@ -6,7 +6,7 @@ import {
   AirseekerRegistry__factory as AirseekerRegistryFactory,
 } from '../typechain-types';
 import type { DecodedDataFeed } from '../types';
-import { decodeDapiName, deriveBeaconId, deriveBeaconSetId } from '../utils';
+import { decodeDapiName, deriveBeaconId } from '../utils';
 
 export const getApi3ServerV1 = (address: string, provider: ethers.JsonRpcProvider) =>
   Api3ServerV1Factory.connect(address, provider);
@@ -41,7 +41,7 @@ export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null 
 
     const dataFeedId = deriveBeaconId(airnodeAddress, templateId)!;
 
-    return { dataFeedId, beacons: [{ beaconId: dataFeedId, airnodeAddress, templateId }] };
+    return { beacons: [{ beaconId: dataFeedId, airnodeAddress, templateId }] };
   }
 
   const [airnodeAddresses, templateIds] = ethers.AbiCoder.defaultAbiCoder().decode(
@@ -56,9 +56,7 @@ export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null 
     return { beaconId, airnodeAddress, templateId };
   });
 
-  const dataFeedId = deriveBeaconSetId(beacons.map((b) => b.beaconId))!;
-
-  return { dataFeedId, beacons };
+  return { beacons };
 };
 
 export interface DecodedUpdateParameters {
@@ -85,6 +83,7 @@ export const decodeUpdateParameters = (updateParameters: string): DecodedUpdateP
 
 export interface DecodedActiveDataFeedResponse {
   dapiName: string | null;
+  dataFeedId: string;
   decodedDapiName: string | null;
   decodedUpdateParameters: DecodedUpdateParameters;
   dataFeedValue: bigint;
@@ -97,7 +96,7 @@ export const decodeActiveDataFeedResponse = (
   airseekerRegistry: AirseekerRegistry,
   activeDataFeedReturndata: string
 ): DecodedActiveDataFeedResponse | null => {
-  const { dapiName, updateParameters, dataFeedValue, dataFeedTimestamp, dataFeedDetails, signedApiUrls } =
+  const { dapiName, dataFeedId, updateParameters, dataFeedValue, dataFeedTimestamp, dataFeedDetails, signedApiUrls } =
     airseekerRegistry.interface.decodeFunctionResult('activeDataFeed', activeDataFeedReturndata) as unknown as Awaited<
       ReturnType<AirseekerRegistry['activeDataFeed']['staticCall']>
     >;
@@ -112,6 +111,7 @@ export const decodeActiveDataFeedResponse = (
 
   return {
     dapiName: decodedDapiName === '' ? null : dapiName, // NOTE: Anywhere in the codebase the "dapiName" is the encoded version of the dAPI name.
+    dataFeedId,
     decodedDapiName: decodedDapiName === '' ? null : decodedDapiName,
     decodedUpdateParameters: decodeUpdateParameters(updateParameters),
     dataFeedValue,
