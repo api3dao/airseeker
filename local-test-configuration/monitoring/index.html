@@ -744,14 +744,18 @@
     }
 
     const decodeDataFeedDetails = (dataFeed) => {
-      if (dataFeed.length === 130) {
-        // (64 [actual bytes] * 2[hex encoding] ) + 2 [for the '0x' preamble]
-        // This is a hex encoded string, the contract works with bytes directly
+      // The contract returns empty bytes if the data feed is not registered. See:
+      // https://github.com/bbenligiray/api3-contracts/blob/d394581549e4d2f343e9910bc330b21266808851/contracts/AirseekerRegistry.sol#L346
+      if (dataFeed === '0x') return null;
+
+      // This is a hex encoded string, the contract works with bytes directly
+      // 2 characters for the '0x' preamble + 32 * 2 hexadecimals for 32 bytes + 32 * 2 hexadecimals for 32 bytes
+      if (dataFeed.length === 2 + 32 * 2 + 32 * 2) {
         const [airnodeAddress, templateId] = ethers.AbiCoder.defaultAbiCoder().decode(['address', 'bytes32'], dataFeed);
 
         const dataFeedId = deriveBeaconId(airnodeAddress, templateId);
 
-        return { beacons: [{ beaconId: dataFeedId, airnodeAddress, templateId }] };
+        return [{ beaconId: dataFeedId, airnodeAddress, templateId }];
       }
 
       const [airnodeAddresses, templateIds] = ethers.AbiCoder.defaultAbiCoder().decode(
@@ -766,7 +770,7 @@
         return { beaconId, airnodeAddress, templateId };
       });
 
-      return { beacons };
+      return beacons;
     };
 
     const decodeUpdateParameters = (updateParameters) => {
@@ -883,7 +887,8 @@
           },
           dataFeedValue: dataFeedValue.toString(),
           dataFeedTimestamp: dataFeedTimestamp.toString(),
-          decodedDataFeed: decodeDataFeedDetails(dataFeedDetails),
+          // This slightly differs from the main logic in Airseeker, but we only care about beacon IDs here.
+          beacons,
           signedApiUrls,
         };
         console.info('Data feed', dataFeed); // For debugging purposes.
@@ -891,9 +896,9 @@
         let signedDatas = [];
         for (let i = 0; i < signedApiUrls.length; i++) {
           const url = signedApiUrls[i].replace('host.docker.internal', 'localhost');
-          const airnode = dataFeed.decodedDataFeed.beacons[i].airnodeAddress;
+          const airnode = dataFeed.beacons[i].airnodeAddress;
           const signedApiResponse = await fetch(`${url}/${airnode}`).then((res) => res.json());
-          const signedData = signedApiResponse.data[dataFeed.decodedDataFeed.beacons[i].beaconId];
+          const signedData = signedApiResponse.data[dataFeed.beacons[i].beaconId];
           signedDatas.push({ ...signedData, value: decodeBeaconValue(signedData.encodedValue).toString() });
         }
         console.info('Signed datas', signedDatas); // For debugging purposes.

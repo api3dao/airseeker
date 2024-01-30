@@ -268,7 +268,7 @@ export const processBatch = async (
 
   updateState((draft) => {
     for (const dataFeed of batch) {
-      const receivedUrls = zip(dataFeed.signedApiUrls, dataFeed.decodedDataFeed.beacons).map(([url, beacon]) => ({
+      const receivedUrls = zip(dataFeed.signedApiUrls, dataFeed.beaconsWithData).map(([url, beacon]) => ({
         url: `${url}/${beacon!.airnodeAddress}`,
         airnodeAddress: beacon!.airnodeAddress,
       }));
@@ -281,7 +281,7 @@ export const processBatch = async (
     }
   });
 
-  const feedsToUpdate = await getUpdatableFeeds(batch, deviationThresholdCoefficient, provider, chainId);
+  const feedsToUpdate = getUpdatableFeeds(batch, deviationThresholdCoefficient);
 
   // Clear last update timestamps for feeds that don't need an update
   for (const feed of batch) {

@@ -1,11 +1,12 @@
 import { ethers } from 'ethers';
+import { zip } from 'lodash';
 
 import {
-  Api3ServerV1__factory as Api3ServerV1Factory,
   type AirseekerRegistry,
   AirseekerRegistry__factory as AirseekerRegistryFactory,
+  Api3ServerV1__factory as Api3ServerV1Factory,
 } from '../typechain-types';
-import type { DecodedDataFeed } from '../types';
+import type { AirnodeAddress, TemplateId } from '../types';
 import { decodeDapiName, deriveBeaconId } from '../utils';
 
 export const getApi3ServerV1 = (address: string, provider: ethers.JsonRpcProvider) =>
@@ -29,9 +30,15 @@ export const decodeGetBlockNumberResponse = Number;
 
 export const decodeGetChainIdResponse = Number;
 
-export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null => {
+export interface Beacon {
+  airnodeAddress: AirnodeAddress;
+  templateId: TemplateId;
+  beaconId: string;
+}
+
+export const decodeDataFeedDetails = (dataFeed: string): Beacon[] | null => {
   // The contract returns empty bytes if the data feed is not registered. See:
-  // https://github.com/api3dao/dapi-management/blob/f3d39e4707c33c075a8f07aa8f8369f8dc07736f/contracts/AirseekerRegistry.sol#L209
+  // https://github.com/bbenligiray/api3-contracts/blob/d394581549e4d2f343e9910bc330b21266808851/contracts/AirseekerRegistry.sol#L346
   if (dataFeed === '0x') return null;
 
   // This is a hex encoded string, the contract works with bytes directly
@@ -41,7 +48,7 @@ export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null 
 
     const dataFeedId = deriveBeaconId(airnodeAddress, templateId)!;
 
-    return { beacons: [{ beaconId: dataFeedId, airnodeAddress, templateId }] };
+    return [{ beaconId: dataFeedId, airnodeAddress, templateId }];
   }
 
   const [airnodeAddresses, templateIds] = ethers.AbiCoder.defaultAbiCoder().decode(
@@ -56,7 +63,7 @@ export const decodeDataFeedDetails = (dataFeed: string): DecodedDataFeed | null 
     return { beaconId, airnodeAddress, templateId };
   });
 
-  return { beacons };
+  return beacons;
 };
 
 export interface DecodedUpdateParameters {
@@ -81,6 +88,11 @@ export const decodeUpdateParameters = (updateParameters: string): DecodedUpdateP
   };
 };
 
+export interface BeaconWithData extends Beacon {
+  value: bigint;
+  timestamp: bigint;
+}
+
 export interface DecodedActiveDataFeedResponse {
   dapiName: string | null;
   dataFeedId: string;
@@ -88,22 +100,41 @@ export interface DecodedActiveDataFeedResponse {
   decodedUpdateParameters: DecodedUpdateParameters;
   dataFeedValue: bigint;
   dataFeedTimestamp: bigint;
-  decodedDataFeed: DecodedDataFeed;
+  beaconsWithData: BeaconWithData[];
   signedApiUrls: string[];
 }
+
+export const createBeaconsWithData = (beacons: Beacon[], beaconValues: bigint[], beaconTimestamps: bigint[]) => {
+  return zip(beacons, beaconValues, beaconTimestamps).map(([beacon, value, timestamp]) => ({
+    ...beacon!,
+    value: value!,
+    timestamp: BigInt(timestamp!),
+  }));
+};
 
 export const decodeActiveDataFeedResponse = (
   airseekerRegistry: AirseekerRegistry,
   activeDataFeedReturndata: string
 ): DecodedActiveDataFeedResponse | null => {
-  const { dapiName, dataFeedId, updateParameters, dataFeedValue, dataFeedTimestamp, dataFeedDetails, signedApiUrls } =
-    airseekerRegistry.interface.decodeFunctionResult('activeDataFeed', activeDataFeedReturndata) as unknown as Awaited<
-      ReturnType<AirseekerRegistry['activeDataFeed']['staticCall']>
-    >;
+  const {
+    dataFeedId,
+    dapiName,
+    updateParameters,
+    dataFeedValue,
+    dataFeedTimestamp,
+    dataFeedDetails,
+    signedApiUrls,
+    beaconValues,
+    beaconTimestamps,
+  } = airseekerRegistry.interface.decodeFunctionResult(
+    'activeDataFeed',
+    activeDataFeedReturndata
+  ) as unknown as Awaited<ReturnType<AirseekerRegistry['activeDataFeed']['staticCall']>>;
 
-  // https://github.com/api3dao/dapi-management/blob/f3d39e4707c33c075a8f07aa8f8369f8dc07736f/contracts/AirseekerRegistry.sol#L162
-  const decodedDataFeed = decodeDataFeedDetails(dataFeedDetails);
-  if (!decodedDataFeed) return null;
+  // https://github.com/bbenligiray/api3-contracts/blob/d394581549e4d2f343e9910bc330b21266808851/contracts/AirseekerRegistry.sol#L295
+  const beacons = decodeDataFeedDetails(dataFeedDetails);
+  if (!beacons) return null;
+  const beaconsWithData = createBeaconsWithData(beacons, beaconValues, beaconTimestamps);
 
   // The dAPI name will be set to zero (in bytes32) in case the data feed is not a dAPI and is identified by a data feed
   // ID.
@@ -116,7 +147,7 @@ export const decodeActiveDataFeedResponse = (
     decodedUpdateParameters: decodeUpdateParameters(updateParameters),
     dataFeedValue,
     dataFeedTimestamp,
-    decodedDataFeed,
+    beaconsWithData,
     signedApiUrls,
   };
 };
