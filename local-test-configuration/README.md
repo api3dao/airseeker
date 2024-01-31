@@ -72,10 +72,8 @@ also required for the monitoring page.
 The `AIRSEEKER_MNEMONIC` needs to be URI encoded via `encodeURIComponent` in JS. For example,
 `test%20test%20test%20test%20test%20test%20test%20test%20test%20test%20test%20junk`.
 
-Initially, you should see errors because the beacons are not initialized. After you run Airseeker, it will do the
-updates and the errors should be gone. The page constantly polls the chain and respective signed APIs and compares the
-on-chain and off-chain values. If the deviation exceeds the treshold, the value is marked bold and should be updated by
-Airseeker shortly.
+The page constantly polls the chain and respective signed APIs and compares the on-chain and off-chain values. If the
+deviation exceeds the treshold, the value is marked bold and should be updated by Airseeker shortly.
 
 - Run the Airseeker:
 
