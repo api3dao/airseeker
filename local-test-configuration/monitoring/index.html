@@ -888,7 +888,7 @@
           dataFeedValue: dataFeedValue.toString(),
           dataFeedTimestamp: dataFeedTimestamp.toString(),
           // This slightly differs from the main logic in Airseeker, but we only care about beacon IDs here.
-          beacons,
+          beacons: decodeDataFeedDetails(dataFeedDetails),
           signedApiUrls,
         };
         console.info('Data feed', dataFeed); // For debugging purposes.
@@ -911,7 +911,7 @@
         const sponsorWallet = deriveSponsorWallet(airseekerMnemonic, dapiName ?? dataFeed.dataFeedId);
         const dataFeedInfo = {
           dapiName: dapiName,
-          dataFeedId: dataFeed.decodedDataFeed.dataFeedId,
+          dataFeedId: dataFeed.dataFeedId,
           decodedDapiName: ethers.decodeBytes32String(dapiName),
           dataFeedValue: dataFeed.dataFeedValue,
           offChainValue: {
