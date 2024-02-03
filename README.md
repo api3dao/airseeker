@@ -224,6 +224,15 @@ The fetch interval in seconds between retrievals of signed API data.
 
 A list of signed API URLs to call along with URLs fetched from the chain.
 
+#### `walletDerivationScheme`
+
+The derivation scheme used to derive sponsor wallets. The following options are available:
+
+- `self-funded` - The sponsor wallet is derived from the hash of the encoded beacon ID together with the update
+  parameters. This is the scheme that was originally used by Nodary for self-funded data feeds.
+- `managed-dapis` - Derives the wallet from the hash of the dAPI name (or data feed ID). This means the wallet
+  derivation is agnostic to update parameters, and the same wallet is used when the dAPI is upgraded/downgraded.
+
 ## Docker
 
 ### Build
