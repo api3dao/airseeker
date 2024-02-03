@@ -2,12 +2,12 @@ import { ethers } from 'hardhat';
 
 import {
   deriveSponsorAddressHashForManagedFeed,
+  deriveSponsorAddressHashForSelfFundedFeed,
+  deriveSponsorWallet,
   deriveSponsorWalletFromSponsorAddressHash,
   deriveWalletPathFromSponsorAddress,
   encodeDapiName,
 } from './utils';
-
-// TODO: Tests for other functions
 
 describe(deriveSponsorWalletFromSponsorAddressHash.name, () => {
   describe(deriveSponsorAddressHashForManagedFeed.name, () => {
@@ -28,7 +28,7 @@ describe(deriveSponsorWalletFromSponsorAddressHash.name, () => {
       expect(sponsorWallet.address).not.toBe(otherSponsorWallet.address);
     });
 
-    it('works even with data feed ID', () => {
+    it('works with data feed ID', () => {
       const dataFeedId = '0x917ecd1b870ef5fcbd53088046d0987493593d761e2516ec6acc455848976f36';
       const sponsorWalletMnemonic =
         'diamond result history offer forest diagram crop armed stumble orchard stage glance';
@@ -36,8 +36,45 @@ describe(deriveSponsorWalletFromSponsorAddressHash.name, () => {
       const sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dataFeedId);
       const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(sponsorWalletMnemonic, sponsorAddressHash);
 
-      expect(sponsorWallet.address).toBe('0x6fD46d2D7AB4574Be0185618944106fdaF20DB7D');
+      expect(sponsorWallet.address).toBe('0x6fD46d2D7AB4574Be0185618944106fdaF20DB7D'); // Note, that the address is different if the sponsor address hash is derived using the "self-funded" scheme.
     });
+  });
+
+  describe(deriveSponsorAddressHashForSelfFundedFeed.name, () => {
+    it('derives a wallet for a self-funded feed', () => {
+      const dataFeedId = '0x917ecd1b870ef5fcbd53088046d0987493593d761e2516ec6acc455848976f36';
+      const updateParameters =
+        '0x0000000000000000000000000000000000000000000000000000000002faf0800000000000000000000000000000000000000000000000000000000002faf0800000000000000000000000000000000000000000000000000000000000000064';
+      const sponsorWalletMnemonic =
+        'diamond result history offer forest diagram crop armed stumble orchard stage glance';
+
+      const sponsorAddressHash = deriveSponsorAddressHashForSelfFundedFeed(dataFeedId, updateParameters);
+      const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(sponsorWalletMnemonic, sponsorAddressHash);
+
+      expect(sponsorWallet.address).toBe('0x08E47E2dF1440492289da760B58d036b3abb1A43'); // Note, that the address is different if the sponsor address hash is derived using the "managed" scheme.
+    });
+  });
+});
+
+describe(deriveSponsorWallet.name, () => {
+  it('derives a wallet for a managed feed', () => {
+    const dapiName = encodeDapiName('Ethereum - Avalanche');
+    const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
+
+    const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName, 'does-not-matter', 'managed');
+
+    expect(sponsorWallet.address).toBe('0xDF5Eb6273BdB4608e70Bb0ABCA0571B45Cb60a22'); // Note, that the address is different if the sponsor address hash is derived using the "self-funded" scheme.
+  });
+
+  it('derives a wallet for a self-funded feed', () => {
+    const dapiName = encodeDapiName('Ethereum - Avalanche');
+    const updateParameters =
+      '0x0000000000000000000000000000000000000000000000000000000002faf0800000000000000000000000000000000000000000000000000000000002faf0800000000000000000000000000000000000000000000000000000000000000064';
+    const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
+
+    const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName, updateParameters, 'self-funded');
+
+    expect(sponsorWallet.address).toBe('0x1e0cb43e47bf4335d21812C2d652fC83F2CB64Bb'); // Note, that the address is different if the sponsor address hash is derived using the "managed" scheme.
   });
 });
 
