@@ -359,7 +359,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     const beacons = contractsModule.decodeDataFeedDetails(dataFeed.dataFeedDetails)!;
     const decodedUpdateParameters = contractsModule.decodeUpdateParameters(dataFeed.updateParameters);
     const activeDataFeed = {
-      ...omit(dataFeed, ['dataFeedDetails', 'updateParameters', 'beaconValues', 'beaconTimestamps']),
+      ...omit(dataFeed, ['dataFeedDetails', 'beaconValues', 'beaconTimestamps']),
       decodedUpdateParameters,
       beaconsWithData: contractsModule.createBeaconsWithData(beacons, dataFeed.beaconValues, dataFeed.beaconTimestamps),
       decodedDapiName: utilsModule.decodeDapiName(dataFeed.dapiName),

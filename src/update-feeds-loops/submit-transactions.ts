@@ -1,6 +1,7 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
+import type { WalletDerivationScheme } from '../config/schema';
 import { getRecommendedGasPrice, setSponsorLastUpdateTimestamp } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
@@ -52,11 +53,11 @@ export const submitTransaction = async (
 ) => {
   const state = getState();
   const {
-    config: { chains, sponsorWalletMnemonic },
+    config: { chains, sponsorWalletMnemonic, walletDerivationScheme },
   } = state;
 
   const { dataFeedInfo } = updatableDataFeed;
-  const { dapiName, dataFeedId, decodedDapiName } = dataFeedInfo;
+  const { dapiName, dataFeedId, decodedDapiName, updateParameters } = dataFeedInfo;
   const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
   const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
@@ -79,7 +80,12 @@ export const submitTransaction = async (
         const gasLimit = goEstimateGasLimit.data;
 
         logger.debug('Getting derived sponsor wallet.');
-        const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, dapiName ?? dataFeedId);
+        const sponsorWallet = getDerivedSponsorWallet(
+          sponsorWalletMnemonic,
+          dapiName ?? dataFeedId,
+          updateParameters,
+          walletDerivationScheme
+        );
 
         logger.debug('Getting nonce.');
         const nonce = await provider.getTransactionCount(sponsorWallet.address, blockNumber);
@@ -170,7 +176,12 @@ export const estimateMulticallGasLimit = async (
   return BigInt(fallbackGasLimit);
 };
 
-export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDataFeedId: DapiNameOrDataFeedId) => {
+export const getDerivedSponsorWallet = (
+  sponsorWalletMnemonic: string,
+  dapiNameOrDataFeedId: DapiNameOrDataFeedId,
+  updateParameters: string,
+  walletDerivationScheme: WalletDerivationScheme
+) => {
   const { derivedSponsorWallets } = getState();
 
   const privateKey = derivedSponsorWallets?.[dapiNameOrDataFeedId];
@@ -178,7 +189,12 @@ export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiNameO
     return new ethers.Wallet(privateKey);
   }
 
-  const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiNameOrDataFeedId);
+  const sponsorWallet = deriveSponsorWallet(
+    sponsorWalletMnemonic,
+    dapiNameOrDataFeedId,
+    updateParameters,
+    walletDerivationScheme
+  );
   logger.debug('Derived new sponsor wallet.', { sponsorWalletAddress: sponsorWallet.address });
 
   updateState((draft) => {

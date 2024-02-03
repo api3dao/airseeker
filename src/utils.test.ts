@@ -1,26 +1,43 @@
 import { ethers } from 'hardhat';
 
-import { deriveSponsorWallet, deriveWalletPathFromSponsorAddress, encodeDapiName } from './utils';
+import {
+  deriveSponsorAddressHashForManagedFeed,
+  deriveSponsorWalletFromSponsorAddressHash,
+  deriveWalletPathFromSponsorAddress,
+  encodeDapiName,
+} from './utils';
 
-describe(deriveSponsorWallet.name, () => {
-  it('derives different wallets for dAPIs with same prefix', () => {
-    const dapiName = encodeDapiName('Ethereum - Avalanche');
-    const otherDapiName = encodeDapiName('Ethereum - Avalanche (DEX)');
-    const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
+// TODO: Tests for other functions
 
-    const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName);
-    const otherSponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, otherDapiName);
+describe(deriveSponsorWalletFromSponsorAddressHash.name, () => {
+  describe(deriveSponsorAddressHashForManagedFeed.name, () => {
+    it('derives different wallets for dAPIs with same prefix', () => {
+      const dapiName = encodeDapiName('Ethereum - Avalanche');
+      const otherDapiName = encodeDapiName('Ethereum - Avalanche (DEX)');
+      const sponsorWalletMnemonic =
+        'diamond result history offer forest diagram crop armed stumble orchard stage glance';
 
-    expect(sponsorWallet.address).not.toBe(otherSponsorWallet.address);
-  });
+      const sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiName);
+      const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(sponsorWalletMnemonic, sponsorAddressHash);
+      const otherSponsorAddressHash = deriveSponsorAddressHashForManagedFeed(otherDapiName);
+      const otherSponsorWallet = deriveSponsorWalletFromSponsorAddressHash(
+        sponsorWalletMnemonic,
+        otherSponsorAddressHash
+      );
 
-  it('works even with data feed ID', () => {
-    const dataFeedId = '0x917ecd1b870ef5fcbd53088046d0987493593d761e2516ec6acc455848976f36';
-    const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
+      expect(sponsorWallet.address).not.toBe(otherSponsorWallet.address);
+    });
 
-    const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dataFeedId);
+    it('works even with data feed ID', () => {
+      const dataFeedId = '0x917ecd1b870ef5fcbd53088046d0987493593d761e2516ec6acc455848976f36';
+      const sponsorWalletMnemonic =
+        'diamond result history offer forest diagram crop armed stumble orchard stage glance';
 
-    expect(sponsorWallet.address).toBe('0x6fD46d2D7AB4574Be0185618944106fdaF20DB7D');
+      const sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dataFeedId);
+      const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(sponsorWalletMnemonic, sponsorAddressHash);
+
+      expect(sponsorWallet.address).toBe('0x6fD46d2D7AB4574Be0185618944106fdaF20DB7D');
+    });
   });
 });
 

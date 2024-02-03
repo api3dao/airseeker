@@ -1,6 +1,7 @@
 import { goSync } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
+import type { WalletDerivationScheme } from './config/schema';
 import { AIRSEEKER_PROTOCOL_ID, INT224_MAX, INT224_MIN } from './constants';
 
 export const abs = (n: bigint) => (n < 0n ? -n : n);
@@ -25,13 +26,22 @@ export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
   return `${AIRSEEKER_PROTOCOL_ID}/${paths.join('/')}`;
 }
 
-export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDataFeedId: string) => {
-  // Hash the dAPI name or data feed ID because we need to take the first 20 bytes of it which could result in
-  // collisions for dAPIs with the same prefix.
-  const hashedDapiNameOrDataFeedId = ethers.keccak256(dapiNameOrDataFeedId);
+export const deriveSponsorAddressHashForManagedFeed = (dapiNameOrDataFeedId: string) => {
+  // Hashing the dAPI name is important because we need to take the first 20 bytes of the hash which could result in
+  // collisions for (encoded) dAPI names with the same prefix.
+  return ethers.keccak256(dapiNameOrDataFeedId);
+};
 
-  // Take first 20 bytes of the hashed dapiName or data feed ID as sponsor address together with the "0x" prefix.
-  const sponsorAddress = ethers.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));
+export const deriveSponsorAddressHashForSelfFundedFeed = (dapiNameOrDataFeedId: string, updateParameters: string) => {
+  return ethers.keccak256(ethers.solidityPacked(['bytes32', 'bytes'], [dapiNameOrDataFeedId, updateParameters]));
+};
+
+export const deriveSponsorWalletFromSponsorAddressHash = (
+  sponsorWalletMnemonic: string,
+  sponsorAddressHash: string
+) => {
+  // Take the first 20 bytes of the sponsor address hash + "0x" prefix.
+  const sponsorAddress = ethers.getAddress(sponsorAddressHash.slice(0, 42));
   // NOTE: Be sure not to use "ethers.Wallet.fromPhrase(sponsorWalletMnemonic).derivePath" because that produces a
   // different result.
   const sponsorWallet = ethers.HDNodeWallet.fromPhrase(
@@ -41,6 +51,23 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDat
   );
 
   return sponsorWallet;
+};
+
+export const deriveSponsorWallet = (
+  sponsorWalletMnemonic: string,
+  dapiNameOrDataFeedId: string,
+  updateParameters: string,
+  walletDerivationScheme: WalletDerivationScheme
+) => {
+  // Derive the hash of the data feed using which the sponsor wallet is derived. For self-funded feeds it's more
+  // suitable to derive the hash also from update parameters. This does not apply to mananaged feeds which want to be
+  // funded by the same wallet independently of the update parameters.
+  const sponsorAddressHash =
+    walletDerivationScheme === 'self-funded'
+      ? deriveSponsorAddressHashForSelfFundedFeed(dapiNameOrDataFeedId, updateParameters)
+      : deriveSponsorAddressHashForManagedFeed(dapiNameOrDataFeedId);
+
+  return deriveSponsorWalletFromSponsorAddressHash(sponsorWalletMnemonic, sponsorAddressHash);
 };
 
 export const multiplyBigNumber = (bigNumber: bigint, multiplier: number) =>

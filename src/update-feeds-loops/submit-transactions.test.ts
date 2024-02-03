@@ -243,7 +243,12 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
     );
     jest.spyOn(utilsModule, 'deriveSponsorWallet');
 
-    const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet('some-mnemonic', dapiName);
+    const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
+      'some-mnemonic',
+      dapiName,
+      'does-not-matter',
+      'managed-dapis'
+    );
 
     expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(0);
     expect(sponsorWallet.privateKey).toBe('0x034e238bdc2622122e7b2191ee5be5df38597b6f58e45b25c6d32cae3110ebfa');
@@ -261,7 +266,9 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
 
     const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
       'diamond result history offer forest diagram crop armed stumble orchard stage glance',
-      dapiName
+      dapiName,
+      'does-not-matter',
+      'managed-dapis'
     );
 
     expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(1);
@@ -279,8 +286,11 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
 
     const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
       'diamond result history offer forest diagram crop armed stumble orchard stage glance',
-      '0x173ec7594911a9d584d577bc8e8b9bb546018667d820a67685df49201a11ae9b'
+      '0x173ec7594911a9d584d577bc8e8b9bb546018667d820a67685df49201a11ae9b',
+      'does-not-matter',
+      'managed-dapis'
     );
+    // TODO: Write a similar test for self-funded
 
     expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(1);
     expect(sponsorWallet.privateKey).toBe('0x1a193892271d2a8c1e39b9d78281a9e7f8c080965dc3ed744eac7746c47b700e');

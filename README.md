@@ -230,6 +230,7 @@ The derivation scheme used to derive sponsor wallets. The following options are 
 
 - `self-funded` - The sponsor wallet is derived from the hash of the encoded beacon ID together with the update
   parameters. This is the scheme that was originally used by Nodary for self-funded data feeds.
+  <!-- TODO: Change to "managed" -->
 - `managed-dapis` - Derives the wallet from the hash of the dAPI name (or data feed ID). This means the wallet
   derivation is agnostic to update parameters, and the same wallet is used when the dAPI is upgraded/downgraded.
 

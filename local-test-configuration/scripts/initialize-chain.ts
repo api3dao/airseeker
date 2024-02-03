@@ -13,7 +13,12 @@ import {
   AccessControlRegistry__factory as AccessControlRegistryFactory,
   Api3ServerV1__factory as Api3ServerV1Factory,
 } from '../../src/typechain-types';
-import { deriveBeaconId, deriveSponsorWallet, encodeDapiName } from '../../src/utils';
+import {
+  deriveBeaconId,
+  deriveSponsorAddressHashForManagedFeed,
+  deriveSponsorWalletFromSponsorAddressHash,
+  encodeDapiName,
+} from '../../src/utils';
 
 interface RawBeaconData {
   airnodeAddress: string;
@@ -57,7 +62,11 @@ export const refundFunder = async (funderWallet: ethers.HDNodeWallet) => {
   for (const beaconSetName of getBeaconSetNames()) {
     const dapiName = encodeDapiName(beaconSetName);
 
-    const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName).connect(funderWallet.provider);
+    const sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiName);
+    const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(
+      airseekerWalletMnemonic,
+      sponsorAddressHash
+    ).connect(funderWallet.provider);
     const sponsorWalletBalance = await funderWallet.provider!.getBalance(sponsorWallet.address);
     console.info('Sponsor wallet balance:', ethers.formatEther(sponsorWalletBalance.toString()));
 
@@ -117,7 +126,8 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.HDNodeWall
   for (const beaconSetName of getBeaconSetNames()) {
     const dapiName = encodeDapiName(beaconSetName);
 
-    const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName);
+    const sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiName);
+    const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(airseekerWalletMnemonic, sponsorAddressHash);
     const sponsorWalletBalance = await funderWallet.provider!.getBalance(sponsorWallet.address);
     console.info('Sponsor wallet balance:', ethers.formatEther(sponsorWalletBalance.toString()));
 

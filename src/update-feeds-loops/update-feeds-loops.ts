@@ -262,7 +262,7 @@ export const processBatch = async (
     blockNumber,
   });
   const {
-    config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient },
+    config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient, walletDerivationScheme },
   } = getState();
   const { contracts } = chains[chainId]!;
 
@@ -285,7 +285,7 @@ export const processBatch = async (
 
   // Clear last update timestamps for feeds that don't need an update
   for (const feed of batch) {
-    const { dapiName, dataFeedId, decodedDapiName } = feed;
+    const { dapiName, dataFeedId, decodedDapiName, updateParameters } = feed;
 
     // Skip if the data feed is updatable
     if (
@@ -297,7 +297,12 @@ export const processBatch = async (
       continue;
     }
 
-    const sponsorWalletAddress = deriveSponsorWallet(sponsorWalletMnemonic, dapiName ?? dataFeedId).address;
+    const sponsorWalletAddress = deriveSponsorWallet(
+      sponsorWalletMnemonic,
+      dapiName ?? dataFeedId,
+      updateParameters,
+      walletDerivationScheme
+    ).address;
     const timestampNeedsClearing = hasSponsorPendingTransaction(chainId, providerName, sponsorWalletAddress);
     if (timestampNeedsClearing) {
       // NOTE: A data feed may stop needing an update for two reasons:
