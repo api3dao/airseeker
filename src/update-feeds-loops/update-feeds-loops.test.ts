@@ -172,7 +172,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     const firstDataFeed = generateActiveDataFeedResponse();
     const thirdDataFeed = generateActiveDataFeedResponse();
     const decodedFirstDataFeed = {
-      ...omit(firstDataFeed, ['dataFeedDetails', 'updateParameters', 'beaconValues', 'beaconTimestamps']),
+      ...omit(firstDataFeed, ['dataFeedDetails', 'beaconValues', 'beaconTimestamps']),
       decodedUpdateParameters: contractsModule.decodeUpdateParameters(firstDataFeed.updateParameters),
       beaconsWithData: contractsModule.createBeaconsWithData(
         contractsModule.decodeDataFeedDetails(firstDataFeed.dataFeedDetails)!,
@@ -181,7 +181,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       ),
     };
     const decodedThirdDataFeed = {
-      ...omit(thirdDataFeed, ['dataFeedDetails', 'updateParameters', 'beaconValues', 'beaconTimestamps']),
+      ...omit(thirdDataFeed, ['dataFeedDetails', 'beaconValues', 'beaconTimestamps']),
       decodedUpdateParameters: contractsModule.decodeUpdateParameters(thirdDataFeed.updateParameters),
       beaconsWithData: contractsModule.createBeaconsWithData(
         contractsModule.decodeDataFeedDetails(thirdDataFeed.dataFeedDetails)!,
