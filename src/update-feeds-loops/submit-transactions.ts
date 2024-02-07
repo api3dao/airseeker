@@ -1,10 +1,10 @@
-import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
 import { getRecommendedGasPrice, setSponsorLastUpdateTimestamp } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
+import type { Api3ServerV1 } from '../typechain-types';
 import type { ChainId, DapiNameOrDataFeedId, ProviderName } from '../types';
 import { deriveSponsorWallet } from '../utils';
 
@@ -45,7 +45,7 @@ export const hasSponsorPendingTransaction = (chainId: string, providerName: stri
 export const submitTransaction = async (
   chainId: ChainId,
   providerName: ProviderName,
-  provider: ethers.providers.StaticJsonRpcProvider,
+  provider: ethers.JsonRpcProvider,
   api3ServerV1: Api3ServerV1,
   updatableDataFeed: UpdatableDataFeed,
   blockNumber: number
@@ -111,8 +111,8 @@ export const submitTransaction = async (
             api3ServerV1
               // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
               // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
-              .connect(sponsorWallet.connect(api3ServerV1.provider))
-              .tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce })
+              .connect(sponsorWallet.connect(provider))
+              .tryMulticall.send(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce })
           );
         });
         if (!goMulticall.success) {
@@ -144,7 +144,7 @@ export const submitTransaction = async (
 export const submitTransactions = async (
   chainId: ChainId,
   providerName: ProviderName,
-  provider: ethers.providers.StaticJsonRpcProvider,
+  provider: ethers.JsonRpcProvider,
   api3ServerV1: Api3ServerV1,
   updatableDataFeeds: UpdatableDataFeed[],
   blockNumber: number
@@ -160,10 +160,10 @@ export const estimateMulticallGasLimit = async (
   calldatas: string[],
   fallbackGasLimit: number | undefined
 ) => {
-  const goEstimateGas = await go(async () => api3ServerV1.estimateGas.multicall(calldatas));
+  const goEstimateGas = await go(async () => api3ServerV1.multicall.estimateGas(calldatas));
   if (goEstimateGas.success) {
     // Adding a extra 10% because multicall consumes less gas than tryMulticall
-    return goEstimateGas.data.mul(ethers.BigNumber.from(Math.round(1.1 * 100))).div(ethers.BigNumber.from(100));
+    return (goEstimateGas.data * BigInt(Math.round(1.1 * 100))) / 100n;
   }
   logger.warn(`Unable to estimate gas for multicall using provider.`, goEstimateGas.error);
 
@@ -171,7 +171,7 @@ export const estimateMulticallGasLimit = async (
     throw new Error('Unable to estimate gas limit');
   }
 
-  return ethers.BigNumber.from(fallbackGasLimit);
+  return BigInt(fallbackGasLimit);
 };
 
 export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDataFeedId: DapiNameOrDataFeedId) => {

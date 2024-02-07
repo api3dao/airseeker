@@ -14,16 +14,20 @@ import * as getUpdatableFeedsModule from './get-updatable-feeds';
 
 const chainId = '31337';
 const rpcUrl = 'http://127.0.0.1:8545/';
-const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
-  chainId: Number.parseInt(chainId, 10),
-  name: chainId,
-});
+const provider = new ethers.JsonRpcProvider(
+  rpcUrl,
+  {
+    chainId: Number.parseInt(chainId, 10),
+    name: chainId,
+  },
+  { staticNetwork: true }
+);
 
 // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
 const encodeBeaconValue = (numericValue: string) => {
-  const numericValueAsBigNumber = ethers.BigNumber.from(numericValue);
+  const numericValueAsBigNumber = BigInt(numericValue);
 
-  return ethers.utils.defaultAbiCoder.encode(['int256'], [numericValueAsBigNumber]);
+  return ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [numericValueAsBigNumber]);
 };
 
 const feedIds = [
@@ -41,10 +45,10 @@ describe(multicallBeaconValues.name, () => {
     const tryMulticallMock = jest.fn().mockReturnValue({
       successes: [true, true, true],
       returndata: [
-        ethers.utils.defaultAbiCoder.encode(['uint256'], [31_337]),
-        ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [100, 105]),
-        ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [101, 106]),
-        ethers.utils.defaultAbiCoder.encode(['int224', 'uint32'], [102, 107]),
+        ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [31_337]),
+        ethers.AbiCoder.defaultAbiCoder().encode(['int224', 'uint32'], [100, 105]),
+        ethers.AbiCoder.defaultAbiCoder().encode(['int224', 'uint32'], [101, 106]),
+        ethers.AbiCoder.defaultAbiCoder().encode(['int224', 'uint32'], [102, 107]),
       ],
     });
 
@@ -56,8 +60,8 @@ describe(multicallBeaconValues.name, () => {
 
     const mockContract = {
       connect: jest.fn().mockReturnValue({
-        callStatic: {
-          tryMulticall: tryMulticallMock,
+        tryMulticall: {
+          staticCall: tryMulticallMock,
         },
       }),
       interface: { encodeFunctionData: encodeFunctionDataMock },
@@ -69,16 +73,16 @@ describe(multicallBeaconValues.name, () => {
 
     expect(callAndParseMulticallPromise).toStrictEqual({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
-        timestamp: ethers.BigNumber.from(105),
-        value: ethers.BigNumber.from(100),
+        timestamp: 105n,
+        value: 100n,
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: ethers.BigNumber.from(106),
-        value: ethers.BigNumber.from(101),
+        timestamp: 106n,
+        value: 101n,
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
-        timestamp: ethers.BigNumber.from(107),
-        value: ethers.BigNumber.from(102),
+        timestamp: 107n,
+        value: 102n,
       },
     });
     expect(tryMulticallMock).toHaveBeenCalledWith(['0xChain', '0xFirst', '0xSecond', '0xThird']);
@@ -122,16 +126,16 @@ describe(getUpdatableFeeds.name, () => {
     // None of the feeds failed to update
     jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
-        timestamp: ethers.BigNumber.from(150),
-        value: ethers.BigNumber.from('400'),
+        timestamp: 150n,
+        value: BigInt('400'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: ethers.BigNumber.from(160),
-        value: ethers.BigNumber.from('500'),
+        timestamp: 160n,
+        value: BigInt('500'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
-        timestamp: ethers.BigNumber.from(170),
-        value: ethers.BigNumber.from('600'),
+        timestamp: 170n,
+        value: BigInt('600'),
       },
     });
     jest.spyOn(logger, 'info');
@@ -139,11 +143,11 @@ describe(getUpdatableFeeds.name, () => {
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
         decodedUpdateParameters: {
-          deviationThresholdInPercentage: ethers.BigNumber.from(1),
-          heartbeatInterval: ethers.BigNumber.from(100),
+          deviationThresholdInPercentage: 1n,
+          heartbeatInterval: 100n,
         },
-        dataFeedValue: ethers.BigNumber.from(10),
-        dataFeedTimestamp: 95,
+        dataFeedValue: 10n,
+        dataFeedTimestamp: 95n,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
@@ -168,8 +172,8 @@ describe(getUpdatableFeeds.name, () => {
         ],
         dataFeedInfo: {
           dapiName: encodeDapiName('test'),
-          dataFeedValue: ethers.BigNumber.from('10'),
-          dataFeedTimestamp: 95,
+          dataFeedValue: BigInt('10'),
+          dataFeedTimestamp: 95n,
           decodedDataFeed: {
             beacons: [
               expect.objectContaining({
@@ -185,8 +189,8 @@ describe(getUpdatableFeeds.name, () => {
             dataFeedId: '0x000',
           },
           decodedUpdateParameters: {
-            deviationThresholdInPercentage: ethers.BigNumber.from(1),
-            heartbeatInterval: ethers.BigNumber.from(100),
+            deviationThresholdInPercentage: 1n,
+            heartbeatInterval: 100n,
           },
         },
       },
@@ -218,16 +222,16 @@ describe(getUpdatableFeeds.name, () => {
     // None of the feeds failed to update
     jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
-        timestamp: ethers.BigNumber.from(150),
-        value: ethers.BigNumber.from('400'),
+        timestamp: 150n,
+        value: BigInt('400'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: ethers.BigNumber.from(160),
-        value: ethers.BigNumber.from('400'),
+        timestamp: 160n,
+        value: BigInt('400'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
-        timestamp: ethers.BigNumber.from(170),
-        value: ethers.BigNumber.from('400'),
+        timestamp: 170n,
+        value: BigInt('400'),
       },
     });
     jest.spyOn(logger, 'debug');
@@ -235,11 +239,11 @@ describe(getUpdatableFeeds.name, () => {
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
         decodedUpdateParameters: {
-          deviationThresholdInPercentage: ethers.BigNumber.from(1),
-          heartbeatInterval: ethers.BigNumber.from(1),
+          deviationThresholdInPercentage: 1n,
+          heartbeatInterval: 1n,
         },
-        dataFeedValue: ethers.BigNumber.from(400),
-        dataFeedTimestamp: 90,
+        dataFeedValue: 400n,
+        dataFeedTimestamp: 90n,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
@@ -264,8 +268,8 @@ describe(getUpdatableFeeds.name, () => {
         ],
         dataFeedInfo: {
           dapiName: encodeDapiName('test'),
-          dataFeedValue: ethers.BigNumber.from('400'),
-          dataFeedTimestamp: 90,
+          dataFeedValue: BigInt('400'),
+          dataFeedTimestamp: 90n,
           decodedDataFeed: {
             beacons: [
               expect.objectContaining({
@@ -281,8 +285,8 @@ describe(getUpdatableFeeds.name, () => {
             dataFeedId: '0x000',
           },
           decodedUpdateParameters: {
-            deviationThresholdInPercentage: ethers.BigNumber.from(1),
-            heartbeatInterval: ethers.BigNumber.from(1),
+            deviationThresholdInPercentage: 1n,
+            heartbeatInterval: 1n,
           },
         },
       },
@@ -315,11 +319,11 @@ describe(getUpdatableFeeds.name, () => {
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
         decodedUpdateParameters: {
-          deviationThresholdInPercentage: ethers.BigNumber.from(1),
-          heartbeatInterval: ethers.BigNumber.from(100),
+          deviationThresholdInPercentage: 1n,
+          heartbeatInterval: 100n,
         },
-        dataFeedValue: ethers.BigNumber.from(200),
-        dataFeedTimestamp: 160,
+        dataFeedValue: 200n,
+        dataFeedTimestamp: 160n,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
@@ -331,16 +335,16 @@ describe(getUpdatableFeeds.name, () => {
     // Ensure on-chain values don't trigger an update
     jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
-        timestamp: ethers.BigNumber.from(150),
-        value: ethers.BigNumber.from('200'),
+        timestamp: 150n,
+        value: BigInt('200'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: ethers.BigNumber.from(155),
-        value: ethers.BigNumber.from('200'),
+        timestamp: 155n,
+        value: BigInt('200'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
-        timestamp: ethers.BigNumber.from(170),
-        value: ethers.BigNumber.from('200'),
+        timestamp: 170n,
+        value: BigInt('200'),
       },
     });
     jest.spyOn(logger, 'warn');
@@ -376,16 +380,16 @@ describe(getUpdatableFeeds.name, () => {
     // None of the feeds failed to update
     jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
-        timestamp: ethers.BigNumber.from(150),
-        value: ethers.BigNumber.from('400'),
+        timestamp: 150n,
+        value: BigInt('400'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: ethers.BigNumber.from(160),
-        value: ethers.BigNumber.from('400'),
+        timestamp: 160n,
+        value: BigInt('400'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
-        timestamp: ethers.BigNumber.from(170),
-        value: ethers.BigNumber.from('400'),
+        timestamp: 170n,
+        value: BigInt('400'),
       },
     });
     jest.spyOn(logger, 'info');
@@ -393,11 +397,11 @@ describe(getUpdatableFeeds.name, () => {
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
         decodedUpdateParameters: {
-          deviationThresholdInPercentage: ethers.BigNumber.from(1),
-          heartbeatInterval: ethers.BigNumber.from(100),
+          deviationThresholdInPercentage: 1n,
+          heartbeatInterval: 100n,
         },
-        dataFeedValue: ethers.BigNumber.from(400),
-        dataFeedTimestamp: 140,
+        dataFeedValue: 400n,
+        dataFeedTimestamp: 140n,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],
@@ -417,11 +421,11 @@ describe(getUpdatableFeeds.name, () => {
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
         decodedUpdateParameters: {
-          deviationThresholdInPercentage: ethers.BigNumber.from(1),
-          heartbeatInterval: ethers.BigNumber.from(100),
+          deviationThresholdInPercentage: 1n,
+          heartbeatInterval: 100n,
         },
-        dataFeedValue: ethers.BigNumber.from(10),
-        dataFeedTimestamp: 95,
+        dataFeedValue: 10n,
+        dataFeedTimestamp: 95n,
         decodedDataFeed: {
           dataFeedId: '0x000',
           beacons: [{ beaconId: feedIds[0] }, { beaconId: feedIds[1] }, { beaconId: feedIds[2] }],

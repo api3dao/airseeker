@@ -2,17 +2,17 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { encode } from '@api3/airnode-abi';
-import {
-  AccessControlRegistry__factory as AccessControlRegistryFactory,
-  Api3ServerV1__factory as Api3ServerV1Factory,
-} from '@api3/airnode-protocol-v1';
 import dotenv from 'dotenv';
-import type { ContractTransaction, Signer } from 'ethers';
+import type { ContractTransactionResponse, Signer } from 'ethers';
 import { ethers } from 'ethers';
 import { zip } from 'lodash';
 
 import { interpolateSecrets, parseSecrets } from '../../src/config/utils';
-import { AirseekerRegistry__factory as AirseekerRegistryFactory } from '../../src/typechain-types';
+import {
+  AirseekerRegistry__factory as AirseekerRegistryFactory,
+  AccessControlRegistry__factory as AccessControlRegistryFactory,
+  Api3ServerV1__factory as Api3ServerV1Factory,
+} from '../../src/typechain-types';
 import { deriveBeaconId, deriveSponsorWallet, encodeDapiName } from '../../src/utils';
 
 interface RawBeaconData {
@@ -29,26 +29,26 @@ const deriveBeaconData = (beaconData: RawBeaconData) => {
   const { endpointId, parameters: parameters, airnodeAddress } = beaconData;
 
   const encodedParameters = encode(parameters);
-  const templateId = ethers.utils.solidityKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]);
+  const templateId = ethers.solidityPackedKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]);
   const beaconId = deriveBeaconId(airnodeAddress, templateId)!;
 
   return { endpointId, templateId, encodedParameters, beaconId, parameters, airnodeAddress };
 };
 
 export const deriveRootRole = (managerAddress: string) => {
-  return ethers.utils.solidityKeccak256(['address'], [managerAddress]);
+  return ethers.solidityPackedKeccak256(['address'], [managerAddress]);
 };
 
 export const deriveRole = (adminRole: string, roleDescription: string) => {
-  return ethers.utils.solidityKeccak256(
+  return ethers.solidityPackedKeccak256(
     ['bytes32', 'bytes32'],
-    [adminRole, ethers.utils.solidityKeccak256(['string'], [roleDescription])]
+    [adminRole, ethers.solidityPackedKeccak256(['string'], [roleDescription])]
   );
 };
 
 // NOTE: This function is not used by the initialization script, but you can use it after finishing Airseeker test on a
 // public testnet to refund test ETH from sponsor wallets to the funder wallet.
-export const refundFunder = async (funderWallet: ethers.Wallet) => {
+export const refundFunder = async (funderWallet: ethers.HDNodeWallet) => {
   const airseekerSecrets = dotenv.parse(readFileSync(join(__dirname, `/../airseeker`, 'secrets.env'), 'utf8'));
   const airseekerWalletMnemonic = airseekerSecrets.SPONSOR_WALLET_MNEMONIC;
   if (!airseekerWalletMnemonic) throw new Error('SPONSOR_WALLET_MNEMONIC not found in Airseeker secrets');
@@ -58,20 +58,23 @@ export const refundFunder = async (funderWallet: ethers.Wallet) => {
     const dapiName = encodeDapiName(beaconSetName);
 
     const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName).connect(funderWallet.provider);
-    const sponsorWalletBalance = await funderWallet.provider.getBalance(sponsorWallet.address);
-    console.info('Sponsor wallet balance:', ethers.utils.formatEther(sponsorWalletBalance.toString()));
+    const sponsorWalletBalance = await funderWallet.provider!.getBalance(sponsorWallet.address);
+    console.info('Sponsor wallet balance:', ethers.formatEther(sponsorWalletBalance.toString()));
 
-    const gasPrice = await sponsorWallet.provider.getGasPrice();
-    const gasFee = gasPrice.mul(ethers.BigNumber.from(21_000));
-    if (sponsorWalletBalance.sub(gasFee).lt(ethers.constants.Zero)) {
+    const feeData = await sponsorWallet.provider!.getFeeData();
+    const { gasPrice } = feeData;
+    // We assume the legacy gas price will always exist. See:
+    // https://api3workspace.slack.com/archives/C05TQPT7PNJ/p1699098552350519
+    const gasFee = gasPrice! * BigInt(21_000);
+    if (sponsorWalletBalance < gasFee) {
       console.info('Sponsor wallet balance is too low, skipping refund');
       continue;
     }
     const tx = await sponsorWallet.sendTransaction({
       to: funderWallet.address,
       gasPrice,
-      gasLimit: ethers.BigNumber.from(21_000),
-      value: sponsorWalletBalance.sub(gasFee),
+      gasLimit: BigInt(21_000),
+      value: sponsorWalletBalance - gasFee,
     });
     await tx.wait();
 
@@ -97,7 +100,7 @@ const loadAirnodeFeedConfig = (airnodeFeedDir: 'airnode-feed-1' | 'airnode-feed-
 
 const getBeaconSetNames = () => {
   const airnodeFeed = loadAirnodeFeedConfig('airnode-feed-1');
-  const airnodeFeedWallet = ethers.Wallet.fromMnemonic(airnodeFeed.nodeSettings.airnodeWalletMnemonic);
+  const airnodeFeedWallet = ethers.Wallet.fromPhrase(airnodeFeed.nodeSettings.airnodeWalletMnemonic);
   const airnodeFeedBeacons = Object.values(airnodeFeed.templates).map((template: any) => {
     return deriveBeaconData({ ...template, airnodeAddress: airnodeFeedWallet.address });
   });
@@ -105,7 +108,7 @@ const getBeaconSetNames = () => {
   return airnodeFeedBeacons.map((beacon) => beacon.parameters[0]!.value);
 };
 
-export const fundAirseekerSponsorWallet = async (funderWallet: ethers.Wallet) => {
+export const fundAirseekerSponsorWallet = async (funderWallet: ethers.HDNodeWallet) => {
   const airseekerSecrets = dotenv.parse(readFileSync(join(__dirname, `/../airseeker`, 'secrets.env'), 'utf8'));
   const airseekerWalletMnemonic = airseekerSecrets.SPONSOR_WALLET_MNEMONIC;
   if (!airseekerWalletMnemonic) throw new Error('SPONSOR_WALLET_MNEMONIC not found in Airseeker secrets');
@@ -115,12 +118,12 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.Wallet) =>
     const dapiName = encodeDapiName(beaconSetName);
 
     const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, dapiName);
-    const sponsorWalletBalance = await funderWallet.provider.getBalance(sponsorWallet.address);
-    console.info('Sponsor wallet balance:', ethers.utils.formatEther(sponsorWalletBalance.toString()));
+    const sponsorWalletBalance = await funderWallet.provider!.getBalance(sponsorWallet.address);
+    console.info('Sponsor wallet balance:', ethers.formatEther(sponsorWalletBalance.toString()));
 
     const tx = await funderWallet.sendTransaction({
       to: sponsorWallet.address,
-      value: ethers.utils.parseEther('1'),
+      value: ethers.parseEther('1'),
     });
     await tx.wait();
 
@@ -131,7 +134,7 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.Wallet) =>
   }
 };
 
-export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.providers.JsonRpcProvider) => {
+export const deploy = async (funderWallet: ethers.HDNodeWallet, provider: ethers.JsonRpcProvider) => {
   // NOTE: It is OK if all of these roles are done via the funder wallet.
   const deployerAndManager = funderWallet,
     randomPerson = funderWallet;
@@ -139,29 +142,29 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   // Deploy contracts
   const accessControlRegistryFactory = new AccessControlRegistryFactory(deployerAndManager as Signer);
   const accessControlRegistry = await accessControlRegistryFactory.deploy();
-  await accessControlRegistry.deployTransaction.wait();
+  await accessControlRegistry.waitForDeployment();
   const api3ServerV1Factory = new Api3ServerV1Factory(deployerAndManager as Signer);
   const api3ServerV1AdminRoleDescription = 'Api3ServerV1 admin';
   const api3ServerV1 = await api3ServerV1Factory.deploy(
-    accessControlRegistry.address,
+    accessControlRegistry.getAddress(),
     api3ServerV1AdminRoleDescription,
     deployerAndManager.address
   );
-  await api3ServerV1.deployTransaction.wait();
+  await api3ServerV1.waitForDeployment();
   const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager as Signer);
   const airseekerRegistry = await airseekerRegistryFactory.deploy(
     await (deployerAndManager as Signer).getAddress(),
-    api3ServerV1.address
+    api3ServerV1.getAddress()
   );
-  await airseekerRegistry.deployTransaction.wait();
+  await airseekerRegistry.waitForDeployment();
 
   // Create templates
   const airnodeFeed1 = loadAirnodeFeedConfig('airnode-feed-1');
   const airnodeFeed2 = loadAirnodeFeedConfig('airnode-feed-2');
-  const airnodeFeed1Wallet = ethers.Wallet.fromMnemonic(airnodeFeed1.nodeSettings.airnodeWalletMnemonic).connect(
+  const airnodeFeed1Wallet = ethers.Wallet.fromPhrase(airnodeFeed1.nodeSettings.airnodeWalletMnemonic).connect(
     provider
   );
-  const airnodeFeed2Wallet = ethers.Wallet.fromMnemonic(airnodeFeed2.nodeSettings.airnodeWalletMnemonic).connect(
+  const airnodeFeed2Wallet = ethers.Wallet.fromPhrase(airnodeFeed2.nodeSettings.airnodeWalletMnemonic).connect(
     provider
   );
   const airnodeFeed1Beacons = Object.values(airnodeFeed1.templates).map((template: any) => {
@@ -176,7 +179,7 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
     [airnodeFeed1Wallet.address, joinUrl(airnodeFeed1.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the signed API, but we need to query it additional path.
     [airnodeFeed2Wallet.address, joinUrl(airnodeFeed2.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the signed API, but we need to query it additional path.
   ] as const;
-  let tx: ContractTransaction;
+  let tx: ContractTransactionResponse;
   for (const [airnode, url] of apiTreeValues) {
     tx = await airseekerRegistry.connect(deployerAndManager).setSignedApiUrl(airnode, url);
     await tx.wait();
@@ -186,8 +189,8 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
       airnodes: [airnodeFeed1Beacon!.airnodeAddress, airnodeFeed2Beacon!.airnodeAddress],
       templateIds: [airnodeFeed1Beacon!.templateId, airnodeFeed1Beacon!.templateId],
       dapiName: encodeDapiName(airnodeFeed1Beacon!.parameters[0]!.value),
-      beaconSetId: ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(
+      beaconSetId: ethers.keccak256(
+        ethers.AbiCoder.defaultAbiCoder().encode(
           ['bytes32[]'],
           [[airnodeFeed1Beacon!.beaconId, airnodeFeed2Beacon!.beaconId]]
         )
@@ -197,25 +200,25 @@ export const deploy = async (funderWallet: ethers.Wallet, provider: ethers.provi
   for (const dapiInfo of dapiInfos) {
     const { airnodes, templateIds, dapiName, beaconSetId } = dapiInfo;
 
-    const encodedBeaconSetData = ethers.utils.defaultAbiCoder.encode(
+    const encodedBeaconSetData = ethers.AbiCoder.defaultAbiCoder().encode(
       ['address[]', 'bytes32[]'],
       [airnodes, templateIds]
     );
     tx = await airseekerRegistry.connect(randomPerson).registerDataFeed(encodedBeaconSetData);
     await tx.wait();
     const HUNDRED_PERCENT = 1e8;
-    const deviationThresholdInPercentage = ethers.BigNumber.from(HUNDRED_PERCENT / 100); // 1%
-    const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
-    const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
+    const deviationThresholdInPercentage = BigInt(HUNDRED_PERCENT / 100); // 1%
+    const deviationReference = 0n; // Not used in Airseeker V2
+    const heartbeatInterval = BigInt(86_400); // 24 hrs
     tx = await api3ServerV1.connect(deployerAndManager).setDapiName(dapiName, beaconSetId);
     await tx.wait();
-    await airseekerRegistry.connect(deployerAndManager).setDapiNameToBeActivated(dapiName);
+    tx = await airseekerRegistry.connect(deployerAndManager).setDapiNameToBeActivated(dapiName);
     await tx.wait();
     tx = await airseekerRegistry
       .connect(deployerAndManager)
       .setDapiNameUpdateParameters(
         dapiName,
-        ethers.utils.defaultAbiCoder.encode(
+        ethers.AbiCoder.defaultAbiCoder().encode(
           ['uint256', 'uint256', 'uint256'],
           [deviationThresholdInPercentage, deviationReference, heartbeatInterval]
         )
@@ -242,17 +245,21 @@ async function main() {
   if (!process.env.FUNDER_MNEMONIC) throw new Error('FUNDER_MNEMONIC not found');
   if (!process.env.PROVIDER_URL) throw new Error('PROVIDER_URL not found');
 
-  const provider = new ethers.providers.StaticJsonRpcProvider(process.env.PROVIDER_URL);
-  const funderWallet = ethers.Wallet.fromMnemonic(process.env.FUNDER_MNEMONIC).connect(provider);
+  const provider = new ethers.JsonRpcProvider(process.env.PROVIDER_URL, undefined, {
+    staticNetwork: true,
+    polling: true,
+    pollingInterval: 100,
+  });
+  const funderWallet = ethers.Wallet.fromPhrase(process.env.FUNDER_MNEMONIC).connect(provider);
 
   await refundFunder(funderWallet);
-  const balance = await funderWallet.getBalance();
-  console.info('Funder balance:', ethers.utils.formatEther(balance.toString()));
+  const balance = await provider.getBalance(funderWallet.address);
+  console.info('Funder balance:', ethers.formatEther(balance.toString()));
   console.info();
 
   const { api3ServerV1, airseekerRegistry } = await deploy(funderWallet, provider);
-  console.info('Api3ServerV1 deployed at:', api3ServerV1.address);
-  console.info('AirseekerRegistry deployed at:', airseekerRegistry.address);
+  console.info('Api3ServerV1 deployed at:', await api3ServerV1.getAddress());
+  console.info('AirseekerRegistry deployed at:', await airseekerRegistry.getAddress());
   console.info();
 
   await fundAirseekerSponsorWallet(funderWallet);

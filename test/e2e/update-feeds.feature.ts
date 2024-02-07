@@ -1,6 +1,3 @@
-import { ethers } from 'ethers';
-import { omit } from 'lodash';
-
 import { initializeGasState } from '../../src/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
@@ -14,8 +11,6 @@ import { generateSignedData } from '../utils';
 
 const chainId = '31337';
 const providerName = 'localhost';
-const rpcUrl = 'http://127.0.0.1:8545/';
-const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl);
 
 it('reads blockchain data', async () => {
   const { config } = await deployAndUpdate();
@@ -41,24 +36,30 @@ it('updates blockchain data', async () => {
     krakenAirnodeWallet,
     binanceAirnodeWallet,
     airseekerWallet,
+    provider,
   } = await deployAndUpdate();
   initializeState(config);
   stateModule.updateState((draft) => {
-    draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic.phrase;
+    draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
   });
   initializeGasState(chainId, providerName);
-  const btcDataFeed = await airseekerRegistry.activeDataFeed(0);
+  const { dataFeedId, dapiName, dataFeedDetails, dataFeedValue, dataFeedTimestamp, updateParameters, signedApiUrls } =
+    await airseekerRegistry.activeDataFeed(0);
 
-  const decodedDataFeed = decodeDataFeedDetails(btcDataFeed.dataFeedDetails)!;
+  const decodedDataFeed = decodeDataFeedDetails(dataFeedDetails)!;
   const activeBtcDataFeed = {
-    ...omit(btcDataFeed, ['dataFeedDetails', 'updateParameters']),
-    decodedUpdateParameters: decodeUpdateParameters(btcDataFeed.updateParameters),
+    dapiName,
+    dataFeedId,
+    dataFeedValue,
+    dataFeedTimestamp,
+    signedApiUrls,
+    decodedUpdateParameters: decodeUpdateParameters(updateParameters),
     decodedDataFeed,
-    decodedDapiName: decodeDapiName(btcDataFeed.dapiName),
+    decodedDapiName: decodeDapiName(dapiName),
   };
 
-  const currentBlock = await airseekerRegistry.provider.getBlock('latest');
-  const currentBlockTimestamp = currentBlock.timestamp;
+  const currentBlock = await provider.getBlock('latest');
+  const currentBlockTimestamp = currentBlock!.timestamp;
   const binanceBtcSignedData = await generateSignedData(
     binanceAirnodeWallet,
     binanceBtcBeacon.templateId,

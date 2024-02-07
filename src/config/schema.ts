@@ -137,7 +137,9 @@ export type DeviationThresholdCoefficient = z.infer<typeof deviationThresholdCoe
 
 export const configSchema = z
   .object({
-    sponsorWalletMnemonic: z.string().refine((mnemonic) => ethers.utils.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
+    sponsorWalletMnemonic: z
+      .string()
+      .refine((mnemonic) => ethers.Mnemonic.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
     chains: chainsSchema,
     signedDataFetchInterval: z.number().positive(),
     deviationThresholdCoefficient: deviationThresholdCoefficientSchema,

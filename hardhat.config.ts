@@ -3,7 +3,7 @@ import type { HardhatUserConfig } from 'hardhat/types';
 import '@nomicfoundation/hardhat-toolbox';
 
 const config: HardhatUserConfig = {
-  solidity: { version: '0.8.18' },
+  solidity: { compilers: [{ version: '0.8.17' }] },
   networks: {
     localhost: {
       url: 'http://127.0.0.1:8545/',
@@ -14,7 +14,7 @@ const config: HardhatUserConfig = {
     // flattened version (only the contents of the "src" folder). This is also in anticipation of importing the
     // Typechain types instead of generating them at build time.
     outDir: 'src/typechain-types',
-    target: 'ethers-v5',
+    target: 'ethers-v6',
   },
   defaultNetwork: 'localhost',
 };

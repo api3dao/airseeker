@@ -19,4 +19,8 @@ module.exports = {
   testMatch: ['**/?(*.)+(spec|test).[t]s?(x)'],
   testPathIgnorePatterns: ['<rootDir>/.build', '<rootDir>/dist/', '<rootDir>/build/'],
   verbose: true,
+
+  // See: https://github.com/jestjs/jest/issues/11617#issuecomment-1028651059. We can't use "workerThreads" mentioned
+  // later, because it complains that some of the node internal modules used in commons processing are unavailable.
+  maxWorkers: 1,
 };

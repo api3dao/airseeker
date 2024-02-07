@@ -3,7 +3,6 @@ import { ethers } from 'ethers';
 import { isError, range, size, zip } from 'lodash';
 
 import type { Chain } from '../config/schema';
-import { RPC_PROVIDER_TIMEOUT_MS } from '../constants';
 import { clearSponsorLastUpdateTimestamp, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
@@ -97,7 +96,7 @@ export const readActiveDataFeedBatch = async (
     )
   );
 
-  let returndatas = verifyMulticallResponse(await airseekerRegistry.callStatic.tryMulticall(calldatas, {}));
+  let returndatas = verifyMulticallResponse(await airseekerRegistry.tryMulticall.staticCall(calldatas));
   let activeDataFeedCountReturndata: string | undefined;
   if (fromIndex === 0) {
     activeDataFeedCountReturndata = returndatas[0]!;
@@ -126,8 +125,9 @@ export const readActiveDataFeedBatch = async (
   const batch = batchReturndata
     .map((dataFeedReturndata) => decodeActiveDataFeedResponse(airseekerRegistry, dataFeedReturndata))
     .filter((dataFeed, dataFeedIndex): dataFeed is DecodedActiveDataFeedResponse => {
-      logger.warn(`Data feed not registered.`, { dataFeedIndex });
-      return dataFeed !== null;
+      const isRegistered = dataFeed !== null;
+      if (!isRegistered) logger.warn(`Data feed not registered.`, { dataFeedIndex });
+      return isRegistered;
     });
 
   const blockNumber = decodeGetBlockNumberResponse(getBlockNumberReturndata!);
@@ -148,9 +148,8 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
       // Create a provider and connect it to the AirseekerRegistry contract.
-      const provider = new ethers.providers.StaticJsonRpcProvider({
-        url: providers[providerName]!.url,
-        timeout: RPC_PROVIDER_TIMEOUT_MS,
+      const provider = new ethers.JsonRpcProvider(providers[providerName]!.url, undefined, {
+        staticNetwork: true,
       });
       const airseekerRegistry = getAirseekerRegistry(contracts.AirseekerRegistry, provider);
 
@@ -253,7 +252,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
 export const processBatch = async (
   batch: DecodedActiveDataFeedResponse[],
   providerName: ProviderName,
-  provider: ethers.providers.StaticJsonRpcProvider,
+  provider: ethers.JsonRpcProvider,
   chainId: ChainId,
   blockNumber: number
 ) => {

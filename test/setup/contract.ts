@@ -1,14 +1,13 @@
 import { encode } from '@api3/airnode-abi';
-import {
-  AccessControlRegistry__factory as AccessControlRegistryFactory,
-  type Api3ServerV1,
-  Api3ServerV1__factory as Api3ServerV1Factory,
-} from '@api3/airnode-protocol-v1';
-import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import type { Signer, Wallet } from 'ethers';
+import type { HDNodeWallet, JsonRpcProvider, Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
-import { AirseekerRegistry__factory as AirseekerRegistryFactory } from '../../src/typechain-types';
+import {
+  Api3ServerV1__factory as Api3ServerV1Factory,
+  AccessControlRegistry__factory as AccessControlRegistryFactory,
+  AirseekerRegistry__factory as AirseekerRegistryFactory,
+  type Api3ServerV1,
+} from '../../src/typechain-types';
 import { deriveBeaconId, deriveSponsorWallet, encodeDapiName } from '../../src/utils';
 import { generateTestConfig } from '../fixtures/mock-config';
 import { signData } from '../utils';
@@ -89,37 +88,37 @@ interface RawBeaconData {
 const deriveBeaconData = (beaconData: RawBeaconData) => {
   const { endpoint, templateParameters, airnodeAddress } = beaconData;
 
-  const endpointId = ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(['string', 'string'], [endpoint.oisTitle, endpoint.endpointName])
+  const endpointId = ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(['string', 'string'], [endpoint.oisTitle, endpoint.endpointName])
   );
   const encodedParameters = encode(templateParameters);
-  const templateId = ethers.utils.solidityKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]);
+  const templateId = ethers.solidityPackedKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]);
   const beaconId = deriveBeaconId(airnodeAddress, templateId)!;
 
   return { endpointId, templateId, encodedParameters, beaconId };
 };
 
 export const deriveRootRole = (managerAddress: string) => {
-  return ethers.utils.solidityKeccak256(['address'], [managerAddress]);
+  return ethers.solidityPackedKeccak256(['address'], [managerAddress]);
 };
 
 export const deriveRole = (adminRole: string, roleDescription: string) => {
-  return ethers.utils.solidityKeccak256(
+  return ethers.solidityPackedKeccak256(
     ['bytes32', 'bytes32'],
-    [adminRole, ethers.utils.solidityKeccak256(['string'], [roleDescription])]
+    [adminRole, ethers.solidityPackedKeccak256(['string'], [roleDescription])]
   );
 };
 
 const initializeBeacon = async (
   api3ServerV1: Api3ServerV1,
-  airnodeWallet: Wallet,
-  sponsorWalletMnemonic: SignerWithAddress | Wallet,
+  airnodeWallet: HDNodeWallet,
+  sponsorWalletMnemonic: HDNodeWallet,
   templateId: string,
   apiValue: number
 ) => {
-  const block = await api3ServerV1.provider.getBlock('latest');
-  const dataFeedTimestamp = (block.timestamp + 1).toString();
-  const encodedValue = ethers.utils.defaultAbiCoder.encode(['uint224'], [ethers.BigNumber.from(apiValue)]);
+  const block = await ethers.provider.getBlock('latest');
+  const dataFeedTimestamp = (block!.timestamp + 1).toString();
+  const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['uint224'], [BigInt(apiValue)]);
   const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
 
   await api3ServerV1
@@ -136,21 +135,21 @@ export const deployAndUpdate = async () => {
   const api3ServerV1Factory = new Api3ServerV1Factory(deployerAndManager as Signer);
   const api3ServerV1AdminRoleDescription = 'Api3ServerV1 admin';
   const api3ServerV1 = await api3ServerV1Factory.deploy(
-    accessControlRegistry.address,
+    accessControlRegistry.getAddress(),
     api3ServerV1AdminRoleDescription,
     deployerAndManager!.address
   );
   const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager as Signer);
   const airseekerRegistry = await airseekerRegistryFactory.deploy(
     await (deployerAndManager as Signer).getAddress(),
-    api3ServerV1.address
+    api3ServerV1.getAddress()
   );
 
   // Initialize special wallet for contract initialization
   const airseekerInitializationWallet = ethers.Wallet.createRandom().connect(ethers.provider);
   await walletFunder!.sendTransaction({
     to: airseekerInitializationWallet.address,
-    value: ethers.utils.parseEther('1'),
+    value: ethers.parseEther('1'),
   });
 
   // Create templates
@@ -200,11 +199,11 @@ export const deployAndUpdate = async () => {
     .updateBeaconSetWithBeacons([binanceEthBeacon.beaconId, krakenEthBeacon.beaconId], { gasLimit: 500_000 });
 
   // Derive beacon set IDs
-  const btcBeaconSetId = ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(['bytes32[]'], [[binanceBtcBeacon.beaconId, krakenBtcBeacon.beaconId]])
+  const btcBeaconSetId = ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(['bytes32[]'], [[binanceBtcBeacon.beaconId, krakenBtcBeacon.beaconId]])
   );
-  const ethBeaconSetId = ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(['bytes32[]'], [[binanceEthBeacon.beaconId, krakenEthBeacon.beaconId]])
+  const ethBeaconSetId = ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(['bytes32[]'], [[binanceEthBeacon.beaconId, krakenEthBeacon.beaconId]])
   );
 
   // Set active data feeds and initialize sponsor wallets
@@ -215,7 +214,7 @@ export const deployAndUpdate = async () => {
   const airseekerWallet = ethers.Wallet.createRandom();
   await Promise.all(
     apiTreeValues.map(async ([airnode, url]) => {
-      return airseekerRegistry.connect(deployerAndManager!).setSignedApiUrl(airnode, url);
+      return airseekerRegistry.connect(deployerAndManager).setSignedApiUrl(airnode, url);
     })
   );
   const dapiInfos = [
@@ -235,40 +234,40 @@ export const deployAndUpdate = async () => {
   for (const dapiInfo of dapiInfos) {
     const { airnodes, templateIds, dapiName, beaconSetId } = dapiInfo;
 
-    const encodedBeaconSetData = ethers.utils.defaultAbiCoder.encode(
+    const encodedBeaconSetData = ethers.AbiCoder.defaultAbiCoder().encode(
       ['address[]', 'bytes32[]'],
       [airnodes, templateIds]
     );
-    await airseekerRegistry.connect(randomPerson!).registerDataFeed(encodedBeaconSetData);
+    await airseekerRegistry.connect(randomPerson).registerDataFeed(encodedBeaconSetData);
     const HUNDRED_PERCENT = 1e8;
-    const deviationThresholdInPercentage = ethers.BigNumber.from(HUNDRED_PERCENT / 50); // 2%
-    const deviationReference = ethers.constants.Zero; // Not used in Airseeker V1
-    const heartbeatInterval = ethers.BigNumber.from(86_400); // 24 hrs
+    const deviationThresholdInPercentage = BigInt(HUNDRED_PERCENT / 50); // 2%
+    const deviationReference = 0n; // Not used in Airseeker V2
+    const heartbeatInterval = BigInt(86_400); // 24 hrs
     await airseekerRegistry
-      .connect(deployerAndManager!)
+      .connect(deployerAndManager)
       .setDapiNameUpdateParameters(
         dapiName,
-        ethers.utils.defaultAbiCoder.encode(
+        ethers.AbiCoder.defaultAbiCoder().encode(
           ['uint256', 'uint256', 'uint256'],
           [deviationThresholdInPercentage, deviationReference, heartbeatInterval]
         )
       );
-    await api3ServerV1.connect(deployerAndManager!).setDapiName(dapiName, beaconSetId);
-    await airseekerRegistry.connect(deployerAndManager!).setDapiNameToBeActivated(dapiName);
+    await api3ServerV1.connect(deployerAndManager).setDapiName(dapiName, beaconSetId);
+    await airseekerRegistry.connect(deployerAndManager).setDapiNameToBeActivated(dapiName);
 
     // Initialize sponsor wallets
-    const sponsorWallet = deriveSponsorWallet(airseekerWallet.mnemonic.phrase, dapiName);
+    const sponsorWallet = deriveSponsorWallet(airseekerWallet.mnemonic!.phrase, dapiName);
     await walletFunder!.sendTransaction({
       to: sponsorWallet.address,
-      value: ethers.utils.parseEther('1'),
+      value: ethers.parseEther('1'),
     });
   }
 
   // Set up config
   const config = generateTestConfig();
-  config.sponsorWalletMnemonic = airseekerWallet.mnemonic.phrase;
-  config.chains[31_337]!.contracts.Api3ServerV1 = api3ServerV1.address;
-  config.chains[31_337]!.contracts.AirseekerRegistry = airseekerRegistry.address;
+  config.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
+  config.chains[31_337]!.contracts.Api3ServerV1 = await api3ServerV1.getAddress();
+  config.chains[31_337]!.contracts.AirseekerRegistry = await airseekerRegistry.getAddress();
 
   return {
     accessControlRegistry,
@@ -288,5 +287,7 @@ export const deployAndUpdate = async () => {
 
     airseekerWallet,
     config,
+
+    provider: ethers.provider as unknown as JsonRpcProvider,
   };
 };

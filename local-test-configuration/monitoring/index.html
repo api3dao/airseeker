@@ -18,8 +18,8 @@
     <pre id="activeDataFeeds"></pre>
   </body>
   <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"
-    integrity="sha512-FDcVY+g7vc5CXANbrTSg1K5qLyriCsGDYCE02Li1tXEYdNQPvLPHNE+rT2Mjei8N7fZbe0WLhw27j2SrGRpdMg=="
+    src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.10.0/ethers.umd.min.js"
+    integrity="sha512-O+pv4/QL+b3vRcPZ64zjoh+t6yhvo8L/OgQQuQIUI9GbMC6VwsujvLiUV+aIxlPLSo+SLVgf8orHcb15S5ieiQ=="
     crossorigin="anonymous"
     referrerpolicy="no-referrer"
   ></script>
@@ -190,6 +190,45 @@
       },
       {
         inputs: [],
+        name: 'MAXIMUM_BEACON_COUNT_IN_SET',
+        outputs: [
+          {
+            internalType: 'uint256',
+            name: '',
+            type: 'uint256',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'MAXIMUM_SIGNED_API_URL_LENGTH',
+        outputs: [
+          {
+            internalType: 'uint256',
+            name: '',
+            type: 'uint256',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
+        name: 'MAXIMUM_UPDATE_PARAMETERS_LENGTH',
+        outputs: [
+          {
+            internalType: 'uint256',
+            name: '',
+            type: 'uint256',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [],
         name: 'activeDapiNameCount',
         outputs: [
           {
@@ -235,6 +274,16 @@
             internalType: 'uint32',
             name: 'dataFeedTimestamp',
             type: 'uint32',
+          },
+          {
+            internalType: 'int224[]',
+            name: 'beaconValues',
+            type: 'int224[]',
+          },
+          {
+            internalType: 'uint32[]',
+            name: 'beaconTimestamps',
+            type: 'uint32[]',
           },
           {
             internalType: 'bytes',
@@ -529,7 +578,7 @@
         inputs: [],
         name: 'renounceOwnership',
         outputs: [],
-        stateMutability: 'nonpayable',
+        stateMutability: 'pure',
         type: 'function',
       },
       {
@@ -648,7 +697,7 @@
         ],
         name: 'transferOwnership',
         outputs: [],
-        stateMutability: 'nonpayable',
+        stateMutability: 'pure',
         type: 'function',
       },
       {
@@ -676,7 +725,6 @@
         type: 'function',
       },
     ];
-
     // Configuration
     const urlParams = new URLSearchParams(window.location.search);
     const rpcUrl = urlParams.get('rpcUrl'),
@@ -686,26 +734,34 @@
     if (!airseekerRegistryAddress) throw new Error('airseekerRegistryAddress must be provided as URL parameter');
     if (!airseekerMnemonic) throw new Error('airseekerMnemonic must be provided as URL parameter');
 
+    // See: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-953187833
+    BigInt.prototype.toJSON = function () {
+      return this.toString();
+    };
+
     function deriveBeaconId(airnodeAddress, templateId) {
-      return ethers.utils.solidityKeccak256(['address', 'bytes32'], [airnodeAddress, templateId]);
+      return ethers.solidityPackedKeccak256(['address', 'bytes32'], [airnodeAddress, templateId]);
     }
 
     function deriveBeaconSetId(beaconIds) {
-      return ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['bytes32[]'], [beaconIds]));
+      return ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(['bytes32[]'], [beaconIds]));
     }
 
     const decodeDataFeedDetails = (dataFeed) => {
       if (dataFeed.length === 130) {
         // (64 [actual bytes] * 2[hex encoding] ) + 2 [for the '0x' preamble]
         // This is a hex encoded string, the contract works with bytes directly
-        const [airnodeAddress, templateId] = ethers.utils.defaultAbiCoder.decode(['address', 'bytes32'], dataFeed);
+        const [airnodeAddress, templateId] = ethers.AbiCoder.defaultAbiCoder().decode(['address', 'bytes32'], dataFeed);
 
         const dataFeedId = deriveBeaconId(airnodeAddress, templateId);
 
         return { dataFeedId, beacons: [{ beaconId: dataFeedId, airnodeAddress, templateId }] };
       }
 
-      const [airnodeAddresses, templateIds] = ethers.utils.defaultAbiCoder.decode(['address[]', 'bytes32[]'], dataFeed);
+      const [airnodeAddresses, templateIds] = ethers.AbiCoder.defaultAbiCoder().decode(
+        ['address[]', 'bytes32[]'],
+        dataFeed
+      );
 
       const beacons = airnodeAddresses.map((airnodeAddress, idx) => {
         const templateId = templateIds[idx];
@@ -722,7 +778,7 @@
     const decodeUpdateParameters = (updateParameters) => {
       // https://github.com/api3dao/airnode-protocol-v1/blob/5f861715749e182e334c273d6a52c4f2560c7994/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L122
       const [deviationThresholdInPercentage, deviationReference, heartbeatInterval] =
-        ethers.utils.defaultAbiCoder.decode(['uint256', 'int224', 'uint256'], updateParameters);
+        ethers.AbiCoder.defaultAbiCoder().decode(['uint256', 'int224', 'uint256'], updateParameters);
 
       // 2 characters for the '0x' preamble + 3 parameters, 32 * 2 hexadecimals for 32 bytes each
       if (updateParameters.length !== 2 + 3 * (32 * 2)) {
@@ -741,52 +797,46 @@
       const mid = Math.floor(arr.length / 2);
 
       const nums = [...arr].sort((a, b) => {
-        if (a.lt(b)) return -1;
-        else if (a.gt(b)) return 1;
+        if (a < b) return -1;
+        else if (a > b) return 1;
         else return 0;
       });
 
-      return arr.length % 2 === 0 ? nums[mid - 1].add(nums[mid]).div(2) : nums[mid];
+      return arr.length % 2 === 0 ? (nums[mid - 1] + nums[mid]) / 2n : nums[mid];
     };
 
     const decodeBeaconValue = (encodedBeaconValue) => {
       // Solidity type(int224).min
-      const INT224_MIN = ethers.BigNumber.from(2).pow(ethers.BigNumber.from(223)).mul(ethers.BigNumber.from(-1));
+      const INT224_MIN = 2n ** 223n * -1n;
       // Solidity type(int224).max
-      const INT224_MAX = ethers.BigNumber.from(2).pow(ethers.BigNumber.from(223)).sub(ethers.BigNumber.from(1));
+      const INT224_MAX = 2n ** 223n - 1n;
 
-      const decodedBeaconValue = ethers.BigNumber.from(
-        ethers.utils.defaultAbiCoder.decode(['int256'], encodedBeaconValue)[0]
-      );
-      if (decodedBeaconValue.gt(INT224_MAX) || decodedBeaconValue.lt(INT224_MIN)) {
+      const decodedBeaconValue = BigInt(ethers.AbiCoder.defaultAbiCoder().decode(['int256'], encodedBeaconValue)[0]);
+      if (decodedBeaconValue > INT224_MAX || decodedBeaconValue < INT224_MIN) {
         return null;
       }
 
       return decodedBeaconValue;
     };
 
+    const abs = (n) => (n < 0n ? -n : n);
+
     const calculateUpdateInPercentage = (initialValue, updatedValue) => {
-      const delta = updatedValue.sub(initialValue);
-      const absoluteDelta = delta.abs();
+      const delta = updatedValue - initialValue;
+      const absoluteDelta = abs(delta);
 
       // Avoid division by 0
-      const absoluteInitialValue = initialValue.isZero() ? ethers.BigNumber.from(1) : initialValue.abs();
+      const absoluteInitialValue = initialValue === 0n ? 1n : abs(initialValue);
 
-      return absoluteDelta.mul(ethers.BigNumber.from(1e8)).div(absoluteInitialValue);
-    };
-
-    const checkDeviationThresholdExceeded = (onChainValue, deviationThreshold, apiValue) => {
-      const updateInPercentage = calculateUpdateInPercentage(onChainValue, apiValue);
-
-      return updateInPercentage.gt(deviationThreshold);
+      return (absoluteDelta * BigInt(1e8)) / absoluteInitialValue;
     };
 
     function deriveWalletPathFromSponsorAddress(sponsorAddress) {
-      const sponsorAddressBN = ethers.BigNumber.from(sponsorAddress);
+      const sponsorAddressBN = BigInt(sponsorAddress);
       const paths = [];
       for (let i = 0; i < 6; i++) {
-        const shiftedSponsorAddressBN = sponsorAddressBN.shr(31 * i);
-        paths.push(shiftedSponsorAddressBN.mask(31).toString());
+        const shiftedSponsorAddressBN = sponsorAddressBN >> BigInt(31 * i);
+        paths.push((shiftedSponsorAddressBN % 2n ** 31n).toString());
       }
       const AIRSEEKER_PROTOCOL_ID = '5'; // From: https://github.com/api3dao/airnode/blob/ef16c54f33d455a1794e7886242567fc47ee14ef/packages/airnode-protocol/src/index.ts#L46
       return `${AIRSEEKER_PROTOCOL_ID}/${paths.join('/')}`;
@@ -795,12 +845,15 @@
     const deriveSponsorWallet = (sponsorWalletMnemonic, dapiNameOrDataFeedId) => {
       // Hash the dAPI name or data feed ID because we need to take the first 20 bytes of it which could result in
       // collisions for dAPIs with the same prefix.
-      const hashedDapiNameOrDataFeedId = ethers.utils.keccak256(dapiNameOrDataFeedId);
+      const hashedDapiNameOrDataFeedId = ethers.keccak256(dapiNameOrDataFeedId);
 
       // Take first 20 bytes of the hashed dapiName or data feed ID as sponsor address together with the "0x" prefix.
-      const sponsorAddress = ethers.utils.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));
-      const sponsorWallet = ethers.Wallet.fromMnemonic(
+      const sponsorAddress = ethers.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));
+      // NOTE: Be sure not to use "ethers.Wallet.fromPhrase(sponsorWalletMnemonic).derivePath" because that produces a
+      // different result.
+      const sponsorWallet = ethers.HDNodeWallet.fromPhrase(
         sponsorWalletMnemonic,
+        undefined,
         `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
       );
 
@@ -808,7 +861,7 @@
     };
 
     setInterval(async () => {
-      const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+      const provider = new ethers.JsonRpcProvider(rpcUrl);
       const airseekerRegistry = new ethers.Contract(airseekerRegistryAddress, airseekerRegistryAbi, provider);
       const activeDataFeedCount = await airseekerRegistry.activeDataFeedCount();
 
@@ -851,20 +904,16 @@
         }
         console.info('Signed datas', signedDatas); // For debugging purposes.
 
-        const newBeaconSetValue = calculateMedian(
-          signedDatas.map((signedData) => ethers.BigNumber.from(signedData.value))
-        );
-        const newBeaconSetTimestamp = calculateMedian(
-          signedDatas.map((signedData) => ethers.BigNumber.from(signedData.timestamp))
-        ).toNumber();
+        const newBeaconSetValue = calculateMedian(signedDatas.map((signedData) => BigInt(signedData.value)));
+        const newBeaconSetTimestamp = calculateMedian(signedDatas.map((signedData) => BigInt(signedData.timestamp)));
 
-        const deviationPercentage = calculateUpdateInPercentage(dataFeedValue, newBeaconSetValue).toNumber() / 1e6;
-        const deviationThresholdPercentage = deviationThresholdInPercentage.toNumber() / 1e6;
+        const deviationPercentage = Number(calculateUpdateInPercentage(dataFeedValue, newBeaconSetValue)) / 1e6;
+        const deviationThresholdPercentage = Number(deviationThresholdInPercentage) / 1e6;
         const sponsorWallet = deriveSponsorWallet(airseekerMnemonic, dapiName ?? dataFeed.decodedDataFeed.dataFeedId);
         const dataFeedInfo = {
           dapiName: dapiName,
           dataFeedId: dataFeed.decodedDataFeed.dataFeedId,
-          decodedDapiName: ethers.utils.parseBytes32String(dapiName),
+          decodedDapiName: ethers.decodeBytes32String(dapiName),
           dataFeedValue: dataFeed.dataFeedValue,
           offChainValue: {
             value: newBeaconSetValue.toString(),
@@ -874,7 +923,7 @@
             deviationPercentage > deviationThresholdPercentage ? `<b>${deviationPercentage}</b>` : deviationPercentage,
           deviationThresholdPercentage: deviationThresholdPercentage,
           sponsorWalletAddress: sponsorWallet.address,
-          sponsorWalletBalance: ethers.utils.formatEther(await provider.getBalance(sponsorWallet.address)),
+          sponsorWalletBalance: ethers.formatEther(await provider.getBalance(sponsorWallet.address)),
         };
 
         newActiveDataFeedsHtml += JSON.stringify(dataFeedInfo, null, 2) + '\n\n';

@@ -16,8 +16,8 @@ import {
 } from './contracts';
 
 interface BeaconValue {
-  timestamp: ethers.BigNumber;
-  value: ethers.BigNumber;
+  timestamp: bigint;
+  value: bigint;
 }
 
 export interface UpdatableBeacon {
@@ -33,7 +33,7 @@ export interface UpdatableDataFeed {
 export const getUpdatableFeeds = async (
   batch: DecodedActiveDataFeedResponse[],
   deviationThresholdCoefficient: number,
-  provider: ethers.providers.StaticJsonRpcProvider,
+  provider: ethers.JsonRpcProvider,
   chainId: ChainId
 ): Promise<UpdatableDataFeed[]> => {
   const uniqueBeaconIds = [
@@ -63,11 +63,11 @@ export const getUpdatableFeeds = async (
           const signedData = getSignedData(beaconId);
           const offChainValue: BeaconValue | undefined = signedData
             ? {
-                timestamp: ethers.BigNumber.from(signedData.timestamp),
+                timestamp: BigInt(signedData.timestamp),
                 value: decodeBeaconValue(signedData.encodedValue)!,
               }
             : undefined;
-          const isUpdatable = offChainValue?.timestamp.gt(onChainValue.timestamp);
+          const isUpdatable = offChainValue && offChainValue?.timestamp > onChainValue.timestamp;
 
           return { onChainValue, offChainValue, isUpdatable, signedData, beaconId };
         });
@@ -84,7 +84,7 @@ export const getUpdatableFeeds = async (
         );
 
         const newBeaconSetValue = calculateMedian(beaconValues.map(({ value }) => value));
-        const newBeaconSetTimestamp = calculateMedian(beaconValues.map(({ timestamp }) => timestamp))!.toNumber();
+        const newBeaconSetTimestamp = calculateMedian(beaconValues.map(({ timestamp }) => timestamp));
 
         const { decodedUpdateParameters, dataFeedValue, dataFeedTimestamp } = dataFeedInfo;
         const adjustedDeviationThresholdCoefficient = multiplyBigNumber(
@@ -116,7 +116,7 @@ export const getUpdatableFeeds = async (
 
 export const multicallBeaconValues = async (
   batch: BeaconId[],
-  provider: ethers.providers.StaticJsonRpcProvider,
+  provider: ethers.JsonRpcProvider,
   chainId: ChainId
 ): Promise<Record<BeaconId, BeaconValue> | null> => {
   const { config } = getState();
@@ -126,11 +126,11 @@ export const multicallBeaconValues = async (
   // Calling the dataFeeds contract function is guaranteed not to revert, so we are not checking the multicall successes
   // and using returndata directly. If the call fails (e.g. timeout or RPC error) we let the parent handle it.
   const api3ServerV1 = getApi3ServerV1(contracts.Api3ServerV1, provider);
-  const voidSigner = new ethers.VoidSigner(ethers.constants.AddressZero, provider);
+  const voidSigner = new ethers.VoidSigner(ethers.ZeroAddress, provider);
   const returndatas = verifyMulticallResponse(
     await api3ServerV1
       .connect(voidSigner)
-      .callStatic.tryMulticall([
+      .tryMulticall.staticCall([
         api3ServerV1.interface.encodeFunctionData('getChainId'),
         ...batch.map((beaconId) => api3ServerV1.interface.encodeFunctionData('dataFeeds', [beaconId])),
       ])
@@ -145,8 +145,11 @@ export const multicallBeaconValues = async (
 
   const onChainValues: Record<BeaconId, BeaconValue> = {};
   for (const [idx, beaconId] of batch.entries()) {
-    const [value, timestamp] = ethers.utils.defaultAbiCoder.decode(['int224', 'uint32'], dataFeedsReturndata[idx]!);
-    onChainValues[beaconId] = { timestamp: ethers.BigNumber.from(timestamp), value: ethers.BigNumber.from(value) };
+    const [value, timestamp] = ethers.AbiCoder.defaultAbiCoder().decode(
+      ['int224', 'uint32'],
+      dataFeedsReturndata[idx]!
+    );
+    onChainValues[beaconId] = { timestamp: BigInt(timestamp), value: BigInt(value) };
   }
   return onChainValues;
 };

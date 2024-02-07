@@ -1,5 +1,5 @@
 import { goSync } from '@api3/promise-utils';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
@@ -9,11 +9,11 @@ import { deriveBeaconId } from '../utils';
 export const verifySignedData = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
   // Verification is wrapped in goSync, because ethers methods can potentially throw on invalid input.
   const goVerify = goSync(() => {
-    const message = ethers.utils.arrayify(
-      ethers.utils.solidityKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, encodedValue])
+    const message = ethers.getBytes(
+      ethers.solidityPackedKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, encodedValue])
     );
 
-    const signerAddr = ethers.utils.verifyMessage(message, signature);
+    const signerAddr = ethers.verifyMessage(message, signature);
     if (signerAddr !== airnode) throw new Error('Signer address does not match');
   });
 
@@ -95,7 +95,7 @@ export const saveSignedData = (signedData: SignedData) => {
 export const getSignedData = (dataFeedId: BeaconId) => getState().signedDatas[dataFeedId];
 
 export const isSignedDataFresh = (signedData: SignedData) =>
-  BigNumber.from(signedData.timestamp).gt(Math.ceil(Date.now() / 1000 - 24 * 60 * 60));
+  BigInt(signedData.timestamp) > BigInt(Math.ceil(Date.now() / 1000 - 24 * 60 * 60));
 
 export const purgeOldSignedData = () => {
   const state = getState();

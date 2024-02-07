@@ -21,7 +21,7 @@ export const initializeGasState = (chainId: string, providerName: string) =>
  * @param providerName
  * @param gasPrice
  */
-export const saveGasPrice = (chainId: string, providerName: string, gasPrice: ethers.BigNumber) =>
+export const saveGasPrice = (chainId: string, providerName: string, gasPrice: bigint) =>
   updateState((draft) => {
     draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({
       price: gasPrice,
@@ -76,10 +76,10 @@ export const clearSponsorLastUpdateTimestamp = (chainId: string, providerName: s
     }
   });
 
-export const getPercentile = (percentile: number, array: ethers.BigNumber[]) => {
+export const getPercentile = (percentile: number, array: bigint[]) => {
   if (array.length === 0) return;
 
-  array.sort((a, b) => (a.gt(b) ? 1 : -1));
+  array.sort((a, b) => (a > b ? 1 : -1));
   const index = Math.max(0, Math.ceil(array.length * (percentile / 100)) - 1);
   return array[index];
 };
@@ -113,7 +113,7 @@ export const calculateScalingMultiplier = (
 export const getRecommendedGasPrice = async (
   chainId: string,
   providerName: string,
-  provider: ethers.providers.StaticJsonRpcProvider,
+  provider: ethers.JsonRpcProvider,
   sponsorWalletAddress: string
 ) => {
   const state = getState();
@@ -131,7 +131,12 @@ export const getRecommendedGasPrice = async (
 
   // Get the provider recommended gas price and save it to the state
   logger.debug('Fetching gas price and saving it to the state.');
-  const goGasPrice = await go(async () => provider.getGasPrice());
+  const goGasPrice = await go(async () => {
+    const feeData = await provider.getFeeData();
+    // We assume the legacy gas price will always exist. See:
+    // https://api3workspace.slack.com/archives/C05TQPT7PNJ/p1699098552350519
+    return feeData.gasPrice;
+  });
   let gasPrice = goGasPrice.data;
   if (!goGasPrice.success) logger.error('Failed to fetch gas price from RPC provider.', goGasPrice.error);
   if (gasPrice) saveGasPrice(chainId, providerName, gasPrice);
@@ -186,7 +191,7 @@ export const getRecommendedGasPrice = async (
   }
 
   // Log a warning if there is not enough historical data to sanitize the gas price but the price could be sanitized
-  if (!hasSufficientSanitizationData && gasPrice.gt(percentileGasPrice)) {
+  if (!hasSufficientSanitizationData && gasPrice > percentileGasPrice) {
     logger.warn('Gas price could be sanitized but there is not enough historical data.', {
       gasPrice: gasPrice.toString(),
       percentileGasPrice: percentileGasPrice.toString(),
@@ -194,7 +199,7 @@ export const getRecommendedGasPrice = async (
   }
 
   // If necessary, sanitize the gas price and log a warning because this should not happen under normal circumstances
-  if (hasSufficientSanitizationData && gasPrice.gt(percentileGasPrice)) {
+  if (hasSufficientSanitizationData && gasPrice > percentileGasPrice) {
     logger.warn('Sanitizing gas price.', {
       gasPrice: gasPrice.toString(),
       percentileGasPrice: percentileGasPrice.toString(),

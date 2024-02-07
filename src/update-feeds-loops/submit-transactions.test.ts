@@ -1,4 +1,3 @@
-import type { Api3ServerV1 } from '@api3/airnode-protocol-v1';
 import { ethers } from 'ethers';
 
 import { generateMockApi3ServerV1 } from '../../test/fixtures/mock-contract';
@@ -6,6 +5,7 @@ import { allowPartial } from '../../test/utils';
 import * as gasPriceModule from '../gas-price';
 import { logger } from '../logger';
 import * as stateModule from '../state';
+import type { Api3ServerV1 } from '../typechain-types';
 import * as utilsModule from '../utils';
 
 import type { UpdatableDataFeed } from './get-updatable-feeds';
@@ -14,7 +14,7 @@ import * as submitTransactionsModule from './submit-transactions';
 describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
   it('estimates the gas limit for a multicall', async () => {
     const mockApi3ServerV1 = generateMockApi3ServerV1();
-    mockApi3ServerV1.estimateGas.multicall.mockResolvedValueOnce(ethers.BigNumber.from(500_000));
+    mockApi3ServerV1.multicall.estimateGas.mockResolvedValueOnce(BigInt(500_000));
 
     const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
       mockApi3ServerV1 as unknown as Api3ServerV1,
@@ -22,12 +22,12 @@ describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
       undefined
     );
 
-    expect(gasLimit).toStrictEqual(ethers.BigNumber.from(550_000)); // Note that the gas limit is increased by 10%.
+    expect(gasLimit).toStrictEqual(BigInt(550_000)); // Note that the gas limit is increased by 10%.
   });
 
   it('uses fallback gas limit when dummy data estimation fails', async () => {
     const mockApi3ServerV1 = generateMockApi3ServerV1();
-    mockApi3ServerV1.estimateGas.multicall.mockRejectedValue(new Error('some-error'));
+    mockApi3ServerV1.multicall.estimateGas.mockRejectedValue(new Error('some-error'));
 
     const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
       mockApi3ServerV1 as unknown as Api3ServerV1,
@@ -35,12 +35,12 @@ describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
       2_000_000
     );
 
-    expect(gasLimit).toStrictEqual(ethers.BigNumber.from(2_000_000));
+    expect(gasLimit).toStrictEqual(BigInt(2_000_000));
   });
 
   it('throws an error if no fallback is provided', async () => {
     const mockApi3ServerV1 = generateMockApi3ServerV1();
-    mockApi3ServerV1.estimateGas.multicall.mockRejectedValue(new Error('some-error'));
+    mockApi3ServerV1.multicall.estimateGas.mockRejectedValue(new Error('some-error'));
 
     await expect(async () =>
       submitTransactionsModule.estimateMulticallGasLimit(
@@ -300,7 +300,7 @@ describe(submitTransactionsModule.submitTransactions.name, () => {
     await submitTransactionsModule.submitTransactions(
       '31337',
       'evm-local',
-      new ethers.providers.StaticJsonRpcProvider(),
+      new ethers.JsonRpcProvider(),
       generateMockApi3ServerV1() as unknown as Api3ServerV1,
       [
         allowPartial<UpdatableDataFeed>({
@@ -324,12 +324,11 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     jest.spyOn(submitTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'info');
-    jest.spyOn(submitTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(ethers.BigNumber.from(500_000));
-    jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockResolvedValue(ethers.BigNumber.from(100_000_000));
+    jest.spyOn(submitTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
+    jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockResolvedValue(BigInt(100_000_000));
     jest.spyOn(submitTransactionsModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
-    jest.spyOn(api3ServerV1, 'tryMulticall');
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: {
@@ -346,7 +345,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     jest.spyOn(stateModule, 'updateState').mockImplementation();
     const provider = {
       getTransactionCount: jest.fn().mockResolvedValue(0),
-    } as unknown as ethers.providers.StaticJsonRpcProvider;
+    } as unknown as ethers.JsonRpcProvider;
 
     await submitTransactionsModule.submitTransaction(
       '31337',

@@ -7,7 +7,7 @@
       "enabled": false
     },
     {
-      "matchPackageNames": ["ethers", "@openzeppelin/contracts", "@nomicfoundation/hardhat-toolbox"],
+      "matchPackageNames": ["@openzeppelin/contracts"],
       "matchUpdateTypes": ["major"],
       "enabled": false
     },

@@ -1,3 +1,5 @@
+import { ethers } from 'hardhat';
+
 import { deriveSponsorWallet, deriveWalletPathFromSponsorAddress, encodeDapiName } from './utils';
 
 describe(deriveSponsorWallet.name, () => {
@@ -31,4 +33,12 @@ describe(deriveWalletPathFromSponsorAddress.name, () => {
       '5/864606635/1454490430/408540531/1314086239/1832346371/16'
     );
   });
+});
+
+test('ethers compatibility for Wallet.fromMnemonic', () => {
+  const wallet = ethers.Wallet.fromPhrase(
+    'arrange actress together floor menu parade dawn abandon say swear excess museum'
+  );
+
+  expect(wallet.address).toBe('0xE1f7E4662F92e5DaDB9529Efb2EE61ec63b028e3');
 });

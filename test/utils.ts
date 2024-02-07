@@ -1,15 +1,15 @@
-import { type Wallet, ethers } from 'ethers';
+import { randomBytes } from 'node:crypto';
+
+import { ethers, type HDNodeWallet } from 'ethers';
 
 import type { SignedData, Beacon } from '../src/types';
 
 export const signData = async (signer: ethers.Signer, templateId: string, timestamp: string, data: string) =>
   signer.signMessage(
-    ethers.utils.arrayify(
-      ethers.utils.solidityKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, data])
-    )
+    ethers.getBytes(ethers.solidityPackedKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, data]))
   );
 
-export const generateRandomBytes32 = () => ethers.utils.hexlify(ethers.utils.randomBytes(32));
+export const generateRandomBytes = (length: number) => `0x${randomBytes(length).toString('hex')}`;
 
 export type DeepPartial<T> = T extends object
   ? {
@@ -24,21 +24,21 @@ export type DeepPartial<T> = T extends object
 export const allowPartial = <T = unknown>(obj: DeepPartial<T>): T => obj as T;
 
 export const encodeBeaconDetails = (dataFeed: Beacon) =>
-  ethers.utils.defaultAbiCoder.encode(['address', 'bytes32'], [dataFeed.airnodeAddress, dataFeed.templateId]);
+  ethers.AbiCoder.defaultAbiCoder().encode(['address', 'bytes32'], [dataFeed.airnodeAddress, dataFeed.templateId]);
 
 export const encodeBeaconSetDetails = (dataFeed: Beacon[]) =>
-  ethers.utils.defaultAbiCoder.encode(
+  ethers.AbiCoder.defaultAbiCoder().encode(
     ['address[]', 'bytes32[]'],
     [dataFeed.map((item) => item.airnodeAddress), dataFeed.map((item) => item.templateId)]
   );
 
 export const generateSignedData = async (
-  airnodeWallet: Wallet,
+  airnodeWallet: HDNodeWallet,
   templateId: string,
   dataFeedTimestamp: string,
-  apiValue = ethers.BigNumber.from(ethers.utils.randomBytes(Math.floor(Math.random() * 27) + 1)) // Fits into uint224.
+  apiValue = BigInt(generateRandomBytes(Math.floor(Math.random() * 27) + 1)) // Fits into uint224.
 ): Promise<SignedData> => {
-  const encodedValue = ethers.utils.defaultAbiCoder.encode(['uint224'], [ethers.BigNumber.from(apiValue)]);
+  const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['uint224'], [BigInt(apiValue)]);
   const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
 
   return { airnode: airnodeWallet.address, templateId, timestamp: dataFeedTimestamp, encodedValue, signature };
