@@ -7,7 +7,7 @@ export const calculateDeviationPercentage = (initialValue: bigint, updatedValue:
   const absoluteDelta = abs(delta);
 
   // Avoid division by 0
-  const absoluteInitialValue = initialValue === 0n ? BigInt(1) : abs(initialValue);
+  const absoluteInitialValue = initialValue === 0n ? 1n : abs(initialValue);
 
   return (absoluteDelta * BigInt(HUNDRED_PERCENT)) / absoluteInitialValue;
 };

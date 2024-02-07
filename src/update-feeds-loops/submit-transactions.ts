@@ -163,7 +163,7 @@ export const estimateMulticallGasLimit = async (
   const goEstimateGas = await go(async () => api3ServerV1.multicall.estimateGas(calldatas));
   if (goEstimateGas.success) {
     // Adding a extra 10% because multicall consumes less gas than tryMulticall
-    return (goEstimateGas.data * BigInt(Math.round(1.1 * 100))) / BigInt(100);
+    return (goEstimateGas.data * BigInt(Math.round(1.1 * 100))) / 100n;
   }
   logger.warn(`Unable to estimate gas for multicall using provider.`, goEstimateGas.error);
 

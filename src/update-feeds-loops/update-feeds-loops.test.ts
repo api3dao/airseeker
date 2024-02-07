@@ -193,11 +193,11 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
     airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
-    const blockNumber = BigInt(123);
+    const blockNumber = 123n;
     const chainId = BigInt(31_337);
     airseekerRegistry.tryMulticall.staticCall.mockResolvedValueOnce({
       successes: [true, true, true, true],
-      returndata: [BigInt(3), blockNumber, chainId, firstDataFeed],
+      returndata: [3n, blockNumber, chainId, firstDataFeed],
     });
     airseekerRegistry.tryMulticall.staticCall.mockResolvedValueOnce({
       successes: [true, true, false],
@@ -307,11 +307,11 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
     airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
-    const blockNumber = BigInt(123);
+    const blockNumber = 123n;
     const chainId = BigInt(31_337);
     airseekerRegistry.tryMulticall.staticCall.mockResolvedValueOnce({
       successes: [true, true, true, true],
-      returndata: [BigInt(1), blockNumber, chainId, dataFeed],
+      returndata: [1n, blockNumber, chainId, dataFeed],
     });
     const testConfig = generateTestConfig();
     jest.spyOn(stateModule, 'getState').mockReturnValue(
@@ -394,15 +394,15 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     jest.spyOn(logger, 'info');
     jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
-        timestamp: BigInt(150),
+        timestamp: 150n,
         value: BigInt('400'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: BigInt(160),
+        timestamp: 160n,
         value: BigInt('500'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
-        timestamp: BigInt(170),
+        timestamp: 170n,
         value: BigInt('600'),
       },
     });

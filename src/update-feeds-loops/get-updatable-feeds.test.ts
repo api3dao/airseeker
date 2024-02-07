@@ -73,16 +73,16 @@ describe(multicallBeaconValues.name, () => {
 
     expect(callAndParseMulticallPromise).toStrictEqual({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
-        timestamp: BigInt(105),
-        value: BigInt(100),
+        timestamp: 105n,
+        value: 100n,
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: BigInt(106),
-        value: BigInt(101),
+        timestamp: 106n,
+        value: 101n,
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
-        timestamp: BigInt(107),
-        value: BigInt(102),
+        timestamp: 107n,
+        value: 102n,
       },
     });
     expect(tryMulticallMock).toHaveBeenCalledWith(['0xChain', '0xFirst', '0xSecond', '0xThird']);
@@ -126,15 +126,15 @@ describe(getUpdatableFeeds.name, () => {
     // None of the feeds failed to update
     jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
-        timestamp: BigInt(150),
+        timestamp: 150n,
         value: BigInt('400'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: BigInt(160),
+        timestamp: 160n,
         value: BigInt('500'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
-        timestamp: BigInt(170),
+        timestamp: 170n,
         value: BigInt('600'),
       },
     });
@@ -143,10 +143,10 @@ describe(getUpdatableFeeds.name, () => {
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
         decodedUpdateParameters: {
-          deviationThresholdInPercentage: BigInt(1),
-          heartbeatInterval: BigInt(100),
+          deviationThresholdInPercentage: 1n,
+          heartbeatInterval: 100n,
         },
-        dataFeedValue: BigInt(10),
+        dataFeedValue: 10n,
         dataFeedTimestamp: 95n,
         decodedDataFeed: {
           dataFeedId: '0x000',
@@ -189,8 +189,8 @@ describe(getUpdatableFeeds.name, () => {
             dataFeedId: '0x000',
           },
           decodedUpdateParameters: {
-            deviationThresholdInPercentage: BigInt(1),
-            heartbeatInterval: BigInt(100),
+            deviationThresholdInPercentage: 1n,
+            heartbeatInterval: 100n,
           },
         },
       },
@@ -222,15 +222,15 @@ describe(getUpdatableFeeds.name, () => {
     // None of the feeds failed to update
     jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
-        timestamp: BigInt(150),
+        timestamp: 150n,
         value: BigInt('400'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: BigInt(160),
+        timestamp: 160n,
         value: BigInt('400'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
-        timestamp: BigInt(170),
+        timestamp: 170n,
         value: BigInt('400'),
       },
     });
@@ -239,10 +239,10 @@ describe(getUpdatableFeeds.name, () => {
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
         decodedUpdateParameters: {
-          deviationThresholdInPercentage: BigInt(1),
-          heartbeatInterval: BigInt(1),
+          deviationThresholdInPercentage: 1n,
+          heartbeatInterval: 1n,
         },
-        dataFeedValue: BigInt(400),
+        dataFeedValue: 400n,
         dataFeedTimestamp: 90n,
         decodedDataFeed: {
           dataFeedId: '0x000',
@@ -285,8 +285,8 @@ describe(getUpdatableFeeds.name, () => {
             dataFeedId: '0x000',
           },
           decodedUpdateParameters: {
-            deviationThresholdInPercentage: BigInt(1),
-            heartbeatInterval: BigInt(1),
+            deviationThresholdInPercentage: 1n,
+            heartbeatInterval: 1n,
           },
         },
       },
@@ -319,10 +319,10 @@ describe(getUpdatableFeeds.name, () => {
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
         decodedUpdateParameters: {
-          deviationThresholdInPercentage: BigInt(1),
-          heartbeatInterval: BigInt(100),
+          deviationThresholdInPercentage: 1n,
+          heartbeatInterval: 100n,
         },
-        dataFeedValue: BigInt(200),
+        dataFeedValue: 200n,
         dataFeedTimestamp: 160n,
         decodedDataFeed: {
           dataFeedId: '0x000',
@@ -335,15 +335,15 @@ describe(getUpdatableFeeds.name, () => {
     // Ensure on-chain values don't trigger an update
     jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
-        timestamp: BigInt(150),
+        timestamp: 150n,
         value: BigInt('200'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: BigInt(155),
+        timestamp: 155n,
         value: BigInt('200'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
-        timestamp: BigInt(170),
+        timestamp: 170n,
         value: BigInt('200'),
       },
     });
@@ -380,15 +380,15 @@ describe(getUpdatableFeeds.name, () => {
     // None of the feeds failed to update
     jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
-        timestamp: BigInt(150),
+        timestamp: 150n,
         value: BigInt('400'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: BigInt(160),
+        timestamp: 160n,
         value: BigInt('400'),
       },
       '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
-        timestamp: BigInt(170),
+        timestamp: 170n,
         value: BigInt('400'),
       },
     });
@@ -397,10 +397,10 @@ describe(getUpdatableFeeds.name, () => {
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
         decodedUpdateParameters: {
-          deviationThresholdInPercentage: BigInt(1),
-          heartbeatInterval: BigInt(100),
+          deviationThresholdInPercentage: 1n,
+          heartbeatInterval: 100n,
         },
-        dataFeedValue: BigInt(400),
+        dataFeedValue: 400n,
         dataFeedTimestamp: 140n,
         decodedDataFeed: {
           dataFeedId: '0x000',
@@ -421,10 +421,10 @@ describe(getUpdatableFeeds.name, () => {
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
         decodedUpdateParameters: {
-          deviationThresholdInPercentage: BigInt(1),
-          heartbeatInterval: BigInt(100),
+          deviationThresholdInPercentage: 1n,
+          heartbeatInterval: 100n,
         },
-        dataFeedValue: BigInt(10),
+        dataFeedValue: 10n,
         dataFeedTimestamp: 95n,
         decodedDataFeed: {
           dataFeedId: '0x000',

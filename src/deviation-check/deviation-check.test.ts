@@ -8,40 +8,38 @@ import {
   isDataFeedUpdatable,
 } from './deviation-check';
 
-const getDeviationThresholdAsBigInt = (input: number) => BigInt(Math.trunc(input * HUNDRED_PERCENT)) / BigInt(100);
+const getDeviationThresholdAsBigInt = (input: number) => BigInt(Math.trunc(input * HUNDRED_PERCENT)) / 100n;
 
 describe(isDeviationThresholdExceeded.name, () => {
-  const onChainValue = BigInt(500);
+  const onChainValue = 500n;
 
   it('returns true when api value is higher and deviation threshold is reached', () => {
-    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigInt(10), BigInt(560));
+    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigInt(10), 560n);
 
     expect(shouldUpdate).toBe(true);
   });
 
   it('returns true when api value is lower and deviation threshold is reached', () => {
-    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigInt(10), BigInt(440));
+    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigInt(10), 440n);
 
     expect(shouldUpdate).toBe(true);
   });
 
   it('returns false when deviation threshold is not reached', () => {
-    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigInt(10), BigInt(480));
+    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigInt(10), 480n);
 
     expect(shouldUpdate).toBe(false);
   });
 
   it('handles correctly bad JS math', () => {
-    expect(() =>
-      isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigInt(0.14), BigInt(560))
-    ).not.toThrow();
+    expect(() => isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigInt(0.14), 560n)).not.toThrow();
   });
 
   it('checks all update conditions | heartbeat exceeded', () => {
     const result = isDataFeedUpdatable(
-      BigInt(10),
+      10n,
       BigInt(Math.floor(Date.now() / 1000) - 60 * 60 * 24),
-      BigInt(10),
+      10n,
       BigInt(Math.floor(Date.now() / 1000)),
       BigInt(60 * 60 * 23),
       getDeviationThresholdAsBigInt(2)
@@ -52,9 +50,9 @@ describe(isDeviationThresholdExceeded.name, () => {
 
   it('checks all update conditions | no update', () => {
     const result = isDataFeedUpdatable(
-      BigInt(10),
+      10n,
       BigInt(Math.floor(Date.now() / 1000)),
-      BigInt(10),
+      10n,
       BigInt(Date.now() + 60 * 60 * 23),
       BigInt(60 * 60 * 24),
       getDeviationThresholdAsBigInt(2)
@@ -66,13 +64,13 @@ describe(isDeviationThresholdExceeded.name, () => {
 
 describe(isOnChainDataFresh.name, () => {
   it('returns true if on chain data timestamp is newer than heartbeat interval', () => {
-    const isFresh = isOnChainDataFresh(BigInt(Math.floor(Date.now() / 1000) - 100), BigInt(200));
+    const isFresh = isOnChainDataFresh(BigInt(Math.floor(Date.now() / 1000) - 100), 200n);
 
     expect(isFresh).toBe(true);
   });
 
   it('returns false if on chain data timestamp is older than heartbeat interval', () => {
-    const isFresh = isOnChainDataFresh(BigInt(Math.floor(Date.now() / 1000) - 300), BigInt(200));
+    const isFresh = isOnChainDataFresh(BigInt(Math.floor(Date.now() / 1000) - 300), 200n);
 
     expect(isFresh).toBe(false);
   });
@@ -80,42 +78,42 @@ describe(isOnChainDataFresh.name, () => {
 
 describe(calculateDeviationPercentage.name, () => {
   it('calculates zero change', () => {
-    const updateInPercentage = calculateDeviationPercentage(BigInt(10), BigInt(10));
+    const updateInPercentage = calculateDeviationPercentage(10n, 10n);
     expect(updateInPercentage).toStrictEqual(BigInt(0 * HUNDRED_PERCENT));
   });
 
   it('calculates 100 percent change', () => {
-    const updateInPercentage = calculateDeviationPercentage(BigInt(10), BigInt(20));
+    const updateInPercentage = calculateDeviationPercentage(10n, 20n);
     expect(updateInPercentage).toStrictEqual(BigInt(1 * HUNDRED_PERCENT));
   });
 
   it('calculates positive to negative change', () => {
-    const updateInPercentage = calculateDeviationPercentage(BigInt(10), BigInt(-5));
+    const updateInPercentage = calculateDeviationPercentage(10n, BigInt(-5));
     expect(updateInPercentage).toStrictEqual(BigInt(1.5 * HUNDRED_PERCENT));
   });
 
   it('calculates negative to positive change', () => {
-    const updateInPercentage = calculateDeviationPercentage(BigInt(-5), BigInt(5));
+    const updateInPercentage = calculateDeviationPercentage(BigInt(-5), 5n);
     expect(updateInPercentage).toStrictEqual(BigInt(2 * HUNDRED_PERCENT));
   });
 
   it('calculates initial zero to positive change', () => {
-    const updateInPercentage = calculateDeviationPercentage(BigInt(0), BigInt(5));
+    const updateInPercentage = calculateDeviationPercentage(0n, 5n);
     expect(updateInPercentage).toStrictEqual(BigInt(5 * HUNDRED_PERCENT));
   });
 
   it('calculates initial zero to negative change', () => {
-    const updateInPercentage = calculateDeviationPercentage(BigInt(0), BigInt(-5));
+    const updateInPercentage = calculateDeviationPercentage(0n, BigInt(-5));
     expect(updateInPercentage).toStrictEqual(BigInt(5 * HUNDRED_PERCENT));
   });
 
   it('calculates initial positive to zero change', () => {
-    const updateInPercentage = calculateDeviationPercentage(BigInt(5), BigInt(0));
+    const updateInPercentage = calculateDeviationPercentage(5n, 0n);
     expect(updateInPercentage).toStrictEqual(BigInt(1 * HUNDRED_PERCENT));
   });
 
   it('calculates initial negative to zero change', () => {
-    const updateInPercentage = calculateDeviationPercentage(BigInt(-5), BigInt(0));
+    const updateInPercentage = calculateDeviationPercentage(BigInt(-5), 0n);
     expect(updateInPercentage).toStrictEqual(BigInt(1 * HUNDRED_PERCENT));
   });
 
@@ -128,25 +126,25 @@ describe(calculateDeviationPercentage.name, () => {
 describe(calculateMedian.name, () => {
   describe('for array with odd number of elements', () => {
     it('calculates median for sorted array', () => {
-      const arr = [BigInt(10), BigInt(11), BigInt(24), BigInt(30), BigInt(47)];
-      expect(calculateMedian(arr)).toStrictEqual(BigInt(24));
+      const arr = [10n, 11n, 24n, 30n, 47n];
+      expect(calculateMedian(arr)).toBe(24n);
     });
 
     it('calculates median for unsorted array', () => {
-      const arr = [BigInt(24), BigInt(11), BigInt(10), BigInt(47), BigInt(30)];
-      expect(calculateMedian(arr)).toStrictEqual(BigInt(24));
+      const arr = [24n, 11n, 10n, 47n, 30n];
+      expect(calculateMedian(arr)).toBe(24n);
     });
   });
 
   describe('for array with even number of elements', () => {
     it('calculates median for sorted array', () => {
-      const arr = [BigInt(10), BigInt(11), BigInt(24), BigInt(30)];
-      expect(calculateMedian(arr)).toStrictEqual(BigInt(17));
+      const arr = [10n, 11n, 24n, 30n];
+      expect(calculateMedian(arr)).toBe(17n);
     });
 
     it('calculates median for unsorted array', () => {
-      const arr = [BigInt(24), BigInt(11), BigInt(10), BigInt(30)];
-      expect(calculateMedian(arr)).toStrictEqual(BigInt(17));
+      const arr = [24n, 11n, 10n, 30n];
+      expect(calculateMedian(arr)).toBe(17n);
     });
   });
 });

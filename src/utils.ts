@@ -48,7 +48,7 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, dapiNameOrDat
 };
 
 export const multiplyBigNumber = (bigNumber: bigint, multiplier: number) =>
-  (bigNumber * BigInt(Math.round(multiplier * 100))) / BigInt(100);
+  (bigNumber * BigInt(Math.round(multiplier * 100))) / 100n;
 
 // https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
 export const decodeBeaconValue = (encodedBeaconValue: string) => {
