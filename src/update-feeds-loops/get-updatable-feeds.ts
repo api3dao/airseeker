@@ -1,19 +1,9 @@
-import { go } from '@api3/promise-utils';
-import { ethers } from 'ethers';
-
 import { getSignedData } from '../data-fetcher-loop/signed-data-state';
 import { calculateMedian, isDataFeedUpdatable } from '../deviation-check';
-import { logger } from '../logger';
-import { getState } from '../state';
-import type { BeaconId, ChainId, SignedData } from '../types';
+import type { SignedData } from '../types';
 import { decodeBeaconValue, multiplyBigNumber } from '../utils';
 
-import {
-  getApi3ServerV1,
-  type DecodedActiveDataFeedResponse,
-  decodeGetChainIdResponse,
-  verifyMulticallResponse,
-} from './contracts';
+import type { DecodedActiveDataFeedResponse } from './contracts';
 
 interface BeaconValue {
   timestamp: bigint;
@@ -30,36 +20,16 @@ export interface UpdatableDataFeed {
   updatableBeacons: UpdatableBeacon[];
 }
 
-export const getUpdatableFeeds = async (
+export const getUpdatableFeeds = (
   batch: DecodedActiveDataFeedResponse[],
-  deviationThresholdCoefficient: number,
-  provider: ethers.JsonRpcProvider,
-  chainId: ChainId
-): Promise<UpdatableDataFeed[]> => {
-  const uniqueBeaconIds = [
-    ...new Set(batch.flatMap((item) => item.decodedDataFeed.beacons.flatMap((beacon) => beacon.beaconId))),
-  ];
-  const goOnChainFeedValues = await go(async () => multicallBeaconValues(uniqueBeaconIds, provider, chainId));
-  if (!goOnChainFeedValues.success) {
-    logger.error(
-      `Multicalling on-chain data feed values has failed. Skipping update for all data feeds in a batch`,
-      goOnChainFeedValues.error,
-      {
-        dapiNames: batch.map((dataFeed) => dataFeed.decodedDapiName),
-        dataFeedIds: batch.map((dataFeed) => dataFeed.decodedDataFeed.dataFeedId),
-      }
-    );
-    return [];
-  }
-  const onChainFeedValues = goOnChainFeedValues.data;
-  if (!onChainFeedValues) return [];
-
+  deviationThresholdCoefficient: number
+): UpdatableDataFeed[] => {
   return (
     batch
       // Determine on-chain and off-chain values for each beacon.
       .map((dataFeedInfo) => {
-        const beaconsWithData = dataFeedInfo.decodedDataFeed.beacons.map(({ beaconId }) => {
-          const onChainValue: BeaconValue = onChainFeedValues[beaconId]!;
+        const aggregatedBeaconsWithData = dataFeedInfo.beaconsWithData.map(({ beaconId, timestamp, value }) => {
+          const onChainValue: BeaconValue = { timestamp, value };
           const signedData = getSignedData(beaconId);
           const offChainValue: BeaconValue | undefined = signedData
             ? {
@@ -74,12 +44,12 @@ export const getUpdatableFeeds = async (
 
         return {
           dataFeedInfo,
-          beaconsWithData,
+          aggregatedBeaconsWithData,
         };
       })
       // Filter out data feeds that cannot be updated.
-      .filter(({ dataFeedInfo, beaconsWithData }) => {
-        const beaconValues = beaconsWithData.map(({ onChainValue, offChainValue, isUpdatable }) =>
+      .filter(({ dataFeedInfo, aggregatedBeaconsWithData }) => {
+        const beaconValues = aggregatedBeaconsWithData.map(({ onChainValue, offChainValue, isUpdatable }) =>
           isUpdatable ? offChainValue! : onChainValue
         );
 
@@ -102,9 +72,9 @@ export const getUpdatableFeeds = async (
         );
       })
       // Compute the updateable beacons.
-      .map(({ dataFeedInfo, beaconsWithData }) => ({
+      .map(({ dataFeedInfo, aggregatedBeaconsWithData }) => ({
         dataFeedInfo,
-        updatableBeacons: beaconsWithData
+        updatableBeacons: aggregatedBeaconsWithData
           .filter(({ isUpdatable }) => isUpdatable)
           .map(({ beaconId, signedData }) => ({
             beaconId,
@@ -112,44 +82,4 @@ export const getUpdatableFeeds = async (
           })),
       }))
   );
-};
-
-export const multicallBeaconValues = async (
-  batch: BeaconId[],
-  provider: ethers.JsonRpcProvider,
-  chainId: ChainId
-): Promise<Record<BeaconId, BeaconValue> | null> => {
-  const { config } = getState();
-  const chain = config.chains[chainId]!;
-  const { contracts } = chain;
-
-  // Calling the dataFeeds contract function is guaranteed not to revert, so we are not checking the multicall successes
-  // and using returndata directly. If the call fails (e.g. timeout or RPC error) we let the parent handle it.
-  const api3ServerV1 = getApi3ServerV1(contracts.Api3ServerV1, provider);
-  const voidSigner = new ethers.VoidSigner(ethers.ZeroAddress, provider);
-  const returndatas = verifyMulticallResponse(
-    await api3ServerV1
-      .connect(voidSigner)
-      .tryMulticall.staticCall([
-        api3ServerV1.interface.encodeFunctionData('getChainId'),
-        ...batch.map((beaconId) => api3ServerV1.interface.encodeFunctionData('dataFeeds', [beaconId])),
-      ])
-  );
-  const [chainIdReturndata, ...dataFeedsReturndata] = returndatas;
-
-  const contractChainId = decodeGetChainIdResponse(chainIdReturndata!).toString();
-  if (contractChainId !== chainId) {
-    logger.warn(`Chain ID mismatch.`, { chainId, contractChainId });
-    return null;
-  }
-
-  const onChainValues: Record<BeaconId, BeaconValue> = {};
-  for (const [idx, beaconId] of batch.entries()) {
-    const [value, timestamp] = ethers.AbiCoder.defaultAbiCoder().decode(
-      ['int224', 'uint32'],
-      dataFeedsReturndata[idx]!
-    );
-    onChainValues[beaconId] = { timestamp: BigInt(timestamp), value: BigInt(value) };
-  }
-  return onChainValues;
 };

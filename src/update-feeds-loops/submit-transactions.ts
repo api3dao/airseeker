@@ -12,7 +12,7 @@ import type { UpdatableDataFeed } from './get-updatable-feeds';
 
 export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableDataFeed: UpdatableDataFeed) => {
   const { dataFeedInfo, updatableBeacons } = updatableDataFeed;
-  const allBeacons = dataFeedInfo.decodedDataFeed.beacons;
+  const allBeacons = dataFeedInfo.beaconsWithData;
 
   // Create calldata for beacons that need to be updated.
   const beaconUpdateCalls = updatableBeacons.map(({ signedData }) =>
@@ -56,11 +56,7 @@ export const submitTransaction = async (
   } = state;
 
   const { dataFeedInfo } = updatableDataFeed;
-  const {
-    dapiName,
-    decodedDapiName,
-    decodedDataFeed: { dataFeedId },
-  } = dataFeedInfo;
+  const { dapiName, dataFeedId, decodedDapiName } = dataFeedInfo;
   const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
   const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 

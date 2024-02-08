@@ -73,13 +73,11 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
           },
         ],
         dataFeedInfo: {
-          decodedDataFeed: {
-            beacons: [
-              {
-                beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-              },
-            ],
-          },
+          beaconsWithData: [
+            {
+              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
+            },
+          ],
         },
       })
     );
@@ -134,19 +132,17 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
           },
         ],
         dataFeedInfo: {
-          decodedDataFeed: {
-            beacons: [
-              {
-                beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-              },
-              {
-                beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
-              },
-              {
-                beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-              },
-            ],
-          },
+          beaconsWithData: [
+            {
+              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+            },
+            {
+              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
+            },
+            {
+              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
+            },
+          ],
         },
       })
     );
@@ -202,19 +198,17 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
           },
         ],
         dataFeedInfo: {
-          decodedDataFeed: {
-            beacons: [
-              {
-                beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-              },
-              {
-                beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
-              },
-              {
-                beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-              },
-            ],
-          },
+          beaconsWithData: [
+            {
+              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+            },
+            {
+              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
+            },
+            {
+              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
+            },
+          ],
         },
       })
     );
@@ -355,9 +349,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
       allowPartial<UpdatableDataFeed>({
         dataFeedInfo: {
           dapiName,
-          decodedDataFeed: {
-            dataFeedId: '0xBeaconSetId',
-          },
+          dataFeedId: '0xBeaconSetId',
         },
       }),
       123_456

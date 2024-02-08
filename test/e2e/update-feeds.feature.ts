@@ -2,7 +2,11 @@ import { initializeGasState } from '../../src/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
 import { runUpdateFeeds } from '../../src/update-feeds-loops';
-import { decodeDataFeedDetails, decodeUpdateParameters } from '../../src/update-feeds-loops/contracts';
+import {
+  createBeaconsWithData,
+  decodeDataFeedDetails,
+  decodeUpdateParameters,
+} from '../../src/update-feeds-loops/contracts';
 import { submitTransactions } from '../../src/update-feeds-loops/submit-transactions';
 import { decodeDapiName } from '../../src/utils';
 import { initializeState } from '../fixtures/mock-config';
@@ -43,10 +47,19 @@ it('updates blockchain data', async () => {
     draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
   });
   initializeGasState(chainId, providerName);
-  const { dataFeedId, dapiName, dataFeedDetails, dataFeedValue, dataFeedTimestamp, updateParameters, signedApiUrls } =
-    await airseekerRegistry.activeDataFeed(0);
+  const {
+    dataFeedId,
+    dapiName,
+    dataFeedDetails,
+    dataFeedValue,
+    dataFeedTimestamp,
+    updateParameters,
+    signedApiUrls,
+    beaconValues,
+    beaconTimestamps,
+  } = await airseekerRegistry.activeDataFeed(0);
 
-  const decodedDataFeed = decodeDataFeedDetails(dataFeedDetails)!;
+  const beacons = decodeDataFeedDetails(dataFeedDetails)!;
   const activeBtcDataFeed = {
     dapiName,
     dataFeedId,
@@ -54,7 +67,7 @@ it('updates blockchain data', async () => {
     dataFeedTimestamp,
     signedApiUrls,
     decodedUpdateParameters: decodeUpdateParameters(updateParameters),
-    decodedDataFeed,
+    beaconsWithData: createBeaconsWithData(beacons, beaconValues, beaconTimestamps),
     decodedDapiName: decodeDapiName(dapiName),
   };
 

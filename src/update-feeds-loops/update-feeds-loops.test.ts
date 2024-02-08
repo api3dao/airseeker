@@ -15,13 +15,6 @@ import * as getUpdatableFeedsModule from './get-updatable-feeds';
 import * as submitTransactionModule from './submit-transactions';
 import * as updateFeedsLoopsModule from './update-feeds-loops';
 
-const chainId = '31337';
-const rpcUrl = 'http://127.0.0.1:8545/';
-const provider = new ethers.JsonRpcProvider(rpcUrl, {
-  chainId: Number.parseInt(chainId, 10),
-  name: chainId,
-});
-
 describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
   it('starts staggered update loops for a chain', async () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
@@ -179,14 +172,22 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     const firstDataFeed = generateActiveDataFeedResponse();
     const thirdDataFeed = generateActiveDataFeedResponse();
     const decodedFirstDataFeed = {
-      ...omit(firstDataFeed, ['dataFeedDetails', 'updateParameters']),
+      ...omit(firstDataFeed, ['dataFeedDetails', 'updateParameters', 'beaconValues', 'beaconTimestamps']),
       decodedUpdateParameters: contractsModule.decodeUpdateParameters(firstDataFeed.updateParameters),
-      decodedDataFeed: contractsModule.decodeDataFeedDetails(firstDataFeed.dataFeedDetails)!,
+      beaconsWithData: contractsModule.createBeaconsWithData(
+        contractsModule.decodeDataFeedDetails(firstDataFeed.dataFeedDetails)!,
+        firstDataFeed.beaconValues,
+        firstDataFeed.beaconTimestamps
+      ),
     };
     const decodedThirdDataFeed = {
-      ...omit(thirdDataFeed, ['dataFeedDetails', 'updateParameters']),
+      ...omit(thirdDataFeed, ['dataFeedDetails', 'updateParameters', 'beaconValues', 'beaconTimestamps']),
       decodedUpdateParameters: contractsModule.decodeUpdateParameters(thirdDataFeed.updateParameters),
-      decodedDataFeed: contractsModule.decodeDataFeedDetails(thirdDataFeed.dataFeedDetails)!,
+      beaconsWithData: contractsModule.createBeaconsWithData(
+        contractsModule.decodeDataFeedDetails(thirdDataFeed.dataFeedDetails)!,
+        thirdDataFeed.beaconValues,
+        thirdDataFeed.beaconTimestamps
+      ),
     };
     const airseekerRegistry = generateMockAirseekerRegistry();
     jest
@@ -230,12 +231,12 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest
       .spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds')
-      .mockResolvedValueOnce([
+      .mockReturnValue([
         allowPartial<getUpdatableFeedsModule.UpdatableDataFeed>({
           dataFeedInfo: decodedFirstDataFeed,
         }),
       ])
-      .mockResolvedValueOnce([
+      .mockReturnValue([
         allowPartial<getUpdatableFeedsModule.UpdatableDataFeed>({
           dataFeedInfo: decodedThirdDataFeed,
         }),
@@ -324,9 +325,11 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest.spyOn(logger, 'error');
-    jest
-      .spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds')
-      .mockRejectedValueOnce(new Error('unexpected-unhandled-error'));
+
+    // Assume there is some unhanded error in getUpdatableFeeds.
+    jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockImplementation((): any => {
+      throw new Error('unexpected-unhandled-error');
+    });
 
     await updateFeedsLoopsModule.runUpdateFeeds(
       'provider-name',
@@ -351,14 +354,14 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
 });
 
 describe(updateFeedsLoopsModule.processBatch.name, () => {
-  it('applies deviationThresholdCoefficient from config', async () => {
+  it('applies deviationThresholdCoefficient from config', () => {
     const dataFeed = generateActiveDataFeedResponse();
-    const decodedDataFeed = contractsModule.decodeDataFeedDetails(dataFeed.dataFeedDetails)!;
+    const beacons = contractsModule.decodeDataFeedDetails(dataFeed.dataFeedDetails)!;
     const decodedUpdateParameters = contractsModule.decodeUpdateParameters(dataFeed.updateParameters);
     const activeDataFeed = {
-      ...omit(dataFeed, ['dataFeedDetails', 'updateParameters']),
+      ...omit(dataFeed, ['dataFeedDetails', 'updateParameters', 'beaconValues', 'beaconTimestamps']),
       decodedUpdateParameters,
-      decodedDataFeed,
+      beaconsWithData: contractsModule.createBeaconsWithData(beacons, dataFeed.beaconValues, dataFeed.beaconTimestamps),
       decodedDapiName: utilsModule.decodeDapiName(dataFeed.dapiName),
     };
     jest.spyOn(Date, 'now').mockReturnValue(Number(dataFeed.dataFeedTimestamp) * 1000);
@@ -392,27 +395,13 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     );
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'info');
-    jest.spyOn(getUpdatableFeedsModule, 'multicallBeaconValues').mockResolvedValue({
-      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
-        timestamp: 150n,
-        value: BigInt('400'),
-      },
-      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7': {
-        timestamp: 160n,
-        value: BigInt('500'),
-      },
-      '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8': {
-        timestamp: 170n,
-        value: BigInt('600'),
-      },
-    });
 
-    const feeds = getUpdatableFeedsModule.getUpdatableFeeds([activeDataFeed], 2, provider, '31337');
+    const feeds = getUpdatableFeedsModule.getUpdatableFeeds([activeDataFeed], 2);
 
     expect(logger.warn).not.toHaveBeenCalledWith(`Off-chain sample's timestamp is older than on-chain timestamp.`);
     expect(logger.warn).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
     expect(logger.info).not.toHaveBeenCalledWith(`Deviation exceeded.`);
-    await expect(feeds).resolves.toStrictEqual([]);
+    expect(feeds).toStrictEqual([]);
   });
 });
 
