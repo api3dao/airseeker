@@ -61,7 +61,7 @@ describe(deriveSponsorWallet.name, () => {
     const dapiName = encodeDapiName('Ethereum - Avalanche');
     const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
 
-    const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName, 'does-not-matter', 'managed');
+    const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName, 'does-not-matter', { type: 'managed' });
 
     expect(sponsorWallet.address).toBe('0xDF5Eb6273BdB4608e70Bb0ABCA0571B45Cb60a22'); // Note, that the address is different if the sponsor address hash is derived using the "self-funded" scheme.
   });
@@ -72,7 +72,9 @@ describe(deriveSponsorWallet.name, () => {
       '0x0000000000000000000000000000000000000000000000000000000002faf0800000000000000000000000000000000000000000000000000000000002faf0800000000000000000000000000000000000000000000000000000000000000064';
     const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
 
-    const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName, updateParameters, 'self-funded');
+    const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, dapiName, updateParameters, {
+      type: 'self-funded',
+    });
 
     expect(sponsorWallet.address).toBe('0x1e0cb43e47bf4335d21812C2d652fC83F2CB64Bb'); // Note, that the address is different if the sponsor address hash is derived using the "managed" scheme.
   });

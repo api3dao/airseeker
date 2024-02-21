@@ -65,7 +65,7 @@ export const deriveSponsorWallet = (
   // For self-funded feeds it's more suitable to derive the hash also from update parameters. This does not apply to
   // mananaged feeds which want to be funded by the same wallet independently of the update parameters.
   const sponsorAddressHash =
-    walletDerivationScheme === 'self-funded'
+    walletDerivationScheme.type === 'self-funded'
       ? deriveSponsorAddressHashForSelfFundedFeed(dapiNameOrDataFeedId, updateParameters)
       : deriveSponsorAddressHashForManagedFeed(dapiNameOrDataFeedId);
 

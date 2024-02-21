@@ -135,7 +135,15 @@ export const deviationThresholdCoefficientSchema = z
 
 export type DeviationThresholdCoefficient = z.infer<typeof deviationThresholdCoefficientSchema>;
 
-export const walletDerivationSchemeSchema = z.union([z.literal('self-funded'), z.literal('managed')]);
+export const walletDerivationTypeSchema = z.union([z.literal('self-funded'), z.literal('managed')]);
+
+export type WalletDerivationType = z.infer<typeof walletDerivationTypeSchema>;
+
+export const walletDerivationSchemeSchema = z
+  .object({
+    type: walletDerivationTypeSchema,
+  })
+  .strict();
 
 export type WalletDerivationScheme = z.infer<typeof walletDerivationSchemeSchema>;
 

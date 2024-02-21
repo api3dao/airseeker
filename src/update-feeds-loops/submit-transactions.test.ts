@@ -248,7 +248,7 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
         'some-mnemonic',
         dapiName,
         'does-not-matter',
-        'managed'
+        { type: 'managed' }
       );
 
       expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(0);
@@ -269,7 +269,7 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
         'diamond result history offer forest diagram crop armed stumble orchard stage glance',
         dapiName,
         'does-not-matter',
-        'managed'
+        { type: 'managed' }
       );
 
       expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(1);
@@ -289,7 +289,7 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
         'diamond result history offer forest diagram crop armed stumble orchard stage glance',
         '0x173ec7594911a9d584d577bc8e8b9bb546018667d820a67685df49201a11ae9b',
         'does-not-matter',
-        'managed'
+        { type: 'managed' }
       );
 
       expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(1);
@@ -314,7 +314,7 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
         'diamond result history offer forest diagram crop armed stumble orchard stage glance',
         dapiName,
         updateParameters,
-        'self-funded'
+        { type: 'self-funded' }
       );
 
       expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(1);
@@ -368,6 +368,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
               fallbackGasLimit: undefined,
             },
           },
+          walletDerivationScheme: { type: 'managed' },
           sponsorWalletMnemonic: 'diamond result history offer forest diagram crop armed stumble orchard stage glance',
         },
       })
