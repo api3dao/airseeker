@@ -8,7 +8,7 @@ import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { AirseekerRegistry } from '../typechain-types';
 import type { ChainId, ProviderName } from '../types';
-import { deriveSponsorWallet, sleep } from '../utils';
+import { sleep } from '../utils';
 
 import {
   decodeActiveDataFeedCountResponse,
@@ -21,7 +21,7 @@ import {
   decodeGetChainIdResponse,
 } from './contracts';
 import { getUpdatableFeeds } from './get-updatable-feeds';
-import { hasSponsorPendingTransaction, submitTransactions } from './submit-transactions';
+import { getDerivedSponsorWallet, hasSponsorPendingTransaction, submitTransactions } from './submit-transactions';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -297,7 +297,7 @@ export const processBatch = async (
       continue;
     }
 
-    const sponsorWalletAddress = deriveSponsorWallet(
+    const sponsorWalletAddress = getDerivedSponsorWallet(
       sponsorWalletMnemonic,
       dapiName ?? dataFeedId,
       updateParameters,
