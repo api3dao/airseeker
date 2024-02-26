@@ -136,10 +136,10 @@ A record of chain configurations. The record key is the chain ID. For example:
   "1": {
     "providers": {
       "mainnet": {
-        "url": "http://mainnet.com"
-      }
-    }
-  }
+        "url": "http://mainnet.com",
+      },
+    },
+  },
 }
 ```
 
