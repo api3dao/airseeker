@@ -1472,7 +1472,7 @@ packages:
       lodash.clonedeep: 4.5.0
       semver: 6.3.1
       table: 6.8.1
-      undici: 5.27.0
+      undici: 5.28.3
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -4803,7 +4803,7 @@ packages:
       ts-node: 10.9.2(@types/node@20.10.7)(typescript@5.3.3)
       tsort: 0.0.1
       typescript: 5.3.3
-      undici: 5.27.0
+      undici: 5.28.3
       uuid: 8.3.2
       ws: 7.5.9
     transitivePeerDependencies:
@@ -7715,8 +7715,8 @@ packages:
   /undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
 
-  /undici@5.27.0:
-    resolution: {integrity: sha512-l3ydWhlhOJzMVOYkymLykcRRXqbUaQriERtR70B9LzNkZ4bX52Fc8wbTDneMiwo8T+AemZXvXaTx+9o5ROxrXg==}
+  /undici@5.28.3:
+    resolution: {integrity: sha512-3ItfzbrhDlINjaP0duwnNsKpDQk3acHI3gVJ1z4fmwMK31k5G9OVIAMLSIaP6w4FaGkaAkN6zaQO9LUvZ1t7VA==}
     engines: {node: '>=14.0'}
     dependencies:
       '@fastify/busboy': 2.0.0
