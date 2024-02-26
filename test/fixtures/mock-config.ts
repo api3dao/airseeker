@@ -26,6 +26,7 @@ export const generateTestConfig = (): Config => ({
   signedDataFetchInterval: 10,
   deviationThresholdCoefficient: 1,
   signedApiUrls: [],
+  walletDerivationScheme: { type: 'managed' },
 });
 
 export const initializeState = (config: Config = generateTestConfig()) => setInitialState(config);

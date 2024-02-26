@@ -135,6 +135,18 @@ export const deviationThresholdCoefficientSchema = z
 
 export type DeviationThresholdCoefficient = z.infer<typeof deviationThresholdCoefficientSchema>;
 
+export const walletDerivationTypeSchema = z.union([z.literal('self-funded'), z.literal('managed')]);
+
+export type WalletDerivationType = z.infer<typeof walletDerivationTypeSchema>;
+
+export const walletDerivationSchemeSchema = z
+  .object({
+    type: walletDerivationTypeSchema,
+  })
+  .strict();
+
+export type WalletDerivationScheme = z.infer<typeof walletDerivationSchemeSchema>;
+
 export const configSchema = z
   .object({
     sponsorWalletMnemonic: z
@@ -144,6 +156,7 @@ export const configSchema = z
     signedDataFetchInterval: z.number().positive(),
     deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
     signedApiUrls: z.array(z.string().url()),
+    walletDerivationScheme: walletDerivationSchemeSchema,
   })
   .strict();
 

@@ -729,7 +729,8 @@
     const urlParams = new URLSearchParams(window.location.search);
     const rpcUrl = urlParams.get('rpcUrl'),
       airseekerRegistryAddress = urlParams.get('airseekerRegistryAddress'),
-      airseekerMnemonic = decodeURIComponent(urlParams.get('airseekerMnemonic'));
+      airseekerMnemonic = decodeURIComponent(urlParams.get('airseekerMnemonic')),
+      walletDerivationScheme = decodeURIComponent(urlParams.get('walletDerivationScheme'));
 
     if (!airseekerRegistryAddress) throw new Error('airseekerRegistryAddress must be provided as URL parameter');
     if (!airseekerMnemonic) throw new Error('airseekerMnemonic must be provided as URL parameter');
@@ -840,13 +841,19 @@
       return `${AIRSEEKER_PROTOCOL_ID}/${paths.join('/')}`;
     }
 
-    const deriveSponsorWallet = (sponsorWalletMnemonic, dapiNameOrDataFeedId) => {
-      // Hash the dAPI name or data feed ID because we need to take the first 20 bytes of it which could result in
-      // collisions for dAPIs with the same prefix.
-      const hashedDapiNameOrDataFeedId = ethers.keccak256(dapiNameOrDataFeedId);
+    const deriveSponsorAddressHashForManagedFeed = (dapiNameOrDataFeedId) => {
+      // Hashing the dAPI name is important because we need to take the first 20 bytes of the hash which could result in
+      // collisions for (encoded) dAPI names with the same prefix.
+      return ethers.keccak256(dapiNameOrDataFeedId);
+    };
 
-      // Take first 20 bytes of the hashed dapiName or data feed ID as sponsor address together with the "0x" prefix.
-      const sponsorAddress = ethers.getAddress(hashedDapiNameOrDataFeedId.slice(0, 42));
+    const deriveSponsorAddressHashForSelfFundedFeed = (dapiNameOrDataFeedId, updateParameters) => {
+      return ethers.keccak256(ethers.solidityPacked(['bytes32', 'bytes'], [dapiNameOrDataFeedId, updateParameters]));
+    };
+
+    const deriveSponsorWalletFromSponsorAddressHash = (sponsorWalletMnemonic, sponsorAddressHash) => {
+      // Take the first 20 bytes of the sponsor address hash + "0x" prefix.
+      const sponsorAddress = ethers.getAddress(sponsorAddressHash.slice(0, 42));
       // NOTE: Be sure not to use "ethers.Wallet.fromPhrase(sponsorWalletMnemonic).derivePath" because that produces a
       // different result.
       const sponsorWallet = ethers.HDNodeWallet.fromPhrase(
@@ -856,6 +863,25 @@
       );
 
       return sponsorWallet;
+    };
+
+    const deriveSponsorWallet = (
+      sponsorWalletMnemonic,
+      dapiNameOrDataFeedId,
+      updateParameters,
+      walletDerivationScheme
+    ) => {
+      // Derive the sponsor address hash, whose first 20 bytes are interpreted as the sponsor address. This address is used
+      // to derive the sponsor wallet.
+      //
+      // For self-funded feeds it's more suitable to derive the hash also from update parameters. This does not apply to
+      // mananaged feeds which want to be funded by the same wallet independently of the update parameters.
+      const sponsorAddressHash =
+        walletDerivationScheme === 'self-funded'
+          ? deriveSponsorAddressHashForSelfFundedFeed(dapiNameOrDataFeedId, updateParameters)
+          : deriveSponsorAddressHashForManagedFeed(dapiNameOrDataFeedId);
+
+      return deriveSponsorWalletFromSponsorAddressHash(sponsorWalletMnemonic, sponsorAddressHash);
     };
 
     setInterval(async () => {
@@ -908,7 +934,12 @@
 
         const deviationPercentage = Number(calculateUpdateInPercentage(dataFeedValue, newBeaconSetValue)) / 1e6;
         const deviationThresholdPercentage = Number(deviationThresholdInPercentage) / 1e6;
-        const sponsorWallet = deriveSponsorWallet(airseekerMnemonic, dapiName ?? dataFeed.dataFeedId);
+        const sponsorWallet = deriveSponsorWallet(
+          airseekerMnemonic,
+          dapiName ?? dataFeed.dataFeedId,
+          updateParameters,
+          walletDerivationScheme
+        );
         const dataFeedInfo = {
           dapiName: dapiName,
           dataFeedId: dataFeed.dataFeedId,
