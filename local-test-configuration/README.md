@@ -66,7 +66,7 @@ also required for the monitoring page.
 
 - Open the monitoring page located in `local-test-configuration/monitoring/index.html` in a browser with the following
   query parameters appended
-  `?airseekerRegistryAddress=<DEPLOYED_AIRSEEKER_REGISTRY_ADDRESS>&rpcUrl=<RPC_URL>&airseekerMnemonic=<AIRSEEKER_MNEMONIC>`
+  `?airseekerRegistryAddress=<DEPLOYED_AIRSEEKER_REGISTRY_ADDRESS>&rpcUrl=<RPC_URL>&airseekerMnemonic=<AIRSEEKER_MNEMONIC>&walletDerivationScheme=managed`
   and open console.
 
 The `AIRSEEKER_MNEMONIC` needs to be URI encoded via `encodeURIComponent` in JS. For example,

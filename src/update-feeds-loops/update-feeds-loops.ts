@@ -8,7 +8,7 @@ import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { AirseekerRegistry } from '../typechain-types';
 import type { ChainId, ProviderName } from '../types';
-import { deriveSponsorWallet, sleep } from '../utils';
+import { sleep } from '../utils';
 
 import {
   decodeActiveDataFeedCountResponse,
@@ -21,7 +21,7 @@ import {
   decodeGetChainIdResponse,
 } from './contracts';
 import { getUpdatableFeeds } from './get-updatable-feeds';
-import { hasSponsorPendingTransaction, submitTransactions } from './submit-transactions';
+import { getDerivedSponsorWallet, hasSponsorPendingTransaction, submitTransactions } from './submit-transactions';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -271,7 +271,7 @@ export const processBatch = async (
     blockNumber,
   });
   const {
-    config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient, signedApiUrls: configSignedApiBaseUrls },
+    config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient, walletDerivationScheme, signedApiUrls: configSignedApiBaseUrls },
   } = getState();
   const { contracts } = chains[chainId]!;
 
@@ -296,7 +296,7 @@ export const processBatch = async (
 
   // Clear last update timestamps for feeds that don't need an update
   for (const feed of batch) {
-    const { dapiName, dataFeedId, decodedDapiName } = feed;
+    const { dapiName, dataFeedId, decodedDapiName, updateParameters } = feed;
 
     // Skip if the data feed is updatable
     if (
@@ -308,7 +308,12 @@ export const processBatch = async (
       continue;
     }
 
-    const sponsorWalletAddress = deriveSponsorWallet(sponsorWalletMnemonic, dapiName ?? dataFeedId).address;
+    const sponsorWalletAddress = getDerivedSponsorWallet(
+      sponsorWalletMnemonic,
+      dapiName ?? dataFeedId,
+      updateParameters,
+      walletDerivationScheme
+    ).address;
     const timestampNeedsClearing = hasSponsorPendingTransaction(chainId, providerName, sponsorWalletAddress);
     if (timestampNeedsClearing) {
       // NOTE: A data feed may stop needing an update for two reasons:

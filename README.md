@@ -136,10 +136,10 @@ A record of chain configurations. The record key is the chain ID. For example:
   "1": {
     "providers": {
       "mainnet": {
-        "url": "http://mainnet.com"
-      }
-    }
-  }
+        "url": "http://mainnet.com",
+      },
+    },
+  },
 }
 ```
 
@@ -223,6 +223,19 @@ The fetch interval in seconds between retrievals of signed API data.
 #### `signedApiUrls`
 
 A list of signed API URLs to call along with URLs fetched from the chain.
+
+#### `walletDerivationScheme`
+
+The derivation scheme configuration used to derive sponsor wallets.
+
+##### `type`
+
+The following options are available:
+
+- `self-funded` - The sponsor wallet is derived from the hash of the encoded beacon ID together with the update
+  parameters. This is the scheme that was originally used by Nodary for self-funded data feeds.
+- `managed` - Derives the wallet from the hash of the dAPI name (or data feed ID). This means the wallet derivation is
+  agnostic to update parameters, and the same wallet is used when the dAPI is upgraded/downgraded.
 
 ## Docker
 

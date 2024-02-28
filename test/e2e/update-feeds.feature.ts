@@ -62,13 +62,14 @@ it('updates blockchain data', async () => {
   const beacons = decodeDataFeedDetails(dataFeedDetails)!;
   const activeBtcDataFeed = {
     dapiName,
+    decodedDapiName: decodeDapiName(dapiName),
+    updateParameters,
+    decodedUpdateParameters: decodeUpdateParameters(updateParameters),
     dataFeedId,
     dataFeedValue,
     dataFeedTimestamp,
     signedApiUrls,
-    decodedUpdateParameters: decodeUpdateParameters(updateParameters),
     beaconsWithData: createBeaconsWithData(beacons, beaconValues, beaconTimestamps),
-    decodedDapiName: decodeDapiName(dapiName),
   };
 
   const currentBlock = await provider.getBlock('latest');

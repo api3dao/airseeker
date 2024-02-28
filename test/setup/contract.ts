@@ -8,7 +8,12 @@ import {
   AirseekerRegistry__factory as AirseekerRegistryFactory,
   type Api3ServerV1,
 } from '../../src/typechain-types';
-import { deriveBeaconId, deriveSponsorWallet, encodeDapiName } from '../../src/utils';
+import {
+  deriveBeaconId,
+  deriveSponsorAddressHashForManagedFeed,
+  deriveSponsorWalletFromSponsorAddressHash,
+  encodeDapiName,
+} from '../../src/utils';
 import { generateTestConfig } from '../fixtures/mock-config';
 import { signData } from '../utils';
 
@@ -256,7 +261,11 @@ export const deployAndUpdate = async () => {
     await airseekerRegistry.connect(deployerAndManager).setDapiNameToBeActivated(dapiName);
 
     // Initialize sponsor wallets
-    const sponsorWallet = deriveSponsorWallet(airseekerWallet.mnemonic!.phrase, dapiName);
+    const sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiName);
+    const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(
+      airseekerWallet.mnemonic!.phrase,
+      sponsorAddressHash
+    );
     await walletFunder!.sendTransaction({
       to: sponsorWallet.address,
       value: ethers.parseEther('1'),

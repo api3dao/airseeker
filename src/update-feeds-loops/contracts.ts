@@ -94,10 +94,11 @@ export interface BeaconWithData extends Beacon {
 }
 
 export interface DecodedActiveDataFeedResponse {
-  dapiName: string | null;
-  dataFeedId: string;
+  dapiName: string | null; // NOTE: Encoded dAPI name
   decodedDapiName: string | null;
+  updateParameters: string; // NOTE: Encoded update parameters
   decodedUpdateParameters: DecodedUpdateParameters;
+  dataFeedId: string;
   dataFeedValue: bigint;
   dataFeedTimestamp: bigint;
   beaconsWithData: BeaconWithData[];
@@ -141,10 +142,11 @@ export const decodeActiveDataFeedResponse = (
   const decodedDapiName = decodeDapiName(dapiName);
 
   return {
-    dapiName: decodedDapiName === '' ? null : dapiName, // NOTE: Anywhere in the codebase the "dapiName" is the encoded version of the dAPI name.
-    dataFeedId,
+    dapiName: decodedDapiName === '' ? null : dapiName,
     decodedDapiName: decodedDapiName === '' ? null : decodedDapiName,
+    updateParameters,
     decodedUpdateParameters: decodeUpdateParameters(updateParameters),
+    dataFeedId,
     dataFeedValue,
     dataFeedTimestamp,
     beaconsWithData,
