@@ -221,9 +221,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrls: {
-          '31337': {},
-        },
+        signedApiUrls: [],
         signedDatas: {},
         gasPrices: {},
       })
@@ -318,7 +316,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrls: {},
+        signedApiUrls: [],
         signedDatas: {},
         gasPrices: {},
       })
@@ -369,7 +367,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrls: {},
+        signedApiUrls: [],
         signedDatas: {
           '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
             airnode: '0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4',
@@ -402,6 +400,82 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     expect(logger.warn).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
     expect(logger.info).not.toHaveBeenCalledWith(`Deviation exceeded.`);
     expect(feeds).toStrictEqual([]);
+  });
+
+  it('generates airnode-populated signed api urls when both config and contract defines base url', async () => {
+    const dataFeed = generateActiveDataFeedResponse();
+    const beacons = contractsModule.decodeDataFeedDetails(dataFeed.dataFeedDetails)!;
+    const decodedUpdateParameters = contractsModule.decodeUpdateParameters(dataFeed.updateParameters);
+    const activeDataFeed = {
+      ...omit(dataFeed, ['dataFeedDetails', 'updateParameters', 'beaconValues', 'beaconTimestamps']),
+      decodedUpdateParameters,
+      beaconsWithData: contractsModule.createBeaconsWithData(beacons, dataFeed.beaconValues, dataFeed.beaconTimestamps),
+      decodedDapiName: utilsModule.decodeDapiName(dataFeed.dapiName),
+    };
+    const testConfig = generateTestConfig();
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: { ...testConfig, signedApiUrls: ['http://config.url'] },
+        signedApiUrls: [],
+      })
+    );
+    jest.spyOn(logger, 'warn');
+    jest.spyOn(logger, 'info');
+
+    // Skip actions other than generating signed api urls.
+    jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
+    jest.spyOn(utilsModule, 'deriveSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
+    jest.spyOn(submitTransactionModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
+
+    const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(
+      [activeDataFeed],
+      'default-provider',
+      new ethers.JsonRpcProvider(),
+      '31337',
+      123
+    );
+
+    expect(signedApiUrls).toHaveLength(2);
+    expect(signedApiUrls).toContain('http://config.url/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4');
+    expect(signedApiUrls).toContain('http://localhost:8080/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4');
+  });
+
+  it('generates airnode-populated signed api urls when only config defines base url', async () => {
+    const dataFeed = generateActiveDataFeedResponse();
+    const beacons = contractsModule.decodeDataFeedDetails(dataFeed.dataFeedDetails)!;
+    const decodedUpdateParameters = contractsModule.decodeUpdateParameters(dataFeed.updateParameters);
+    const activeDataFeed = {
+      ...omit(dataFeed, ['dataFeedDetails', 'updateParameters', 'beaconValues', 'beaconTimestamps']),
+      decodedUpdateParameters,
+      beaconsWithData: contractsModule.createBeaconsWithData(beacons, dataFeed.beaconValues, dataFeed.beaconTimestamps),
+      decodedDapiName: utilsModule.decodeDapiName(dataFeed.dapiName),
+      signedApiUrls: [],
+    };
+    const testConfig = generateTestConfig();
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: { ...testConfig, signedApiUrls: ['http://config.url'] },
+        signedApiUrls: [],
+      })
+    );
+    jest.spyOn(logger, 'warn');
+    jest.spyOn(logger, 'info');
+
+    // Skip actions other than generating signed api urls.
+    jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
+    jest.spyOn(utilsModule, 'deriveSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
+    jest.spyOn(submitTransactionModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
+
+    const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(
+      [activeDataFeed],
+      'default-provider',
+      new ethers.JsonRpcProvider(),
+      '31337',
+      123
+    );
+
+    expect(signedApiUrls).toHaveLength(1);
+    expect(signedApiUrls).toContain('http://config.url/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4');
   });
 });
 

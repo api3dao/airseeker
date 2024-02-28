@@ -1,6 +1,6 @@
 import { go } from '@api3/promise-utils';
 import axios, { type AxiosResponse, type AxiosError } from 'axios';
-import { pick, uniq } from 'lodash';
+import { pick } from 'lodash';
 
 import { HTTP_SIGNED_DATA_API_TIMEOUT_MULTIPLIER } from '../constants';
 import { logger } from '../logger';
@@ -70,23 +70,15 @@ export const runDataFetcher = async () => {
     logger.debug('Running data fetcher.');
     const state = getState();
     const {
-      config: { signedDataFetchInterval, signedApiUrls },
-      signedApiUrls: signedApiUrlState,
+      config: { signedDataFetchInterval },
+      signedApiUrls,
     } = state;
 
     const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
 
-    const urls = uniq([
-      ...Object.values(signedApiUrlState)
-        .flatMap((urlsPerProvider) => Object.values(urlsPerProvider))
-        .flatMap((urlsPerAirnode) => Object.values(urlsPerAirnode))
-        .flat(),
-      ...signedApiUrls,
-    ]);
-
-    logger.debug('Fetching data from signed APIs.', { urls });
+    logger.debug('Fetching data from signed APIs.', { signedApiUrls });
     const fetchResults = await Promise.all(
-      urls.map(async (url) =>
+      signedApiUrls.map(async (url) =>
         go(
           async () => {
             const signedDataApiResponse = await callSignedApi(

@@ -8,7 +8,6 @@ import type {
   BeaconId,
   ProviderName,
   SignedApiUrl,
-  AirnodeAddress,
   DapiNameOrDataFeedId,
 } from '../types';
 
@@ -22,7 +21,7 @@ export interface State {
   gasPrices: Record<ChainId, Record<ProviderName, GasState>>;
   derivedSponsorWallets: Record<DapiNameOrDataFeedId, PrivateKey>;
   signedDatas: Record<BeaconId, SignedData>;
-  signedApiUrls: Record<ChainId, Record<ProviderName, Record<AirnodeAddress, SignedApiUrl>>>;
+  signedApiUrls: SignedApiUrl[];
 }
 
 let state: State | undefined;
@@ -40,7 +39,7 @@ export const setInitialState = (config: Config) => {
     config,
     gasPrices: {},
     signedDatas: {},
-    signedApiUrls: {},
+    signedApiUrls: [],
     derivedSponsorWallets: {},
   };
 };

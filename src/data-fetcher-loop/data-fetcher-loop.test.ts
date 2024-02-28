@@ -13,14 +13,7 @@ describe('data fetcher', () => {
   beforeEach(() => {
     initializeState();
     updateState((draft) => {
-      draft.signedApiUrls = {
-        '31337': {
-          hardhat: {
-            '0xC04575A2773Da9Cd23853A69694e02111b2c4182':
-              'http://127.0.0.1:8090/0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
-          },
-        },
-      };
+      draft.signedApiUrls = ['http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182'];
     });
   });
 
@@ -62,6 +55,7 @@ describe('data fetcher', () => {
       })
     );
 
+    jest.spyOn(dataFetcherLoopModule, 'callSignedApi');
     jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
 
     const dataFetcherPromise = dataFetcherLoopModule.runDataFetcher();
@@ -69,26 +63,10 @@ describe('data fetcher', () => {
 
     expect(mockedAxios).toHaveBeenCalledTimes(1);
     expect(saveSignedDataSpy).toHaveBeenCalledTimes(3);
-  });
-
-  it('calls signed api urls from config', async () => {
-    jest.spyOn(dataFetcherLoopModule, 'callSignedApi');
-
-    const signedApiUrl = 'http://some.url/0xbF3137b0a7574563a23a8fC8badC6537F98197CC';
-    updateState((draft) => {
-      draft.config.signedApiUrls = [signedApiUrl];
-    });
-
-    const dataFetcherPromise = dataFetcherLoopModule.runDataFetcher();
-
-    await expect(dataFetcherPromise).resolves.toBeDefined();
-
-    expect(mockedAxios).toHaveBeenCalledTimes(2);
     expect(dataFetcherLoopModule.callSignedApi).toHaveBeenNthCalledWith(
       1,
-      'http://127.0.0.1:8090/0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
+      'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
       9000
     );
-    expect(dataFetcherLoopModule.callSignedApi).toHaveBeenNthCalledWith(2, signedApiUrl, 9000);
   });
 });

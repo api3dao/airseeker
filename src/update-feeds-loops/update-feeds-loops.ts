@@ -1,6 +1,6 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
-import { isError, range, size, zip } from 'lodash';
+import { isError, range, size, uniq } from 'lodash';
 
 import type { Chain } from '../config/schema';
 import { clearSponsorLastUpdateTimestamp, initializeGasState } from '../gas-price';
@@ -241,6 +241,15 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
         dataFeedUpdates,
         dataFeedUpdateFailures,
       });
+
+      // Update the state with the signed API URLs.
+      const signedApiUrls = uniq(
+        processedBatches.reduce((acc, batch) => (batch ? [...acc, ...batch.signedApiUrls] : acc), [] as string[])
+      );
+      // Overwrite the state with the new signed API URLs instead of merging them to avoid stale URLs.
+      updateState((draft) => {
+        draft.signedApiUrls = signedApiUrls;
+      });
     });
 
     if (!goRunUpdateFeeds.success) {
@@ -262,24 +271,26 @@ export const processBatch = async (
     blockNumber,
   });
   const {
-    config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient },
+    config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient, signedApiUrls: configSignedApiBaseUrls },
   } = getState();
   const { contracts } = chains[chainId]!;
 
-  updateState((draft) => {
-    for (const dataFeed of batch) {
-      const receivedUrls = zip(dataFeed.signedApiUrls, dataFeed.beaconsWithData).map(([url, beacon]) => ({
-        url: `${url}/${beacon!.airnodeAddress}`,
-        airnodeAddress: beacon!.airnodeAddress,
-      }));
-      if (!draft.signedApiUrls) draft.signedApiUrls = {};
-      if (!draft.signedApiUrls[chainId]) draft.signedApiUrls[chainId] = {};
-      if (!draft.signedApiUrls[chainId]![providerName]) draft.signedApiUrls[chainId]![providerName] = {};
-      for (const { airnodeAddress, url } of receivedUrls) {
-        draft.signedApiUrls[chainId]![providerName]![airnodeAddress] = url;
-      }
-    }
-  });
+  // Generate signed API URLs for the batch
+  const signedApiUrls = batch
+    .map((dataFeed) =>
+      dataFeed.beaconsWithData.map((beacon, index) => {
+        const configSignedApiUrls = configSignedApiBaseUrls.map((baseUrl) => `${baseUrl}/${beacon.airnodeAddress}`);
+
+        // WARNING: contractSignedApiBaseUrl is an array of empty strings if it's not set on chain
+        const contractSignedApiBaseUrl = dataFeed.signedApiUrls[index];
+        const contractSignedApiUrls = contractSignedApiBaseUrl
+          ? [`${contractSignedApiBaseUrl}/${beacon.airnodeAddress}`]
+          : [];
+
+        return [...configSignedApiUrls, ...contractSignedApiUrls];
+      })
+    )
+    .flat(2);
 
   const feedsToUpdate = getUpdatableFeeds(batch, deviationThresholdCoefficient);
 
@@ -323,5 +334,5 @@ export const processBatch = async (
     blockNumber
   );
   const successCount = updatedFeeds.filter(Boolean).length;
-  return { successCount, errorCount: size(feedsToUpdate) - successCount };
+  return { signedApiUrls, successCount, errorCount: size(feedsToUpdate) - successCount };
 };

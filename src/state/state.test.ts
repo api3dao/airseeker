@@ -27,14 +27,7 @@ const stateMock: State = {
       timestamp: 'something-silly',
     },
   },
-  signedApiUrls: {
-    '31337': {
-      hardhat: {
-        '0xC04575A2773Da9Cd23853A69694e02111b2c4182':
-          'http://127.0.0.1:8090/0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
-      },
-    },
-  },
+  signedApiUrls: ['http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182'],
   derivedSponsorWallets: {},
 };
 
