@@ -407,7 +407,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     const beacons = contractsModule.decodeDataFeedDetails(dataFeed.dataFeedDetails)!;
     const decodedUpdateParameters = contractsModule.decodeUpdateParameters(dataFeed.updateParameters);
     const activeDataFeed = {
-      ...omit(dataFeed, ['dataFeedDetails', 'updateParameters', 'beaconValues', 'beaconTimestamps']),
+      ...omit(dataFeed, ['dataFeedDetails', 'beaconValues', 'beaconTimestamps']),
       decodedUpdateParameters,
       beaconsWithData: contractsModule.createBeaconsWithData(beacons, dataFeed.beaconValues, dataFeed.beaconTimestamps),
       decodedDapiName: utilsModule.decodeDapiName(dataFeed.dapiName),
@@ -424,7 +424,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
 
     // Skip actions other than generating signed api urls.
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
-    jest.spyOn(utilsModule, 'deriveSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
+    jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
     jest.spyOn(submitTransactionModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
 
     const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(
@@ -445,7 +445,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     const beacons = contractsModule.decodeDataFeedDetails(dataFeed.dataFeedDetails)!;
     const decodedUpdateParameters = contractsModule.decodeUpdateParameters(dataFeed.updateParameters);
     const activeDataFeed = {
-      ...omit(dataFeed, ['dataFeedDetails', 'updateParameters', 'beaconValues', 'beaconTimestamps']),
+      ...omit(dataFeed, ['dataFeedDetails', 'beaconValues', 'beaconTimestamps']),
       decodedUpdateParameters,
       beaconsWithData: contractsModule.createBeaconsWithData(beacons, dataFeed.beaconValues, dataFeed.beaconTimestamps),
       decodedDapiName: utilsModule.decodeDapiName(dataFeed.dapiName),
@@ -463,7 +463,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
 
     // Skip actions other than generating signed api urls.
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
-    jest.spyOn(utilsModule, 'deriveSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
+    jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
     jest.spyOn(submitTransactionModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
 
     const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(

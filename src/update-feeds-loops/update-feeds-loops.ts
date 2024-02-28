@@ -271,7 +271,13 @@ export const processBatch = async (
     blockNumber,
   });
   const {
-    config: { sponsorWalletMnemonic, chains, deviationThresholdCoefficient, walletDerivationScheme, signedApiUrls: configSignedApiBaseUrls },
+    config: {
+      sponsorWalletMnemonic,
+      chains,
+      deviationThresholdCoefficient,
+      walletDerivationScheme,
+      signedApiUrls: configSignedApiBaseUrls,
+    },
   } = getState();
   const { contracts } = chains[chainId]!;
 
