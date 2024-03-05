@@ -13,7 +13,9 @@ describe('data fetcher', () => {
   beforeEach(() => {
     initializeState();
     updateState((draft) => {
-      draft.signedApiUrls = ['http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182'];
+      draft.signedApiUrls = {
+        '31337': { hardhat: ['http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182'] },
+      };
     });
   });
 

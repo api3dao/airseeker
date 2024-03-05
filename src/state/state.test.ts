@@ -8,7 +8,7 @@ const stateMock: State = {
   config: generateTestConfig(),
   gasPrices: {
     '31337': {
-      localhost: {
+      hardhat: {
         gasPrices: [{ price: 10n, timestamp: timestampMock }],
         sponsorLastUpdateTimestamp: { '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266': timestampMock },
       },
@@ -27,7 +27,7 @@ const stateMock: State = {
       timestamp: 'something-silly',
     },
   },
-  signedApiUrls: ['http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182'],
+  signedApiUrls: { '31337': { hardhat: ['http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182'] } },
   derivedSponsorWallets: {},
 };
 

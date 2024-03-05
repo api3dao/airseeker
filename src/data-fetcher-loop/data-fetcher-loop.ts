@@ -1,6 +1,6 @@
 import { go } from '@api3/promise-utils';
 import axios, { type AxiosResponse, type AxiosError } from 'axios';
-import { pick } from 'lodash';
+import { pick, uniq } from 'lodash';
 
 import { HTTP_SIGNED_DATA_API_TIMEOUT_MULTIPLIER } from '../constants';
 import { logger } from '../logger';
@@ -76,9 +76,17 @@ export const runDataFetcher = async () => {
 
     const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
 
+    // Better to log the non-decomposed object to see which URL comes from which chain-provider group.
     logger.debug('Fetching data from signed APIs.', { signedApiUrls });
+
+    const urls = uniq(
+      Object.values(signedApiUrls)
+        .map((urlsPerProvider) => Object.values(urlsPerProvider))
+        .flat(2)
+    );
+
     const fetchResults = await Promise.all(
-      signedApiUrls.map(async (url) =>
+      urls.map(async (url) =>
         go(
           async () => {
             const signedDataApiResponse = await callSignedApi(

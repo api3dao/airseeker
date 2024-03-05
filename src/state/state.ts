@@ -21,7 +21,7 @@ export interface State {
   gasPrices: Record<ChainId, Record<ProviderName, GasState>>;
   derivedSponsorWallets: Record<DapiNameOrDataFeedId, PrivateKey>;
   signedDatas: Record<BeaconId, SignedData>;
-  signedApiUrls: SignedApiUrl[];
+  signedApiUrls: Record<ChainId, Record<ProviderName, SignedApiUrl[]>>;
 }
 
 let state: State | undefined;
@@ -39,7 +39,7 @@ export const setInitialState = (config: Config) => {
     config,
     gasPrices: {},
     signedDatas: {},
-    signedApiUrls: [],
+    signedApiUrls: {},
     derivedSponsorWallets: {},
   };
 };

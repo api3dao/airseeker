@@ -1,6 +1,6 @@
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
-import { isError, range, size, uniq } from 'lodash';
+import { isError, range, set, size, uniq } from 'lodash';
 
 import type { Chain } from '../config/schema';
 import { clearSponsorLastUpdateTimestamp, initializeGasState } from '../gas-price';
@@ -247,9 +247,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
         processedBatches.reduce((acc, batch) => (batch ? [...acc, ...batch.signedApiUrls] : acc), [] as string[])
       );
       // Overwrite the state with the new signed API URLs instead of merging them to avoid stale URLs.
-      updateState((draft) => {
-        draft.signedApiUrls = signedApiUrls;
-      });
+      updateState((draft) => set(draft, ['signedApiUrls', chainId, providerName], signedApiUrls));
     });
 
     if (!goRunUpdateFeeds.success) {
