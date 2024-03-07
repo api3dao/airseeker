@@ -30,7 +30,7 @@ To release a new version:
 
 1. `git checkout main` - Always version from `main` branch. Also, ensure that the working directory is clean (has no
    uncommitted changes).
-2. `contracts:compile:force` - Build the latest Typechain artifacts.
+2. `pnpm run contracts:compile:force` - Build the latest Typechain artifacts.
 3. `pnpm version [major|minor|patch]` - Choose the right version bump. This will bump the version, create a git tag and
    commit it.
 4. Build the docker image with tag `api3/airseeker:latest`. If running on Linux, use `pnpm run docker:build` otherwise
@@ -40,6 +40,7 @@ To release a new version:
 6. `docker push api3/airseeker:latest && docker push api3/airseeker:<MAJOR.MINOR.PATCH>` - Push the image upstream. Both
    the latest and the versioned tag should be published.
 7. `git push --follow-tags` - Push the tagged commit upstream.
+8. Create a GitHub release for the specific tag.
 
 ## Configuration
 
