@@ -102,7 +102,7 @@ export interface DecodedActiveDataFeedResponse {
   dataFeedValue: bigint;
   dataFeedTimestamp: bigint;
   beaconsWithData: BeaconWithData[];
-  signedApiUrls: string[];
+  signedApiUrls: (string | null)[];
 }
 
 export const createBeaconsWithData = (beacons: Beacon[], beaconValues: bigint[], beaconTimestamps: bigint[]) => {
@@ -150,6 +150,6 @@ export const decodeActiveDataFeedResponse = (
     dataFeedValue,
     dataFeedTimestamp,
     beaconsWithData,
-    signedApiUrls,
+    signedApiUrls: signedApiUrls.map((url) => (url === '' ? null : url)),
   };
 };

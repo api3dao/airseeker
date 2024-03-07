@@ -70,21 +70,21 @@ export const runDataFetcher = async () => {
     logger.debug('Running data fetcher.');
     const state = getState();
     const {
-      config: { signedDataFetchInterval, signedApiUrls },
-      signedApiUrls: signedApiUrlState,
+      config: { signedDataFetchInterval },
+      signedApiUrls,
     } = state;
 
     const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
 
-    const urls = uniq([
-      ...Object.values(signedApiUrlState)
-        .flatMap((urlsPerProvider) => Object.values(urlsPerProvider))
-        .flatMap((urlsPerAirnode) => Object.values(urlsPerAirnode))
-        .flat(),
-      ...signedApiUrls,
-    ]);
+    // Better to log the non-decomposed object to see which URL comes from which chain-provider group.
+    logger.debug('Fetching data from signed APIs.', { signedApiUrls });
 
-    logger.debug('Fetching data from signed APIs.', { urls });
+    const urls = uniq(
+      Object.values(signedApiUrls)
+        .map((urlsPerProvider) => Object.values(urlsPerProvider))
+        .flat(2)
+    );
+
     const fetchResults = await Promise.all(
       urls.map(async (url) =>
         go(

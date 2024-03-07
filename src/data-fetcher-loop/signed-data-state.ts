@@ -101,7 +101,7 @@ export const purgeOldSignedData = () => {
   const state = getState();
   const oldSignedData = Object.values(state.signedDatas).filter((signedData) => isSignedDataFresh(signedData));
   if (oldSignedData.length > 0) {
-    logger.info(`Purging some old signed data.`, { oldSignedData });
+    logger.debug(`Purging some old signed data.`, { oldSignedData });
   }
 
   updateState((draft) => {
