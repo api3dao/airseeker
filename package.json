@@ -1,5 +1,5 @@
 {
-  "name": "airseeker-v2",
+  "name": "@api3/airseeker",
   "version": "2.2.0",
   "keywords": [],
   "license": "MIT",
@@ -9,8 +9,9 @@
   },
   "files": [
     "dist",
-    "*.js"
+    "src"
   ],
+  "main": "./dist/npm-exports.js",
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "clean": "rm -rf coverage dist artifacts cache",
