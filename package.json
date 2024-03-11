@@ -21,6 +21,7 @@
     "docker:run": "docker run -it --init --volume $(pwd)/config:/app/config --network host --env-file .env --rm api3/airseeker:latest",
     "eslint:check": "eslint --report-unused-disable-directives --cache --ext js,ts . --max-warnings 0",
     "eslint:fix": "pnpm run eslint:check --fix",
+    "prepublishOnly": "pnpm i && pnpm run clean && pnpm run build",
     "prettier:check": "prettier --check \"./**/*.{js,ts,md,json,html}\"",
     "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json,html}\"",
     "test:e2e": "jest --config=jest-e2e.config.js",
