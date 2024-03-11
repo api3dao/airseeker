@@ -13,9 +13,7 @@
   ],
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
-    "clean": "rm -rf coverage dist artifacts cache src/typechain-types",
-    "contracts:compile:force": "hardhat compile --force",
-    "contracts:compile": "hardhat compile",
+    "clean": "rm -rf coverage dist artifacts cache",
     "dev:eth-node": "hardhat node",
     "dev": "nodemon --ext ts,js,json,env  --exec \"pnpm ts-node src/index.ts\"",
     "docker:build": "docker build --tag api3/airseeker:latest --file docker/Dockerfile .",
@@ -47,7 +45,6 @@
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@openzeppelin/contracts": "4.9.5",
-    "@typechain/hardhat": "^9.1.0",
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.14.202",
     "@types/node": "^20.11.20",
@@ -65,7 +62,6 @@
     "rimraf": "^5.0.5",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
-    "typechain": "^8.3.2",
     "typescript": "^5.3.3"
   }
 }

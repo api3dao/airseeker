@@ -52,9 +52,6 @@ devDependencies:
   '@openzeppelin/contracts':
     specifier: 4.9.5
     version: 4.9.5
-  '@typechain/hardhat':
-    specifier: ^9.1.0
-    version: 9.1.0(@typechain/ethers-v6@0.5.1)(ethers@6.11.1)(hardhat@2.20.1)(typechain@8.3.2)
   '@types/jest':
     specifier: ^29.5.12
     version: 29.5.12
@@ -106,9 +103,6 @@ devDependencies:
   ts-node:
     specifier: ^10.9.2
     version: 10.9.2(@types/node@20.11.20)(typescript@5.3.3)
-  typechain:
-    specifier: ^8.3.2
-    version: 8.3.2(typescript@5.3.3)
   typescript:
     specifier: ^5.3.3
     version: 5.3.3

@@ -30,17 +30,16 @@ To release a new version:
 
 1. `git checkout main` - Always version from `main` branch. Also, ensure that the working directory is clean (has no
    uncommitted changes).
-2. `pnpm run contracts:compile:force` - Build the latest Typechain artifacts.
-3. `pnpm version [major|minor|patch]` - Choose the right version bump. This will bump the version, create a git tag and
+2. `pnpm version [major|minor|patch]` - Choose the right version bump. This will bump the version, create a git tag and
    commit it.
-4. Build the docker image with tag `api3/airseeker:latest`. If running on Linux, use `pnpm run docker:build` otherwise
+3. Build the docker image with tag `api3/airseeker:latest`. If running on Linux, use `pnpm run docker:build` otherwise
    use `pnpm run docker:build:amd64`.
-5. `docker tag api3/airseeker:latest api3/airseeker:<MAJOR.MINOR.PATCH>` - Tag the image with the version. Replace the
+4. `docker tag api3/airseeker:latest api3/airseeker:<MAJOR.MINOR.PATCH>` - Tag the image with the version. Replace the
    `<MAJOR.MINOR.PATCH>` with the version you just bumped (copy it from `package.json`).
-6. `docker push api3/airseeker:latest && docker push api3/airseeker:<MAJOR.MINOR.PATCH>` - Push the image upstream. Both
+5. `docker push api3/airseeker:latest && docker push api3/airseeker:<MAJOR.MINOR.PATCH>` - Push the image upstream. Both
    the latest and the versioned tag should be published.
-7. `git push --follow-tags` - Push the tagged commit upstream.
-8. Create a GitHub release for the specific tag.
+6. `git push --follow-tags` - Push the tagged commit upstream.
+7. Create a GitHub release for the specific tag.
 
 ## Configuration
 
@@ -245,7 +244,6 @@ The following options are available:
 The docker image can be built by running the following commands from the root directory:
 
 ```sh
-pnpm run contracts:compile # The Typechain artifacts are copied over to the Docker image.
 pnpm run docker:build
 ```
 
