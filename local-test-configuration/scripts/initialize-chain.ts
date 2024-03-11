@@ -2,17 +2,17 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { encode } from '@api3/airnode-abi';
+import {
+  AirseekerRegistry__factory as AirseekerRegistryFactory,
+  AccessControlRegistry__factory as AccessControlRegistryFactory,
+  Api3ServerV1__factory as Api3ServerV1Factory,
+} from 'api3-contracts';
 import dotenv from 'dotenv';
 import type { ContractTransactionResponse, Signer } from 'ethers';
 import { ethers } from 'ethers';
 import { zip } from 'lodash';
 
 import { interpolateSecrets, parseSecrets } from '../../src/config/utils';
-import {
-  AirseekerRegistry__factory as AirseekerRegistryFactory,
-  AccessControlRegistry__factory as AccessControlRegistryFactory,
-  Api3ServerV1__factory as Api3ServerV1Factory,
-} from '../../src/typechain-types';
 import {
   deriveBeaconId,
   deriveSponsorAddressHashForManagedFeed,

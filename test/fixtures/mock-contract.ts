@@ -1,6 +1,6 @@
+import type { AirseekerRegistry, Api3ServerV1 } from 'api3-contracts';
 import { ethers } from 'ethers';
 
-import type { AirseekerRegistry, Api3ServerV1 } from '../../src/typechain-types';
 import { encodeDapiName } from '../../src/utils';
 import { type DeepPartial, encodeBeaconDetails } from '../utils';
 

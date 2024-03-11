@@ -1,11 +1,11 @@
-import { ethers } from 'ethers';
-import { zip } from 'lodash';
-
 import {
   type AirseekerRegistry,
   AirseekerRegistry__factory as AirseekerRegistryFactory,
   Api3ServerV1__factory as Api3ServerV1Factory,
-} from '../typechain-types';
+} from 'api3-contracts';
+import { ethers } from 'ethers';
+import { zip } from 'lodash';
+
 import type { AirnodeAddress, TemplateId } from '../types';
 import { decodeDapiName, deriveBeaconId } from '../utils';
 
