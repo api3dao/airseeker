@@ -4,7 +4,7 @@ import {
   AccessControlRegistry__factory as AccessControlRegistryFactory,
   AirseekerRegistry__factory as AirseekerRegistryFactory,
   type Api3ServerV1,
-} from 'api3-contracts';
+} from '@api3/contracts';
 import type { HDNodeWallet, JsonRpcProvider, Signer } from 'ethers';
 import { ethers } from 'hardhat';
 

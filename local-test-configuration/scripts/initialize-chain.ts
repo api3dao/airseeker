@@ -6,7 +6,7 @@ import {
   AirseekerRegistry__factory as AirseekerRegistryFactory,
   AccessControlRegistry__factory as AccessControlRegistryFactory,
   Api3ServerV1__factory as Api3ServerV1Factory,
-} from 'api3-contracts';
+} from '@api3/contracts';
 import dotenv from 'dotenv';
 import type { ContractTransactionResponse, Signer } from 'ethers';
 import { ethers } from 'ethers';

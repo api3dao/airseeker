@@ -1,4 +1,4 @@
-import type { AirseekerRegistry } from 'api3-contracts';
+import type { AirseekerRegistry } from '@api3/contracts';
 import { ethers } from 'ethers';
 import { omit } from 'lodash';
 

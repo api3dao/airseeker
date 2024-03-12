@@ -2,7 +2,7 @@ import {
   type AirseekerRegistry,
   AirseekerRegistry__factory as AirseekerRegistryFactory,
   Api3ServerV1__factory as Api3ServerV1Factory,
-} from 'api3-contracts';
+} from '@api3/contracts';
 import { ethers } from 'ethers';
 import { zip } from 'lodash';
 

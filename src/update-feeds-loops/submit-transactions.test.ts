@@ -1,4 +1,4 @@
-import type { Api3ServerV1 } from 'api3-contracts';
+import type { Api3ServerV1 } from '@api3/contracts';
 import { ethers } from 'ethers';
 
 import { generateMockApi3ServerV1 } from '../../test/fixtures/mock-contract';

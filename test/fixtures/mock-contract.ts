@@ -1,4 +1,4 @@
-import type { AirseekerRegistry, Api3ServerV1 } from 'api3-contracts';
+import type { AirseekerRegistry, Api3ServerV1 } from '@api3/contracts';
 import { ethers } from 'ethers';
 
 import { encodeDapiName } from '../../src/utils';

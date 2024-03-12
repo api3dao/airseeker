@@ -1,5 +1,5 @@
+import type { AirseekerRegistry } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
-import type { AirseekerRegistry } from 'api3-contracts';
 import { ethers } from 'ethers';
 import { isError, range, set, size, uniq } from 'lodash';
 

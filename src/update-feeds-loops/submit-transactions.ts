@@ -1,5 +1,5 @@
+import type { Api3ServerV1 } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
-import type { Api3ServerV1 } from 'api3-contracts';
 import { ethers } from 'ethers';
 
 import type { WalletDerivationScheme } from '../config/schema';
