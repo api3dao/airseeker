@@ -46,7 +46,7 @@
     "@api3/ois": "^2.3.2",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
-    "@openzeppelin/contracts": "4.9.5",
+    "@openzeppelin/contracts": "4.9.6",
     "@typechain/hardhat": "^9.1.0",
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.14.202",
