@@ -17,7 +17,7 @@ export const envConfigSchema = z
             message: 'Invalid LOG_FORMAT',
             path: ['LOG_FORMAT'],
           });
-          return;
+          return z.NEVER;
         }
 
         return value as LogFormat;
@@ -32,7 +32,7 @@ export const envConfigSchema = z
             message: 'Invalid LOG_LEVEL',
             path: ['LOG_LEVEL'],
           });
-          return;
+          return z.NEVER;
         }
 
         return value as LogLevel;
