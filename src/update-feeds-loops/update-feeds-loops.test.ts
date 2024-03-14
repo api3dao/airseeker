@@ -1,3 +1,4 @@
+import type { AirseekerRegistry } from '@api3/contracts';
 import { ethers } from 'ethers';
 import { omit } from 'lodash';
 
@@ -7,7 +8,6 @@ import { allowPartial } from '../../test/utils';
 import type { Chain } from '../config/schema';
 import { logger } from '../logger';
 import * as stateModule from '../state';
-import type { AirseekerRegistry } from '../typechain-types';
 import * as utilsModule from '../utils';
 
 import * as contractsModule from './contracts';

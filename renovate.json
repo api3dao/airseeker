@@ -7,11 +7,6 @@
       "enabled": false
     },
     {
-      "matchPackageNames": ["@openzeppelin/contracts"],
-      "matchUpdateTypes": ["major"],
-      "enabled": false
-    },
-    {
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["patch", "minor"],
       "schedule": ["before 4am on Monday"],

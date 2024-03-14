@@ -1,13 +1,13 @@
 import { encode } from '@api3/airnode-abi';
-import type { HDNodeWallet, JsonRpcProvider, Signer } from 'ethers';
-import { ethers } from 'hardhat';
-
 import {
   Api3ServerV1__factory as Api3ServerV1Factory,
   AccessControlRegistry__factory as AccessControlRegistryFactory,
   AirseekerRegistry__factory as AirseekerRegistryFactory,
   type Api3ServerV1,
-} from '../../src/typechain-types';
+} from '@api3/contracts';
+import type { HDNodeWallet, JsonRpcProvider, Signer } from 'ethers';
+import { ethers } from 'hardhat';
+
 import {
   deriveBeaconId,
   deriveSponsorAddressHashForManagedFeed,

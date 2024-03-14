@@ -1,3 +1,4 @@
+import type { AirseekerRegistry } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 import { isError, range, set, size, uniq } from 'lodash';
@@ -6,7 +7,6 @@ import type { Chain } from '../config/schema';
 import { clearSponsorLastUpdateTimestamp, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { AirseekerRegistry } from '../typechain-types';
 import type { ChainId, ProviderName } from '../types';
 import { sleep } from '../utils';
 

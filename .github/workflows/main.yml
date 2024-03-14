@@ -34,8 +34,6 @@ jobs:
           cache: 'pnpm'
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
-      - name: Compile contracts
-        run: pnpm run contracts:compile
       - name: Build
         run: pnpm run build
       - name: Lint Typescript
@@ -63,8 +61,6 @@ jobs:
           cache: 'pnpm'
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
-      - name: Compile contracts
-        run: pnpm run contracts:compile
       - name: Start Hardhat
         run: pnpm dev:eth-node&
       - name: Test E2E
