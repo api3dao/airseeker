@@ -18,11 +18,9 @@ COPY . /app
 RUN pnpm install --prefer-offline
 RUN pnpm run build
 
-RUN chown -R node:node /app/config
-
+RUN chown --recursive node:node /app
 # "node" Docker images come with a built-in, least-privileged user called "node"
 USER node
-
 # Start the Airseeker.
 ENV NODE_ENV=production
 ENTRYPOINT ["node", "dist/index.js"]
