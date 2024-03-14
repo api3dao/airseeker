@@ -25,6 +25,7 @@ module.exports = {
     // Typescript
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/no-dynamic-delete': 'off',
+    '@typescript-eslint/consistent-return': 'off', // Does not play with no useless undefined when function return type is "T | undefined" and does not have a fixer.
 
     // Lodash
     'lodash/prefer-immutable-method': 'off',
