@@ -140,6 +140,7 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
 describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
   it('aborts when fetching first data feed batch fails', async () => {
     const airseekerRegistry = generateMockAirseekerRegistry();
+    jest.spyOn(contractsModule, 'createProvider').mockResolvedValue(123 as any as ethers.JsonRpcProvider);
     jest
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
@@ -190,6 +191,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       ),
     };
     const airseekerRegistry = generateMockAirseekerRegistry();
+    jest.spyOn(contractsModule, 'createProvider').mockResolvedValue(123 as any as ethers.JsonRpcProvider);
     jest
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
@@ -302,6 +304,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
   it('catches unhandled error', async () => {
     const dataFeed = generateActiveDataFeedResponse();
     const airseekerRegistry = generateMockAirseekerRegistry();
+    jest.spyOn(contractsModule, 'createProvider').mockResolvedValue(123 as any as ethers.JsonRpcProvider);
     jest
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
