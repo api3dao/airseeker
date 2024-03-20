@@ -1,6 +1,6 @@
 import type { AirseekerRegistry } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
-import { ethers } from 'ethers';
+import type { ethers } from 'ethers';
 import { isError, range, set, size, uniq } from 'lodash';
 
 import type { Chain } from '../config/schema';
@@ -19,6 +19,7 @@ import {
   getApi3ServerV1,
   decodeGetBlockNumberResponse,
   decodeGetChainIdResponse,
+  createProvider,
 } from './contracts';
 import { getUpdatableFeeds } from './get-updatable-feeds';
 import { getDerivedSponsorWallet, hasSponsorPendingTransaction, submitTransactions } from './submit-transactions';
@@ -148,9 +149,11 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
       // Create a provider and connect it to the AirseekerRegistry contract.
-      const provider = new ethers.JsonRpcProvider(providers[providerName]!.url, undefined, {
-        staticNetwork: true,
-      });
+      const provider = await createProvider(providers[providerName]!.url);
+      if (!provider) {
+        logger.info('Failed to create provider. This is likely an RPC issue.');
+        return;
+      }
       const airseekerRegistry = getAirseekerRegistry(contracts.AirseekerRegistry, provider);
 
       logger.debug(`Fetching first batch of data feeds batches.`);
