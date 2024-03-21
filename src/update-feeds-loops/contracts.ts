@@ -3,11 +3,35 @@ import {
   AirseekerRegistry__factory as AirseekerRegistryFactory,
   Api3ServerV1__factory as Api3ServerV1Factory,
 } from '@api3/contracts';
+import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 import { zip } from 'lodash';
 
 import type { AirnodeAddress, TemplateId } from '../types';
 import { decodeDapiName, deriveBeaconId } from '../utils';
+
+export const createProvider = async (url: string) => {
+  // Create a static network provider (bound to a specific network) to avoid the overhead of fetching the chain ID
+  // periodically.
+  const provider = new ethers.JsonRpcProvider(url, undefined, {
+    staticNetwork: true,
+  });
+
+  // Unfortunately, ethers internally detects the network and when it fails it retries indefinitely (and logs and
+  // annoying message). See:
+  // https://github.com/ethers-io/ethers.js/blob/ad5f1c5fc7b73cfb20d9012b669e9dcb9122d244/src.ts/providers/provider-jsonrpc.ts#L762
+  //
+  // This is extremely unwanted behaviour, because if there is a broken RPC this will drain resources. Moreover, in
+  // Airseeker we initialize provider in every cycle. The workaround is to detect the network manually to ensure the RPC
+  // is healthy. If this is not the case, we destroy the provider stopping it from draining any resources.
+  const goDetectNetwork = await go(async () => provider._detectNetwork());
+  if (!goDetectNetwork.success) {
+    provider.destroy();
+    return null;
+  }
+
+  return provider;
+};
 
 export const getApi3ServerV1 = (address: string, provider: ethers.JsonRpcProvider) =>
   Api3ServerV1Factory.connect(address, provider);
