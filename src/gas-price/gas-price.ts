@@ -186,7 +186,7 @@ export const getRecommendedGasPrice = async (
     gasPrices.map((gasPrice) => gasPrice.price)
   );
   if (!percentileGasPrice) {
-    logger.debug('No historical gas prices to compute the percentile. Using the provider recommended gas price.');
+    logger.info('No historical gas prices to compute the percentile. Using the provider recommended gas price.');
     return multiplyBigNumber(gasPrice, recommendedGasPriceMultiplier);
   }
 

@@ -59,7 +59,7 @@ export const verifySignedDataIntegrity = (signedData: SignedData) => {
 };
 
 export const saveSignedData = (signedData: SignedData) => {
-  const { airnode, templateId, signature, timestamp, encodedValue } = signedData;
+  const { airnode, templateId, timestamp } = signedData;
 
   if (!verifySignedDataIntegrity(signedData)) {
     return;
@@ -76,17 +76,11 @@ export const saveSignedData = (signedData: SignedData) => {
   }
 
   if (!isSignedDataFresh(signedData)) {
-    logger.debug('Skipping state update. The signed data value is older than 24 hours.');
+    // This should not happen under normal circumstances. Something must be off with the Signed API.
+    logger.warn('Skipping state update. The signed data value is older than 24 hours.');
     return;
   }
 
-  logger.debug(`Storing signed data.`, {
-    airnode,
-    templateId,
-    timestamp,
-    signature,
-    encodedValue,
-  });
   updateState((draft) => {
     draft.signedDatas[dataFeedId] = signedData;
   });

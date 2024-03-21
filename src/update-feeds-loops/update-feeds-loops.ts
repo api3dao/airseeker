@@ -151,7 +151,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       // Create a provider and connect it to the AirseekerRegistry contract.
       const provider = await createProvider(providers[providerName]!.url);
       if (!provider) {
-        logger.info('Failed to create provider. This is likely an RPC issue.');
+        logger.warn('Failed to create provider. This is likely an RPC issue.');
         return;
       }
       const airseekerRegistry = getAirseekerRegistry(contracts.AirseekerRegistry, provider);
@@ -239,7 +239,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
       const skippedBatchesCount = processedBatches.filter((batch) => !batch).length;
       const dataFeedUpdates = processedBatches.reduce((acc, batch) => acc + (batch ? batch.successCount : 0), 0);
       const dataFeedUpdateFailures = processedBatches.reduce((acc, batch) => acc + (batch ? batch.errorCount : 0), 0);
-      logger.debug(`Finished processing batches of active data feeds.`, {
+      logger.info(`Finished processing batches of active data feeds.`, {
         skippedBatchesCount,
         dataFeedUpdates,
         dataFeedUpdateFailures,

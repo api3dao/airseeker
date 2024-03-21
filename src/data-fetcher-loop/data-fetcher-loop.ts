@@ -67,18 +67,17 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
 
 export const runDataFetcher = async () => {
   return logger.runWithContext({ dataFetcherCoordinatorId: Date.now().toString() }, async () => {
-    logger.debug('Running data fetcher.');
+    logger.info('Running data fetcher.');
+
     const state = getState();
     const {
       config: { signedDataFetchInterval },
       signedApiUrls,
     } = state;
-
     const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
 
     // Better to log the non-decomposed object to see which URL comes from which chain-provider group.
     logger.debug('Fetching data from signed APIs.', { signedApiUrls });
-
     const urls = uniq(
       Object.values(signedApiUrls)
         .map((urlsPerProvider) => Object.values(urlsPerProvider))
