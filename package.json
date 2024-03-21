@@ -30,9 +30,10 @@
   },
   "dependencies": {
     "@api3/airnode-protocol-v1": "^3.4.0",
+    "@api3/chains": "^4.13.1",
     "@api3/commons": "^0.8.0",
+    "@api3/contracts": "2.0.0-beta13",
     "@api3/promise-utils": "^0.4.0",
-    "@api3/contracts": "2.0.0-beta9",
     "axios": "^1.6.8",
     "dotenv": "^16.4.5",
     "ethers": "^6.11.1",
