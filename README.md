@@ -111,6 +111,15 @@ Defines the minimum level of logs. Logs with smaller level (severity) will be si
 
 Default: `info`.
 
+### `LOG_HEARTBEAT` _(optional)_
+
+Enables or disables the heartbeat log. The heartbeat log is a cryptographically secure log that is emitted every 60
+seconds to indicate that the service is running. The log includes useful information such as the configuration hash.
+Options:
+
+- `true` - Enables the heartbeat log.
+- `false` - Disables the heartbeat log.
+
 ### Configuration files
 
 Airseeker needs two configuration files, `airseeker.json` and `secrets.env`. All expressions of a form `${SECRET_NAME}`

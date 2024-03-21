@@ -39,6 +39,7 @@ export const envConfigSchema = z
       })
       .default('info'),
     LOGGER_ENABLED: envBooleanSchema.default('true'),
+    LOG_HEARTBEAT: envBooleanSchema.default('true'),
   })
   .strip(); // We parse from ENV variables of the process which has many variables that we don't care about
 

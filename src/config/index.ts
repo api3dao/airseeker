@@ -7,12 +7,16 @@ import dotenv from 'dotenv';
 import { configSchema } from './schema';
 import { interpolateSecrets, parseSecrets } from './utils';
 
-export const loadConfig = () => {
-  const configPath = join(__dirname, '../../config');
-  const rawSecrets = dotenv.parse(readFileSync(join(configPath, 'secrets.env'), 'utf8'));
+export const getConfigPath = () => join(__dirname, '../../config');
 
+export const loadRawConfig = () => JSON.parse(readFileSync(join(getConfigPath(), 'airseeker.json'), 'utf8'));
+
+export const loadRawSecrets = () => dotenv.parse(readFileSync(join(getConfigPath(), 'secrets.env'), 'utf8'));
+
+export const loadConfig = () => {
   const goLoadConfig = goSync(() => {
-    const rawConfig = JSON.parse(readFileSync(join(configPath, 'airseeker.json'), 'utf8'));
+    const rawConfig = loadRawConfig();
+    const rawSecrets = loadRawSecrets();
     const secrets = parseSecrets(rawSecrets);
     return configSchema.parse(interpolateSecrets(rawConfig, secrets));
   });
