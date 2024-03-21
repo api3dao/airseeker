@@ -44,7 +44,7 @@
     "@api3/airnode-abi": "^0.14.0",
     "@api3/ois": "^2.3.2",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
-    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.17.0",
     "@types/node": "^20.11.27",
