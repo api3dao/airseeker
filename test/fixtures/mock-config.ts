@@ -1,3 +1,4 @@
+import packageJson from '../../package.json';
 import type { Config } from '../../src/config/schema';
 import { setInitialState } from '../../src/state';
 
@@ -27,6 +28,8 @@ export const generateTestConfig = (): Config => ({
   deviationThresholdCoefficient: 1,
   signedApiUrls: [],
   walletDerivationScheme: { type: 'managed' },
+  stage: 'test',
+  version: packageJson.version,
 });
 
 export const initializeState = (config: Config = generateTestConfig()) => setInitialState(config);

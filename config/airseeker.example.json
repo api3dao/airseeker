@@ -25,5 +25,7 @@
   "deviationThresholdCoefficient": 1,
   "signedDataFetchInterval": 10,
   "signedApiUrls": [],
-  "walletDerivationScheme": { "type": "managed" }
+  "walletDerivationScheme": { "type": "managed" },
+  "stage": "dev",
+  "version": "2.2.1"
 }

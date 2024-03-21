@@ -2,6 +2,8 @@ import { references } from '@api3/airnode-protocol-v1';
 import { ethers } from 'ethers';
 import { z } from 'zod';
 
+import packageJson from '../../package.json';
+
 export const evmAddressSchema = z.string().regex(/^0x[\dA-Fa-f]{40}$/, 'Must be a valid EVM address');
 
 export type EvmAddress = z.infer<typeof evmAddressSchema>;
@@ -92,7 +94,8 @@ export const chainsSchema = z
       Object.entries(chains).map(([chainId, chain]) => {
         const { contracts } = chain;
         const parsedContracts = contractsSchema.safeParse({
-          Api3ServerV1: contracts.Api3ServerV1 ?? references.Api3ServerV1[chainId],
+          Api3ServerV1:
+            contracts.Api3ServerV1 ?? references.Api3ServerV1[chainId as keyof typeof references.Api3ServerV1],
           AirseekerRegistry: contracts.AirseekerRegistry,
         });
         if (!parsedContracts.success) {
@@ -157,6 +160,10 @@ export const configSchema = z
     deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
     signedApiUrls: z.array(z.string().url()),
     walletDerivationScheme: walletDerivationSchemeSchema,
+    stage: z
+      .string()
+      .regex(/^[\da-z-]{1,256}$/, 'Only lowercase letters, numbers and hyphens are allowed (max 256 characters)'),
+    version: z.string().refine((version) => version === packageJson.version, 'Invalid Airseeker version'),
   })
   .strict();
 
