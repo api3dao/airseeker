@@ -144,6 +144,7 @@ describe(getRecommendedGasPrice.name, () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     jest.spyOn(provider, 'getFeeData').mockResolvedValueOnce({ gasPrice: ethers.parseUnits('10', 'gwei') } as any);
     jest.spyOn(logger, 'debug');
+    jest.spyOn(logger, 'info');
 
     const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWalletAddress);
 
@@ -152,11 +153,13 @@ describe(getRecommendedGasPrice.name, () => {
       { price: ethers.parseUnits('10', 'gwei'), timestamp: timestampMock },
     ]);
 
-    expect(logger.debug).toHaveBeenCalledTimes(3);
+    expect(logger.debug).toHaveBeenCalledTimes(2);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices.');
-    expect(logger.debug).toHaveBeenNthCalledWith(
-      3,
+
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenNthCalledWith(
+      1,
       'No historical gas prices to compute the percentile. Using the provider recommended gas price.'
     );
   });

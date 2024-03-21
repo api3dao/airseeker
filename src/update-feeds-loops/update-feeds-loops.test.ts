@@ -39,6 +39,7 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
       intervalCalls.push(Date.now());
     }) as any);
     jest.spyOn(logger, 'debug');
+    jest.spyOn(utilsModule, 'getChainName').mockImplementation((chainId) => `chain-${chainId}`);
 
     await updateFeedsLoopsModule.startUpdateFeedsLoops();
 
@@ -47,26 +48,18 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
     expect(intervalCalls[1]! - intervalCalls[0]!).toBeGreaterThanOrEqual(40); // Reserving 10ms as the buffer for computing stagger time.
 
     // Expect the logs to be called with the correct context.
-    expect(logger.debug).toHaveBeenCalledTimes(5);
+    expect(logger.debug).toHaveBeenCalledTimes(3);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Starting update loops for chain.', {
-      chainId: '123',
+      chainName: 'chain-123',
       staggerTimeMs: 50,
       providerNames: ['first-provider', 'second-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas state.', {
-      chainId: '123',
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Starting update feeds loop.', {
+      chainName: 'chain-123',
       providerName: 'first-provider',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update feed loop.', {
-      chainId: '123',
-      providerName: 'first-provider',
-    });
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Initializing gas state.', {
-      chainId: '123',
-      providerName: 'second-provider',
-    });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Starting update feed loop.', {
-      chainId: '123',
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update feeds loop.', {
+      chainName: 'chain-123',
       providerName: 'second-provider',
     });
   });
@@ -99,6 +92,7 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
       intervalCalls.push(Date.now());
     }) as any);
     jest.spyOn(logger, 'debug');
+    jest.spyOn(utilsModule, 'getChainName').mockImplementation((chainId) => `chain-${chainId}`);
 
     await updateFeedsLoopsModule.startUpdateFeedsLoops();
 
@@ -107,31 +101,23 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
     expect(intervalCalls[1]! - intervalCalls[0]!).toBeLessThan(50); // Ensures that the loops are run in parallel.
 
     // Expect the logs to be called with the correct context.
-    expect(logger.debug).toHaveBeenCalledTimes(6);
+    expect(logger.debug).toHaveBeenCalledTimes(4);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Starting update loops for chain.', {
-      chainId: '123',
+      chainName: 'chain-123',
       staggerTimeMs: 100,
       providerNames: ['first-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Initializing gas state.', {
-      chainId: '123',
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Starting update feeds loop.', {
+      chainName: 'chain-123',
       providerName: 'first-provider',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update feed loop.', {
-      chainId: '123',
-      providerName: 'first-provider',
-    });
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Starting update loops for chain.', {
-      chainId: '456',
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Starting update loops for chain.', {
+      chainName: 'chain-456',
       staggerTimeMs: 100,
       providerNames: ['another-provider'],
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Initializing gas state.', {
-      chainId: '456',
-      providerName: 'another-provider',
-    });
-    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Starting update feed loop.', {
-      chainId: '456',
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Starting update feeds loop.', {
+      chainName: 'chain-456',
       providerName: 'another-provider',
     });
   });
@@ -217,6 +203,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       return originalSleep(ms);
     });
     jest.spyOn(logger, 'debug');
+    jest.spyOn(logger, 'info');
     jest.spyOn(logger, 'error');
 
     const testConfig = generateTestConfig();
@@ -280,7 +267,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       'Failed to get active data feeds batch.',
       new Error('One of the multicalls failed')
     );
-    expect(logger.debug).toHaveBeenCalledTimes(7);
+    expect(logger.debug).toHaveBeenCalledTimes(6);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of data feeds batches.');
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active data feeds.', expect.anything());
     expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching batches of active data feeds.', {
@@ -294,7 +281,9 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       batchIndex: 2,
     });
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Processing batch of active data feeds.', expect.anything());
-    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Finished processing batches of active data feeds.', {
+
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenNthCalledWith(1, 'Finished processing batches of active data feeds.', {
       dataFeedUpdateFailures: 2,
       dataFeedUpdates: 0,
       skippedBatchesCount: 1,
