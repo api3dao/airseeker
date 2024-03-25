@@ -171,7 +171,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
         if (goFirstBatch.data === null) return;
         const { batch: firstBatch, activeDataFeedCount, blockNumber: firstBatchBlockNumber } = goFirstBatch.data;
         if (activeDataFeedCount === 0) {
-          logger.warn(`No active data feeds found.`);
+          logger.info(`No active data feeds found.`);
           return;
         }
         // NOTE: We need to explicitly handle the .catch here because it's possible that the promise settles before it's
