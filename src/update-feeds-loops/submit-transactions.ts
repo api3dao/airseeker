@@ -170,7 +170,7 @@ export const estimateMulticallGasLimit = async (
   logger.warn(`Unable to estimate gas for multicall using provider.`, { errorMessage: goEstimateGas.error.message });
 
   if (!fallbackGasLimit) {
-    throw new Error('Unable to estimate gas limit');
+    throw new Error('No fallback gas limit provided.');
   }
 
   return BigInt(fallbackGasLimit);
