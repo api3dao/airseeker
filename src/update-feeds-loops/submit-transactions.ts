@@ -167,7 +167,7 @@ export const estimateMulticallGasLimit = async (
     // Adding a extra 10% because multicall consumes less gas than tryMulticall
     return (goEstimateGas.data * BigInt(Math.round(1.1 * 100))) / 100n;
   }
-  logger.warn(`Unable to estimate gas for multicall using provider.`, goEstimateGas.error);
+  logger.warn(`Unable to estimate gas for multicall using provider.`, { errorMessage: goEstimateGas.error.message });
 
   if (!fallbackGasLimit) {
     throw new Error('Unable to estimate gas limit');
