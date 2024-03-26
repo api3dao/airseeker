@@ -247,7 +247,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
 
       // Update the state with the signed API URLs.
       const signedApiUrls = uniq(
-        processedBatches.reduce((acc, batch) => (batch ? [...acc, ...batch.signedApiUrls] : acc), [] as string[])
+        processedBatches.reduce<string[]>((acc, batch) => (batch ? [...acc, ...batch.signedApiUrls] : acc), [])
       );
       // Overwrite the state with the new signed API URLs instead of merging them to avoid stale URLs.
       updateState((draft) => set(draft, ['signedApiUrls', chainId, providerName], signedApiUrls));
