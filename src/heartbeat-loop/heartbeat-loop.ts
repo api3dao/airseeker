@@ -28,7 +28,7 @@ export const logHeartbeat = async () => {
   logger.debug('Creating heartbeat log.');
 
   const rawConfig = loadRawConfig(); // We want to log the raw config, not the one with interpolated secrets.
-  const configHash = createSha256Hash(JSON.stringify(rawConfig));
+  const configHash = createSha256Hash(serializePlainObject(rawConfig));
   const {
     config: { sponsorWalletMnemonic },
   } = getState();
