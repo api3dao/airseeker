@@ -11,6 +11,11 @@
     "src"
   ],
   "main": "./dist/npm-exports.js",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/api3dao/airseeker-v2"
+  },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "clean": "rm -rf coverage dist artifacts cache",
