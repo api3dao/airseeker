@@ -28,8 +28,8 @@ describe('checks README', () => {
 
     const readFileSyncSpy = jest.spyOn(nodeFsModule, 'readFileSync');
 
-    readFileSyncSpy.mockImplementationOnce(() => exampleSecretsData);
     readFileSyncSpy.mockImplementationOnce(() => exampleConfigData);
+    readFileSyncSpy.mockImplementationOnce(() => exampleSecretsData);
 
     const readmeHashtagTitles = readmeData
       .split('\n')
