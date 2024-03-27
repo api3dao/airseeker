@@ -22,6 +22,9 @@ export interface HeartbeatPayload {
   currentTimestamp: string;
   configHash: string;
   signature: string;
+  stage: string;
+  version: string;
+  deploymentTimestamp: string;
 }
 
 export const logHeartbeat = async () => {
@@ -30,7 +33,8 @@ export const logHeartbeat = async () => {
   const rawConfig = loadRawConfig(); // We want to log the raw config, not the one with interpolated secrets.
   const configHash = createSha256Hash(serializePlainObject(rawConfig));
   const {
-    config: { sponsorWalletMnemonic },
+    config: { sponsorWalletMnemonic, stage, version },
+    deploymentTimestamp,
   } = getState();
 
   logger.debug('Creating heartbeat payload.');
@@ -38,6 +42,9 @@ export const logHeartbeat = async () => {
   const unsignedHeartbeatPayload = {
     currentTimestamp,
     configHash,
+    stage,
+    version,
+    deploymentTimestamp,
   };
   const sponsorWallet = ethers.Wallet.fromPhrase(sponsorWalletMnemonic);
   const signature = await signHeartbeat(sponsorWallet, unsignedHeartbeatPayload);

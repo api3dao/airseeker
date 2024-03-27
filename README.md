@@ -28,19 +28,14 @@ package is not published to NPM, but instead dockerized and published to Docker 
 
 To release a new version:
 
-1. `git checkout main` - Always version from `main` branch. Also, ensure that the working directory is clean (has no
-   uncommitted changes).
-2. `pnpm version [major|minor|patch]` - Choose the right version bump. This will bump the version, create a git tag and
-   commit it.
-3. `pnpm publish --access public` - Build the package and publish the new version to NPM.
-4. `git push --follow-tags` - Push the tagged commit upstream.
-5. Create a GitHub release for the specific tag.
-6. Build the docker image with tag `api3/airseeker:latest`. If running on Linux, use `pnpm run docker:build` otherwise
-   use `pnpm run docker:build:amd64`.
-7. `docker tag api3/airseeker:latest api3/airseeker:<MAJOR.MINOR.PATCH>` - Tag the image with the version. Replace the
-   `<MAJOR.MINOR.PATCH>` with the version you just bumped (copy it from `package.json`).
-8. `docker push api3/airseeker:latest && docker push api3/airseeker:<MAJOR.MINOR.PATCH>` - Push the image upstream. Both
-   the latest and the versioned tag should be published.
+1. `pnpm create-release:npm [major|minor|patch]` - Choose the right version bump. This will bump the version, create a
+   git tag and commit it.
+2. `pnpm publish --access public` - Publish the package to NPM.
+3. `git push --follow-tags` - Push the tagged commit upstream.
+4. Create a GitHub release for the specific tag.
+5. `pnpm run create-release:docker` - To build the Docker image and tag it correctly. The script uses the current
+   package.json version so it expects the NPM release is done first.
+6. The command outputs the publish instructions to push the images.
 
 ## Configuration
 
@@ -246,6 +241,16 @@ The following options are available:
   parameters. This is the scheme that was originally used by Nodary for self-funded data feeds.
 - `managed` - Derives the wallet from the hash of the dAPI name (or data feed ID). This means the wallet derivation is
   agnostic to update parameters, and the same wallet is used when the dAPI is upgraded/downgraded.
+
+#### `stage`
+
+An identifier of the deployment stage. This is used to distinguish between different deployments, for example `dev`,
+`prod-1` or `prod-2`. The stage value can have 256 characters at maximum and can only include lowercase alphanumeric
+characters and hyphens.
+
+#### `version`
+
+The version specified in the config must match the version of the Airseeker Docker image at deployment time.
 
 ## Docker
 
