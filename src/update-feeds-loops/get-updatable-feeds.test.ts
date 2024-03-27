@@ -137,7 +137,7 @@ describe(getUpdatableFeeds.name, () => {
     jest
       .spyOn(signedDataStateModule, 'getSignedData')
       .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
-    jest.spyOn(logger, 'debug');
+    jest.spyOn(logger, 'info');
 
     const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
       {
@@ -159,7 +159,7 @@ describe(getUpdatableFeeds.name, () => {
 
     const checkFeedsResult = getUpdatableFeeds(batch, 1);
 
-    expect(logger.debug).toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
+    expect(logger.info).toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
     expect(checkFeedsResult).toStrictEqual([
       {
         updatableBeacons: [

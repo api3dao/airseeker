@@ -1,3 +1,4 @@
+import { CHAINS } from '@api3/chains';
 import { goSync } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
@@ -83,4 +84,8 @@ export const decodeBeaconValue = (encodedBeaconValue: string) => {
   }
 
   return decodedBeaconValue;
+};
+
+export const getChainName = (chainId: string) => {
+  return CHAINS.find((c) => c.id === chainId)?.alias ?? 'unknown';
 };

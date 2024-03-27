@@ -8,7 +8,7 @@ import { clearSponsorLastUpdateTimestamp, initializeGasState } from '../gas-pric
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
-import { sleep } from '../utils';
+import { getChainName, sleep } from '../utils';
 
 import {
   decodeActiveDataFeedCountResponse,
@@ -40,16 +40,15 @@ export const startUpdateFeedsLoops = async () => {
       // frequency.
       const staggerTimeMs = dataFeedUpdateIntervalMs / size(providers);
       logger.debug(`Starting update loops for chain.`, {
-        chainId,
+        chainName: getChainName(chainId),
         staggerTimeMs,
         providerNames: Object.keys(providers),
       });
 
       for (const providerName of Object.keys(providers)) {
-        logger.debug(`Initializing gas state.`, { chainId, providerName });
         initializeGasState(chainId, providerName);
 
-        logger.debug(`Starting update feed loop.`, { chainId, providerName });
+        logger.debug(`Starting update feeds loop.`, { chainName: getChainName(chainId), providerName });
         // Run the update feed loop manually for the first time, because setInterval first waits for the given period of
         // time before calling the callback function.
         void runUpdateFeeds(providerName, chain, chainId);
@@ -141,122 +140,125 @@ export const readActiveDataFeedBatch = async (
 };
 
 export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, chainId: ChainId) => {
-  await logger.runWithContext({ chainId, providerName, updateFeedsCoordinatorId: Date.now().toString() }, async () => {
-    // We do not expect this function to throw, but its possible that some execution path is incorrectly handled and we
-    // want to process the error ourselves, for example log the error using the configured format.
-    const goRunUpdateFeeds = await go(async () => {
-      const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
-      const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
+  await logger.runWithContext(
+    { chainName: getChainName(chainId), providerName, updateFeedsCoordinatorId: Date.now().toString() },
+    async () => {
+      // We do not expect this function to throw, but its possible that some execution path is incorrectly handled and we
+      // want to process the error ourselves, for example log the error using the configured format.
+      const goRunUpdateFeeds = await go(async () => {
+        const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
+        const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
-      // Create a provider and connect it to the AirseekerRegistry contract.
-      const provider = await createProvider(providers[providerName]!.url);
-      if (!provider) {
-        logger.info('Failed to create provider. This is likely an RPC issue.');
-        return;
-      }
-      const airseekerRegistry = getAirseekerRegistry(contracts.AirseekerRegistry, provider);
-
-      logger.debug(`Fetching first batch of data feeds batches.`);
-      const firstBatchStartTimeMs = Date.now();
-      const goFirstBatch = await go(
-        async () => readActiveDataFeedBatch(airseekerRegistry, chainId, 0, dataFeedBatchSize),
-        { totalTimeoutMs: dataFeedUpdateIntervalMs }
-      );
-      if (!goFirstBatch.success) {
-        logger.error(`Failed to get first active data feeds batch.`, goFirstBatch.error);
-        return;
-      }
-
-      if (goFirstBatch.data === null) return;
-      const { batch: firstBatch, activeDataFeedCount, blockNumber: firstBatchBlockNumber } = goFirstBatch.data;
-      if (activeDataFeedCount === 0) {
-        logger.warn(`No active data feeds found.`);
-        return;
-      }
-      // NOTE: We need to explicitly handle the .catch here because it's possible that the promise settles before it's
-      // awaited, causing unhandled promise rejection. We do not expect this function to throw, but we want the promise
-      // chain to be handled correctly in case there is some unhandled error.
-      const processFirstBatchPromise: Promise<Error> | ReturnType<typeof processBatch> = processBatch(
-        firstBatch,
-        providerName,
-        provider,
-        chainId,
-        firstBatchBlockNumber
-      ).catch((error) => error);
-
-      // Calculate the stagger time.
-      const batchesCount = Math.ceil(activeDataFeedCount! / dataFeedBatchSize);
-      const firstBatchDurationMs = Date.now() - firstBatchStartTimeMs;
-      const staggerTimeMs = calculateStaggerTimeMs(batchesCount, firstBatchDurationMs, dataFeedUpdateIntervalMs);
-
-      // Wait the remaining stagger time required after fetching the first batch.
-      await sleep(Math.max(0, staggerTimeMs - firstBatchDurationMs));
-
-      // Fetch the rest of the batches in parallel in a staggered way and process them.
-      if (batchesCount > 1) {
-        logger.debug('Fetching batches of active data feeds.', { batchesCount, staggerTimeMs });
-      }
-      const processOtherBatchesPromises = range(1, batchesCount).map(async (batchIndex) => {
-        await sleep((batchIndex - 1) * staggerTimeMs);
-
-        const goBatch = await go(async () => {
-          logger.debug(`Fetching batch of active data feeds.`, { batchIndex });
-          const dataFeedBatchIndexStart = batchIndex * dataFeedBatchSize;
-          const dataFeedBatchIndexEnd = Math.min(activeDataFeedCount!, dataFeedBatchIndexStart + dataFeedBatchSize);
-          const activeBatch = await readActiveDataFeedBatch(
-            airseekerRegistry,
-            chainId,
-            dataFeedBatchIndexStart,
-            dataFeedBatchIndexEnd
-          );
-
-          return activeBatch;
-        });
-        if (!goBatch.success) {
-          logger.error(`Failed to get active data feeds batch.`, goBatch.error);
+        // Create a provider and connect it to the AirseekerRegistry contract.
+        const provider = await createProvider(providers[providerName]!.url);
+        if (!provider) {
+          logger.warn('Failed to create provider. This is likely an RPC issue.');
           return;
         }
-        if (goBatch.data === null) return;
-        const { batch, blockNumber } = goBatch.data;
+        const airseekerRegistry = getAirseekerRegistry(contracts.AirseekerRegistry, provider);
 
-        return processBatch(batch, providerName, provider, chainId, blockNumber);
-      });
+        logger.debug(`Fetching first batch of data feeds batches.`);
+        const firstBatchStartTimeMs = Date.now();
+        const goFirstBatch = await go(
+          async () => readActiveDataFeedBatch(airseekerRegistry, chainId, 0, dataFeedBatchSize),
+          { totalTimeoutMs: dataFeedUpdateIntervalMs }
+        );
+        if (!goFirstBatch.success) {
+          logger.error(`Failed to get first active data feeds batch.`, goFirstBatch.error);
+          return;
+        }
 
-      // Wait for all the batches to be processed and print stats from this run.
-      const processedBatches = await Promise.all([
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        new Promise<Awaited<ReturnType<typeof processBatch>>>((resolve, reject) => {
-          return processFirstBatchPromise.then((result) => {
-            // eslint-disable-next-line promise/always-return
-            if (isError(result)) reject(result);
-            else resolve(result);
+        if (goFirstBatch.data === null) return;
+        const { batch: firstBatch, activeDataFeedCount, blockNumber: firstBatchBlockNumber } = goFirstBatch.data;
+        if (activeDataFeedCount === 0) {
+          logger.info(`No active data feeds found.`);
+          return;
+        }
+        // NOTE: We need to explicitly handle the .catch here because it's possible that the promise settles before it's
+        // awaited, causing unhandled promise rejection. We do not expect this function to throw, but we want the promise
+        // chain to be handled correctly in case there is some unhandled error.
+        const processFirstBatchPromise: Promise<Error> | ReturnType<typeof processBatch> = processBatch(
+          firstBatch,
+          providerName,
+          provider,
+          chainId,
+          firstBatchBlockNumber
+        ).catch((error) => error);
+
+        // Calculate the stagger time.
+        const batchesCount = Math.ceil(activeDataFeedCount! / dataFeedBatchSize);
+        const firstBatchDurationMs = Date.now() - firstBatchStartTimeMs;
+        const staggerTimeMs = calculateStaggerTimeMs(batchesCount, firstBatchDurationMs, dataFeedUpdateIntervalMs);
+
+        // Wait the remaining stagger time required after fetching the first batch.
+        await sleep(Math.max(0, staggerTimeMs - firstBatchDurationMs));
+
+        // Fetch the rest of the batches in parallel in a staggered way and process them.
+        if (batchesCount > 1) {
+          logger.debug('Fetching batches of active data feeds.', { batchesCount, staggerTimeMs });
+        }
+        const processOtherBatchesPromises = range(1, batchesCount).map(async (batchIndex) => {
+          await sleep((batchIndex - 1) * staggerTimeMs);
+
+          const goBatch = await go(async () => {
+            logger.debug(`Fetching batch of active data feeds.`, { batchIndex });
+            const dataFeedBatchIndexStart = batchIndex * dataFeedBatchSize;
+            const dataFeedBatchIndexEnd = Math.min(activeDataFeedCount!, dataFeedBatchIndexStart + dataFeedBatchSize);
+            const activeBatch = await readActiveDataFeedBatch(
+              airseekerRegistry,
+              chainId,
+              dataFeedBatchIndexStart,
+              dataFeedBatchIndexEnd
+            );
+
+            return activeBatch;
           });
-        }),
-        ...processOtherBatchesPromises,
-      ]);
+          if (!goBatch.success) {
+            logger.error(`Failed to get active data feeds batch.`, goBatch.error);
+            return;
+          }
+          if (goBatch.data === null) return;
+          const { batch, blockNumber } = goBatch.data;
 
-      // Print stats from this run.
-      const skippedBatchesCount = processedBatches.filter((batch) => !batch).length;
-      const dataFeedUpdates = processedBatches.reduce((acc, batch) => acc + (batch ? batch.successCount : 0), 0);
-      const dataFeedUpdateFailures = processedBatches.reduce((acc, batch) => acc + (batch ? batch.errorCount : 0), 0);
-      logger.debug(`Finished processing batches of active data feeds.`, {
-        skippedBatchesCount,
-        dataFeedUpdates,
-        dataFeedUpdateFailures,
+          return processBatch(batch, providerName, provider, chainId, blockNumber);
+        });
+
+        // Wait for all the batches to be processed and print stats from this run.
+        const processedBatches = await Promise.all([
+          // eslint-disable-next-line @typescript-eslint/promise-function-async
+          new Promise<Awaited<ReturnType<typeof processBatch>>>((resolve, reject) => {
+            return processFirstBatchPromise.then((result) => {
+              // eslint-disable-next-line promise/always-return
+              if (isError(result)) reject(result);
+              else resolve(result);
+            });
+          }),
+          ...processOtherBatchesPromises,
+        ]);
+
+        // Print stats from this run.
+        const skippedBatchesCount = processedBatches.filter((batch) => !batch).length;
+        const dataFeedUpdates = processedBatches.reduce((acc, batch) => acc + (batch ? batch.successCount : 0), 0);
+        const dataFeedUpdateFailures = processedBatches.reduce((acc, batch) => acc + (batch ? batch.errorCount : 0), 0);
+        logger.info(`Finished processing batches of active data feeds.`, {
+          skippedBatchesCount,
+          dataFeedUpdates,
+          dataFeedUpdateFailures,
+        });
+
+        // Update the state with the signed API URLs.
+        const signedApiUrls = uniq(
+          processedBatches.reduce<string[]>((acc, batch) => (batch ? [...acc, ...batch.signedApiUrls] : acc), [])
+        );
+        // Overwrite the state with the new signed API URLs instead of merging them to avoid stale URLs.
+        updateState((draft) => set(draft, ['signedApiUrls', chainId, providerName], signedApiUrls));
       });
 
-      // Update the state with the signed API URLs.
-      const signedApiUrls = uniq(
-        processedBatches.reduce<string[]>((acc, batch) => (batch ? [...acc, ...batch.signedApiUrls] : acc), [])
-      );
-      // Overwrite the state with the new signed API URLs instead of merging them to avoid stale URLs.
-      updateState((draft) => set(draft, ['signedApiUrls', chainId, providerName], signedApiUrls));
-    });
-
-    if (!goRunUpdateFeeds.success) {
-      logger.error(`Unexpected error when updating data feeds feeds.`, goRunUpdateFeeds.error);
+      if (!goRunUpdateFeeds.success) {
+        logger.error(`Unexpected error when updating data feeds feeds.`, goRunUpdateFeeds.error);
+      }
     }
-  });
+  );
 };
 
 export const processBatch = async (

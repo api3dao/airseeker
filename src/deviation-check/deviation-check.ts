@@ -65,7 +65,7 @@ export const isDataFeedUpdatable = (
       return true;
     }
   } else {
-    logger.debug(`On-chain timestamp is older than the heartbeat interval.`);
+    logger.info(`On-chain timestamp is older than the heartbeat interval.`);
     return true;
   }
 

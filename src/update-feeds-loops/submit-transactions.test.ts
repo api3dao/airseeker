@@ -48,7 +48,7 @@ describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
         ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
         undefined
       )
-    ).rejects.toStrictEqual(new Error('Unable to estimate gas limit'));
+    ).rejects.toStrictEqual(new Error('No fallback gas limit provided.'));
   });
 });
 
