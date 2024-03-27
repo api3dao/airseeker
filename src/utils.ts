@@ -87,5 +87,5 @@ export const decodeBeaconValue = (encodedBeaconValue: string) => {
 };
 
 export const getChainName = (chainId: string) => {
-  return CHAINS.find((c) => c.id === chainId)?.name ?? 'unknown';
+  return CHAINS.find((c) => c.id === chainId)?.alias ?? 'unknown';
 };
