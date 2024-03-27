@@ -10,25 +10,21 @@ import { zip } from 'lodash';
 import type { AirnodeAddress, TemplateId } from '../types';
 import { decodeDapiName, deriveBeaconId } from '../utils';
 
-export const createProvider = async (url: string) => {
+export const createProvider = async (chainId: string, chainAlias: string, providerUrl: string) => {
   // Create a static network provider (bound to a specific network) to avoid the overhead of fetching the chain ID
   // periodically.
-  const provider = new ethers.JsonRpcProvider(url, undefined, {
-    staticNetwork: true,
+  //
+  // Specifying the chain statically also avoids the code path that can cause infinite retries when the RPC is down.
+  // This is extremely unwanted behaviour, because Airseeker initializes provider in every cycle. See:
+  // https://github.com/ethers-io/ethers.js/blob/ad5f1c5fc7b73cfb20d9012b669e9dcb9122d244/src.ts/providers/provider-jsonrpc.ts#L762
+  const network = new ethers.Network(chainAlias, chainId);
+  const provider = new ethers.JsonRpcProvider(providerUrl, network, {
+    staticNetwork: network,
   });
 
-  // Unfortunately, ethers internally detects the network and when it fails it retries indefinitely (and logs and
-  // annoying message). See:
-  // https://github.com/ethers-io/ethers.js/blob/ad5f1c5fc7b73cfb20d9012b669e9dcb9122d244/src.ts/providers/provider-jsonrpc.ts#L762
-  //
-  // This is extremely unwanted behaviour, because if there is a broken RPC this will drain resources. Moreover, in
-  // Airseeker we initialize provider in every cycle. The workaround is to detect the network manually to ensure the RPC
-  // is healthy. If this is not the case, we destroy the provider stopping it from draining any resources.
-  const goDetectNetwork = await go(async () => provider._detectNetwork());
-  if (!goDetectNetwork.success) {
-    provider.destroy();
-    return null;
-  }
+  // Make sure the RPC is working by making a call to get the chain ID.
+  const goChainId = await go(async () => provider.send('eth_chainId', []));
+  if (!goChainId.success) return null;
 
   return provider;
 };

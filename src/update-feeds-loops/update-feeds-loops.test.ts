@@ -22,6 +22,7 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
         config: {
           chains: {
             '123': {
+              alias: 'chain-123',
               dataFeedUpdateInterval: 0.1, // Have just 100 ms update interval to make the test run quicker.
               providers: {
                 'first-provider': { url: 'first-provider-url' },
@@ -39,7 +40,6 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
       intervalCalls.push(Date.now());
     }) as any);
     jest.spyOn(logger, 'debug');
-    jest.spyOn(utilsModule, 'getChainName').mockImplementation((chainId) => `chain-${chainId}`);
 
     await updateFeedsLoopsModule.startUpdateFeedsLoops();
 
@@ -70,12 +70,14 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
         config: {
           chains: {
             '123': {
+              alias: 'chain-123',
               dataFeedUpdateInterval: 0.1,
               providers: {
                 'first-provider': { url: 'first-provider-url' },
               },
             },
             '456': {
+              alias: 'chain-456',
               dataFeedUpdateInterval: 0.1,
               providers: {
                 'another-provider': { url: 'another-provider-url' },
@@ -92,7 +94,6 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
       intervalCalls.push(Date.now());
     }) as any);
     jest.spyOn(logger, 'debug');
-    jest.spyOn(utilsModule, 'getChainName').mockImplementation((chainId) => `chain-${chainId}`);
 
     await updateFeedsLoopsModule.startUpdateFeedsLoops();
 
