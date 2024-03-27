@@ -86,6 +86,7 @@ it('updates blockchain data', async () => {
   );
   jest.spyOn(logger, 'debug');
   jest.spyOn(logger, 'info');
+  jest.spyOn(logger, 'warn');
   const blockNumber = await provider.getBlockNumber();
 
   await submitTransactions(
@@ -111,7 +112,7 @@ it('updates blockchain data', async () => {
     blockNumber
   );
 
-  expect(logger.debug).toHaveBeenCalledTimes(10);
+  expect(logger.debug).toHaveBeenCalledTimes(9);
   expect(logger.debug).toHaveBeenNthCalledWith(1, 'Creating calldatas.');
   expect(logger.debug).toHaveBeenNthCalledWith(2, 'Estimating gas limit.');
   expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting derived sponsor wallet.');
@@ -120,12 +121,13 @@ it('updates blockchain data', async () => {
   expect(logger.debug).toHaveBeenNthCalledWith(6, 'Getting gas price.');
   expect(logger.debug).toHaveBeenNthCalledWith(7, 'Fetching gas price and saving it to the state.');
   expect(logger.debug).toHaveBeenNthCalledWith(8, 'Purging old gas prices.');
-  expect(logger.debug).toHaveBeenNthCalledWith(
-    9,
-    'No historical gas prices to compute the percentile. Using the provider recommended gas price.'
-  );
-  expect(logger.debug).toHaveBeenNthCalledWith(10, 'Setting timestamp of the original update transaction.');
+  expect(logger.debug).toHaveBeenNthCalledWith(9, 'Setting timestamp of the original update transaction.');
   expect(logger.info).toHaveBeenCalledTimes(2);
   expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed.', expect.anything());
   expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully updated data feed.');
+  expect(logger.warn).toHaveBeenCalledTimes(1);
+  expect(logger.warn).toHaveBeenNthCalledWith(
+    1,
+    'No historical gas prices to compute the percentile. Using the provider recommended gas price.'
+  );
 });
