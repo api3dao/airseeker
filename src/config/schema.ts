@@ -1,4 +1,5 @@
 import { references } from '@api3/airnode-protocol-v1';
+import { CHAINS } from '@api3/chains';
 import { ethers } from 'ethers';
 import { z } from 'zod';
 
@@ -48,6 +49,7 @@ export type GasSettings = z.infer<typeof gasSettingsSchema>;
 // validation. We need a chain ID from parent schema to load the contracts.
 export const optionalChainSchema = z
   .object({
+    alias: z.string().optional(), // By default, the chain alias is loaded from "@api3/chains" package
     providers: z.record(providerSchema), // The record key is the provider "nickname"
     contracts: optionalContractsSchema,
     gasSettings: gasSettingsSchema,
@@ -61,6 +63,7 @@ export const optionalChainSchema = z
 // we create a new schema just to infer the type correctly.
 const chainSchema = optionalChainSchema
   .extend({
+    alias: z.string(), // Will fallback to `unknown` in case there is no user provided value and no record in "@api3/chains"
     contracts: contractsSchema,
   })
   .strict();
@@ -92,7 +95,7 @@ export const chainsSchema = z
   .transform((chains, ctx) => {
     return Object.fromEntries(
       Object.entries(chains).map(([chainId, chain]) => {
-        const { contracts } = chain;
+        const { contracts, alias } = chain;
         const parsedContracts = contractsSchema.safeParse({
           Api3ServerV1:
             contracts.Api3ServerV1 ?? references.Api3ServerV1[chainId as keyof typeof references.Api3ServerV1],
@@ -113,6 +116,7 @@ export const chainsSchema = z
           chainId,
           {
             ...chain,
+            alias: alias ?? CHAINS.find((c) => c.id === chainId)?.alias ?? 'unknown',
             contracts: parsedContracts.data,
           },
         ];

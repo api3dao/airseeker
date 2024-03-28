@@ -8,7 +8,7 @@ import { clearSponsorLastUpdateTimestamp, initializeGasState } from '../gas-pric
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
-import { getChainName, sleep } from '../utils';
+import { sleep } from '../utils';
 
 import {
   decodeActiveDataFeedCountResponse,
@@ -33,14 +33,14 @@ export const startUpdateFeedsLoops = async () => {
   // Start update loops for each chain in parallel.
   await Promise.all(
     Object.entries(chains).map(async ([chainId, chain]) => {
-      const { dataFeedUpdateInterval, providers } = chain;
+      const { dataFeedUpdateInterval, providers, alias } = chain;
       const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
       // Calculate the stagger time for each provider on the same chain to maximize transaction throughput and update
       // frequency.
       const staggerTimeMs = dataFeedUpdateIntervalMs / size(providers);
       logger.debug(`Starting update loops for chain.`, {
-        chainName: getChainName(chainId),
+        chainName: alias,
         staggerTimeMs,
         providerNames: Object.keys(providers),
       });
@@ -48,7 +48,7 @@ export const startUpdateFeedsLoops = async () => {
       for (const providerName of Object.keys(providers)) {
         initializeGasState(chainId, providerName);
 
-        logger.debug(`Starting update feeds loop.`, { chainName: getChainName(chainId), providerName });
+        logger.debug(`Starting update feeds loop.`, { chainName: alias, providerName });
         // Run the update feed loop manually for the first time, because setInterval first waits for the given period of
         // time before calling the callback function.
         void runUpdateFeeds(providerName, chain, chainId);
@@ -141,16 +141,16 @@ export const readActiveDataFeedBatch = async (
 
 export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, chainId: ChainId) => {
   await logger.runWithContext(
-    { chainName: getChainName(chainId), providerName, updateFeedsCoordinatorId: Date.now().toString() },
+    { chainName: chain.alias, providerName, updateFeedsCoordinatorId: Date.now().toString() },
     async () => {
       // We do not expect this function to throw, but its possible that some execution path is incorrectly handled and we
       // want to process the error ourselves, for example log the error using the configured format.
       const goRunUpdateFeeds = await go(async () => {
-        const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts } = chain;
+        const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts, alias } = chain;
         const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
         // Create a provider and connect it to the AirseekerRegistry contract.
-        const provider = await createProvider(providers[providerName]!.url);
+        const provider = await createProvider(chainId, alias, providers[providerName]!.url);
         if (!provider) {
           logger.warn('Failed to create provider. This is likely an RPC issue.');
           return;
