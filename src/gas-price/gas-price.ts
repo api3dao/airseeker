@@ -168,15 +168,19 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
   // Check if the next update is a retry of a pending transaction
   if (lastUpdateTimestamp) {
     const pendingPeriod = Math.floor(Date.now() / 1000) - lastUpdateTimestamp;
-    const multiplier = calculateScalingMultiplier(
+    const scalingMultiplier = calculateScalingMultiplier(
       recommendedGasPriceMultiplier,
       maxScalingMultiplier,
       pendingPeriod,
       scalingWindow
     );
 
-    logger.warn('Scaling gas price.', { gasPrice: latestGasPrice.toString(), multiplier, pendingPeriod });
-    return multiplyBigNumber(latestGasPrice, multiplier);
+    logger.warn('Scaling gas price.', {
+      gasPrice: latestGasPrice.toString(),
+      multiplier: scalingMultiplier,
+      pendingPeriod,
+    });
+    return multiplyBigNumber(latestGasPrice, scalingMultiplier);
   }
 
   // Check that there are enough entries in the stored gas prices to determine whether to use sanitization or not
