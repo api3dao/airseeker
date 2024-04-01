@@ -37,7 +37,6 @@ export type Contracts = z.infer<typeof contractsSchema>;
 
 export const gasSettingsSchema = z
   .object({
-    // TODO: Rename to baseGasPriceMultiplier and maxGasPriceMultiplier (when issue is fixed).
     recommendedGasPriceMultiplier: z.number().positive(),
     sanitizationSamplingWindow: z.number().positive(),
     sanitizationPercentile: z.number().positive(),

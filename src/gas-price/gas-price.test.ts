@@ -219,7 +219,7 @@ describe(getRecommendedGasPrice.name, () => {
     expect(logger.warn).toHaveBeenCalledTimes(0);
   });
 
-  it('applies scaling if there a pending transaction timestamp', async () => {
+  it('applies scaling if the transaction is a retry of a pending transaction', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     jest.spyOn(provider, 'getFeeData').mockResolvedValueOnce({ gasPrice: ethers.parseUnits('10', 'gwei') } as any);
     updateState((draft) => {

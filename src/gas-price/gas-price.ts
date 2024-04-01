@@ -141,7 +141,7 @@ export const getRecommendedGasPrice = async (
   if (!goGasPrice.success) logger.error('Failed to fetch gas price from RPC provider.', goGasPrice.error);
   if (gasPrice) saveGasPrice(chainId, providerName, gasPrice);
 
-  // If the gas price from RPC provider is not available, use the last saved gas price.
+  // If the gas price from RPC provider is not available, use the last saved gas price (provided it's fresh enough)
   if (!gasPrice && gasPrices.length > 0) {
     const lastSavedTimestamp = Math.max(...gasPrices.map((gasPrice) => gasPrice.timestamp));
     const lastSavedGasPrice = gasPrices.find((gasPrice) => gasPrice.timestamp === lastSavedTimestamp)!.price;
