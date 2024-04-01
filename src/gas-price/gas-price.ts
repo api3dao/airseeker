@@ -158,7 +158,7 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
   let latestGasPrice: bigint | undefined;
   // Use the latest gas price that is stored in the state. We assume that the gas price is fetched frequently and has
   // been fetched immediately before making this call. In case it fails, we fallback to the previously stored gas price.
-  if (!latestGasPrice && gasPrices.length > 0) {
+  if (gasPrices.length > 0) {
     const lastSavedTimestamp = Math.max(...gasPrices.map((gasPrice) => gasPrice.timestamp));
     latestGasPrice = gasPrices.find((gasPrice) => gasPrice.timestamp === lastSavedTimestamp)!.price;
   }

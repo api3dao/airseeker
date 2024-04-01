@@ -154,9 +154,10 @@ describe(getRecommendedGasPrice.name, () => {
     expect(logger.warn).toHaveBeenNthCalledWith(1, 'There is no gas price stored.');
   });
 
-  it("uses sanitized percentile gas price if it's above the percentile", () => {
+  it('uses sanitized percentile gas price if the latest is above the percentile', () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
+      // Make sure there are enough historical gas prices to sanitize.
       draft.gasPrices[chainId]![providerName]!.gasPrices = range(30).map((_, i) => ({
         price: ethers.parseUnits(`10`, 'gwei') - BigInt(i) * 100_000_000n,
         timestamp: timestampMock - 30 * (i + 1),
@@ -219,7 +220,7 @@ describe(getRecommendedGasPrice.name, () => {
     expect(logger.warn).toHaveBeenCalledTimes(0);
   });
 
-  it('applies scaling if the transaction is a retry of a pending transaction', async () => {
+  it('applies scaling if the transaction is a retry of a pending transaction', () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName]!.gasPrices = [];
