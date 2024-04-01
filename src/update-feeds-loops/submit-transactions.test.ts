@@ -355,7 +355,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'info');
     jest.spyOn(submitTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
-    jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockResolvedValue(BigInt(100_000_000));
+    jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockReturnValue(BigInt(100_000_000));
     jest.spyOn(submitTransactionsModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
@@ -412,7 +412,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
       sponsorWalletAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
     });
     expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting nonce.');
-    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Getting gas price.');
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Getting recommended gas price.');
     expect(logger.debug).toHaveBeenNthCalledWith(7, 'Setting timestamp of the original update transaction.');
   });
 });

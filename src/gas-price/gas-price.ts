@@ -116,9 +116,12 @@ export const fetchAndStoreGasPrice = async (
     return feeData.gasPrice;
   });
   const gasPrice = goGasPrice.data;
-  if (!goGasPrice.success || !gasPrice) {
+  if (!goGasPrice.success) {
     if (!goGasPrice.success) logger.error('Failed to fetch gas price from RPC provider.', goGasPrice.error);
-    if (!gasPrice) logger.error('No gas price returned from RPC provider.');
+    return null;
+  }
+  if (!gasPrice) {
+    logger.error('No gas price returned from RPC provider.');
     return null;
   }
 
@@ -160,7 +163,7 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
     latestGasPrice = gasPrices.find((gasPrice) => gasPrice.timestamp === lastSavedTimestamp)!.price;
   }
   if (!latestGasPrice) {
-    logger.warn('There is no gas price to use. Skipping update.');
+    logger.warn('There is no gas price stored.');
     return null;
   }
 
@@ -190,12 +193,7 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
   const percentileGasPrice = getPercentile(
     sanitizationPercentile,
     gasPrices.map((gasPrice) => gasPrice.price)
-  );
-  if (!percentileGasPrice) {
-    logger.warn('No historical gas prices to compute the percentile. Using the provider recommended gas price.');
-    return multiplyBigNumber(latestGasPrice, recommendedGasPriceMultiplier);
-  }
-
+  )!;
   // Log a warning if there is not enough historical data to sanitize the gas price but the price could be sanitized
   if (!hasSufficientSanitizationData && latestGasPrice > percentileGasPrice) {
     logger.warn('Gas price could be sanitized but there is not enough historical data.', {

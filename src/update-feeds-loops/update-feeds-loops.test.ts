@@ -178,7 +178,10 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       ),
     };
     const airseekerRegistry = generateMockAirseekerRegistry();
-    jest.spyOn(contractsModule, 'createProvider').mockResolvedValue(123 as any as ethers.JsonRpcProvider);
+    const getFeeDataSpy = jest.fn().mockResolvedValue({ gasPrice: ethers.parseUnits('5', 'gwei') });
+    jest
+      .spyOn(contractsModule, 'createProvider')
+      .mockResolvedValue({ getFeeData: getFeeDataSpy } as any as ethers.JsonRpcProvider);
     jest
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
@@ -268,20 +271,22 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       'Failed to get active data feeds batch.',
       new Error('One of the multicalls failed')
     );
-    expect(logger.debug).toHaveBeenCalledTimes(6);
+    expect(logger.debug).toHaveBeenCalledTimes(8);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of data feeds batches.');
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active data feeds.', expect.anything());
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching batches of active data feeds.', {
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching gas price and saving it to the state.');
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching batches of active data feeds.', {
       batchesCount: 3,
       staggerTimeMs: 50,
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching batch of active data feeds.', {
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batch of active data feeds.', {
       batchIndex: 1,
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batch of active data feeds.', {
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Fetching batch of active data feeds.', {
       batchIndex: 2,
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Processing batch of active data feeds.', expect.anything());
+    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Processing batch of active data feeds.', expect.anything());
+    expect(logger.debug).toHaveBeenNthCalledWith(8, 'Fetching gas price and saving it to the state.');
 
     expect(logger.info).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenNthCalledWith(1, 'Finished processing batches of active data feeds.', {
