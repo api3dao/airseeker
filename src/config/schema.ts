@@ -51,6 +51,14 @@ export const gasSettingsSchema = z
         path: ['recommendedGasPriceMultiplier'],
       });
     }
+
+    if (gasSettings.sanitizationPercentile >= 100) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'sanitizationPercentile must be less than 100.',
+        path: ['sanitizationPercentile'],
+      });
+    }
   });
 
 export type GasSettings = z.infer<typeof gasSettingsSchema>;

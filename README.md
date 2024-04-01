@@ -181,11 +181,29 @@ The URL of the provider.
 
 ##### `gasSettings`
 
-The settings used to calculate gas prices used to submit transactions.
+The settings used to calculate gas prices used to submit transactions. The gas oracle is stateful and maintains
+historical gas prices for a specific sampling window. In case the transaction is a retry of a pending transaction, the
+latest gas price is linearly scaled by a factor up to a specified maximum. In case the transaction is not a retry, the
+latest gas price is sanitized against a percentile chosen from the historical gas prices and multipled by a specified
+gas price multiplier.
+
+Example of a scaling computation:
+
+```js
+// Parameters:
+// - recommendedGasPriceMultiplier = 1.2
+// - maxScalingMultiplier = 2
+// - scalingWindow = 300
+//
+// Say there is a pending transaction for 150 seconds.
+//
+// The scaling factor is calculated as:
+1.2 + (2 - 1.2) * (2.5 / 5) = 1.6
+```
 
 ###### `recommendedGasPriceMultiplier`
 
-The multiplier used for the provider recommended gas price.
+The base multiplier used to compute the gas price. Used to multiply the latest (or sanitized) gas price.
 
 ###### `sanitizationSamplingWindow`
 
@@ -193,15 +211,17 @@ The number of seconds for which to keep historical gas prices.
 
 ###### `sanitizationPercentile`
 
-The percentile of gas historical prices to use for sanitization.
+The percentile of gas historical prices to use for sanitization of the latest gas price.
 
 ###### `scalingWindow`
 
-The number of seconds used to calculate the scaling multiplier if a pending transaction is detected.
+The period in seconds used to scale the retry of a pending update transaction. The transaction is scaled linearly up to
+the `maxScalingMultiplier`.
 
 ###### `maxScalingMultiplier`
 
-The maximum scaling multiplier used when the pending transaction lag exceeds the `scalingWindow`.
+The maximum scaling multiplier. The gas price will not be scaled by a larger factor independently of how long is the
+update pending.
 
 ##### `deviationThresholdCoefficient` _(optional)_
 
