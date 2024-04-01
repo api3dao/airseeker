@@ -60,7 +60,7 @@ describe(purgeOldGasPrices.name, () => {
     };
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
-      draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
+      draft.gasPrices[chainId]![providerName]!.gasPrices = [oldGasPriceMock];
     });
 
     purgeOldGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
@@ -196,74 +196,16 @@ describe(getRecommendedGasPrice.name, () => {
   });
 
   it('uses provider recommended gas if it is within the percentile', async () => {
-    const oldGasPriceValueMock = ethers.parseUnits('11', 'gwei');
-    const oldGasPriceMock = {
-      price: oldGasPriceValueMock,
-      timestamp: timestampMock,
-    };
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     jest.spyOn(provider, 'getFeeData').mockResolvedValueOnce({ gasPrice: ethers.parseUnits('10', 'gwei') } as any);
     updateState((draft) => {
-      draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-    });
-    jest.spyOn(logger, 'debug');
-
-    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWalletAddress);
-
-    expect(gasPrice).toStrictEqual(ethers.parseUnits('15', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
-    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
-      { price: ethers.parseUnits('10', 'gwei'), timestamp: timestampMock },
-      oldGasPriceMock,
-    ]);
-
-    expect(logger.debug).toHaveBeenCalledTimes(2);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices.');
-  });
-
-  it('applies scaling if last update timestamp is past the scaling window', async () => {
-    const oldGasPriceValueMock = ethers.parseUnits('5', 'gwei');
-    const oldGasPriceMock = {
-      price: oldGasPriceValueMock,
-      timestamp: timestampMock,
-    };
-    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
-    jest.spyOn(provider, 'getFeeData').mockResolvedValueOnce({ gasPrice: ethers.parseUnits('10', 'gwei') } as any);
-    updateState((draft) => {
-      draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress] =
-        timestampMock - gasSettings.scalingWindow - 1;
-    });
-    jest.spyOn(logger, 'debug');
-    jest.spyOn(logger, 'warn');
-
-    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWalletAddress);
-
-    expect(gasPrice).toStrictEqual(ethers.parseUnits('20', 'gwei')); // The price is multiplied by the scaling multiplier.
-    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
-      { price: ethers.parseUnits('10', 'gwei'), timestamp: timestampMock },
-      oldGasPriceMock,
-    ]);
-
-    expect(logger.debug).toHaveBeenCalledTimes(2);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices.');
-    expect(logger.warn).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenNthCalledWith(1, 'Scaling gas price.', { gasPrice: '10000000000', multiplier: 2 });
-  });
-
-  it('does not apply scaling if the lag is not sufficient', async () => {
-    const oldGasPriceValueMock = ethers.parseUnits('5', 'gwei');
-    const oldGasPriceMock = {
-      price: oldGasPriceValueMock,
-      timestamp: timestampMock,
-    };
-    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
-    jest.spyOn(provider, 'getFeeData').mockResolvedValueOnce({ gasPrice: ethers.parseUnits('10', 'gwei') } as any);
-    updateState((draft) => {
-      draft.gasPrices[chainId]![providerName]!.gasPrices.unshift(oldGasPriceMock);
-      draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress] =
-        timestampMock - gasSettings.scalingWindow + 1000;
+      draft.gasPrices[chainId]![providerName]!.gasPrices = [];
+      for (let i = 0; i < 20; i++) {
+        draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({
+          price: ethers.parseUnits('9', 'gwei') + BigInt(i) * 100_000_000n,
+          timestamp: timestampMock - (20 - i) * 30,
+        });
+      }
     });
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'warn');
@@ -271,20 +213,41 @@ describe(getRecommendedGasPrice.name, () => {
     const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWalletAddress);
 
     expect(gasPrice).toStrictEqual(ethers.parseUnits('15', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
-    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
-      { price: ethers.parseUnits('10', 'gwei'), timestamp: timestampMock },
-      oldGasPriceMock,
-    ]);
+    expect(logger.debug).toHaveBeenCalledTimes(2);
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices.');
+    expect(logger.warn).toHaveBeenCalledTimes(0);
+  });
+
+  it('applies scaling if there a pending transaction timestamp', async () => {
+    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
+    jest.spyOn(provider, 'getFeeData').mockResolvedValueOnce({ gasPrice: ethers.parseUnits('10', 'gwei') } as any);
+    updateState((draft) => {
+      draft.gasPrices[chainId]![providerName]!.gasPrices = [];
+      draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress] = timestampMock - 60;
+      for (let i = 0; i < 20; i++) {
+        draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({
+          price: ethers.parseUnits('9', 'gwei') + BigInt(i) * 100_000_000n,
+          timestamp: timestampMock - (20 - i) * 30,
+        });
+      }
+    });
+    jest.spyOn(logger, 'debug');
+    jest.spyOn(logger, 'warn');
+
+    const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWalletAddress);
+
+    expect(gasPrice).toStrictEqual(ethers.parseUnits('17.5', 'gwei')); // The price is multiplied by the scaling multiplier.
 
     expect(logger.debug).toHaveBeenCalledTimes(2);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Purging old gas prices.');
     expect(logger.warn).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenNthCalledWith(
-      1,
-      'Gas price could be sanitized but there is not enough historical data.',
-      { gasPrice: '10000000000', percentileGasPrice: '5000000000' }
-    );
+    expect(logger.warn).toHaveBeenNthCalledWith(1, 'Scaling gas price.', {
+      gasPrice: '10000000000',
+      multiplier: 1.75,
+      pendingPeriod: 60,
+    });
   });
 
   it('throws and error when getting gas price from RPC provider fails', async () => {
