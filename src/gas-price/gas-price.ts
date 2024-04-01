@@ -141,7 +141,7 @@ export const getRecommendedGasPrice = async (
   if (!goGasPrice.success) logger.error('Failed to fetch gas price from RPC provider.', goGasPrice.error);
   if (gasPrice) saveGasPrice(chainId, providerName, gasPrice);
 
-  // If the gas price from RPC provider is not available, use the last saved gas price (provided it's fresh enough)
+  // If the gas price from RPC provider is not available, use the last saved gas price.
   if (!gasPrice && gasPrices.length > 0) {
     const lastSavedTimestamp = Math.max(...gasPrices.map((gasPrice) => gasPrice.timestamp));
     const lastSavedGasPrice = gasPrices.find((gasPrice) => gasPrice.timestamp === lastSavedTimestamp)!.price;
@@ -161,15 +161,16 @@ export const getRecommendedGasPrice = async (
   const lastUpdateTimestamp = sponsorLastUpdateTimestamp[sponsorWalletAddress];
 
   // Check if the next update is a retry of a pending transaction and if it has been pending longer than scalingWindow
-  if (lastUpdateTimestamp && lastUpdateTimestamp < Math.floor(Date.now() / 1000) - scalingWindow) {
+  if (lastUpdateTimestamp) {
+    const pendingPeriod = Math.floor(Date.now() / 1000) - lastUpdateTimestamp;
     const multiplier = calculateScalingMultiplier(
       recommendedGasPriceMultiplier,
       maxScalingMultiplier,
-      Math.floor(Date.now() / 1000) - lastUpdateTimestamp,
+      pendingPeriod,
       scalingWindow
     );
 
-    logger.warn('Scaling gas price.', { gasPrice: gasPrice.toString(), multiplier });
+    logger.warn('Scaling gas price.', { gasPrice: gasPrice.toString(), multiplier, pendingPeriod });
     return multiplyBigNumber(gasPrice, multiplier);
   }
 
