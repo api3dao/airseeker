@@ -90,8 +90,8 @@ export const submitTransaction = async (
         logger.debug('Getting nonce.');
         const nonce = await provider.getTransactionCount(sponsorWallet.address, blockNumber);
 
-        logger.debug('Getting gas price.');
-        const gasPrice = await getRecommendedGasPrice(chainId, providerName, provider, sponsorWallet.address);
+        logger.debug('Getting recommended gas price.');
+        const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWallet.address);
         if (!gasPrice) return null;
 
         // We want to set the timestamp of the first update transaction. We can determine if the transaction is the

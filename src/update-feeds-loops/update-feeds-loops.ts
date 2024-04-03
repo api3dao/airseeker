@@ -4,7 +4,7 @@ import type { ethers } from 'ethers';
 import { isError, range, set, size, uniq } from 'lodash';
 
 import type { Chain } from '../config/schema';
-import { clearSponsorLastUpdateTimestamp, initializeGasState } from '../gas-price';
+import { clearSponsorLastUpdateTimestamp, fetchAndStoreGasPrice, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
@@ -338,6 +338,10 @@ export const processBatch = async (
       clearSponsorLastUpdateTimestamp(chainId, providerName, sponsorWalletAddress);
     }
   }
+
+  // Fetch the gas price regardless of whether there are any feeds to be updated or not in order for gas oracle to
+  // maintain historical gas prices.
+  await fetchAndStoreGasPrice(chainId, providerName, provider);
 
   const updatedFeeds = await submitTransactions(
     chainId,

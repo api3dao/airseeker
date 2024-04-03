@@ -1,6 +1,6 @@
 import { go } from '@api3/promise-utils';
 import type { ethers } from 'ethers';
-import { remove } from 'lodash';
+import { maxBy, remove } from 'lodash';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
@@ -102,6 +102,38 @@ export const calculateScalingMultiplier = (
     maxScalingMultiplier
   );
 
+export const fetchAndStoreGasPrice = async (
+  chainId: string,
+  providerName: string,
+  provider: ethers.JsonRpcProvider
+) => {
+  // Get the provider recommended gas price and save it to the state
+  logger.debug('Fetching gas price and saving it to the state.');
+  const goGasPrice = await go(async () => {
+    const feeData = await provider.getFeeData();
+    // We assume the legacy gas price will always exist. See:
+    // https://api3workspace.slack.com/archives/C05TQPT7PNJ/p1699098552350519
+    return feeData.gasPrice;
+  });
+  const gasPrice = goGasPrice.data;
+  if (!goGasPrice.success) {
+    logger.error('Failed to fetch gas price from RPC provider.', goGasPrice.error);
+    return null;
+  }
+  if (!gasPrice) {
+    logger.error('No gas price returned from RPC provider.');
+    return null;
+  }
+
+  const state = getState();
+  const {
+    gasSettings: { sanitizationSamplingWindow },
+  } = state.config.chains[chainId]!;
+  saveGasPrice(chainId, providerName, gasPrice);
+  purgeOldGasPrices(chainId, providerName, sanitizationSamplingWindow);
+  return gasPrice;
+};
+
 /**
  *  Calculates the gas price to be used in a transaction based on sanitization and scaling settings.
  * @param chainId
@@ -110,12 +142,7 @@ export const calculateScalingMultiplier = (
  * @param gasSettings
  * @param sponsorWalletAddress
  */
-export const getRecommendedGasPrice = async (
-  chainId: string,
-  providerName: string,
-  provider: ethers.JsonRpcProvider,
-  sponsorWalletAddress: string
-) => {
+export const getRecommendedGasPrice = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
   const state = getState();
   const { gasPrices, sponsorLastUpdateTimestamp } = state.gasPrices[chainId]![providerName]!;
   const {
@@ -126,40 +153,18 @@ export const getRecommendedGasPrice = async (
       scalingWindow,
       maxScalingMultiplier,
     },
-    dataFeedUpdateInterval,
   } = state.config.chains[chainId]!;
 
-  // Get the provider recommended gas price and save it to the state
-  logger.debug('Fetching gas price and saving it to the state.');
-  const goGasPrice = await go(async () => {
-    const feeData = await provider.getFeeData();
-    // We assume the legacy gas price will always exist. See:
-    // https://api3workspace.slack.com/archives/C05TQPT7PNJ/p1699098552350519
-    return feeData.gasPrice;
-  });
-  let gasPrice = goGasPrice.data;
-  if (!goGasPrice.success) logger.error('Failed to fetch gas price from RPC provider.', goGasPrice.error);
-  if (gasPrice) saveGasPrice(chainId, providerName, gasPrice);
-
-  // If the gas price from RPC provider is not available, use the last saved gas price (provided it's fresh enough)
-  if (!gasPrice && gasPrices.length > 0) {
-    const lastSavedTimestamp = Math.max(...gasPrices.map((gasPrice) => gasPrice.timestamp));
-    const lastSavedGasPrice = gasPrices.find((gasPrice) => gasPrice.timestamp === lastSavedTimestamp)!.price;
-
-    if (lastSavedTimestamp >= Math.floor(Date.now() / 1000) - 10 * dataFeedUpdateInterval) {
-      gasPrice = lastSavedGasPrice;
-    }
-  }
-  if (!gasPrice) {
-    logger.warn('There is no gas price to use. Skipping update.');
+  let latestGasPrice: bigint | undefined;
+  // Use the latest gas price that is stored in the state. We assume that the gas price is fetched frequently and has
+  // been fetched immediately before making this call. In case it fails, we fallback to the previously stored gas price.
+  if (gasPrices.length > 0) latestGasPrice = maxBy(gasPrices, (x) => x.timestamp)!.price;
+  if (!latestGasPrice) {
+    logger.warn('There is no gas price stored.');
     return null;
   }
 
-  logger.debug('Purging old gas prices.');
-  purgeOldGasPrices(chainId, providerName, sanitizationSamplingWindow);
-
   const lastUpdateTimestamp = sponsorLastUpdateTimestamp[sponsorWalletAddress];
-
   // Check if the next update is a retry of a pending transaction
   if (lastUpdateTimestamp) {
     const pendingPeriod = Math.floor(Date.now() / 1000) - lastUpdateTimestamp;
@@ -170,8 +175,8 @@ export const getRecommendedGasPrice = async (
       scalingWindow
     );
 
-    logger.warn('Scaling gas price.', { gasPrice: gasPrice.toString(), multiplier, pendingPeriod });
-    return multiplyBigNumber(gasPrice, multiplier);
+    logger.warn('Scaling gas price.', { gasPrice: latestGasPrice.toString(), multiplier, pendingPeriod });
+    return multiplyBigNumber(latestGasPrice, multiplier);
   }
 
   // Check that there are enough entries in the stored gas prices to determine whether to use sanitization or not
@@ -185,28 +190,23 @@ export const getRecommendedGasPrice = async (
   const percentileGasPrice = getPercentile(
     sanitizationPercentile,
     gasPrices.map((gasPrice) => gasPrice.price)
-  );
-  if (!percentileGasPrice) {
-    logger.warn('No historical gas prices to compute the percentile. Using the provider recommended gas price.');
-    return multiplyBigNumber(gasPrice, recommendedGasPriceMultiplier);
-  }
-
+  )!;
   // Log a warning if there is not enough historical data to sanitize the gas price but the price could be sanitized
-  if (!hasSufficientSanitizationData && gasPrice > percentileGasPrice) {
+  if (!hasSufficientSanitizationData && latestGasPrice > percentileGasPrice) {
     logger.warn('Gas price could be sanitized but there is not enough historical data.', {
-      gasPrice: gasPrice.toString(),
+      gasPrice: latestGasPrice.toString(),
       percentileGasPrice: percentileGasPrice.toString(),
     });
   }
 
   // If necessary, sanitize the gas price and log a warning because this should not happen under normal circumstances
-  if (hasSufficientSanitizationData && gasPrice > percentileGasPrice) {
+  if (hasSufficientSanitizationData && latestGasPrice > percentileGasPrice) {
     logger.warn('Sanitizing gas price.', {
-      gasPrice: gasPrice.toString(),
+      gasPrice: latestGasPrice.toString(),
       percentileGasPrice: percentileGasPrice.toString(),
     });
     return multiplyBigNumber(percentileGasPrice, recommendedGasPriceMultiplier);
   }
 
-  return multiplyBigNumber(gasPrice, recommendedGasPriceMultiplier);
+  return multiplyBigNumber(latestGasPrice, recommendedGasPriceMultiplier);
 };

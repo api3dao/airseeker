@@ -1,4 +1,4 @@
-import { initializeGasState } from '../../src/gas-price';
+import { fetchAndStoreGasPrice, initializeGasState } from '../../src/gas-price';
 import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
 import { runUpdateFeeds } from '../../src/update-feeds-loops';
@@ -88,6 +88,7 @@ it('updates blockchain data', async () => {
   jest.spyOn(logger, 'info');
   jest.spyOn(logger, 'warn');
   const blockNumber = await provider.getBlockNumber();
+  await fetchAndStoreGasPrice(chainId, providerName, provider);
 
   await submitTransactions(
     chainId,
@@ -112,22 +113,17 @@ it('updates blockchain data', async () => {
     blockNumber
   );
 
-  expect(logger.debug).toHaveBeenCalledTimes(9);
-  expect(logger.debug).toHaveBeenNthCalledWith(1, 'Creating calldatas.');
-  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Estimating gas limit.');
-  expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting derived sponsor wallet.');
-  expect(logger.debug).toHaveBeenNthCalledWith(4, 'Derived new sponsor wallet.', expect.anything());
-  expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting nonce.');
-  expect(logger.debug).toHaveBeenNthCalledWith(6, 'Getting gas price.');
-  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Fetching gas price and saving it to the state.');
-  expect(logger.debug).toHaveBeenNthCalledWith(8, 'Purging old gas prices.');
-  expect(logger.debug).toHaveBeenNthCalledWith(9, 'Setting timestamp of the original update transaction.');
+  expect(logger.debug).toHaveBeenCalledTimes(8);
+  expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
+  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Creating calldatas.');
+  expect(logger.debug).toHaveBeenNthCalledWith(3, 'Estimating gas limit.');
+  expect(logger.debug).toHaveBeenNthCalledWith(4, 'Getting derived sponsor wallet.');
+  expect(logger.debug).toHaveBeenNthCalledWith(5, 'Derived new sponsor wallet.', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(6, 'Getting nonce.');
+  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Getting recommended gas price.');
+  expect(logger.debug).toHaveBeenNthCalledWith(8, 'Setting timestamp of the original update transaction.');
   expect(logger.info).toHaveBeenCalledTimes(2);
   expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed.', expect.anything());
   expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully updated data feed.');
-  expect(logger.warn).toHaveBeenCalledTimes(1);
-  expect(logger.warn).toHaveBeenNthCalledWith(
-    1,
-    'No historical gas prices to compute the percentile. Using the provider recommended gas price.'
-  );
+  expect(logger.warn).toHaveBeenCalledTimes(0);
 });
