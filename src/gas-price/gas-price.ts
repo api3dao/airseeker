@@ -1,6 +1,6 @@
 import { go } from '@api3/promise-utils';
 import type { ethers } from 'ethers';
-import { remove } from 'lodash';
+import { maxBy, remove } from 'lodash';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
@@ -117,7 +117,7 @@ export const fetchAndStoreGasPrice = async (
   });
   const gasPrice = goGasPrice.data;
   if (!goGasPrice.success) {
-    if (!goGasPrice.success) logger.error('Failed to fetch gas price from RPC provider.', goGasPrice.error);
+    logger.error('Failed to fetch gas price from RPC provider.', goGasPrice.error);
     return null;
   }
   if (!gasPrice) {
@@ -158,10 +158,7 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
   let latestGasPrice: bigint | undefined;
   // Use the latest gas price that is stored in the state. We assume that the gas price is fetched frequently and has
   // been fetched immediately before making this call. In case it fails, we fallback to the previously stored gas price.
-  if (gasPrices.length > 0) {
-    const lastSavedTimestamp = Math.max(...gasPrices.map((gasPrice) => gasPrice.timestamp));
-    latestGasPrice = gasPrices.find((gasPrice) => gasPrice.timestamp === lastSavedTimestamp)!.price;
-  }
+  if (gasPrices.length > 0) latestGasPrice = maxBy(gasPrices, (x) => x.timestamp)!.price;
   if (!latestGasPrice) {
     logger.warn('There is no gas price stored.');
     return null;
