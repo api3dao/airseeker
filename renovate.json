@@ -3,7 +3,7 @@
   "extends": ["config:base"],
   "packageRules": [
     {
-      "matchPackageNames": ["node"],
+      "matchPackageNames": ["node", "is-wsl"],
       "enabled": false
     },
     {
