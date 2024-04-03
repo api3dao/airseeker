@@ -35,13 +35,23 @@ const contractsSchema = optionalContractsSchema.required();
 
 export type Contracts = z.infer<typeof contractsSchema>;
 
-export const gasSettingsSchema = z.object({
-  recommendedGasPriceMultiplier: z.number().positive(),
-  sanitizationSamplingWindow: z.number().positive(),
-  sanitizationPercentile: z.number().positive(),
-  scalingWindow: z.number().positive(),
-  maxScalingMultiplier: z.number().positive(),
-});
+export const gasSettingsSchema = z
+  .object({
+    recommendedGasPriceMultiplier: z.number().positive(),
+    sanitizationSamplingWindow: z.number().positive(),
+    sanitizationPercentile: z.number().positive(),
+    scalingWindow: z.number().positive(),
+    maxScalingMultiplier: z.number().positive(),
+  })
+  .superRefine((gasSettings, ctx) => {
+    if (gasSettings.recommendedGasPriceMultiplier > gasSettings.maxScalingMultiplier) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'recommendedGasPriceMultiplier must be less than or equal to maxScalingMultiplier.',
+        path: ['recommendedGasPriceMultiplier'],
+      });
+    }
+  });
 
 export type GasSettings = z.infer<typeof gasSettingsSchema>;
 
