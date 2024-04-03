@@ -400,7 +400,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
       nonce: 0,
       sponsorAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
     });
-    expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully updated data feed.');
+    expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the multicall transaction.');
 
     // Verify the flow of the update process via the debug logs. Note, that some debug log calls are not here because
     // many functions are mocked.
