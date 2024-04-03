@@ -15,12 +15,6 @@ export const initializeGasState = (chainId: string, providerName: string) =>
     draft.gasPrices[chainId]![providerName] = { gasPrices: [], sponsorLastUpdateTimestamp: {} };
   });
 
-/**
- * Saves a gas price into the state.
- * @param chainId
- * @param providerName
- * @param gasPrice
- */
 export const saveGasPrice = (chainId: string, providerName: string, gasPrice: bigint) =>
   updateState((draft) => {
     draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({
@@ -29,12 +23,6 @@ export const saveGasPrice = (chainId: string, providerName: string, gasPrice: bi
     });
   });
 
-/**
- * Removes gas prices where the timestamp is older than sanitizationSamplingWindow from the state.
- * @param chainId
- * @param providerName
- * @param sanitizationSamplingWindow
- */
 export const purgeOldGasPrices = (chainId: string, providerName: string, sanitizationSamplingWindow: number) =>
   updateState((draft) => {
     // Remove gasPrices older than the sanitizationSamplingWindow.
@@ -44,12 +32,6 @@ export const purgeOldGasPrices = (chainId: string, providerName: string, sanitiz
     );
   });
 
-/**
- * Saves a sponsor wallet's last update timestamp into the state.
- * @param chainId
- * @param providerName
- * @param sponsorWalletAddress
- */
 export const setSponsorLastUpdateTimestamp = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
   updateState((draft) => {
     draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress] = Math.floor(
@@ -58,12 +40,6 @@ export const setSponsorLastUpdateTimestamp = (chainId: string, providerName: str
   });
 };
 
-/**
- * Removes a sponsor wallet's last update timestamp from the state.
- * @param chainId
- * @param providerName
- * @param sponsorWalletAddress
- */
 export const clearSponsorLastUpdateTimestamp = (chainId: string, providerName: string, sponsorWalletAddress: string) =>
   updateState((draft) => {
     const gasPriceStatePerChain = draft?.gasPrices[chainId] ?? {};
@@ -84,13 +60,6 @@ export const getPercentile = (percentile: number, array: bigint[]) => {
   return array[index];
 };
 
-/**
- * Calculates the multiplier to use for pending transactions.
- * @param recommendedGasPriceMultiplier
- * @param maxScalingMultiplier
- * @param lag
- * @param scalingWindow
- */
 export const calculateScalingMultiplier = (
   recommendedGasPriceMultiplier: number,
   maxScalingMultiplier: number,
@@ -134,14 +103,6 @@ export const fetchAndStoreGasPrice = async (
   return gasPrice;
 };
 
-/**
- *  Calculates the gas price to be used in a transaction based on sanitization and scaling settings.
- * @param chainId
- * @param providerName
- * @param provider
- * @param gasSettings
- * @param sponsorWalletAddress
- */
 export const getRecommendedGasPrice = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
   const state = getState();
   const { gasPrices, sponsorLastUpdateTimestamp } = state.gasPrices[chainId]![providerName]!;
@@ -168,15 +129,19 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
   // Check if the next update is a retry of a pending transaction
   if (lastUpdateTimestamp) {
     const pendingPeriod = Math.floor(Date.now() / 1000) - lastUpdateTimestamp;
-    const multiplier = calculateScalingMultiplier(
+    const scalingMultiplier = calculateScalingMultiplier(
       recommendedGasPriceMultiplier,
       maxScalingMultiplier,
       pendingPeriod,
       scalingWindow
     );
 
-    logger.warn('Scaling gas price.', { gasPrice: latestGasPrice.toString(), multiplier, pendingPeriod });
-    return multiplyBigNumber(latestGasPrice, multiplier);
+    logger.warn('Scaling gas price.', {
+      gasPrice: latestGasPrice.toString(),
+      multiplier: scalingMultiplier,
+      pendingPeriod,
+    });
+    return multiplyBigNumber(latestGasPrice, scalingMultiplier);
   }
 
   // Check that there are enough entries in the stored gas prices to determine whether to use sanitization or not
