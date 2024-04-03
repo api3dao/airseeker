@@ -1,5 +1,6 @@
 import { getSignedData } from '../data-fetcher-loop/signed-data-state';
 import { calculateMedian, isDataFeedUpdatable } from '../deviation-check';
+import { logger } from '../logger';
 import type { SignedData } from '../types';
 import { decodeBeaconValue, multiplyBigNumber } from '../utils';
 
@@ -56,19 +57,26 @@ export const getUpdatableFeeds = (
         const newBeaconSetValue = calculateMedian(beaconValues.map(({ value }) => value));
         const newBeaconSetTimestamp = calculateMedian(beaconValues.map(({ timestamp }) => timestamp));
 
-        const { decodedUpdateParameters, dataFeedValue, dataFeedTimestamp } = dataFeedInfo;
+        const { decodedUpdateParameters, dataFeedValue, dataFeedTimestamp, decodedDapiName, dataFeedId } = dataFeedInfo;
         const adjustedDeviationThresholdCoefficient = multiplyBigNumber(
           decodedUpdateParameters.deviationThresholdInPercentage,
           deviationThresholdCoefficient
         );
 
-        return isDataFeedUpdatable(
-          dataFeedValue,
-          dataFeedTimestamp,
-          newBeaconSetValue,
-          newBeaconSetTimestamp,
-          decodedUpdateParameters.heartbeatInterval,
-          adjustedDeviationThresholdCoefficient
+        return logger.runWithContext(
+          {
+            dapiName: decodedDapiName,
+            dataFeedId,
+          },
+          () =>
+            isDataFeedUpdatable(
+              dataFeedValue,
+              dataFeedTimestamp,
+              newBeaconSetValue,
+              newBeaconSetTimestamp,
+              decodedUpdateParameters.heartbeatInterval,
+              adjustedDeviationThresholdCoefficient
+            )
         );
       })
       // Compute the updateable beacons.
