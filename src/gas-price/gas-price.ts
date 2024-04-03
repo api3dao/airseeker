@@ -160,7 +160,7 @@ export const getRecommendedGasPrice = async (
 
   const lastUpdateTimestamp = sponsorLastUpdateTimestamp[sponsorWalletAddress];
 
-  // Check if the next update is a retry of a pending transaction and if it has been pending longer than scalingWindow
+  // Check if the next update is a retry of a pending transaction
   if (lastUpdateTimestamp) {
     const pendingPeriod = Math.floor(Date.now() / 1000) - lastUpdateTimestamp;
     const multiplier = calculateScalingMultiplier(
