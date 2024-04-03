@@ -64,6 +64,7 @@ describe(getUpdatableFeeds.name, () => {
         decodedUpdateParameters: {
           deviationThresholdInPercentage: 1n,
           heartbeatInterval: 100n,
+          deviationReference: 0n,
         },
         dataFeedValue: 10n,
         dataFeedTimestamp: 95n,
@@ -110,6 +111,7 @@ describe(getUpdatableFeeds.name, () => {
           decodedUpdateParameters: {
             deviationThresholdInPercentage: 1n,
             heartbeatInterval: 100n,
+            deviationReference: 0n,
           },
         },
       },
@@ -272,6 +274,7 @@ describe(getUpdatableFeeds.name, () => {
         decodedUpdateParameters: {
           deviationThresholdInPercentage: 1n,
           heartbeatInterval: 100n,
+          deviationReference: 0n,
         },
         dataFeedValue: 400n,
         dataFeedTimestamp: 140n,

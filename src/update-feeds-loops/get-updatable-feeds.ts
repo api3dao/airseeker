@@ -57,9 +57,15 @@ export const getUpdatableFeeds = (
         const newBeaconSetValue = calculateMedian(beaconValues.map(({ value }) => value));
         const newBeaconSetTimestamp = calculateMedian(beaconValues.map(({ timestamp }) => timestamp));
 
-        const { decodedUpdateParameters, dataFeedValue, dataFeedTimestamp, decodedDapiName, dataFeedId } = dataFeedInfo;
+        const {
+          decodedUpdateParameters: { deviationThresholdInPercentage, deviationReference, heartbeatInterval },
+          dataFeedValue,
+          dataFeedTimestamp,
+          decodedDapiName,
+          dataFeedId,
+        } = dataFeedInfo;
         const adjustedDeviationThresholdCoefficient = multiplyBigNumber(
-          decodedUpdateParameters.deviationThresholdInPercentage,
+          deviationThresholdInPercentage,
           deviationThresholdCoefficient
         );
 
@@ -74,8 +80,9 @@ export const getUpdatableFeeds = (
               dataFeedTimestamp,
               newBeaconSetValue,
               newBeaconSetTimestamp,
-              decodedUpdateParameters.heartbeatInterval,
-              adjustedDeviationThresholdCoefficient
+              heartbeatInterval,
+              adjustedDeviationThresholdCoefficient,
+              deviationReference
             )
         );
       })

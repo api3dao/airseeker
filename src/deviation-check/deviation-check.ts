@@ -1,14 +1,17 @@
-import { HUNDRED_PERCENT } from '../constants';
+import { HUNDRED_PERCENT, UINT256_MAX } from '../constants';
 import { logger } from '../logger';
 import { abs } from '../utils';
 
-export const calculateDeviationPercentage = (initialValue: bigint, updatedValue: bigint) => {
-  const delta = updatedValue - initialValue;
-  const absoluteDelta = abs(delta);
+// Mirroring the logic of https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L153-L153
+export const calculateDeviationPercentage = (
+  initialValue: bigint,
+  updatedValue: bigint,
+  deviationReference: bigint
+) => {
+  const absoluteDelta = abs(updatedValue - initialValue);
+  const absoluteInitialValue = abs(deviationReference - initialValue);
 
-  // Avoid division by 0
-  const absoluteInitialValue = initialValue === 0n ? 1n : abs(initialValue);
-
+  if (!absoluteInitialValue) return UINT256_MAX;
   return (absoluteDelta * BigInt(HUNDRED_PERCENT)) / absoluteInitialValue;
 };
 
@@ -25,8 +28,13 @@ export const calculateMedian = (arr: bigint[]) => {
   return arr.length % 2 === 0 ? (nums[mid - 1]! + nums[mid]!) / 2n : nums[mid]!;
 };
 
-export const isDeviationThresholdExceeded = (onChainValue: bigint, deviationThreshold: bigint, apiValue: bigint) => {
-  const updateInPercentage = calculateDeviationPercentage(onChainValue, apiValue);
+export const isDeviationThresholdExceeded = (
+  onChainValue: bigint,
+  deviationThreshold: bigint,
+  apiValue: bigint,
+  deviationReference: bigint
+) => {
+  const updateInPercentage = calculateDeviationPercentage(onChainValue, apiValue, deviationReference);
 
   return updateInPercentage > deviationThreshold;
 };
@@ -43,11 +51,12 @@ export const isDataFeedUpdatable = (
   offChainValue: bigint,
   offChainTimestamp: bigint,
   heartbeatInterval: bigint,
-  deviationThreshold: bigint
+  deviationThreshold: bigint,
+  deviationReference: bigint
 ): boolean => {
   // Check that fulfillment data is newer than on chain data. Update transaction with stale data would revert on chain,
   // draining the sponsor wallet. See:
-  // https://github.com/api3dao/airnode-protocol-v1/blob/dev/contracts/dapis/DataFeedServer.sol#L121
+  // https://github.com/api3dao/airnode-protocol-v1/blob/main/contracts/dapis/DataFeedServer.sol#L121
   if (offChainTimestamp <= onChainTimestamp) {
     if (offChainTimestamp < onChainTimestamp) {
       logger.warn(`Off-chain sample's timestamp is older than on-chain timestamp.`);
@@ -59,7 +68,12 @@ export const isDataFeedUpdatable = (
   const isFreshEnough = isOnChainDataFresh(onChainTimestamp, heartbeatInterval);
   if (isFreshEnough) {
     // Check beacon condition
-    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue);
+    const shouldUpdate = isDeviationThresholdExceeded(
+      onChainValue,
+      deviationThreshold,
+      offChainValue,
+      deviationReference
+    );
     if (shouldUpdate) {
       logger.info(`Deviation exceeded.`);
       return true;

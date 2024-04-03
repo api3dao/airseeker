@@ -218,7 +218,7 @@ export const deploy = async (funderWallet: ethers.HDNodeWallet, provider: ethers
     await tx.wait();
     const HUNDRED_PERCENT = 1e8;
     const deviationThresholdInPercentage = BigInt(HUNDRED_PERCENT / 100); // 1%
-    const deviationReference = 0n; // Not used in Airseeker V2
+    const deviationReference = 0n;
     const heartbeatInterval = BigInt(86_400); // 24 hrs
     tx = await api3ServerV1.connect(deployerAndManager).setDapiName(dapiName, beaconSetId);
     await tx.wait();
