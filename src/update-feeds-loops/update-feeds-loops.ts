@@ -331,7 +331,7 @@ export const processBatch = async (
       //
       // We can't differentiate between these cases unless we check recent update transactions, which we don't want to
       // do.
-      logger.debug(`Clearing data feed update timestamp because it no longer needs an update.`, {
+      logger.info(`Clearing data feed update timestamp because it no longer needs an update.`, {
         dapiName: decodedDapiName,
         dataFeedId,
       });

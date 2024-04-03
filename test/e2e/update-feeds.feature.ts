@@ -124,6 +124,6 @@ it('updates blockchain data', async () => {
   expect(logger.debug).toHaveBeenNthCalledWith(8, 'Setting timestamp of the original update transaction.');
   expect(logger.info).toHaveBeenCalledTimes(2);
   expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed.', expect.anything());
-  expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully updated data feed.');
+  expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the multicall transaction.');
   expect(logger.warn).toHaveBeenCalledTimes(0);
 });
