@@ -1,4 +1,4 @@
-import { getSignedData } from '../data-fetcher-loop/signed-data-state';
+import { getSignedData, isSignedDataFresh } from '../data-fetcher-loop/signed-data-state';
 import { calculateMedian, checkUpdateCondition } from '../deviation-check';
 import { logger } from '../logger';
 import type { SignedData } from '../types';
@@ -31,7 +31,12 @@ export const getUpdatableFeeds = (
       .map((dataFeedInfo) => {
         const aggregatedBeaconsWithData = dataFeedInfo.beaconsWithData.map(({ beaconId, timestamp, value }) => {
           const onChainValue: BeaconValue = { timestamp, value };
-          const signedData = getSignedData(beaconId);
+          let signedData = getSignedData(beaconId);
+          if (signedData && !isSignedDataFresh(signedData)) {
+            // This should not happen under normal circumstances. Something must be off with the Signed API.
+            logger.warn("Not using the the signed data because it's older than 24 hours.");
+            signedData = undefined;
+          }
           const offChainValue: BeaconValue | undefined = signedData
             ? {
                 timestamp: BigInt(signedData.timestamp),

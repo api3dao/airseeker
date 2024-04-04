@@ -73,12 +73,6 @@ export const saveSignedData = (signedData: SignedData) => {
       return;
     }
 
-    if (!isSignedDataFresh(signedData)) {
-      // This should not happen under normal circumstances. Something must be off with the Signed API.
-      logger.warn('Skipping state update. The signed data value is older than 24 hours.');
-      return;
-    }
-
     updateState((draft) => {
       draft.signedDatas[dataFeedId] = signedData;
     });

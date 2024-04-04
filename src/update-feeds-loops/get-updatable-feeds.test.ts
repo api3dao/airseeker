@@ -446,4 +446,56 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
   });
+
+  it('logs a warning when some signed data is too old', () => {
+    const now = Date.now();
+    jest.useFakeTimers().setSystemTime(now);
+
+    const mockSignedDataState = allowPartial<Record<string, SignedData>>({
+      [feedIds[0]]: {
+        timestamp: String(Math.floor(now / 1000) - 23 * 60 * 60),
+        encodedValue: encodeBeaconValue('200'),
+      },
+      [feedIds[1]]: {
+        timestamp: String(Math.floor(now / 1000) - 24 * 60 * 60), // Too old.
+        encodedValue: encodeBeaconValue('250'),
+      },
+      [feedIds[2]]: {
+        timestamp: String(Math.floor(now / 1000) - 25 * 60 * 60), // Too old.
+        encodedValue: encodeBeaconValue('300'),
+      },
+    });
+    jest
+      .spyOn(signedDataStateModule, 'getSignedData')
+      .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
+    jest.spyOn(logger, 'warn');
+
+    const timestamps = [BigInt(now - 2 * 60 * 1000), BigInt(now - 2 * 60 * 1000), BigInt(now - 2 * 60 * 1000)];
+    const values = [400n, 500n, 600n];
+    const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
+      {
+        decodedUpdateParameters: {
+          deviationThresholdInPercentage: ONE_PERCENT,
+          heartbeatInterval: 100n,
+          deviationReference: 0n,
+        },
+        dataFeedValue: calculateMedian(values),
+        dataFeedTimestamp: calculateMedian(timestamps),
+        beaconsWithData: range(values.length).map((i) => ({
+          beaconId: feedIds[i]!,
+          timestamp: timestamps[i]!,
+          value: values[i]!,
+        })),
+        dataFeedId: '0x000',
+        dapiName: encodeDapiName('test'),
+      },
+    ]);
+
+    const updatableFeeds = getUpdatableFeeds(batch, 1);
+
+    expect(updatableFeeds).toStrictEqual([]);
+    expect(logger.warn).toHaveBeenCalledTimes(2);
+    expect(logger.warn).toHaveBeenCalledWith(`Not using the the signed data because it's older than 24 hours.`);
+    expect(logger.warn).toHaveBeenCalledWith(`Not using the the signed data because it's older than 24 hours.`);
+  });
 });
