@@ -64,31 +64,20 @@ export const isDataFeedUpdatable = (
     }
     return false;
   }
-
-  // At this point it's clear that the off-chain data is newer than the on-chain data and the on-chain data is
-  // uninitialized.
+  // At this point it's clear that the off-chain data is newer than the on-chain data.
   if (onChainTimestamp === 0n) return true;
 
+  // Contract requires deviation threshold to be non-zero when computing the standard deviation.
+  if (
+    deviationThreshold &&
+    isDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue, deviationReference)
+  ) {
+    logger.info(`Deviation exceeded.`);
+    return true;
+  }
+
   // Check that on-chain data is fresh enough to not be force-updated by the heartbeat.
-  const isFreshEnough = isOnChainDataFresh(onChainTimestamp, heartbeatInterval);
-  if (isFreshEnough) {
-    // Contract requires deviation threshold to be non-zero when computing the standard deviation.
-    if (deviationThreshold === 0n) {
-      logger.info(`Deviation threshold is zero.`);
-      return false;
-    }
-
-    if (isDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue, deviationReference)) {
-      logger.info(`Deviation exceeded.`);
-      return true;
-    }
-  } else {
-    // Contract requires heartbeat interval to be non-zero when checking for heartbeat update.
-    if (heartbeatInterval === 0n) {
-      logger.info(`Heartbeat interval is zero.`);
-      return false;
-    }
-
+  if (heartbeatInterval && !isOnChainDataFresh(onChainTimestamp, heartbeatInterval)) {
     logger.info(`On-chain timestamp is older than the heartbeat interval.`);
     return true;
   }
