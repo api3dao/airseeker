@@ -394,9 +394,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
 
     const feeds = getUpdatableFeedsModule.getUpdatableFeeds([activeDataFeed], 2);
 
-    expect(logger.warn).not.toHaveBeenCalledWith(`Off-chain sample's timestamp is older than on-chain timestamp.`);
-    expect(logger.warn).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
-    expect(logger.info).not.toHaveBeenCalledWith(`Deviation exceeded.`);
+    expect(logger.warn).toHaveBeenCalledTimes(0);
     expect(feeds).toStrictEqual([]);
   });
 

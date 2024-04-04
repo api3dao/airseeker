@@ -242,7 +242,7 @@ describe(getUpdatableFeeds.name, () => {
 
     const checkFeedsResult = getUpdatableFeeds(batch, 1);
 
-    expect(logger.warn).toHaveBeenCalledWith(`Off-chain sample's timestamp is older than on-chain timestamp.`);
+    expect(logger.warn).toHaveBeenCalledWith(`Off-chain sample's timestamp is not newer than on-chain timestamp.`);
     expect(checkFeedsResult).toStrictEqual([]);
   });
 
@@ -290,8 +290,7 @@ describe(getUpdatableFeeds.name, () => {
 
     const checkFeedsResult = getUpdatableFeeds(batch, 1);
 
-    expect(logger.info).not.toHaveBeenCalledWith(`Deviation exceeded.`);
-    expect(logger.info).not.toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
+    expect(logger.info).toHaveBeenCalledTimes(0);
     expect(checkFeedsResult).toStrictEqual([]);
   });
 });

@@ -59,9 +59,7 @@ export const isDataFeedUpdatable = (
   // Check that fulfillment data is newer than on chain data. Update transaction with stale data would revert on chain,
   // draining the sponsor wallet.
   if (offChainTimestamp <= onChainTimestamp) {
-    if (offChainTimestamp < onChainTimestamp) {
-      logger.warn(`Off-chain sample's timestamp is older than on-chain timestamp.`);
-    }
+    logger.warn(`Off-chain sample's timestamp is not newer than on-chain timestamp.`);
     return false;
   }
   // At this point it's clear that the off-chain data is newer than the on-chain data.
