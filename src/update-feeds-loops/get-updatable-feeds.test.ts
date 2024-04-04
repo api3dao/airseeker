@@ -293,4 +293,88 @@ describe(getUpdatableFeeds.name, () => {
     expect(logger.info).toHaveBeenCalledTimes(0);
     expect(checkFeedsResult).toStrictEqual([]);
   });
+
+  it('does not update beacon feed if the off-chain value is not newer', () => {
+    jest.useFakeTimers().setSystemTime(90);
+
+    // Only the third feed will satisfy the timestamp check
+    const mockSignedDataState = allowPartial<Record<string, SignedData>>({
+      [feedIds[0]]: {
+        timestamp: '150',
+        encodedValue: encodeBeaconValue('200'),
+      },
+    });
+    jest
+      .spyOn(signedDataStateModule, 'getSignedData')
+      .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
+    jest.spyOn(logger, 'info');
+
+    const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
+      {
+        decodedUpdateParameters: {
+          deviationThresholdInPercentage: 1n,
+          heartbeatInterval: 100n,
+          deviationReference: 0n,
+        },
+        dataFeedValue: 200n,
+        dataFeedTimestamp: 150n,
+        beaconsWithData: [{ beaconId: feedIds[0], timestamp: BigInt(150), value: BigInt('200') }],
+        dataFeedId: '0x000',
+        dapiName: encodeDapiName('test'),
+      },
+    ]);
+
+    const checkFeedsResult = getUpdatableFeeds(batch, 1);
+
+    expect(logger.info).toHaveBeenCalledTimes(0);
+    expect(checkFeedsResult).toStrictEqual([]);
+  });
+
+  it("does not update beacon set if it won't cause on-chain update", () => {
+    jest.useFakeTimers().setSystemTime(500);
+
+    // Only the third feed will satisfy the timestamp check
+    const mockSignedDataState = allowPartial<Record<string, SignedData>>({
+      [feedIds[0]]: {
+        timestamp: '110', // Changed by 10 compared to the on-chain value
+        encodedValue: encodeBeaconValue('210'), // Changed by 10 compared to the on-chain value
+      },
+      [feedIds[1]]: {
+        timestamp: '150',
+        encodedValue: encodeBeaconValue('300'),
+      },
+      [feedIds[2]]: {
+        timestamp: '200',
+        encodedValue: encodeBeaconValue('400'),
+      },
+    });
+    jest
+      .spyOn(signedDataStateModule, 'getSignedData')
+      .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
+    jest.spyOn(logger, 'info');
+
+    const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
+      {
+        decodedUpdateParameters: {
+          deviationThresholdInPercentage: 1n,
+          heartbeatInterval: 100n,
+          deviationReference: 0n,
+        },
+        dataFeedValue: 300n,
+        dataFeedTimestamp: 150n,
+        beaconsWithData: [
+          { beaconId: feedIds[0], timestamp: BigInt(100), value: BigInt('200') },
+          { beaconId: feedIds[1], timestamp: BigInt(150), value: BigInt('300') },
+          { beaconId: feedIds[2], timestamp: BigInt(200), value: BigInt('400') },
+        ],
+        dataFeedId: '0x000',
+        dapiName: encodeDapiName('test'),
+      },
+    ]);
+
+    const checkFeedsResult = getUpdatableFeeds(batch, 1);
+
+    expect(logger.info).toHaveBeenCalledTimes(0);
+    expect(checkFeedsResult).toStrictEqual([]);
+  });
 });
