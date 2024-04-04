@@ -36,7 +36,9 @@ describe(isDeviationThresholdExceeded.name, () => {
       isDeviationThresholdExceeded(onChainValue, getDeviationThresholdAsBigInt(0.14), 560n, 0n)
     ).not.toThrow();
   });
+});
 
+describe(isDataFeedUpdatable.name, () => {
   it('checks all update conditions | heartbeat exceeded', () => {
     const result = isDataFeedUpdatable(
       10n,
@@ -59,6 +61,26 @@ describe(isDeviationThresholdExceeded.name, () => {
       BigInt(Date.now() + 60 * 60 * 23),
       BigInt(60 * 60 * 24),
       getDeviationThresholdAsBigInt(2),
+      0n
+    );
+
+    expect(result).toBe(false);
+  });
+
+  it('updates uninitialized data feed', () => {
+    const result = isDataFeedUpdatable(0n, 0n, 1n, 1n, 100_000_000_000_000n, getDeviationThresholdAsBigInt(2), -100n);
+
+    expect(result).toBe(true);
+  });
+
+  it('does not update if deviation percentage is 0', () => {
+    const result = isDataFeedUpdatable(
+      10n,
+      BigInt(Math.floor(Date.now() / 1000)),
+      10n,
+      BigInt(Date.now() + 60 * 60 * 23),
+      BigInt(60 * 60 * 24),
+      getDeviationThresholdAsBigInt(0),
       0n
     );
 

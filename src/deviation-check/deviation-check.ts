@@ -36,11 +36,11 @@ export const isDeviationThresholdExceeded = (
 ) => {
   const updateInPercentage = calculateDeviationPercentage(onChainValue, apiValue, deviationReference);
 
-  return updateInPercentage > deviationThreshold;
+  return updateInPercentage >= deviationThreshold;
 };
 
 /**
- * Returns true when the on chain data timestamp is newer than the heartbeat interval.
+ * Returns true when the on-chain data is fresh enough not to be updated by the heartbeat.
  */
 export const isOnChainDataFresh = (timestamp: bigint, heartbeatInterval: bigint) =>
   BigInt(timestamp) > BigInt(Math.floor(Date.now() / 1000)) - heartbeatInterval;
@@ -55,30 +55,37 @@ export const isDataFeedUpdatable = (
   deviationReference: bigint
 ): boolean => {
   // Check that fulfillment data is newer than on chain data. Update transaction with stale data would revert on chain,
-  // draining the sponsor wallet. See:
-  // https://github.com/api3dao/airnode-protocol-v1/blob/main/contracts/dapis/DataFeedServer.sol#L121
+  // draining the sponsor wallet.
   if (offChainTimestamp <= onChainTimestamp) {
-    if (offChainTimestamp < onChainTimestamp) {
-      logger.warn(`Off-chain sample's timestamp is older than on-chain timestamp.`);
-    }
+    logger.warn(`Off-chain sample's timestamp is not newer than on-chain timestamp.`);
     return false;
   }
 
-  // Check that on chain data is newer than heartbeat interval
+  // Uninitialized data feed has on-chain timestamp and data set to zero. In practice, it should be updated because of
+  // the heartbeat, but the contract allows updating unititialized data feed in a fast-path. See:
+  // https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L126
+  if (onChainTimestamp === 0n) return true;
+
+  // Check that on-chain data is fresh enough to not be force-updated by the heartbeat.
   const isFreshEnough = isOnChainDataFresh(onChainTimestamp, heartbeatInterval);
   if (isFreshEnough) {
-    // Check beacon condition
-    const shouldUpdate = isDeviationThresholdExceeded(
-      onChainValue,
-      deviationThreshold,
-      offChainValue,
-      deviationReference
-    );
-    if (shouldUpdate) {
+    // Contract requires deviation threshold to be non-zero when computing the standard deviation.
+    if (deviationThreshold === 0n) {
+      logger.info(`Deviation threshold is zero.`);
+      return false;
+    }
+
+    if (isDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue, deviationReference)) {
       logger.info(`Deviation exceeded.`);
       return true;
     }
   } else {
+    // Contract requires heartbeat interval to be non-zero when checking for heartbeat update.
+    if (heartbeatInterval === 0n) {
+      logger.info(`Heartbeat interval is zero.`);
+      return false;
+    }
+
     logger.info(`On-chain timestamp is older than the heartbeat interval.`);
     return true;
   }
