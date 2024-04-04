@@ -33,8 +33,12 @@ export const getUpdatableFeeds = (
           const onChainValue: BeaconValue = { timestamp, value };
           let signedData = getSignedData(beaconId);
           if (signedData && !isSignedDataFresh(signedData)) {
+            const { airnode, templateId } = signedData;
             // This should not happen under normal circumstances. Something must be off with the Signed API.
-            logger.warn("Not using the the signed data because it's older than 24 hours.");
+            logger.warn("Not using the the signed data because it's older than 24 hours.", {
+              airnode,
+              templateId,
+            });
             signedData = undefined;
           }
           const offChainValue: BeaconValue | undefined = signedData

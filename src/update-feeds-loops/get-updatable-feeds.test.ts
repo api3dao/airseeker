@@ -453,14 +453,20 @@ describe(getUpdatableFeeds.name, () => {
 
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
+        airnode: '0x8676eA8B6Ebe5b8FBbc25FF55192bADf39D7D61b',
+        templateId: '0x9b8c129f62484aef617622caba20a58f51fdad30c39a32b1ee416b3be4a3f028',
         timestamp: String(Math.floor(now / 1000) - 23 * 60 * 60),
         encodedValue: encodeBeaconValue('200'),
       },
       [feedIds[1]]: {
+        airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+        templateId: '0xe6df5fb43a0b3a65ac1b05e7e50fba03b475fe5b721693d469554278086fd2e4',
         timestamp: String(Math.floor(now / 1000) - 24 * 60 * 60), // Too old.
         encodedValue: encodeBeaconValue('250'),
       },
       [feedIds[2]]: {
+        airnode: '0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
+        templateId: '0x6f0c2b5c6420d1896e67e56539ccbec5e6aafee5c27f6eb8783b9731faa7205d',
         timestamp: String(Math.floor(now / 1000) - 25 * 60 * 60), // Too old.
         encodedValue: encodeBeaconValue('300'),
       },
@@ -495,7 +501,13 @@ describe(getUpdatableFeeds.name, () => {
 
     expect(updatableFeeds).toStrictEqual([]);
     expect(logger.warn).toHaveBeenCalledTimes(2);
-    expect(logger.warn).toHaveBeenCalledWith(`Not using the the signed data because it's older than 24 hours.`);
-    expect(logger.warn).toHaveBeenCalledWith(`Not using the the signed data because it's older than 24 hours.`);
+    expect(logger.warn).toHaveBeenCalledWith(`Not using the the signed data because it's older than 24 hours.`, {
+      airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+      templateId: '0xe6df5fb43a0b3a65ac1b05e7e50fba03b475fe5b721693d469554278086fd2e4',
+    });
+    expect(logger.warn).toHaveBeenCalledWith(`Not using the the signed data because it's older than 24 hours.`, {
+      airnode: '0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
+      templateId: '0x6f0c2b5c6420d1896e67e56539ccbec5e6aafee5c27f6eb8783b9731faa7205d',
+    });
   });
 });
