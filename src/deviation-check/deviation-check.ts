@@ -59,7 +59,6 @@ export const isDataFeedUpdatable = (
   // Check that fulfillment data is newer than on chain data. Update transaction with stale data would revert on chain,
   // draining the sponsor wallet.
   if (offChainTimestamp <= onChainTimestamp) {
-    // It's possible that no beacon is updatable, but we may still update the data feed due to heartbeat.
     if (offChainTimestamp < onChainTimestamp) {
       logger.warn(`Off-chain sample's timestamp is older than on-chain timestamp.`);
     }
