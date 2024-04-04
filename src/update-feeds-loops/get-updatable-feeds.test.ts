@@ -228,7 +228,7 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: 100n,
         },
         dataFeedValue: 200n,
-        dataFeedTimestamp: 160n,
+        dataFeedTimestamp: 155n,
         beaconsWithData: [
           { beaconId: feedIds[0], timestamp: BigInt(150), value: BigInt('200') },
           { beaconId: feedIds[1], timestamp: BigInt(155), value: BigInt('200') },
@@ -242,7 +242,7 @@ describe(getUpdatableFeeds.name, () => {
 
     const checkFeedsResult = getUpdatableFeeds(batch, 1);
 
-    expect(logger.warn).toHaveBeenCalledWith(`Off-chain sample's timestamp is not newer than on-chain timestamp.`);
+    expect(logger.warn).toHaveBeenCalledTimes(0);
     expect(checkFeedsResult).toStrictEqual([]);
   });
 

@@ -56,16 +56,7 @@ export const isDataFeedUpdatable = (
   deviationThreshold: bigint,
   deviationReference: bigint
 ): boolean => {
-  // Check that fulfillment data is newer than on chain data. Update transaction with stale data would revert on chain,
-  // draining the sponsor wallet.
-  if (offChainTimestamp <= onChainTimestamp) {
-    logger.warn(`Off-chain sample's timestamp is not newer than on-chain timestamp.`);
-    return false;
-  }
-  // At this point it's clear that the off-chain data is newer than the on-chain data.
-  if (onChainTimestamp === 0n) return true;
-
-  // Contract requires deviation threshold to be non-zero when computing the standard deviation.
+  if (onChainTimestamp === 0n && offChainTimestamp > 0) return true;
   if (
     deviationThreshold &&
     isDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue, deviationReference)
@@ -73,8 +64,6 @@ export const isDataFeedUpdatable = (
     logger.info(`Deviation exceeded.`);
     return true;
   }
-
-  // Check that on-chain data is fresh enough to not be force-updated by the heartbeat.
   if (heartbeatInterval && isHeartbeatUpdatable(onChainTimestamp, heartbeatInterval)) {
     logger.info(`On-chain timestamp is older than the heartbeat interval.`);
     return true;
