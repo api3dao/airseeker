@@ -28,6 +28,7 @@ describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
   it('uses fallback gas limit when dummy data estimation fails', async () => {
     const mockApi3ServerV1 = generateMockApi3ServerV1();
     mockApi3ServerV1.multicall.estimateGas.mockRejectedValue(new Error('some-error'));
+    jest.spyOn(logger, 'warn');
 
     const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
       mockApi3ServerV1 as unknown as Api3ServerV1,
@@ -36,19 +37,51 @@ describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
     );
 
     expect(gasLimit).toStrictEqual(BigInt(2_000_000));
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith('Unable to estimate gas for multicall using provider.', {
+      errorMessage: 'some-error',
+    });
   });
 
-  it('throws an error if no fallback is provided', async () => {
+  it('returns null if no fallback is provided', async () => {
     const mockApi3ServerV1 = generateMockApi3ServerV1();
     mockApi3ServerV1.multicall.estimateGas.mockRejectedValue(new Error('some-error'));
+    jest.spyOn(logger, 'info');
+    jest.spyOn(logger, 'warn');
 
-    await expect(async () =>
-      submitTransactionsModule.estimateMulticallGasLimit(
-        mockApi3ServerV1 as unknown as Api3ServerV1,
-        ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
-        undefined
-      )
-    ).rejects.toStrictEqual(new Error('No fallback gas limit provided.'));
+    const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
+      mockApi3ServerV1 as unknown as Api3ServerV1,
+      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
+      undefined
+    );
+
+    expect(gasLimit).toBeNull();
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith('No fallback gas limit provided. No gas limit to use.');
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith('Unable to estimate gas for multicall using provider.', {
+      errorMessage: 'some-error',
+    });
+  });
+
+  it('detects a contract revert due to timestamp check', async () => {
+    const mockApi3ServerV1 = generateMockApi3ServerV1();
+    mockApi3ServerV1.multicall.estimateGas.mockRejectedValue(new Error('Does not update timestamp'));
+    jest.spyOn(logger, 'info');
+    jest.spyOn(logger, 'warn');
+
+    const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
+      mockApi3ServerV1 as unknown as Api3ServerV1,
+      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
+      2_000_000
+    );
+
+    expect(gasLimit).toBe(2_000_000n);
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith('Gas estimation failed because of a contract revert.', {
+      errorMessage: 'Does not update timestamp',
+    });
+    expect(logger.warn).toHaveBeenCalledTimes(0);
   });
 });
 
