@@ -40,9 +40,6 @@ export const isDeviationThresholdExceeded = (
   return updateInPercentage >= deviationThreshold;
 };
 
-/**
- * Returns true when the on-chain data is fresh enough not to be updated by the heartbeat.
- */
 export const isHeartbeatUpdatable = (timestamp: bigint, heartbeatInterval: bigint) =>
   BigInt(timestamp) + heartbeatInterval <= BigInt(Math.floor(Date.now() / 1000));
 
