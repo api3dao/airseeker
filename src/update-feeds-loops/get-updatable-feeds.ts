@@ -38,7 +38,7 @@ export const getUpdatableFeeds = (
                 value: decodeBeaconValue(signedData.encodedValue)!,
               }
             : undefined;
-          const isUpdatable = offChainValue && offChainValue?.timestamp > onChainValue.timestamp;
+          const isUpdatable = offChainValue && offChainValue.timestamp > onChainValue.timestamp;
 
           return { onChainValue, offChainValue, isUpdatable, signedData, beaconId };
         });
