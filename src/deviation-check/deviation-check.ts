@@ -2,7 +2,6 @@ import { HUNDRED_PERCENT, UINT256_MAX } from '../constants';
 import { logger } from '../logger';
 import { abs } from '../utils';
 
-// Mirroring the logic of https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L153-L153
 export const calculateDeviationPercentage = (
   initialValue: bigint,
   updatedValue: bigint,
@@ -45,6 +44,7 @@ export const isDeviationThresholdExceeded = (
 export const isOnChainDataFresh = (timestamp: bigint, heartbeatInterval: bigint) =>
   BigInt(timestamp) > BigInt(Math.floor(Date.now() / 1000)) - heartbeatInterval;
 
+// Mirroring the logic of https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L111
 export const isDataFeedUpdatable = (
   onChainValue: bigint,
   onChainTimestamp: bigint,
@@ -57,13 +57,15 @@ export const isDataFeedUpdatable = (
   // Check that fulfillment data is newer than on chain data. Update transaction with stale data would revert on chain,
   // draining the sponsor wallet.
   if (offChainTimestamp <= onChainTimestamp) {
-    logger.warn(`Off-chain sample's timestamp is not newer than on-chain timestamp.`);
+    // It's possible that no beacon is updatable, but we may still update the data feed due to heartbeat.
+    if (offChainTimestamp < onChainTimestamp) {
+      logger.warn(`Off-chain sample's timestamp is older than on-chain timestamp.`);
+    }
     return false;
   }
 
-  // Uninitialized data feed has on-chain timestamp and data set to zero. In practice, it should be updated because of
-  // the heartbeat, but the contract allows updating unititialized data feed in a fast-path. See:
-  // https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L126
+  // At this point it's clear that the off-chain data is newer than the on-chain data and the on-chain data is
+  // uninitialized.
   if (onChainTimestamp === 0n) return true;
 
   // Check that on-chain data is fresh enough to not be force-updated by the heartbeat.
