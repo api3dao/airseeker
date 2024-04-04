@@ -30,11 +30,9 @@ describe('signed data state', () => {
 
   it('stores and gets a data point', () => {
     jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
-    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-    const promisedStorage = signedDataStateModule.saveSignedData(testDataPoint);
-    expect(promisedStorage).toBeFalsy();
-
+    signedDataStateModule.saveSignedData(testDataPoint);
     const dataFeedId = deriveBeaconId(testDataPoint.airnode, testDataPoint.templateId)!;
+
     const datapoint = signedDataStateModule.getSignedData(dataFeedId);
 
     expect(datapoint).toStrictEqual(testDataPoint);
@@ -45,7 +43,6 @@ describe('signed data state', () => {
     const timestamp = Math.floor((Date.now() + 61 * 60 * 1000) / 1000).toString();
     const airnode = signer.address;
     const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [1n]);
-
     const futureTestDataPoint = {
       airnode,
       encodedValue,
