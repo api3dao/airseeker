@@ -3,7 +3,7 @@ import { HUNDRED_PERCENT, UINT256_MAX } from '../constants';
 import {
   calculateMedian,
   calculateDeviationPercentage,
-  isOnChainDataFresh,
+  isHeartbeatUpdatable,
   isDeviationThresholdExceeded,
   isDataFeedUpdatable,
 } from './deviation-check';
@@ -88,17 +88,17 @@ describe(isDataFeedUpdatable.name, () => {
   });
 });
 
-describe(isOnChainDataFresh.name, () => {
-  it('returns true if on chain data timestamp is newer than heartbeat interval', () => {
-    const isFresh = isOnChainDataFresh(BigInt(Math.floor(Date.now() / 1000) - 100), 200n);
-
-    expect(isFresh).toBe(true);
-  });
-
-  it('returns false if on chain data timestamp is older than heartbeat interval', () => {
-    const isFresh = isOnChainDataFresh(BigInt(Math.floor(Date.now() / 1000) - 300), 200n);
+describe(isHeartbeatUpdatable.name, () => {
+  it('returns false if on chain data timestamp is newer than heartbeat interval', () => {
+    const isFresh = isHeartbeatUpdatable(BigInt(Math.floor(Date.now() / 1000) - 100), 200n);
 
     expect(isFresh).toBe(false);
+  });
+
+  it('returns true if on chain data timestamp is older than heartbeat interval', () => {
+    const isFresh = isHeartbeatUpdatable(BigInt(Math.floor(Date.now() / 1000) - 300), 200n);
+
+    expect(isFresh).toBe(true);
   });
 });
 

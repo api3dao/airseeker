@@ -43,8 +43,8 @@ export const isDeviationThresholdExceeded = (
 /**
  * Returns true when the on-chain data is fresh enough not to be updated by the heartbeat.
  */
-export const isOnChainDataFresh = (timestamp: bigint, heartbeatInterval: bigint) =>
-  BigInt(timestamp) > BigInt(Math.floor(Date.now() / 1000)) - heartbeatInterval;
+export const isHeartbeatUpdatable = (timestamp: bigint, heartbeatInterval: bigint) =>
+  BigInt(timestamp) + heartbeatInterval <= BigInt(Math.floor(Date.now() / 1000));
 
 // Mirroring the logic of https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L111
 export const isDataFeedUpdatable = (
@@ -77,7 +77,7 @@ export const isDataFeedUpdatable = (
   }
 
   // Check that on-chain data is fresh enough to not be force-updated by the heartbeat.
-  if (heartbeatInterval && !isOnChainDataFresh(onChainTimestamp, heartbeatInterval)) {
+  if (heartbeatInterval && isHeartbeatUpdatable(onChainTimestamp, heartbeatInterval)) {
     logger.info(`On-chain timestamp is older than the heartbeat interval.`);
     return true;
   }
