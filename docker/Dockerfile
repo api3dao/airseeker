@@ -23,4 +23,4 @@ RUN chown --recursive node:node /app
 USER node
 # Start the Airseeker.
 ENV NODE_ENV=production
-ENTRYPOINT ["node", "dist/index.js"]
+ENTRYPOINT ["node", "dist/src/index.js"]
