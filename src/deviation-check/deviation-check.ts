@@ -8,9 +8,11 @@ export const calculateDeviationPercentage = (
   deviationReference: bigint
 ) => {
   const absoluteDelta = abs(updatedValue - initialValue);
-  const absoluteInitialValue = abs(deviationReference - initialValue);
+  if (absoluteDelta === 0n) return 0n;
 
+  const absoluteInitialValue = abs(deviationReference - initialValue);
   if (!absoluteInitialValue) return UINT256_MAX;
+
   return (absoluteDelta * BigInt(HUNDRED_PERCENT)) / absoluteInitialValue;
 };
 

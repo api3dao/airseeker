@@ -164,6 +164,11 @@ describe(calculateDeviationPercentage.name, () => {
     updateInPercentage = calculateDeviationPercentage(BigInt(100), BigInt(120), -100n);
     expect(updateInPercentage).toStrictEqual(BigInt(0.1 * HUNDRED_PERCENT));
   });
+
+  it('returns 0 if there is no value change', () => {
+    const updateInPercentage = calculateDeviationPercentage(10n, 10n, 10n);
+    expect(updateInPercentage).toBe(0n);
+  });
 });
 
 describe(calculateMedian.name, () => {
