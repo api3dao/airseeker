@@ -377,4 +377,93 @@ describe(getUpdatableFeeds.name, () => {
     expect(logger.info).toHaveBeenCalledTimes(0);
     expect(checkFeedsResult).toStrictEqual([]);
   });
+
+  it("updates a beacon set even if it's timestamp doesn't change, but the value does", () => {
+    jest.useFakeTimers().setSystemTime(300);
+
+    // Only the third feed will satisfy the timestamp check
+    const mockSignedDataState = allowPartial<Record<string, SignedData>>({
+      [feedIds[0]]: {
+        timestamp: '150',
+        encodedValue: encodeBeaconValue('350'), // Changed by 150 compared to the on-chain value
+      },
+      [feedIds[1]]: {
+        timestamp: '150',
+        encodedValue: encodeBeaconValue('300'),
+      },
+      [feedIds[2]]: {
+        timestamp: '200',
+        encodedValue: encodeBeaconValue('400'),
+      },
+    });
+    jest
+      .spyOn(signedDataStateModule, 'getSignedData')
+      .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
+    jest.spyOn(logger, 'info');
+
+    const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
+      {
+        decodedUpdateParameters: {
+          deviationThresholdInPercentage: 1n,
+          heartbeatInterval: 100n,
+          deviationReference: 0n,
+        },
+        dataFeedValue: 300n,
+        dataFeedTimestamp: 150n,
+        beaconsWithData: [
+          { beaconId: feedIds[0], timestamp: BigInt(100), value: BigInt('200') },
+          { beaconId: feedIds[1], timestamp: BigInt(150), value: BigInt('300') },
+          { beaconId: feedIds[2], timestamp: BigInt(200), value: BigInt('400') },
+        ],
+        dataFeedId: '0x000',
+        dapiName: encodeDapiName('test'),
+      },
+    ]);
+
+    const checkFeedsResult = getUpdatableFeeds(batch, 1);
+
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith(`Deviation exceeded.`);
+    expect(checkFeedsResult).toStrictEqual([
+      {
+        dataFeedInfo: {
+          beaconsWithData: [
+            {
+              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+              timestamp: 100n,
+              value: 200n,
+            },
+            {
+              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
+              timestamp: 150n,
+              value: 300n,
+            },
+            {
+              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
+              timestamp: 200n,
+              value: 400n,
+            },
+          ],
+          dapiName: '0x7465737400000000000000000000000000000000000000000000000000000000',
+          dataFeedId: '0x000',
+          dataFeedTimestamp: 150n,
+          dataFeedValue: 300n,
+          decodedUpdateParameters: {
+            deviationReference: 0n,
+            deviationThresholdInPercentage: 1n,
+            heartbeatInterval: 100n,
+          },
+        },
+        updatableBeacons: [
+          {
+            beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+            signedData: {
+              encodedValue: '0x000000000000000000000000000000000000000000000000000000000000015e',
+              timestamp: '150',
+            },
+          },
+        ],
+      },
+    ]);
+  });
 });
