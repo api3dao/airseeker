@@ -1,15 +1,19 @@
-import { HUNDRED_PERCENT } from '../constants';
+import { HUNDRED_PERCENT, UINT256_MAX } from '../constants';
 import { logger } from '../logger';
 import { abs } from '../utils';
 
-export const calculateDeviationPercentage = (initialValue: bigint, updatedValue: bigint) => {
-  const delta = updatedValue - initialValue;
-  const absoluteDelta = abs(delta);
+export const calculateDeviationPercentage = (
+  initialValue: bigint,
+  updatedValue: bigint,
+  deviationReference: bigint
+) => {
+  const absoluteDelta = abs(updatedValue - initialValue);
+  if (absoluteDelta === 0n) return 0n;
 
-  // Avoid division by 0
-  const absoluteInitialValue = initialValue === 0n ? 1n : abs(initialValue);
+  const absoluteInitialValue = abs(deviationReference - initialValue);
+  if (!absoluteInitialValue) return UINT256_MAX;
 
-  return (absoluteDelta * BigInt(HUNDRED_PERCENT)) / absoluteInitialValue;
+  return (absoluteDelta * HUNDRED_PERCENT) / absoluteInitialValue;
 };
 
 export const calculateMedian = (arr: bigint[]) => {
@@ -25,46 +29,44 @@ export const calculateMedian = (arr: bigint[]) => {
   return arr.length % 2 === 0 ? (nums[mid - 1]! + nums[mid]!) / 2n : nums[mid]!;
 };
 
-export const isDeviationThresholdExceeded = (onChainValue: bigint, deviationThreshold: bigint, apiValue: bigint) => {
-  const updateInPercentage = calculateDeviationPercentage(onChainValue, apiValue);
+export const isDeviationThresholdExceeded = (
+  onChainValue: bigint,
+  deviationThreshold: bigint,
+  apiValue: bigint,
+  deviationReference: bigint
+) => {
+  const updateInPercentage = calculateDeviationPercentage(onChainValue, apiValue, deviationReference);
 
-  return updateInPercentage > deviationThreshold;
+  return updateInPercentage >= deviationThreshold;
 };
 
-/**
- * Returns true when the on chain data timestamp is newer than the heartbeat interval.
- */
-export const isOnChainDataFresh = (timestamp: bigint, heartbeatInterval: bigint) =>
-  BigInt(timestamp) > BigInt(Math.floor(Date.now() / 1000)) - heartbeatInterval;
+export const isHeartbeatUpdatable = (timestamp: bigint, heartbeatInterval: bigint) =>
+  BigInt(timestamp) + heartbeatInterval <= BigInt(Math.floor(Date.now() / 1000));
 
-export const isDataFeedUpdatable = (
+// Mirroring the logic of
+// https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L111
+//
+// NOTE: This function on it's own is not enough to determine if a data feed needs to be updated. In particular, the
+// feed may require an update due to heartbeat, but Airseeker may not have the data to make the update. Refer to the
+// Airseeker implementation of computing the updatable feeds for details.
+export const checkUpdateCondition = (
   onChainValue: bigint,
   onChainTimestamp: bigint,
   offChainValue: bigint,
   offChainTimestamp: bigint,
   heartbeatInterval: bigint,
-  deviationThreshold: bigint
+  deviationThreshold: bigint,
+  deviationReference: bigint
 ): boolean => {
-  // Check that fulfillment data is newer than on chain data. Update transaction with stale data would revert on chain,
-  // draining the sponsor wallet. See:
-  // https://github.com/api3dao/airnode-protocol-v1/blob/dev/contracts/dapis/DataFeedServer.sol#L121
-  if (offChainTimestamp <= onChainTimestamp) {
-    if (offChainTimestamp < onChainTimestamp) {
-      logger.warn(`Off-chain sample's timestamp is older than on-chain timestamp.`);
-    }
-    return false;
+  if (onChainTimestamp === 0n && offChainTimestamp > 0) return true;
+  if (
+    deviationThreshold &&
+    isDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue, deviationReference)
+  ) {
+    logger.info(`Deviation exceeded.`);
+    return true;
   }
-
-  // Check that on chain data is newer than heartbeat interval
-  const isFreshEnough = isOnChainDataFresh(onChainTimestamp, heartbeatInterval);
-  if (isFreshEnough) {
-    // Check beacon condition
-    const shouldUpdate = isDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue);
-    if (shouldUpdate) {
-      logger.info(`Deviation exceeded.`);
-      return true;
-    }
-  } else {
+  if (heartbeatInterval && isHeartbeatUpdatable(onChainTimestamp, heartbeatInterval)) {
     logger.info(`On-chain timestamp is older than the heartbeat interval.`);
     return true;
   }

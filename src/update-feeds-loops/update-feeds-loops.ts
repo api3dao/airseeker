@@ -290,7 +290,7 @@ export const processBatch = async (
       dataFeed.beaconsWithData.map((beacon, index) => {
         const configSignedApiUrls = configSignedApiBaseUrls.map((baseUrl) => `${baseUrl}/${beacon.airnodeAddress}`);
 
-        // WARNING: contractSignedApiBaseUrl is an array of empty strings if it's not set on chain
+        // NOTE: contractSignedApiBaseUrl is an array of empty strings if it's not set on-chain
         const contractSignedApiBaseUrl = dataFeed.signedApiUrls[index];
         const contractSignedApiUrls = contractSignedApiBaseUrl
           ? [`${contractSignedApiBaseUrl}/${beacon.airnodeAddress}`]
