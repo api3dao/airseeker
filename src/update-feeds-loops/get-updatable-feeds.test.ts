@@ -404,45 +404,14 @@ describe(getUpdatableFeeds.name, () => {
 
     expect(logger.info).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenCalledWith(`Deviation exceeded.`);
-    expect(checkFeedsResult).toStrictEqual([
+    expect(checkFeedsResult).toHaveLength(1);
+    expect(checkFeedsResult[0]!.updatableBeacons).toStrictEqual([
       {
-        dataFeedInfo: {
-          beaconsWithData: [
-            {
-              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-              timestamp: 100n,
-              value: 200n,
-            },
-            {
-              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
-              timestamp: 150n,
-              value: 300n,
-            },
-            {
-              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-              timestamp: 200n,
-              value: 400n,
-            },
-          ],
-          dapiName: '0x7465737400000000000000000000000000000000000000000000000000000000',
-          dataFeedId: '0x000',
-          dataFeedTimestamp: 150n,
-          dataFeedValue: 300n,
-          decodedUpdateParameters: {
-            deviationReference: 0n,
-            deviationThresholdInPercentage: ONE_PERCENT,
-            heartbeatInterval: 100n,
-          },
+        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+        signedData: {
+          encodedValue: '0x000000000000000000000000000000000000000000000000000000000000015e',
+          timestamp: '150',
         },
-        updatableBeacons: [
-          {
-            beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-            signedData: {
-              encodedValue: '0x000000000000000000000000000000000000000000000000000000000000015e',
-              timestamp: '150',
-            },
-          },
-        ],
       },
     ]);
   });
