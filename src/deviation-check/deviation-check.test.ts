@@ -8,7 +8,9 @@ import {
   checkUpdateCondition,
 } from './deviation-check';
 
-const getDeviationThresholdAsBigInt = (input: number) => BigInt(Math.trunc(input * HUNDRED_PERCENT)) / 100n;
+const ONE_PERCENT = BigInt(Number(HUNDRED_PERCENT) / 100);
+
+const getDeviationThresholdAsBigInt = (input: number) => BigInt(Math.trunc(input * Number(ONE_PERCENT)));
 
 describe(isDeviationThresholdExceeded.name, () => {
   const onChainValue = 500n;
@@ -110,17 +112,17 @@ describe(calculateDeviationPercentage.name, () => {
 
   it('calculates 100 percent change', () => {
     const updateInPercentage = calculateDeviationPercentage(10n, 20n, 0n);
-    expect(updateInPercentage).toStrictEqual(BigInt(1 * HUNDRED_PERCENT));
+    expect(updateInPercentage).toStrictEqual(HUNDRED_PERCENT);
   });
 
   it('calculates positive to negative change', () => {
     const updateInPercentage = calculateDeviationPercentage(10n, BigInt(-5), 0n);
-    expect(updateInPercentage).toStrictEqual(BigInt(1.5 * HUNDRED_PERCENT));
+    expect(updateInPercentage).toStrictEqual(150n * ONE_PERCENT);
   });
 
   it('calculates negative to positive change', () => {
     const updateInPercentage = calculateDeviationPercentage(BigInt(-5), 5n, 0n);
-    expect(updateInPercentage).toStrictEqual(BigInt(2 * HUNDRED_PERCENT));
+    expect(updateInPercentage).toStrictEqual(2n * HUNDRED_PERCENT);
   });
 
   it('calculates initial zero to positive change', () => {
@@ -135,17 +137,17 @@ describe(calculateDeviationPercentage.name, () => {
 
   it('calculates initial positive to zero change', () => {
     const updateInPercentage = calculateDeviationPercentage(5n, 0n, 0n);
-    expect(updateInPercentage).toStrictEqual(BigInt(1 * HUNDRED_PERCENT));
+    expect(updateInPercentage).toStrictEqual(HUNDRED_PERCENT);
   });
 
   it('calculates initial negative to zero change', () => {
     const updateInPercentage = calculateDeviationPercentage(BigInt(-5), 0n, 0n);
-    expect(updateInPercentage).toStrictEqual(BigInt(1 * HUNDRED_PERCENT));
+    expect(updateInPercentage).toStrictEqual(HUNDRED_PERCENT);
   });
 
   it('calculates initial negative to negative change', () => {
     const updateInPercentage = calculateDeviationPercentage(BigInt(-5), BigInt(-1), 0n);
-    expect(updateInPercentage).toStrictEqual(BigInt(0.8 * HUNDRED_PERCENT));
+    expect(updateInPercentage).toStrictEqual(80n * ONE_PERCENT);
   });
 
   it('respects the deviation reference', () => {
@@ -153,16 +155,16 @@ describe(calculateDeviationPercentage.name, () => {
     let updateInPercentage: bigint;
 
     updateInPercentage = calculateDeviationPercentage(BigInt(100), BigInt(91), -100n);
-    expect(updateInPercentage).toStrictEqual(BigInt(0.045 * HUNDRED_PERCENT));
+    expect(updateInPercentage).toStrictEqual(BigInt(4.5 * Number(ONE_PERCENT)));
 
     updateInPercentage = calculateDeviationPercentage(BigInt(100), BigInt(109), -100n);
-    expect(updateInPercentage).toStrictEqual(BigInt(0.045 * HUNDRED_PERCENT));
+    expect(updateInPercentage).toStrictEqual(BigInt(4.5 * Number(ONE_PERCENT)));
 
     updateInPercentage = calculateDeviationPercentage(BigInt(100), BigInt(80), -100n);
-    expect(updateInPercentage).toStrictEqual(BigInt(0.1 * HUNDRED_PERCENT));
+    expect(updateInPercentage).toStrictEqual(10n * ONE_PERCENT);
 
     updateInPercentage = calculateDeviationPercentage(BigInt(100), BigInt(120), -100n);
-    expect(updateInPercentage).toStrictEqual(BigInt(0.1 * HUNDRED_PERCENT));
+    expect(updateInPercentage).toStrictEqual(10n * ONE_PERCENT);
   });
 
   it('returns 0 if there is no value change', () => {

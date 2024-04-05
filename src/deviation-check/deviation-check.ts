@@ -13,7 +13,7 @@ export const calculateDeviationPercentage = (
   const absoluteInitialValue = abs(deviationReference - initialValue);
   if (!absoluteInitialValue) return UINT256_MAX;
 
-  return (absoluteDelta * BigInt(HUNDRED_PERCENT)) / absoluteInitialValue;
+  return (absoluteDelta * HUNDRED_PERCENT) / absoluteInitialValue;
 };
 
 export const calculateMedian = (arr: bigint[]) => {
