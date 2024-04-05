@@ -1,5 +1,5 @@
 import { getSignedData } from '../data-fetcher-loop/signed-data-state';
-import { calculateMedian, isDataFeedUpdatable } from '../deviation-check';
+import { calculateMedian, checkUpdateCondition } from '../deviation-check';
 import { logger } from '../logger';
 import type { SignedData } from '../types';
 import { decodeBeaconValue, multiplyBigNumber } from '../utils';
@@ -50,6 +50,10 @@ export const getUpdatableFeeds = (
       })
       // Filter out data feeds that cannot be updated.
       .filter(({ dataFeedInfo, aggregatedBeaconsWithData }) => {
+        // Beacons are updatable when the off-chain timestamp is newer than the on-chain one. If we can't update the
+        // timestamp, we reuse the on-chain value.
+        //
+        // NOTE: This guarantees that the off-chain data feed timestamp is greater or equal to the on-chain one.
         const beaconValues = aggregatedBeaconsWithData.map(({ onChainValue, offChainValue, isUpdatable }) =>
           isUpdatable ? offChainValue! : onChainValue
         );
@@ -90,7 +94,7 @@ export const getUpdatableFeeds = (
             dataFeedId,
           },
           () =>
-            isDataFeedUpdatable(
+            checkUpdateCondition(
               dataFeedValue,
               dataFeedTimestamp,
               newDataFeedValue,

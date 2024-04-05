@@ -5,7 +5,7 @@ import {
   calculateDeviationPercentage,
   isHeartbeatUpdatable,
   isDeviationThresholdExceeded,
-  isDataFeedUpdatable,
+  checkUpdateCondition,
 } from './deviation-check';
 
 const getDeviationThresholdAsBigInt = (input: number) => BigInt(Math.trunc(input * HUNDRED_PERCENT)) / 100n;
@@ -38,9 +38,9 @@ describe(isDeviationThresholdExceeded.name, () => {
   });
 });
 
-describe(isDataFeedUpdatable.name, () => {
+describe(checkUpdateCondition.name, () => {
   it('checks all update conditions | heartbeat exceeded', () => {
-    const result = isDataFeedUpdatable(
+    const result = checkUpdateCondition(
       10n,
       BigInt(Math.floor(Date.now() / 1000) - 60 * 60 * 24),
       10n,
@@ -54,7 +54,7 @@ describe(isDataFeedUpdatable.name, () => {
   });
 
   it('checks all update conditions | no update', () => {
-    const result = isDataFeedUpdatable(
+    const result = checkUpdateCondition(
       10n,
       BigInt(Math.floor(Date.now() / 1000)),
       10n,
@@ -68,13 +68,13 @@ describe(isDataFeedUpdatable.name, () => {
   });
 
   it('updates uninitialized data feed', () => {
-    const result = isDataFeedUpdatable(0n, 0n, 1n, 1n, 100_000_000_000_000n, getDeviationThresholdAsBigInt(2), -100n);
+    const result = checkUpdateCondition(0n, 0n, 1n, 1n, 100_000_000_000_000n, getDeviationThresholdAsBigInt(2), -100n);
 
     expect(result).toBe(true);
   });
 
   it('does not update if deviation percentage is 0', () => {
-    const result = isDataFeedUpdatable(
+    const result = checkUpdateCondition(
       10n,
       BigInt(Math.floor(Date.now() / 1000)),
       10n,

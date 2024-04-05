@@ -43,8 +43,13 @@ export const isDeviationThresholdExceeded = (
 export const isHeartbeatUpdatable = (timestamp: bigint, heartbeatInterval: bigint) =>
   BigInt(timestamp) + heartbeatInterval <= BigInt(Math.floor(Date.now() / 1000));
 
-// Mirroring the logic of https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L111
-export const isDataFeedUpdatable = (
+// Mirroring the logic of
+// https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L111
+//
+// NOTE: This function on it's own is not enough to determine if a data feed needs to be updated. In particular, the
+// feed may require an update due to heartbeat, but Airseeker may not have the data to make the update. Refer to the
+// Airseeker implementation of computing the updatable feeds for details.
+export const checkUpdateCondition = (
   onChainValue: bigint,
   onChainTimestamp: bigint,
   offChainValue: bigint,
