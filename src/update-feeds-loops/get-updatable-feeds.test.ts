@@ -95,7 +95,7 @@ describe(getUpdatableFeeds.name, () => {
     ]);
   });
 
-  it('returns updatable feeds when on chain timestamp is older than heartbeat and value is within the deviation', () => {
+  it('returns updatable feeds when on-chain timestamp is older than heartbeat and value is within the deviation', () => {
     jest.useFakeTimers().setSystemTime(200 * 1000);
 
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({
@@ -219,7 +219,7 @@ describe(getUpdatableFeeds.name, () => {
     expect(checkFeedsResult).toStrictEqual([]);
   });
 
-  it('returns an empty array for on chain data newer than heartbeat and value within the threshold', () => {
+  it('returns an empty array for on-chain data newer than heartbeat and value within the threshold', () => {
     jest.useFakeTimers().setSystemTime(90 * 1000);
 
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({

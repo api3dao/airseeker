@@ -91,13 +91,13 @@ describe(checkUpdateCondition.name, () => {
 });
 
 describe(isHeartbeatUpdatable.name, () => {
-  it('returns false if on chain data timestamp is newer than heartbeat interval', () => {
+  it('returns false if on-chain data timestamp is newer than heartbeat interval', () => {
     const isFresh = isHeartbeatUpdatable(BigInt(Math.floor(Date.now() / 1000) - 100), 200n);
 
     expect(isFresh).toBe(false);
   });
 
-  it('returns true if on chain data timestamp is older than heartbeat interval', () => {
+  it('returns true if on-chain data timestamp is older than heartbeat interval', () => {
     const isFresh = isHeartbeatUpdatable(BigInt(Math.floor(Date.now() / 1000) - 300), 200n);
 
     expect(isFresh).toBe(true);

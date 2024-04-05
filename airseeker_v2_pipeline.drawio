@@ -121,7 +121,7 @@
         <mxCell id="ci7EG28U3f9VGxeywyoC-78" value="" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="1290" y="1490" width="240" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="ci7EG28U3f9VGxeywyoC-79" value="Fetch the rest of the active data feed batches together with Airnode address, template ID(s), signed API URLs and on chain values." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+        <mxCell id="ci7EG28U3f9VGxeywyoC-79" value="Fetch the rest of the active data feed batches together with Airnode address, template ID(s), signed API URLs and on-chain values." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;align=center;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="1300" y="1499" width="240" height="80" as="geometry" />
         </mxCell>
         <mxCell id="ci7EG28U3f9VGxeywyoC-89" value="if there is any data feed&lt;br&gt;to be updated" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ci7EG28U3f9VGxeywyoC-86" target="ci7EG28U3f9VGxeywyoC-88" edge="1">
