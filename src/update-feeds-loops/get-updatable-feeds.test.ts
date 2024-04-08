@@ -404,46 +404,79 @@ describe(getUpdatableFeeds.name, () => {
 
     expect(logger.info).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenCalledWith(`Deviation exceeded.`);
-    expect(checkFeedsResult).toStrictEqual([
+    expect(checkFeedsResult).toHaveLength(1);
+    expect(checkFeedsResult[0]!.updatableBeacons).toStrictEqual([
       {
-        dataFeedInfo: {
-          beaconsWithData: [
-            {
-              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-              timestamp: 100n,
-              value: 200n,
-            },
-            {
-              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
-              timestamp: 150n,
-              value: 300n,
-            },
-            {
-              beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
-              timestamp: 200n,
-              value: 400n,
-            },
-          ],
-          dapiName: '0x7465737400000000000000000000000000000000000000000000000000000000',
-          dataFeedId: '0x000',
-          dataFeedTimestamp: 150n,
-          dataFeedValue: 300n,
-          decodedUpdateParameters: {
-            deviationReference: 0n,
-            deviationThresholdInPercentage: ONE_PERCENT,
-            heartbeatInterval: 100n,
-          },
+        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+        signedData: {
+          encodedValue: '0x000000000000000000000000000000000000000000000000000000000000015e',
+          timestamp: '150',
         },
-        updatableBeacons: [
-          {
-            beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
-            signedData: {
-              encodedValue: '0x000000000000000000000000000000000000000000000000000000000000015e',
-              timestamp: '150',
-            },
-          },
-        ],
       },
     ]);
+  });
+
+  it('logs a warning when some signed data is too old', () => {
+    const now = Date.now();
+    jest.useFakeTimers().setSystemTime(now);
+
+    const mockSignedDataState = allowPartial<Record<string, SignedData>>({
+      [feedIds[0]]: {
+        airnode: '0x8676eA8B6Ebe5b8FBbc25FF55192bADf39D7D61b',
+        templateId: '0x9b8c129f62484aef617622caba20a58f51fdad30c39a32b1ee416b3be4a3f028',
+        timestamp: String(Math.floor(now / 1000) - 23 * 60 * 60),
+        encodedValue: encodeBeaconValue('200'),
+      },
+      [feedIds[1]]: {
+        airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+        templateId: '0xe6df5fb43a0b3a65ac1b05e7e50fba03b475fe5b721693d469554278086fd2e4',
+        timestamp: String(Math.floor(now / 1000) - 24 * 60 * 60), // Too old.
+        encodedValue: encodeBeaconValue('250'),
+      },
+      [feedIds[2]]: {
+        airnode: '0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
+        templateId: '0x6f0c2b5c6420d1896e67e56539ccbec5e6aafee5c27f6eb8783b9731faa7205d',
+        timestamp: String(Math.floor(now / 1000) - 25 * 60 * 60), // Too old.
+        encodedValue: encodeBeaconValue('300'),
+      },
+    });
+    jest
+      .spyOn(signedDataStateModule, 'getSignedData')
+      .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
+    jest.spyOn(logger, 'warn');
+
+    const timestamps = [BigInt(now - 2 * 60 * 1000), BigInt(now - 2 * 60 * 1000), BigInt(now - 2 * 60 * 1000)];
+    const values = [400n, 500n, 600n];
+    const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
+      {
+        decodedUpdateParameters: {
+          deviationThresholdInPercentage: ONE_PERCENT,
+          heartbeatInterval: 100n,
+          deviationReference: 0n,
+        },
+        dataFeedValue: calculateMedian(values),
+        dataFeedTimestamp: calculateMedian(timestamps),
+        beaconsWithData: range(values.length).map((i) => ({
+          beaconId: feedIds[i]!,
+          timestamp: timestamps[i]!,
+          value: values[i]!,
+        })),
+        dataFeedId: '0x000',
+        dapiName: encodeDapiName('test'),
+      },
+    ]);
+
+    const updatableFeeds = getUpdatableFeeds(batch, 1);
+
+    expect(updatableFeeds).toStrictEqual([]);
+    expect(logger.warn).toHaveBeenCalledTimes(2);
+    expect(logger.warn).toHaveBeenCalledWith(`Not using the the signed data because it's older than 24 hours.`, {
+      airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+      templateId: '0xe6df5fb43a0b3a65ac1b05e7e50fba03b475fe5b721693d469554278086fd2e4',
+    });
+    expect(logger.warn).toHaveBeenCalledWith(`Not using the the signed data because it's older than 24 hours.`, {
+      airnode: '0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
+      templateId: '0x6f0c2b5c6420d1896e67e56539ccbec5e6aafee5c27f6eb8783b9731faa7205d',
+    });
   });
 });

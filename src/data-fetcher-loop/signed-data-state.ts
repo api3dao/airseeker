@@ -19,8 +19,6 @@ export const verifySignedData = ({ airnode, templateId, timestamp, signature, en
 
   if (!goVerify.success) {
     logger.error(`Signature verification failed.`, {
-      airnode,
-      templateId,
       signature,
       timestamp,
       encodedValue,
@@ -31,23 +29,21 @@ export const verifySignedData = ({ airnode, templateId, timestamp, signature, en
   return true;
 };
 
-const verifyTimestamp = ({ timestamp, airnode, templateId }: SignedData) => {
-  if (Number.parseInt(timestamp, 10) * 1000 > Date.now() + 60 * 60 * 1000) {
+const verifyTimestamp = (timestamp: number) => {
+  const timestampMs = timestamp * 1000;
+
+  if (timestampMs > Date.now() + 60 * 60 * 1000) {
     logger.error(`Refusing to store sample as timestamp is more than one hour in the future.`, {
-      airnode,
-      templateId,
       systemDateNow: new Date().toLocaleDateString(),
-      signedDataDate: new Date(Number.parseInt(timestamp, 10) * 1000).toLocaleDateString(),
+      signedDataDate: new Date(timestampMs).toLocaleDateString(),
     });
     return false;
   }
 
-  if (Number.parseInt(timestamp, 10) * 1000 > Date.now()) {
+  if (timestampMs > Date.now()) {
     logger.warn(`Sample is in the future, but by less than an hour, therefore storing anyway.`, {
-      airnode,
-      templateId,
       systemDateNow: new Date().toLocaleDateString(),
-      signedDataDate: new Date(Number.parseInt(timestamp, 10) * 1000).toLocaleDateString(),
+      signedDataDate: new Date(timestampMs).toLocaleDateString(),
     });
   }
 
@@ -55,34 +51,31 @@ const verifyTimestamp = ({ timestamp, airnode, templateId }: SignedData) => {
 };
 
 export const verifySignedDataIntegrity = (signedData: SignedData) => {
-  return verifyTimestamp(signedData) && verifySignedData(signedData);
+  return verifyTimestamp(Number.parseInt(signedData.timestamp, 10)) && verifySignedData(signedData);
 };
 
 export const saveSignedData = (signedData: SignedData) => {
   const { airnode, templateId, timestamp } = signedData;
 
-  if (!verifySignedDataIntegrity(signedData)) {
-    return;
-  }
+  // Make sure we run the verification checks with enough context.
+  logger.runWithContext({ airnode, templateId }, () => {
+    if (!verifySignedDataIntegrity(signedData)) {
+      return;
+    }
 
-  const state = getState();
+    const state = getState();
 
-  const dataFeedId = deriveBeaconId(airnode, templateId)!;
+    const dataFeedId = deriveBeaconId(airnode, templateId)!;
 
-  const existingValue = state.signedDatas[dataFeedId];
-  if (existingValue && existingValue.timestamp >= timestamp) {
-    logger.debug('Skipping state update. The signed data value is not fresher than the stored value.');
-    return;
-  }
+    const existingValue = state.signedDatas[dataFeedId];
+    if (existingValue && existingValue.timestamp >= timestamp) {
+      logger.debug('Skipping state update. The signed data value is not fresher than the stored value.');
+      return;
+    }
 
-  if (!isSignedDataFresh(signedData)) {
-    // This should not happen under normal circumstances. Something must be off with the Signed API.
-    logger.warn('Skipping state update. The signed data value is older than 24 hours.');
-    return;
-  }
-
-  updateState((draft) => {
-    draft.signedDatas[dataFeedId] = signedData;
+    updateState((draft) => {
+      draft.signedDatas[dataFeedId] = signedData;
+    });
   });
 };
 
