@@ -70,14 +70,7 @@ export const submitTransaction = async (
         const dataFeedUpdateCalldatas = createUpdateFeedCalldatas(api3ServerV1, updatableDataFeed);
 
         logger.debug('Estimating gas limit.');
-        const goEstimateGasLimit = await go(async () =>
-          estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas, fallbackGasLimit)
-        );
-        if (!goEstimateGasLimit.success) {
-          logger.error(`Skipping data feed update because estimating gas limit failed.`, goEstimateGasLimit.error);
-          return null;
-        }
-        const gasLimit = goEstimateGasLimit.data;
+        const gasLimit = await estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas, fallbackGasLimit);
         if (!gasLimit) return null;
 
         logger.debug('Getting derived sponsor wallet.');
