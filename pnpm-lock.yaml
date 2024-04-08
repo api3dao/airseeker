@@ -9,14 +9,14 @@ dependencies:
     specifier: ^3.4.0
     version: 3.4.0
   '@api3/chains':
-    specifier: ^4.14.0
-    version: 4.14.0(typescript@5.4.3)
+    specifier: ^4.16.1
+    version: 4.16.1(typescript@5.4.3)
   '@api3/commons':
     specifier: ^0.9.0
     version: 0.9.0(eslint@8.57.0)(jest@29.7.0)(typescript@5.4.3)
   '@api3/contracts':
-    specifier: 2.1.0
-    version: 2.1.0
+    specifier: 2.4.0
+    version: 2.4.0
   '@api3/promise-utils':
     specifier: ^0.4.0
     version: 0.4.0
@@ -146,10 +146,10 @@ packages:
       '@openzeppelin/contracts': 4.8.2
     dev: false
 
-  /@api3/chains@4.14.0(typescript@5.4.3):
-    resolution: {integrity: sha512-zM37/EW6bsYVmu6wea+3+D7FlK60kI6LBYwCRxE85ISUUCT6gkclkFLksGN6vrw4ZTl9Xool2fbhALHiuYA7Uw==}
+  /@api3/chains@4.16.1(typescript@5.4.3):
+    resolution: {integrity: sha512-ve0k83r7tnH/e2+JSYcEEnLbBP+jcqwOH4+7KL6lTiheZebOyPKUSlxOvTmBvuA1ejP3o77uEkyR+OZnaf/DwA==}
     dependencies:
-      viem: 2.8.16(typescript@5.4.3)(zod@3.22.4)
+      viem: 2.9.13(typescript@5.4.3)(zod@3.22.4)
       zod: 3.22.4
     transitivePeerDependencies:
       - bufferutil
@@ -200,8 +200,8 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@api3/contracts@2.1.0:
-    resolution: {integrity: sha512-NxQJWn2zwer1UflUw8ub5oRwinmeSOCbgO9tcbEq+2JNn2RJoleVYz8yhGR/lXEsbyAGje3Ynk6qDQu7O7od9A==}
+  /@api3/contracts@2.4.0:
+    resolution: {integrity: sha512-jfBBB/pJKnQccSCi9qOdzGOY30mq7HtQn11xi38w8pHbhVl5HLhpDsXkeOrQTGnw09R48QVvr60KkDVCmrZD8w==}
     engines: {node: ^20.11.1}
     dependencies:
       ethers: 6.11.1
@@ -7765,8 +7765,8 @@ packages:
       spdx-expression-parse: 3.0.1
     dev: false
 
-  /viem@2.8.16(typescript@5.4.3)(zod@3.22.4):
-    resolution: {integrity: sha512-J8tu1aP7TfI2HT/IEmyJ+n+WInrA/cuMuJtfgvYhYgHBobxhYGc2SojHm5lZBWcWgErN1Ld7VcKUwTmPh4ToQA==}
+  /viem@2.9.13(typescript@5.4.3)(zod@3.22.4):
+    resolution: {integrity: sha512-TxNZOWFwr2Pc6CeY4tViFL2NRq9v86HofAPkhBgScP8DUn3EeSbQhmDXbjMZNkZvXoMqWVl0AZM81rEOlaKrbg==}
     peerDependencies:
       typescript: '>=5.0.4'
     peerDependenciesMeta:
