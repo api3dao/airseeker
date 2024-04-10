@@ -40,7 +40,7 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
 
 export const hasSponsorPendingTransaction = (chainId: string, providerName: string, sponsorWalletAddress: Address) => {
   const firstExceededDeviationTimestamp =
-    getState().firstExceededDeviationTimestamp[chainId]![providerName]![sponsorWalletAddress];
+    getState().firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress];
 
   return !!firstExceededDeviationTimestamp;
 };

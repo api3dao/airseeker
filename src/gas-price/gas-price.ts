@@ -12,8 +12,8 @@ export const initializeGasState = (chainId: string, providerName: string) =>
     if (!draft.gasPrices[chainId]) draft.gasPrices[chainId] = {};
     draft.gasPrices[chainId]![providerName] = [];
 
-    if (!draft.firstExceededDeviationTimestamp[chainId]) draft.firstExceededDeviationTimestamp[chainId] = {};
-    draft.firstExceededDeviationTimestamp[chainId]![providerName] = {};
+    if (!draft.firstExceededDeviationTimestamps[chainId]) draft.firstExceededDeviationTimestamps[chainId] = {};
+    draft.firstExceededDeviationTimestamps[chainId]![providerName] = {};
   });
 
 export const saveGasPrice = (chainId: string, providerName: string, gasPrice: bigint) =>
@@ -35,7 +35,7 @@ export const purgeOldGasPrices = (chainId: string, providerName: string, sanitiz
 
 export const setSponsorLastUpdateTimestamp = (chainId: string, providerName: string, sponsorWalletAddress: Address) => {
   updateState((draft) => {
-    draft.firstExceededDeviationTimestamp[chainId]![providerName]![sponsorWalletAddress] = Math.floor(
+    draft.firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress] = Math.floor(
       Date.now() / 1000
     );
   });
@@ -44,7 +44,7 @@ export const setSponsorLastUpdateTimestamp = (chainId: string, providerName: str
 // TODO: Rename these functions
 export const clearSponsorLastUpdateTimestamp = (chainId: string, providerName: string, sponsorWalletAddress: Address) =>
   updateState((draft) => {
-    const exceededDeviationTimestamps = draft.firstExceededDeviationTimestamp[chainId]![providerName]!;
+    const exceededDeviationTimestamps = draft.firstExceededDeviationTimestamps[chainId]![providerName]!;
     if (exceededDeviationTimestamps[sponsorWalletAddress]) {
       exceededDeviationTimestamps[sponsorWalletAddress] = null;
     }
@@ -104,7 +104,7 @@ export const fetchAndStoreGasPrice = async (
 export const getRecommendedGasPrice = (chainId: string, providerName: string, sponsorWalletAddress: Address) => {
   const state = getState();
   const firstExceededDeviationTimestamp =
-    state.firstExceededDeviationTimestamp[chainId]![providerName]![sponsorWalletAddress];
+    state.firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress];
   const gasPrices = state.gasPrices[chainId]![providerName]!;
   const {
     gasSettings: {
