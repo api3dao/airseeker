@@ -1,3 +1,4 @@
+import type { Address } from '@api3/commons';
 import { go } from '@api3/promise-utils';
 import type { ethers } from 'ethers';
 import { maxBy, remove } from 'lodash';
@@ -8,11 +9,11 @@ import { multiplyBigNumber } from '../utils';
 
 export const initializeGasState = (chainId: string, providerName: string) =>
   updateState((draft) => {
-    if (!draft.gasPrices[chainId]) {
-      draft.gasPrices[chainId] = {};
-    }
+    if (!draft.gasPrices[chainId]) draft.gasPrices[chainId] = {};
+    draft.gasPrices[chainId]![providerName] = { gasPrices: [] };
 
-    draft.gasPrices[chainId]![providerName] = { gasPrices: [], sponsorLastUpdateTimestamp: {} };
+    if (!draft.firstExceededDeviationTimestamp[chainId]) draft.firstExceededDeviationTimestamp[chainId] = {};
+    draft.firstExceededDeviationTimestamp[chainId]![providerName] = {};
   });
 
 export const saveGasPrice = (chainId: string, providerName: string, gasPrice: bigint) =>
@@ -32,23 +33,20 @@ export const purgeOldGasPrices = (chainId: string, providerName: string, sanitiz
     );
   });
 
-export const setSponsorLastUpdateTimestamp = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
+export const setSponsorLastUpdateTimestamp = (chainId: string, providerName: string, sponsorWalletAddress: Address) => {
   updateState((draft) => {
-    draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress] = Math.floor(
+    draft.firstExceededDeviationTimestamp[chainId]![providerName]![sponsorWalletAddress] = Math.floor(
       Date.now() / 1000
     );
   });
 };
 
-export const clearSponsorLastUpdateTimestamp = (chainId: string, providerName: string, sponsorWalletAddress: string) =>
+// TODO: Rename these functions
+export const clearSponsorLastUpdateTimestamp = (chainId: string, providerName: string, sponsorWalletAddress: Address) =>
   updateState((draft) => {
-    const gasPriceStatePerChain = draft?.gasPrices[chainId] ?? {};
-
-    const sponsorLastUpdateTimestamp =
-      gasPriceStatePerChain[providerName]?.sponsorLastUpdateTimestamp[sponsorWalletAddress];
-
-    if (sponsorLastUpdateTimestamp) {
-      delete draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress];
+    const exceededDeviationTimestamps = draft.firstExceededDeviationTimestamp[chainId]![providerName]!;
+    if (exceededDeviationTimestamps[sponsorWalletAddress]) {
+      exceededDeviationTimestamps[sponsorWalletAddress] = null;
     }
   });
 
@@ -103,9 +101,11 @@ export const fetchAndStoreGasPrice = async (
   return gasPrice;
 };
 
-export const getRecommendedGasPrice = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
+export const getRecommendedGasPrice = (chainId: string, providerName: string, sponsorWalletAddress: Address) => {
   const state = getState();
-  const { gasPrices, sponsorLastUpdateTimestamp } = state.gasPrices[chainId]![providerName]!;
+  const firstExceededDeviationTimestamp =
+    state.firstExceededDeviationTimestamp[chainId]![providerName]![sponsorWalletAddress];
+  const { gasPrices } = state.gasPrices[chainId]![providerName]!;
   const {
     gasSettings: {
       recommendedGasPriceMultiplier,
@@ -125,10 +125,9 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
     return null;
   }
 
-  const lastUpdateTimestamp = sponsorLastUpdateTimestamp[sponsorWalletAddress];
   // Check if the next update is a retry of a pending transaction
-  if (lastUpdateTimestamp) {
-    const pendingPeriod = Math.floor(Date.now() / 1000) - lastUpdateTimestamp;
+  if (firstExceededDeviationTimestamp) {
+    const pendingPeriod = Math.floor(Date.now() / 1000) - firstExceededDeviationTimestamp;
     const scalingMultiplier = calculateScalingMultiplier(
       recommendedGasPriceMultiplier,
       maxScalingMultiplier,

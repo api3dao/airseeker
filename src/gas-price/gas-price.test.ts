@@ -89,9 +89,9 @@ describe(setSponsorLastUpdateTimestamp.name, () => {
 
     setSponsorLastUpdateTimestamp(chainId, providerName, sponsorWalletAddress);
 
-    expect(
-      getState().gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress]
-    ).toStrictEqual(timestampMock);
+    expect(getState().firstExceededDeviationTimestamp[chainId]![providerName]![sponsorWalletAddress]).toStrictEqual(
+      timestampMock
+    );
   });
 });
 
@@ -102,9 +102,7 @@ describe(clearSponsorLastUpdateTimestamp.name, () => {
 
     clearSponsorLastUpdateTimestamp(chainId, providerName, sponsorWalletAddress);
 
-    expect(
-      getState().gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress]
-    ).toBeUndefined();
+    expect(getState().firstExceededDeviationTimestamp[chainId]![providerName]![sponsorWalletAddress]).toBeNull();
   });
 });
 
@@ -224,7 +222,7 @@ describe(getRecommendedGasPrice.name, () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName]!.gasPrices = [];
-      draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress] = timestampMock - 60;
+      draft.firstExceededDeviationTimestamp[chainId]![providerName]![sponsorWalletAddress] = timestampMock - 60;
       for (let i = 0; i < 20; i++) {
         draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({
           price: ethers.parseUnits('9', 'gwei') + BigInt(i) * 100_000_000n,
@@ -250,8 +248,7 @@ describe(getRecommendedGasPrice.name, () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName]!.gasPrices = [];
-      draft.gasPrices[chainId]![providerName]!.sponsorLastUpdateTimestamp[sponsorWalletAddress] =
-        timestampMock - 60 * 60; // The feed is requires update for 1 hour.
+      draft.firstExceededDeviationTimestamp[chainId]![providerName]![sponsorWalletAddress] = timestampMock - 60 * 60; // The feed is requires update for 1 hour.
       for (let i = 0; i < 20; i++) {
         draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({
           price: ethers.parseUnits('9', 'gwei') + BigInt(i) * 100_000_000n,

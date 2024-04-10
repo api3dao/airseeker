@@ -1,3 +1,4 @@
+import type { Address } from '@api3/commons';
 import type { AirseekerRegistry } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
 import type { ethers } from 'ethers';
@@ -311,7 +312,7 @@ export const processBatch = async (
       dapiName ?? dataFeedId,
       updateParameters,
       walletDerivationScheme
-    ).address;
+    ).address as Address;
     const timestampNeedsClearing = hasSponsorPendingTransaction(chainId, providerName, sponsorWalletAddress);
     if (timestampNeedsClearing) {
       // NOTE: A data feed may stop needing an update for two reasons:

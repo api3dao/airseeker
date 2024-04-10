@@ -10,9 +10,11 @@ const stateMock: State = {
     '31337': {
       hardhat: {
         gasPrices: [{ price: 10n, timestamp: timestampMock }],
-        sponsorLastUpdateTimestamp: { '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266': timestampMock },
       },
     },
+  },
+  firstExceededDeviationTimestamp: {
+    '31337': { hardhat: { '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266': timestampMock } },
   },
   signedDatas: {
     [deriveBeaconId(

@@ -1,3 +1,4 @@
+import type { Address } from '@api3/commons';
 import { produce, type Draft } from 'immer';
 
 import type { Config } from '../config/schema';
@@ -13,12 +14,17 @@ import type {
 
 interface GasState {
   gasPrices: { price: bigint; timestamp: number }[];
-  sponsorLastUpdateTimestamp: Record<string, number>;
 }
 
 export interface State {
   config: Config;
   gasPrices: Record<ChainId, Record<ProviderName, GasState>>;
+  // The timestamp when we last detected that the deviation is exceeded for a feed. Note, that if the feed exceeds
+  // deviation consecutively, the timestamp of the first deviation is stored.
+  firstExceededDeviationTimestamp: Record<
+    ChainId,
+    Record<ProviderName, Record<Address /* Sponsor wallet */, number | null>>
+  >;
   derivedSponsorWallets: Record<DapiNameOrDataFeedId, PrivateKey>;
   signedDatas: Record<BeaconId, SignedData>;
   signedApiUrls: Record<ChainId, Record<ProviderName, SignedApiUrl[]>>;
@@ -40,6 +46,7 @@ export const setInitialState = (config: Config) => {
   state = {
     config,
     gasPrices: {},
+    firstExceededDeviationTimestamp: {},
     signedDatas: {},
     signedApiUrls: {},
     derivedSponsorWallets: {},
