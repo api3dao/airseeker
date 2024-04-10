@@ -8,9 +8,7 @@ const stateMock: State = {
   config: generateTestConfig(),
   gasPrices: {
     '31337': {
-      hardhat: {
-        gasPrices: [{ price: 10n, timestamp: timestampMock }],
-      },
+      hardhat: [{ price: 10n, timestamp: timestampMock }],
     },
   },
   firstExceededDeviationTimestamp: {

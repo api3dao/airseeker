@@ -10,7 +10,7 @@ import { multiplyBigNumber } from '../utils';
 export const initializeGasState = (chainId: string, providerName: string) =>
   updateState((draft) => {
     if (!draft.gasPrices[chainId]) draft.gasPrices[chainId] = {};
-    draft.gasPrices[chainId]![providerName] = { gasPrices: [] };
+    draft.gasPrices[chainId]![providerName] = [];
 
     if (!draft.firstExceededDeviationTimestamp[chainId]) draft.firstExceededDeviationTimestamp[chainId] = {};
     draft.firstExceededDeviationTimestamp[chainId]![providerName] = {};
@@ -18,7 +18,7 @@ export const initializeGasState = (chainId: string, providerName: string) =>
 
 export const saveGasPrice = (chainId: string, providerName: string, gasPrice: bigint) =>
   updateState((draft) => {
-    draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({
+    draft.gasPrices[chainId]![providerName]!.unshift({
       price: gasPrice,
       timestamp: Math.floor(Date.now() / 1000),
     });
@@ -28,7 +28,7 @@ export const purgeOldGasPrices = (chainId: string, providerName: string, sanitiz
   updateState((draft) => {
     // Remove gasPrices older than the sanitizationSamplingWindow.
     remove(
-      draft.gasPrices[chainId]![providerName]!.gasPrices,
+      draft.gasPrices[chainId]![providerName]!,
       (gasPrice) => gasPrice.timestamp < Math.floor(Date.now() / 1000) - sanitizationSamplingWindow
     );
   });
@@ -105,7 +105,7 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
   const state = getState();
   const firstExceededDeviationTimestamp =
     state.firstExceededDeviationTimestamp[chainId]![providerName]![sponsorWalletAddress];
-  const { gasPrices } = state.gasPrices[chainId]![providerName]!;
+  const gasPrices = state.gasPrices[chainId]![providerName]!;
   const {
     gasSettings: {
       recommendedGasPriceMultiplier,

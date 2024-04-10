@@ -62,12 +62,12 @@ describe(purgeOldGasPrices.name, () => {
     };
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
-      draft.gasPrices[chainId]![providerName]!.gasPrices = [oldGasPriceMock];
+      draft.gasPrices[chainId]![providerName] = [oldGasPriceMock];
     });
 
     purgeOldGasPrices(chainId, providerName, gasSettings.sanitizationSamplingWindow);
 
-    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([]);
+    expect(getState().gasPrices[chainId]![providerName]!).toStrictEqual([]);
   });
 });
 
@@ -77,7 +77,7 @@ describe(saveGasPrice.name, () => {
 
     saveGasPrice(chainId, providerName, ethers.parseUnits('10', 'gwei'));
 
-    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
+    expect(getState().gasPrices[chainId]![providerName]!).toStrictEqual([
       { price: ethers.parseUnits('10', 'gwei'), timestamp: timestampMock },
     ]);
   });
@@ -156,7 +156,7 @@ describe(getRecommendedGasPrice.name, () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
       // Make sure there are enough historical gas prices to sanitize.
-      draft.gasPrices[chainId]![providerName]!.gasPrices = range(30).map((_, i) => ({
+      draft.gasPrices[chainId]![providerName] = range(30).map((_, i) => ({
         price: ethers.parseUnits(`10`, 'gwei') - BigInt(i) * 100_000_000n,
         timestamp: timestampMock - 30 * (i + 1),
       }));
@@ -176,7 +176,7 @@ describe(getRecommendedGasPrice.name, () => {
   it('logs a warning when there is not enough data for sanitization', () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
-      draft.gasPrices[chainId]![providerName]!.gasPrices = range(10).map((_, i) => ({
+      draft.gasPrices[chainId]![providerName] = range(10).map((_, i) => ({
         price: ethers.parseUnits(`10`, 'gwei') - BigInt(i) * 100_000_000n,
         timestamp: timestampMock - 30 * (i + 1),
       }));
@@ -200,15 +200,15 @@ describe(getRecommendedGasPrice.name, () => {
   it('uses last stored gas price if it is within the percentile', () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
-      draft.gasPrices[chainId]![providerName]!.gasPrices = [];
+      draft.gasPrices[chainId]![providerName] = [];
       for (let i = 0; i < 20; i++) {
-        draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({
+        draft.gasPrices[chainId]![providerName].unshift({
           price: ethers.parseUnits('9', 'gwei') + BigInt(-i) * 100_000_000n, // Let the gas price deviate up and down, such that the the last price is within the percentile.
           timestamp: timestampMock - (20 - i) * 30,
         });
       }
     });
-    const latestStoredGasPrice = getState().gasPrices[chainId]![providerName]!.gasPrices[0]!.price;
+    const latestStoredGasPrice = getState().gasPrices[chainId]![providerName]![0]!.price;
     jest.spyOn(logger, 'warn');
 
     const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress);
@@ -221,10 +221,10 @@ describe(getRecommendedGasPrice.name, () => {
   it('applies scaling if the transaction is a retry of a pending transaction', () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
-      draft.gasPrices[chainId]![providerName]!.gasPrices = [];
+      draft.gasPrices[chainId]![providerName] = [];
       draft.firstExceededDeviationTimestamp[chainId]![providerName]![sponsorWalletAddress] = timestampMock - 60;
       for (let i = 0; i < 20; i++) {
-        draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({
+        draft.gasPrices[chainId]![providerName].unshift({
           price: ethers.parseUnits('9', 'gwei') + BigInt(i) * 100_000_000n,
           timestamp: timestampMock - (20 - i) * 30,
         });
@@ -247,10 +247,10 @@ describe(getRecommendedGasPrice.name, () => {
   it('scales up to a maximum scaling multiplier', () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
-      draft.gasPrices[chainId]![providerName]!.gasPrices = [];
+      draft.gasPrices[chainId]![providerName] = [];
       draft.firstExceededDeviationTimestamp[chainId]![providerName]![sponsorWalletAddress] = timestampMock - 60 * 60; // The feed is requires update for 1 hour.
       for (let i = 0; i < 20; i++) {
-        draft.gasPrices[chainId]![providerName]!.gasPrices.unshift({
+        draft.gasPrices[chainId]![providerName].unshift({
           price: ethers.parseUnits('9', 'gwei') + BigInt(i) * 100_000_000n,
           timestamp: timestampMock - (20 - i) * 30,
         });
@@ -279,7 +279,7 @@ describe(fetchAndStoreGasPrice.name, () => {
     const gasPrice = await fetchAndStoreGasPrice(chainId, providerName, provider);
 
     expect(gasPrice).toStrictEqual(ethers.parseUnits('10', 'gwei'));
-    expect(getState().gasPrices[chainId]![providerName]!.gasPrices).toStrictEqual([
+    expect(getState().gasPrices[chainId]![providerName]!).toStrictEqual([
       { price: ethers.parseUnits('10', 'gwei'), timestamp: timestampMock },
     ]);
   });

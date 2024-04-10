@@ -12,13 +12,14 @@ import type {
   DapiNameOrDataFeedId,
 } from '../types';
 
-interface GasState {
-  gasPrices: { price: bigint; timestamp: number }[];
+interface GasPriceInfo {
+  price: bigint;
+  timestamp: number;
 }
 
 export interface State {
   config: Config;
-  gasPrices: Record<ChainId, Record<ProviderName, GasState>>;
+  gasPrices: Record<ChainId, Record<ProviderName, GasPriceInfo[]>>;
   // The timestamp when we last detected that the deviation is exceeded for a feed. Note, that if the feed exceeds
   // deviation consecutively, the timestamp of the first deviation is stored.
   firstExceededDeviationTimestamp: Record<
