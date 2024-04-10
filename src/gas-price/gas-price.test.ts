@@ -85,9 +85,7 @@ describe(saveGasPrice.name, () => {
 
 describe(setFirstExceededDeviationTimestamp.name, () => {
   it('sets the last update timestamp for the sponsor', () => {
-    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
-
-    setFirstExceededDeviationTimestamp(chainId, providerName, sponsorWalletAddress);
+    setFirstExceededDeviationTimestamp(chainId, providerName, sponsorWalletAddress, timestampMock);
 
     expect(getState().firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress]).toStrictEqual(
       timestampMock
@@ -97,8 +95,7 @@ describe(setFirstExceededDeviationTimestamp.name, () => {
 
 describe(clearFirstExceededDeviationTimestamp.name, () => {
   it('clears the last update timestamp for the sponsor', () => {
-    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
-    setFirstExceededDeviationTimestamp(chainId, providerName, sponsorWalletAddress);
+    setFirstExceededDeviationTimestamp(chainId, providerName, sponsorWalletAddress, timestampMock);
 
     clearFirstExceededDeviationTimestamp(chainId, providerName, sponsorWalletAddress);
 

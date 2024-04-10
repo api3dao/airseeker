@@ -437,7 +437,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
 
     // Verify the flow of the update process via the debug logs. Note, that some debug log calls are not here because
     // many functions are mocked.
-    expect(logger.debug).toHaveBeenCalledTimes(7);
+    expect(logger.debug).toHaveBeenCalledTimes(6);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Creating calldatas.');
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Estimating gas limit.');
     expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting derived sponsor wallet.');
@@ -446,7 +446,6 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     });
     expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting nonce.');
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Getting recommended gas price.');
-    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Setting timestamp of the original update transaction.');
   });
 
   it('logs and error when getting nonce fails', async () => {

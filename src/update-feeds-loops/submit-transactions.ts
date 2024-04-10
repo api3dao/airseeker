@@ -4,7 +4,7 @@ import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
 import type { WalletDerivationScheme } from '../config/schema';
-import { getRecommendedGasPrice, setFirstExceededDeviationTimestamp } from '../gas-price';
+import { getRecommendedGasPrice } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, DapiNameOrDataFeedId, ProviderName } from '../types';
@@ -38,6 +38,7 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
     : beaconUpdateCalls;
 };
 
+// TODO: Rename
 export const hasSponsorPendingTransaction = (chainId: string, providerName: string, sponsorWalletAddress: Address) => {
   const firstExceededDeviationTimestamp =
     getState().firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress];
@@ -95,14 +96,6 @@ export const submitTransaction = async (
         logger.debug('Getting recommended gas price.');
         const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress);
         if (!gasPrice) return null;
-
-        // We want to set the timestamp of the first update transaction. We can determine if the transaction is the
-        // original one and that it isn't a retry of a pending transaction (if there is no timestamp for the
-        // particular sponsor wallet). This assumes that a single sponsor updates a single data feed.
-        if (!hasSponsorPendingTransaction(chainId, providerName, sponsorWalletAddress)) {
-          logger.debug('Setting timestamp of the original update transaction.');
-          setFirstExceededDeviationTimestamp(chainId, providerName, sponsorWalletAddress);
-        }
 
         logger.info('Updating data feed.', {
           sponsorAddress: sponsorWalletAddress,

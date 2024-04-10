@@ -36,12 +36,11 @@ export const purgeOldGasPrices = (chainId: string, providerName: string, sanitiz
 export const setFirstExceededDeviationTimestamp = (
   chainId: string,
   providerName: string,
-  sponsorWalletAddress: Address
+  sponsorWalletAddress: Address,
+  timestamp: number
 ) => {
   updateState((draft) => {
-    draft.firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress] = Math.floor(
-      Date.now() / 1000
-    );
+    draft.firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress] = timestamp;
   });
 };
 
