@@ -33,7 +33,11 @@ export const purgeOldGasPrices = (chainId: string, providerName: string, sanitiz
     );
   });
 
-export const setSponsorLastUpdateTimestamp = (chainId: string, providerName: string, sponsorWalletAddress: Address) => {
+export const setFirstExceededDeviationTimestamp = (
+  chainId: string,
+  providerName: string,
+  sponsorWalletAddress: Address
+) => {
   updateState((draft) => {
     draft.firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress] = Math.floor(
       Date.now() / 1000
@@ -41,8 +45,11 @@ export const setSponsorLastUpdateTimestamp = (chainId: string, providerName: str
   });
 };
 
-// TODO: Rename these functions
-export const clearSponsorLastUpdateTimestamp = (chainId: string, providerName: string, sponsorWalletAddress: Address) =>
+export const clearFirstExceededDeviationTimestamp = (
+  chainId: string,
+  providerName: string,
+  sponsorWalletAddress: Address
+) =>
   updateState((draft) => {
     const exceededDeviationTimestamps = draft.firstExceededDeviationTimestamps[chainId]![providerName]!;
     if (exceededDeviationTimestamps[sponsorWalletAddress]) {

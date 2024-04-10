@@ -4,7 +4,7 @@ import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
 import type { WalletDerivationScheme } from '../config/schema';
-import { getRecommendedGasPrice, setSponsorLastUpdateTimestamp } from '../gas-price';
+import { getRecommendedGasPrice, setFirstExceededDeviationTimestamp } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, DapiNameOrDataFeedId, ProviderName } from '../types';
@@ -101,7 +101,7 @@ export const submitTransaction = async (
         // particular sponsor wallet). This assumes that a single sponsor updates a single data feed.
         if (!hasSponsorPendingTransaction(chainId, providerName, sponsorWalletAddress)) {
           logger.debug('Setting timestamp of the original update transaction.');
-          setSponsorLastUpdateTimestamp(chainId, providerName, sponsorWalletAddress);
+          setFirstExceededDeviationTimestamp(chainId, providerName, sponsorWalletAddress);
         }
 
         logger.info('Updating data feed.', {

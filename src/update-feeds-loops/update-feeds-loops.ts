@@ -5,7 +5,7 @@ import type { ethers } from 'ethers';
 import { isError, range, set, size, uniq } from 'lodash';
 
 import type { Chain } from '../config/schema';
-import { clearSponsorLastUpdateTimestamp, fetchAndStoreGasPrice, initializeGasState } from '../gas-price';
+import { clearFirstExceededDeviationTimestamp, fetchAndStoreGasPrice, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
@@ -325,7 +325,7 @@ export const processBatch = async (
         dapiName: decodedDapiName,
         dataFeedId,
       });
-      clearSponsorLastUpdateTimestamp(chainId, providerName, sponsorWalletAddress);
+      clearFirstExceededDeviationTimestamp(chainId, providerName, sponsorWalletAddress);
     }
   }
 
