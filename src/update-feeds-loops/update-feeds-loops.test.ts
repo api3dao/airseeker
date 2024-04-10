@@ -13,7 +13,7 @@ import * as utilsModule from '../utils';
 import * as contractsModule from './contracts';
 import * as getUpdatableFeedsModule from './get-updatable-feeds';
 import * as submitTransactionModule from './submit-transactions';
-import * as updateabilityTimestampModule from './updatability-timestamp';
+import * as updatabilityTimestampModule from './updatability-timestamp';
 import * as updateFeedsLoopsModule from './update-feeds-loops';
 
 describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
@@ -440,7 +440,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     // Skip actions other than generating signed api urls.
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
     jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
-    jest.spyOn(updateabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
+    jest.spyOn(updatabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
 
     const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(
       [activeDataFeed],
@@ -480,7 +480,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     // Skip actions other than generating signed api urls.
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
     jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
-    jest.spyOn(updateabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
+    jest.spyOn(updatabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
 
     const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(
       [activeDataFeed],

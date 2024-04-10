@@ -9,7 +9,7 @@ export const isAlreadyUpdatable = (chainId: string, providerName: string, sponso
   return !!firstExceededDeviationTimestamp;
 };
 
-export const initializeFirstMarkedUpdateableTimestamp = (chainId: string, providerName: string) =>
+export const initializeFirstMarkedUpdatableTimestamp = (chainId: string, providerName: string) =>
   updateState((draft) => {
     if (!draft.firstMarkedUpdatableTimestamps[chainId]) draft.firstMarkedUpdatableTimestamps[chainId] = {};
     draft.firstMarkedUpdatableTimestamps[chainId]![providerName] = {};

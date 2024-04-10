@@ -4,7 +4,7 @@ import { range } from 'lodash';
 import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import { initializeFirstMarkedUpdateableTimestamp } from '../update-feeds-loops/updatability-timestamp';
+import { initializeFirstMarkedUpdatableTimestamp } from '../update-feeds-loops/updatability-timestamp';
 
 import {
   getRecommendedGasPrice,
@@ -37,7 +37,7 @@ const { gasSettings } = testConfig.chains[chainId]!;
 beforeEach(() => {
   initializeState(testConfig);
   initializeGasState(chainId, providerName);
-  initializeFirstMarkedUpdateableTimestamp(chainId, providerName);
+  initializeFirstMarkedUpdatableTimestamp(chainId, providerName);
 });
 
 describe(calculateScalingMultiplier.name, () => {
