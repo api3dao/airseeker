@@ -448,4 +448,50 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Getting recommended gas price.');
     expect(logger.debug).toHaveBeenNthCalledWith(7, 'Setting timestamp of the original update transaction.');
   });
+
+  it('logs and error when getting nonce fails', async () => {
+    jest.spyOn(submitTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
+    jest.spyOn(logger, 'warn');
+    jest.spyOn(submitTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
+    jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockReturnValue(BigInt(100_000_000));
+    jest.spyOn(submitTransactionsModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
+    const api3ServerV1 = generateMockApi3ServerV1();
+    jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: {
+          chains: {
+            '31337': {
+              dataFeedUpdateInterval: 60,
+              fallbackGasLimit: undefined,
+            },
+          },
+          walletDerivationScheme: { type: 'managed' },
+          sponsorWalletMnemonic: 'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+        },
+      })
+    );
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
+    const provider = {
+      getTransactionCount: jest.fn().mockRejectedValue(new Error('some-error')),
+    } as unknown as ethers.JsonRpcProvider;
+
+    await submitTransactionsModule.submitTransaction(
+      '31337',
+      'evm-local',
+      provider,
+      api3ServerV1 as unknown as Api3ServerV1,
+      allowPartial<UpdatableDataFeed>({
+        dataFeedInfo: {
+          dapiName,
+          dataFeedId: '0xBeaconSetId',
+        },
+      }),
+      123_456
+    );
+
+    // Verify that the data feed was not updated.
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenNthCalledWith(1, 'Failed to get nonce.', new Error('some-error'));
+  });
 });
