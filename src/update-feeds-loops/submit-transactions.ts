@@ -38,14 +38,6 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
     : beaconUpdateCalls;
 };
 
-// TODO: Rename
-export const hasSponsorPendingTransaction = (chainId: string, providerName: string, sponsorWalletAddress: Address) => {
-  const firstExceededDeviationTimestamp =
-    getState().firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress];
-
-  return !!firstExceededDeviationTimestamp;
-};
-
 export const submitTransaction = async (
   chainId: ChainId,
   providerName: ProviderName,

@@ -20,9 +20,9 @@ interface GasPriceInfo {
 export interface State {
   config: Config;
   gasPrices: Record<ChainId, Record<ProviderName, GasPriceInfo[]>>;
-  // The timestamp when we last detected that the deviation is exceeded for a feed. Note, that if the feed exceeds
-  // deviation consecutively, the timestamp of the first deviation is stored.
-  firstExceededDeviationTimestamps: Record<
+  // The timestamp of when we last detected that the feed requires an update. Note, that if the feed requires an update
+  // consecutively, the timestamp is not updated until the feed stops being updatable again.
+  firstMarkedUpdatableTimestamps: Record<
     ChainId,
     Record<ProviderName, Record<Address /* Sponsor wallet */, number | null>>
   >;
@@ -47,7 +47,7 @@ export const setInitialState = (config: Config) => {
   state = {
     config,
     gasPrices: {},
-    firstExceededDeviationTimestamps: {},
+    firstMarkedUpdatableTimestamps: {},
     signedDatas: {},
     signedApiUrls: {},
     derivedSponsorWallets: {},

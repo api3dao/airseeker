@@ -10,6 +10,7 @@ import * as utilsModule from '../utils';
 
 import type { UpdatableDataFeed } from './get-updatable-feeds';
 import * as submitTransactionsModule from './submit-transactions';
+import * as updateabilityTimestampModule from './updatability-timestamp';
 
 describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
   it('estimates the gas limit for a multicall', async () => {
@@ -389,7 +390,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     jest.spyOn(logger, 'info');
     jest.spyOn(submitTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
     jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockReturnValue(BigInt(100_000_000));
-    jest.spyOn(submitTransactionsModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
+    jest.spyOn(updateabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
     jest.spyOn(stateModule, 'getState').mockReturnValue(
@@ -453,7 +454,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     jest.spyOn(logger, 'warn');
     jest.spyOn(submitTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
     jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockReturnValue(BigInt(100_000_000));
-    jest.spyOn(submitTransactionsModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
+    jest.spyOn(updateabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
     jest.spyOn(stateModule, 'getState').mockReturnValue(

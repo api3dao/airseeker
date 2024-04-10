@@ -13,6 +13,7 @@ import * as utilsModule from '../utils';
 import * as contractsModule from './contracts';
 import * as getUpdatableFeedsModule from './get-updatable-feeds';
 import * as submitTransactionModule from './submit-transactions';
+import * as updateabilityTimestampModule from './updatability-timestamp';
 import * as updateFeedsLoopsModule from './update-feeds-loops';
 
 describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
@@ -217,7 +218,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
         signedApiUrls: {},
         signedDatas: {},
         gasPrices: {},
-        firstExceededDeviationTimestamps: { 31_337: { ['provider-name']: {} } },
+        firstMarkedUpdatableTimestamps: { 31_337: { ['provider-name']: {} } },
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
@@ -298,12 +299,12 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     expect(logger.info).toHaveBeenCalledTimes(3);
     expect(logger.info).toHaveBeenNthCalledWith(
       1,
-      'Setting timestamp of first deviation exceeded event.',
+      'Setting timestamp when the feed is first updatable.',
       expect.anything()
     );
     expect(logger.info).toHaveBeenNthCalledWith(
       2,
-      'Setting timestamp of first deviation exceeded event.',
+      'Setting timestamp when the feed is first updatable.',
       expect.anything()
     );
     expect(logger.info).toHaveBeenNthCalledWith(3, 'Finished processing batches of active data feeds.', {
@@ -432,13 +433,14 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
         signedApiUrls: {},
       })
     );
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'info');
 
     // Skip actions other than generating signed api urls.
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
     jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
-    jest.spyOn(submitTransactionModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
+    jest.spyOn(updateabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
 
     const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(
       [activeDataFeed],
@@ -471,13 +473,14 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
         signedApiUrls: {},
       })
     );
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'info');
 
     // Skip actions other than generating signed api urls.
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
     jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
-    jest.spyOn(submitTransactionModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
+    jest.spyOn(updateabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
 
     const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(
       [activeDataFeed],

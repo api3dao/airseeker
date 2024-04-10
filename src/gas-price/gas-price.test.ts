@@ -4,12 +4,11 @@ import { range } from 'lodash';
 import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
+import { initializeFirstMarkedUpdateableTimestamp } from '../update-feeds-loops/updatability-timestamp';
 
 import {
   getRecommendedGasPrice,
-  setFirstExceededDeviationTimestamp,
   saveGasPrice,
-  clearFirstExceededDeviationTimestamp,
   purgeOldGasPrices,
   initializeGasState,
   calculateScalingMultiplier,
@@ -38,6 +37,7 @@ const { gasSettings } = testConfig.chains[chainId]!;
 beforeEach(() => {
   initializeState(testConfig);
   initializeGasState(chainId, providerName);
+  initializeFirstMarkedUpdateableTimestamp(chainId, providerName);
 });
 
 describe(calculateScalingMultiplier.name, () => {
@@ -80,26 +80,6 @@ describe(saveGasPrice.name, () => {
     expect(getState().gasPrices[chainId]![providerName]!).toStrictEqual([
       { price: ethers.parseUnits('10', 'gwei'), timestamp: timestampMock },
     ]);
-  });
-});
-
-describe(setFirstExceededDeviationTimestamp.name, () => {
-  it('sets the last update timestamp for the sponsor', () => {
-    setFirstExceededDeviationTimestamp(chainId, providerName, sponsorWalletAddress, timestampMock);
-
-    expect(getState().firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress]).toStrictEqual(
-      timestampMock
-    );
-  });
-});
-
-describe(clearFirstExceededDeviationTimestamp.name, () => {
-  it('clears the last update timestamp for the sponsor', () => {
-    setFirstExceededDeviationTimestamp(chainId, providerName, sponsorWalletAddress, timestampMock);
-
-    clearFirstExceededDeviationTimestamp(chainId, providerName, sponsorWalletAddress);
-
-    expect(getState().firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress]).toBeNull();
   });
 });
 
@@ -219,7 +199,7 @@ describe(getRecommendedGasPrice.name, () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName] = [];
-      draft.firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress] = timestampMock - 60;
+      draft.firstMarkedUpdatableTimestamps[chainId]![providerName]![sponsorWalletAddress] = timestampMock - 60;
       for (let i = 0; i < 20; i++) {
         draft.gasPrices[chainId]![providerName].unshift({
           price: ethers.parseUnits('9', 'gwei') + BigInt(i) * 100_000_000n,
@@ -245,7 +225,7 @@ describe(getRecommendedGasPrice.name, () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
     updateState((draft) => {
       draft.gasPrices[chainId]![providerName] = [];
-      draft.firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress] = timestampMock - 60 * 60; // The feed is requires update for 1 hour.
+      draft.firstMarkedUpdatableTimestamps[chainId]![providerName]![sponsorWalletAddress] = timestampMock - 60 * 60; // The feed is requires update for 1 hour.
       for (let i = 0; i < 20; i++) {
         draft.gasPrices[chainId]![providerName].unshift({
           price: ethers.parseUnits('9', 'gwei') + BigInt(i) * 100_000_000n,

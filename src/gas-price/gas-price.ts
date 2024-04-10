@@ -11,9 +11,6 @@ export const initializeGasState = (chainId: string, providerName: string) =>
   updateState((draft) => {
     if (!draft.gasPrices[chainId]) draft.gasPrices[chainId] = {};
     draft.gasPrices[chainId]![providerName] = [];
-
-    if (!draft.firstExceededDeviationTimestamps[chainId]) draft.firstExceededDeviationTimestamps[chainId] = {};
-    draft.firstExceededDeviationTimestamps[chainId]![providerName] = {};
   });
 
 export const saveGasPrice = (chainId: string, providerName: string, gasPrice: bigint) =>
@@ -31,29 +28,6 @@ export const purgeOldGasPrices = (chainId: string, providerName: string, sanitiz
       draft.gasPrices[chainId]![providerName]!,
       (gasPrice) => gasPrice.timestamp < Math.floor(Date.now() / 1000) - sanitizationSamplingWindow
     );
-  });
-
-export const setFirstExceededDeviationTimestamp = (
-  chainId: string,
-  providerName: string,
-  sponsorWalletAddress: Address,
-  timestamp: number
-) => {
-  updateState((draft) => {
-    draft.firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress] = timestamp;
-  });
-};
-
-export const clearFirstExceededDeviationTimestamp = (
-  chainId: string,
-  providerName: string,
-  sponsorWalletAddress: Address
-) =>
-  updateState((draft) => {
-    const exceededDeviationTimestamps = draft.firstExceededDeviationTimestamps[chainId]![providerName]!;
-    if (exceededDeviationTimestamps[sponsorWalletAddress]) {
-      exceededDeviationTimestamps[sponsorWalletAddress] = null;
-    }
   });
 
 export const getPercentile = (percentile: number, array: bigint[]) => {
@@ -110,7 +84,7 @@ export const fetchAndStoreGasPrice = async (
 export const getRecommendedGasPrice = (chainId: string, providerName: string, sponsorWalletAddress: Address) => {
   const state = getState();
   const firstExceededDeviationTimestamp =
-    state.firstExceededDeviationTimestamps[chainId]![providerName]![sponsorWalletAddress];
+    state.firstMarkedUpdatableTimestamps[chainId]![providerName]![sponsorWalletAddress];
   const gasPrices = state.gasPrices[chainId]![providerName]!;
   const {
     gasSettings: {

@@ -5,12 +5,7 @@ import type { ethers } from 'ethers';
 import { isError, range, set, size, uniq } from 'lodash';
 
 import type { Chain } from '../config/schema';
-import {
-  clearFirstExceededDeviationTimestamp,
-  fetchAndStoreGasPrice,
-  initializeGasState,
-  setFirstExceededDeviationTimestamp,
-} from '../gas-price';
+import { fetchAndStoreGasPrice, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
@@ -28,7 +23,12 @@ import {
   createProvider,
 } from './contracts';
 import { getUpdatableFeeds } from './get-updatable-feeds';
-import { getDerivedSponsorWallet, hasSponsorPendingTransaction, submitTransactions } from './submit-transactions';
+import { getDerivedSponsorWallet, submitTransactions } from './submit-transactions';
+import {
+  clearFirstMarkedUpdatableTimestamp,
+  isAlreadyUpdatable,
+  setFirstMarkedUpdatableTimestamp,
+} from './updatability-timestamp';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -313,15 +313,15 @@ export const processBatch = async (
       updateParameters,
       walletDerivationScheme
     ).address as Address;
-    const hasPendingTransaction = hasSponsorPendingTransaction(chainId, providerName, sponsorWalletAddress);
+    const alreadyUpdatable = isAlreadyUpdatable(chainId, providerName, sponsorWalletAddress);
 
-    if (isFeedUpdatable && !hasPendingTransaction) {
+    if (isFeedUpdatable && !alreadyUpdatable) {
       const timestamp = Math.floor(Date.now() / 1000);
-      logger.info('Setting timestamp of first deviation exceeded event.', { timestamp });
-      setFirstExceededDeviationTimestamp(chainId, providerName, sponsorWalletAddress, timestamp);
+      logger.info('Setting timestamp when the feed is first updatable.', { timestamp });
+      setFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress, timestamp);
     }
 
-    if (!isFeedUpdatable && hasPendingTransaction) {
+    if (!isFeedUpdatable && alreadyUpdatable) {
       // NOTE: A data feed may stop needing an update for two reasons:
       //  1. It has been updated by some other transaction. This could have been done by this Airseeker or some backup.
       //  2. As a natural price shift in signed API data.
@@ -332,7 +332,7 @@ export const processBatch = async (
         dapiName: decodedDapiName,
         dataFeedId,
       });
-      clearFirstExceededDeviationTimestamp(chainId, providerName, sponsorWalletAddress);
+      clearFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress);
     }
   }
 
