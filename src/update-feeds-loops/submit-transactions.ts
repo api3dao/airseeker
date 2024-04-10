@@ -117,15 +117,28 @@ export const submitTransaction = async (
           );
         });
         if (!goMulticall.success) {
-          // It is possible (and sometimes expected) that we try to submit a replacement transaction with insufficient
-          // gas price. Because this is intended flow, we catch the transaction error and log an information message
-          // instead.
-          if ((goMulticall.error as any).code === 'REPLACEMENT_UNDERPRICED') {
-            logger.info(`Failed to submit replacement transaction because it was underpriced.`);
-            return null;
+          // It seems that in practice, this code is widely used. We can do a best-effort attempt to determine the error
+          // reason. Many times, the error is acceptable and results from the way Airseeker is designed.
+          const errorCode = (goMulticall.error as any).code;
+          switch (errorCode) {
+            case 'REPLACEMENT_UNDERPRICED': {
+              logger.info(`Failed to submit replacement transaction because it was underpriced.`);
+              return null;
+            }
+            case 'NONCE_EXPIRED': {
+              logger.info(`Failed to submit the transaction because the nonce was expired.`);
+              return null;
+            }
+            case 'INSUFFICIENT_FUNDS': {
+              // This should never happen and monitoring should warn even before Airseeker comes to this point.
+              logger.error(`Failed to submit the transaction because of insufficient funds.`, goMulticall.error);
+              return null;
+            }
+            default: {
+              logger.warn(`Failed to submit the multicall transaction.`, goMulticall.error);
+              return null;
+            }
           }
-          logger.info(`Failed to submit the multicall transaction.`, goMulticall.error);
-          return null;
         }
 
         logger.info('Successfully submitted the multicall transaction.');
