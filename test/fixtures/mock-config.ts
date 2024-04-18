@@ -15,8 +15,8 @@ export const generateTestConfig = (): Config => ({
       },
       providers: { hardhat: { url: 'http://127.0.0.1:8545' } },
       gasSettings: {
-        recommendedGasPriceMultiplier: 1.5,
-        sanitizationPercentile: 80,
+        recommendedGasPriceMultiplier: 1.2,
+        sanitizationPercentile: 50,
         sanitizationSamplingWindow: 900,
         maxScalingMultiplier: 2,
         scalingWindow: 300,

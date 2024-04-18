@@ -107,7 +107,7 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
   }
 
   // Check if the next update is a retry of a pending transaction and scale the gas price accordingly.
-  let gasPriceToUse = latestGasPrice;
+  let gasPriceToUse = multiplyBigNumber(latestGasPrice, recommendedGasPriceMultiplier);
   if (firstExceededDeviationTimestamp) {
     const pendingPeriod = Math.floor(Date.now() / 1000) - firstExceededDeviationTimestamp;
     const scalingMultiplier = calculateScalingMultiplier(
@@ -131,15 +131,12 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
   // Check if there are entries with a timestamp older than at least 90% of the sanitizationSamplingWindow.
   const hasSufficientSanitizationData = gasPrices.some((gasPrice) => gasPrice.timestamp <= minTimestamp);
   // Get the configured gas price cap for sanitization.
-  const sanitizationGasPriceCap = BigInt(
-    Math.round(
-      Number(
-        getPercentile(
-          sanitizationPercentile,
-          gasPrices.map((gasPrice) => gasPrice.price)
-        )!
-      ) * sanitizationMultiplier
-    )
+  const sanitizationGasPriceCap = multiplyBigNumber(
+    getPercentile(
+      sanitizationPercentile,
+      gasPrices.map((gasPrice) => gasPrice.price)
+    )!,
+    sanitizationMultiplier
   );
 
   // Log a warning if there is not enough historical data to sanitize the gas price but the price could be sanitized.
@@ -158,5 +155,5 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
     return sanitizationGasPriceCap;
   }
 
-  return multiplyBigNumber(gasPriceToUse, recommendedGasPriceMultiplier);
+  return gasPriceToUse;
 };
