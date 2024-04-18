@@ -82,7 +82,7 @@ export const submitTransaction = async (
         );
 
         logger.debug('Getting nonce.');
-        const goNonce = await go(async () => provider.getTransactionCount(sponsorWallet.address, 'latest'));
+        const goNonce = await go(async () => provider.getTransactionCount(sponsorWallet.address, blockNumber));
         if (!goNonce.success) {
           logger.warn(`Failed to get nonce.`, goNonce.error);
           return null;
