@@ -81,6 +81,7 @@ export const calculateStaggerTimeMs = (
 };
 
 export const readActiveDataFeedBatch = async (
+  provider: ethers.JsonRpcProvider,
   airseekerRegistry: AirseekerRegistry,
   chainId: string,
   fromIndex: number,
@@ -130,7 +131,11 @@ export const readActiveDataFeedBatch = async (
       return isRegistered;
     });
 
-  const blockNumber = decodeGetBlockNumberResponse(getBlockNumberReturndata!);
+  // NOTE: https://api3workspace.slack.com/archives/C05TQPT7PNJ/p1713441156074839?thread_ts=1713438669.278119&cid=C05TQPT7PNJ
+  const blockNumber =
+    chainId === '42161' || chainId === '421614'
+      ? await provider.getBlockNumber()
+      : decodeGetBlockNumberResponse(getBlockNumberReturndata!);
 
   return {
     batch,
@@ -160,7 +165,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
         logger.debug(`Fetching first batch of data feeds batches.`);
         const firstBatchStartTimeMs = Date.now();
         const goFirstBatch = await go(
-          async () => readActiveDataFeedBatch(airseekerRegistry, chainId, 0, dataFeedBatchSize),
+          async () => readActiveDataFeedBatch(provider, airseekerRegistry, chainId, 0, dataFeedBatchSize),
           { totalTimeoutMs: dataFeedUpdateIntervalMs }
         );
         if (!goFirstBatch.success) {
@@ -205,6 +210,7 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
             const dataFeedBatchIndexStart = batchIndex * dataFeedBatchSize;
             const dataFeedBatchIndexEnd = Math.min(activeDataFeedCount!, dataFeedBatchIndexStart + dataFeedBatchSize);
             const activeBatch = await readActiveDataFeedBatch(
+              provider,
               airseekerRegistry,
               chainId,
               dataFeedBatchIndexStart,
