@@ -133,7 +133,9 @@ export const readActiveDataFeedBatch = async (
 
   // NOTE: https://api3workspace.slack.com/archives/C05TQPT7PNJ/p1713441156074839?thread_ts=1713438669.278119&cid=C05TQPT7PNJ
   const blockNumber =
-    chainId === '42161' ? await provider.getBlockNumber() : decodeGetBlockNumberResponse(getBlockNumberReturndata!);
+    chainId === '42161' || chainId === '421614'
+      ? await provider.getBlockNumber()
+      : decodeGetBlockNumberResponse(getBlockNumberReturndata!);
 
   return {
     batch,
