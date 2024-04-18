@@ -82,7 +82,12 @@ export const submitTransaction = async (
         );
 
         logger.debug('Getting nonce.');
-        const nonce = await provider.getTransactionCount(sponsorWallet.address, blockNumber);
+        const goNonce = await go(async () => provider.getTransactionCount(sponsorWallet.address, blockNumber));
+        if (!goNonce.success) {
+          logger.warn(`Failed to get nonce.`, goNonce.error);
+          return null;
+        }
+        const nonce = goNonce.data;
 
         logger.debug('Getting recommended gas price.');
         const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWallet.address);

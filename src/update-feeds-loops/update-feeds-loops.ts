@@ -290,23 +290,6 @@ export const processBatch = async (
   } = getState();
   const { contracts } = chains[chainId]!;
 
-  // Generate signed API URLs for the batch
-  const signedApiUrls = batch
-    .map((dataFeed) =>
-      dataFeed.beaconsWithData.map((beacon, index) => {
-        const configSignedApiUrls = configSignedApiBaseUrls.map((baseUrl) => `${baseUrl}/${beacon.airnodeAddress}`);
-
-        // NOTE: contractSignedApiBaseUrl is an array of empty strings if it's not set on-chain
-        const contractSignedApiBaseUrl = dataFeed.signedApiUrls[index];
-        const contractSignedApiUrls = contractSignedApiBaseUrl
-          ? [`${contractSignedApiBaseUrl}/${beacon.airnodeAddress}`]
-          : [];
-
-        return [...configSignedApiUrls, ...contractSignedApiUrls];
-      })
-    )
-    .flat(2);
-
   const feedsToUpdate = getUpdatableFeeds(batch, deviationThresholdCoefficient);
 
   // Clear last update timestamps for feeds that don't need an update
@@ -358,5 +341,22 @@ export const processBatch = async (
     blockNumber
   );
   const successCount = updatedFeeds.filter(Boolean).length;
+
+  // Generate signed API URLs for the batch
+  const signedApiUrls = batch
+    .map((dataFeed) =>
+      dataFeed.beaconsWithData.map((beacon, index) => {
+        const configSignedApiUrls = configSignedApiBaseUrls.map((baseUrl) => `${baseUrl}/${beacon.airnodeAddress}`);
+
+        // NOTE: contractSignedApiBaseUrl is an array of empty strings if it's not set on-chain
+        const contractSignedApiBaseUrl = dataFeed.signedApiUrls[index];
+        const contractSignedApiUrls = contractSignedApiBaseUrl
+          ? [`${contractSignedApiBaseUrl}/${beacon.airnodeAddress}`]
+          : [];
+
+        return [...configSignedApiUrls, ...contractSignedApiUrls];
+      })
+    )
+    .flat(2);
   return { signedApiUrls, successCount, errorCount: size(feedsToUpdate) - successCount };
 };
