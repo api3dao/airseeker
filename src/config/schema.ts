@@ -42,6 +42,7 @@ export const gasSettingsSchema = z
     sanitizationPercentile: z.number().positive(),
     scalingWindow: z.number().positive(),
     maxScalingMultiplier: z.number().positive(),
+    sanitizationMultiplier: z.number().positive(),
   })
   .superRefine((gasSettings, ctx) => {
     if (gasSettings.recommendedGasPriceMultiplier > gasSettings.maxScalingMultiplier) {

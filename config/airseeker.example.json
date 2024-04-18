@@ -17,7 +17,8 @@
         "sanitizationSamplingWindow": 900,
         "sanitizationPercentile": 80,
         "scalingWindow": 120,
-        "maxScalingMultiplier": 2
+        "maxScalingMultiplier": 2,
+        "sanitizationMultiplier": 2
       },
       "dataFeedUpdateInterval": 60,
       "dataFeedBatchSize": 10

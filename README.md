@@ -223,6 +223,11 @@ the `maxScalingMultiplier`.
 The maximum scaling multiplier. The gas price will not be scaled by a larger factor independently of how long is the
 update pending.
 
+###### `sanitizationMultiplier`
+
+The multiplier used during sanitization. The percentile gas price computed during sanitization is multiplied by this
+factor and the result is used to cap the gas price.
+
 ##### `deviationThresholdCoefficient` _(optional)_
 
 The global coefficient applied to all deviation checks. Used to differentiate alternate deployments. For example:

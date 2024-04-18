@@ -20,6 +20,7 @@ export const generateTestConfig = (): Config => ({
         sanitizationSamplingWindow: 900,
         maxScalingMultiplier: 2,
         scalingWindow: 300,
+        sanitizationMultiplier: 2,
       },
       dataFeedBatchSize: 10,
       dataFeedUpdateInterval: 60,
