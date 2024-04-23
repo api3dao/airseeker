@@ -1,7 +1,11 @@
 import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
 import { getState } from '../state';
 
-import { clearFirstMarkedUpdatableTimestamp, setFirstMarkedUpdatableTimestamp } from './updatability-timestamp';
+import {
+  clearFirstMarkedUpdatableTimestamp,
+  initializeFirstMarkedUpdatableTimestamp,
+  setFirstMarkedUpdatableTimestamp,
+} from './updatability-timestamp';
 
 const chainId = '31337';
 const providerName = 'localhost';
@@ -11,6 +15,7 @@ const sponsorWalletAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
 beforeEach(() => {
   initializeState(generateTestConfig());
+  initializeFirstMarkedUpdatableTimestamp(chainId, providerName);
 });
 
 describe(setFirstMarkedUpdatableTimestamp.name, () => {

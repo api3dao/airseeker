@@ -248,7 +248,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       'provider-name',
       allowPartial<Chain>({
         dataFeedBatchSize: 1,
-        dataFeedUpdateInterval: 0.15,
+        dataFeedUpdateInterval: 0.3, // 300ms update interval to make the test run quicker.
         providers: { ['provider-name']: { url: 'provider-url' } },
         contracts: {
           AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
@@ -261,11 +261,11 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     expect(utilsModule.sleep).toHaveBeenCalledTimes(3);
     expect(sleepCalls[0]).toBeGreaterThan(0); // The first stagger time is computed dynamically (the execution time is subtracted from the interval time) which is slow on CI, so we just check it's non-zero.
     expect(sleepCalls[1]).toBe(0);
-    expect(sleepCalls[2]).toBe(50);
+    expect(sleepCalls[2]).toBe(100);
 
     // Expect the call times of processBatch to be staggered as well.
     expect(updateFeedsLoopsModule.processBatch).toHaveBeenCalledTimes(2);
-    expect(processBatchCalls[1]! - processBatchCalls[0]!).toBeGreaterThan(100 - 20); // The stagger time is 50ms, but second batch fails to load which means the third second processBatch call needs to happen after we wait for 2 stagger times. We add some buffer to account for processing delays.
+    expect(processBatchCalls[1]! - processBatchCalls[0]!).toBeGreaterThan(200 - 20); // The stagger time is 100ms, but second batch fails to load which means the third second processBatch call needs to happen after we wait for 2 stagger times. We add some buffer to account for processing delays.
 
     // Expect the logs to be called with the correct context.
     expect(logger.error).toHaveBeenCalledTimes(1);
@@ -282,7 +282,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching gas price and saving it to the state.');
     expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batches of active data feeds.', {
       batchesCount: 3,
-      staggerTimeMs: 50,
+      staggerTimeMs: 100,
     });
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Fetching batch of active data feeds.', {
       batchIndex: 1,
