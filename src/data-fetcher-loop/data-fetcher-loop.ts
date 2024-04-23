@@ -56,7 +56,7 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
   );
 
   if (!goAxiosCall.success) {
-    logger.warn('Failed to fetch data from signed API.', parseAxiosError(goAxiosCall.error));
+    logger.warn('Failed to fetch data from signed API.', { url, ...parseAxiosError(goAxiosCall.error) });
     return null;
   }
 
