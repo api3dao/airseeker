@@ -1,9 +1,10 @@
+import type { Address } from '@api3/commons';
 import type { Api3ServerV1 } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
 import type { WalletDerivationScheme } from '../config/schema';
-import { getRecommendedGasPrice, setSponsorLastUpdateTimestamp } from '../gas-price';
+import { getRecommendedGasPrice } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, DapiNameOrDataFeedId, ProviderName } from '../types';
@@ -35,12 +36,6 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
         ]),
       ]
     : beaconUpdateCalls;
-};
-
-export const hasSponsorPendingTransaction = (chainId: string, providerName: string, sponsorWalletAddress: string) => {
-  const { sponsorLastUpdateTimestamp } = getState().gasPrices[chainId]![providerName]!;
-
-  return !!sponsorLastUpdateTimestamp[sponsorWalletAddress];
 };
 
 export const submitTransaction = async (
@@ -80,6 +75,7 @@ export const submitTransaction = async (
           updateParameters,
           walletDerivationScheme
         );
+        const sponsorWalletAddress = sponsorWallet.address as Address;
 
         logger.debug('Getting nonce.');
         const goNonce = await go(async () => provider.getTransactionCount(sponsorWallet.address, blockNumber));
@@ -90,19 +86,11 @@ export const submitTransaction = async (
         const nonce = goNonce.data;
 
         logger.debug('Getting recommended gas price.');
-        const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWallet.address);
+        const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress);
         if (!gasPrice) return null;
 
-        // We want to set the timestamp of the first update transaction. We can determine if the transaction is the
-        // original one and that it isn't a retry of a pending transaction (if there is no timestamp for the
-        // particular sponsor wallet). This assumes that a single sponsor updates a single data feed.
-        if (!hasSponsorPendingTransaction(chainId, providerName, sponsorWallet.address)) {
-          logger.debug('Setting timestamp of the original update transaction.');
-          setSponsorLastUpdateTimestamp(chainId, providerName, sponsorWallet.address);
-        }
-
         logger.info('Updating data feed.', {
-          sponsorAddress: sponsorWallet.address,
+          sponsorAddress: sponsorWalletAddress,
           gasPrice: gasPrice.toString(),
           gasLimit: gasLimit.toString(),
           nonce,

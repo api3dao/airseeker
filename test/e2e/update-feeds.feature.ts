@@ -8,6 +8,7 @@ import {
   decodeUpdateParameters,
 } from '../../src/update-feeds-loops/contracts';
 import { submitTransactions } from '../../src/update-feeds-loops/submit-transactions';
+import { initializeFirstMarkedUpdatableTimestamp } from '../../src/update-feeds-loops/updatability-timestamp';
 import { decodeDapiName } from '../../src/utils';
 import { initializeState } from '../fixtures/mock-config';
 import { deployAndUpdate } from '../setup/contract';
@@ -47,6 +48,7 @@ it('updates blockchain data', async () => {
     draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
   });
   initializeGasState(chainId, providerName);
+  initializeFirstMarkedUpdatableTimestamp(chainId, providerName);
   const {
     dataFeedId,
     dapiName,
@@ -113,7 +115,7 @@ it('updates blockchain data', async () => {
     blockNumber
   );
 
-  expect(logger.debug).toHaveBeenCalledTimes(8);
+  expect(logger.debug).toHaveBeenCalledTimes(7);
   expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
   expect(logger.debug).toHaveBeenNthCalledWith(2, 'Creating calldatas.');
   expect(logger.debug).toHaveBeenNthCalledWith(3, 'Estimating gas limit.');
@@ -121,7 +123,6 @@ it('updates blockchain data', async () => {
   expect(logger.debug).toHaveBeenNthCalledWith(5, 'Derived new sponsor wallet.', expect.anything());
   expect(logger.debug).toHaveBeenNthCalledWith(6, 'Getting nonce.');
   expect(logger.debug).toHaveBeenNthCalledWith(7, 'Getting recommended gas price.');
-  expect(logger.debug).toHaveBeenNthCalledWith(8, 'Setting timestamp of the original update transaction.');
   expect(logger.info).toHaveBeenCalledTimes(2);
   expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed.', expect.anything());
   expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the multicall transaction.');

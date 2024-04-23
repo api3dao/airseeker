@@ -1,10 +1,11 @@
+import type { Address } from '@api3/commons';
 import type { AirseekerRegistry } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
 import type { ethers } from 'ethers';
 import { isError, range, set, size, uniq } from 'lodash';
 
 import type { Chain } from '../config/schema';
-import { clearSponsorLastUpdateTimestamp, fetchAndStoreGasPrice, initializeGasState } from '../gas-price';
+import { fetchAndStoreGasPrice, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { ChainId, ProviderName } from '../types';
@@ -22,7 +23,12 @@ import {
   createProvider,
 } from './contracts';
 import { getUpdatableFeeds } from './get-updatable-feeds';
-import { getDerivedSponsorWallet, hasSponsorPendingTransaction, submitTransactions } from './submit-transactions';
+import { getDerivedSponsorWallet, submitTransactions } from './submit-transactions';
+import {
+  clearFirstMarkedUpdatableTimestamp,
+  isAlreadyUpdatable,
+  setFirstMarkedUpdatableTimestamp,
+} from './updatability-timestamp';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -292,28 +298,30 @@ export const processBatch = async (
 
   const feedsToUpdate = getUpdatableFeeds(batch, deviationThresholdCoefficient);
 
-  // Clear last update timestamps for feeds that don't need an update
+  // We need to update the first exceeded deviation timestamp for the feeds. We need to set them for feeds for which the
+  // deviation is exceeded for the first time and clear the timestamp for feeds that no longer need an update.
   for (const feed of batch) {
     const { dapiName, dataFeedId, decodedDapiName, updateParameters } = feed;
 
-    // Skip if the data feed is updatable
-    if (
-      feedsToUpdate.some(
-        (updatableFeed) =>
-          updatableFeed.dataFeedInfo.dapiName === dapiName && updatableFeed.dataFeedInfo.dataFeedId === dataFeedId
-      )
-    ) {
-      continue;
-    }
-
+    const isFeedUpdatable = feedsToUpdate.some(
+      (updatableFeed) =>
+        updatableFeed.dataFeedInfo.dapiName === dapiName && updatableFeed.dataFeedInfo.dataFeedId === dataFeedId
+    );
     const sponsorWalletAddress = getDerivedSponsorWallet(
       sponsorWalletMnemonic,
       dapiName ?? dataFeedId,
       updateParameters,
       walletDerivationScheme
-    ).address;
-    const timestampNeedsClearing = hasSponsorPendingTransaction(chainId, providerName, sponsorWalletAddress);
-    if (timestampNeedsClearing) {
+    ).address as Address;
+    const alreadyUpdatable = isAlreadyUpdatable(chainId, providerName, sponsorWalletAddress);
+
+    if (isFeedUpdatable && !alreadyUpdatable) {
+      const timestamp = Math.floor(Date.now() / 1000);
+      logger.info('Setting timestamp when the feed is first updatable.', { timestamp });
+      setFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress, timestamp);
+    }
+
+    if (!isFeedUpdatable && alreadyUpdatable) {
       // NOTE: A data feed may stop needing an update for two reasons:
       //  1. It has been updated by some other transaction. This could have been done by this Airseeker or some backup.
       //  2. As a natural price shift in signed API data.
@@ -324,7 +332,7 @@ export const processBatch = async (
         dapiName: decodedDapiName,
         dataFeedId,
       });
-      clearSponsorLastUpdateTimestamp(chainId, providerName, sponsorWalletAddress);
+      clearFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress);
     }
   }
 

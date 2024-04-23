@@ -13,6 +13,7 @@ import * as utilsModule from '../utils';
 import * as contractsModule from './contracts';
 import * as getUpdatableFeedsModule from './get-updatable-feeds';
 import * as submitTransactionModule from './submit-transactions';
+import * as updatabilityTimestampModule from './updatability-timestamp';
 import * as updateFeedsLoopsModule from './update-feeds-loops';
 
 describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
@@ -217,6 +218,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
         signedApiUrls: {},
         signedDatas: {},
         gasPrices: {},
+        firstMarkedUpdatableTimestamps: { 31_337: { ['provider-name']: {} } },
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
@@ -246,7 +248,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       'provider-name',
       allowPartial<Chain>({
         dataFeedBatchSize: 1,
-        dataFeedUpdateInterval: 0.15,
+        dataFeedUpdateInterval: 0.3, // 300ms update interval to make the test run quicker.
         providers: { ['provider-name']: { url: 'provider-url' } },
         contracts: {
           AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
@@ -259,11 +261,11 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     expect(utilsModule.sleep).toHaveBeenCalledTimes(3);
     expect(sleepCalls[0]).toBeGreaterThan(0); // The first stagger time is computed dynamically (the execution time is subtracted from the interval time) which is slow on CI, so we just check it's non-zero.
     expect(sleepCalls[1]).toBe(0);
-    expect(sleepCalls[2]).toBe(50);
+    expect(sleepCalls[2]).toBe(100);
 
     // Expect the call times of processBatch to be staggered as well.
     expect(updateFeedsLoopsModule.processBatch).toHaveBeenCalledTimes(2);
-    expect(processBatchCalls[1]! - processBatchCalls[0]!).toBeGreaterThan(100 - 20); // The stagger time is 50ms, but second batch fails to load which means the third second processBatch call needs to happen after we wait for 2 stagger times. We add some buffer to account for processing delays.
+    expect(processBatchCalls[1]! - processBatchCalls[0]!).toBeGreaterThan(200 - 20); // The stagger time is 100ms, but second batch fails to load which means the third second processBatch call needs to happen after we wait for 2 stagger times. We add some buffer to account for processing delays.
 
     // Expect the logs to be called with the correct context.
     expect(logger.error).toHaveBeenCalledTimes(1);
@@ -271,25 +273,41 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       'Failed to get active data feeds batch.',
       new Error('One of the multicalls failed')
     );
-    expect(logger.debug).toHaveBeenCalledTimes(8);
+    expect(logger.debug).toHaveBeenCalledTimes(10);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of data feeds batches.');
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active data feeds.', expect.anything());
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching gas price and saving it to the state.');
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching batches of active data feeds.', {
-      batchesCount: 3,
-      staggerTimeMs: 50,
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Derived new sponsor wallet.', {
+      sponsorWalletAddress: '0x4Fe33c7f5E9407c8A27B97144c98759C88B5b8dE',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batch of active data feeds.', {
-      batchIndex: 1,
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching gas price and saving it to the state.');
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batches of active data feeds.', {
+      batchesCount: 3,
+      staggerTimeMs: 100,
     });
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Fetching batch of active data feeds.', {
+      batchIndex: 1,
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Fetching batch of active data feeds.', {
       batchIndex: 2,
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Processing batch of active data feeds.', expect.anything());
-    expect(logger.debug).toHaveBeenNthCalledWith(8, 'Fetching gas price and saving it to the state.');
+    expect(logger.debug).toHaveBeenNthCalledWith(8, 'Processing batch of active data feeds.', expect.anything());
+    expect(logger.debug).toHaveBeenNthCalledWith(9, 'Derived new sponsor wallet.', {
+      sponsorWalletAddress: '0x4Fe33c7f5E9407c8A27B97144c98759C88B5b8dE',
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(10, 'Fetching gas price and saving it to the state.');
 
-    expect(logger.info).toHaveBeenCalledTimes(1);
-    expect(logger.info).toHaveBeenNthCalledWith(1, 'Finished processing batches of active data feeds.', {
+    expect(logger.info).toHaveBeenCalledTimes(3);
+    expect(logger.info).toHaveBeenNthCalledWith(
+      1,
+      'Setting timestamp when the feed is first updatable.',
+      expect.anything()
+    );
+    expect(logger.info).toHaveBeenNthCalledWith(
+      2,
+      'Setting timestamp when the feed is first updatable.',
+      expect.anything()
+    );
+    expect(logger.info).toHaveBeenNthCalledWith(3, 'Finished processing batches of active data feeds.', {
       dataFeedUpdateFailures: 2,
       dataFeedUpdates: 0,
       skippedBatchesCount: 1,
@@ -415,13 +433,14 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
         signedApiUrls: {},
       })
     );
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'info');
 
     // Skip actions other than generating signed api urls.
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
     jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
-    jest.spyOn(submitTransactionModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
+    jest.spyOn(updatabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
 
     const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(
       [activeDataFeed],
@@ -454,13 +473,14 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
         signedApiUrls: {},
       })
     );
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'info');
 
     // Skip actions other than generating signed api urls.
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
     jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
-    jest.spyOn(submitTransactionModule, 'hasSponsorPendingTransaction').mockReturnValue(false);
+    jest.spyOn(updatabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
 
     const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(
       [activeDataFeed],

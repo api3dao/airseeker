@@ -1,3 +1,4 @@
+import type { Address } from '@api3/commons';
 import { produce, type Draft } from 'immer';
 
 import type { Config } from '../config/schema';
@@ -11,14 +12,20 @@ import type {
   DapiNameOrDataFeedId,
 } from '../types';
 
-interface GasState {
-  gasPrices: { price: bigint; timestamp: number }[];
-  sponsorLastUpdateTimestamp: Record<string, number>;
+interface GasPriceInfo {
+  price: bigint;
+  timestamp: number;
 }
 
 export interface State {
   config: Config;
-  gasPrices: Record<ChainId, Record<ProviderName, GasState>>;
+  gasPrices: Record<ChainId, Record<ProviderName, GasPriceInfo[]>>;
+  // The timestamp of when we last detected that the feed requires an update. Note, that if the feed requires an update
+  // consecutively, the timestamp is not updated until the feed stops being updatable again.
+  firstMarkedUpdatableTimestamps: Record<
+    ChainId,
+    Record<ProviderName, Record<Address /* Sponsor wallet */, number | null>>
+  >;
   derivedSponsorWallets: Record<DapiNameOrDataFeedId, PrivateKey>;
   signedDatas: Record<BeaconId, SignedData>;
   signedApiUrls: Record<ChainId, Record<ProviderName, SignedApiUrl[]>>;
@@ -40,6 +47,7 @@ export const setInitialState = (config: Config) => {
   state = {
     config,
     gasPrices: {},
+    firstMarkedUpdatableTimestamps: {},
     signedDatas: {},
     signedApiUrls: {},
     derivedSponsorWallets: {},
