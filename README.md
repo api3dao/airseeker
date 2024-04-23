@@ -182,10 +182,12 @@ The URL of the provider.
 ##### `gasSettings`
 
 The settings used to calculate gas prices used to submit transactions. The gas oracle is stateful and maintains
-historical gas prices for a specific sampling window. In case the transaction is a retry of a pending transaction, the
-latest gas price is linearly scaled by a factor up to a specified maximum. In case the transaction is not a retry, the
-latest gas price is sanitized against a percentile chosen from the historical gas prices and multipled by a specified
-gas price multiplier.
+historical gas prices for a specific sampling window. It computes the gas price to be used based on the latest gas
+price. In case the transaction is a retry of a pending transaction, the latest gas price is linearly scaled by a factor
+up to a specified maximum. In case the transaction is not a retry, the latest gas price is multiplied only by the
+recommended gas price multiplier. The sanitization cap is computed as a percentile chosen from the historical gas prices
+multiplied by a specified gas price multiplier. The sanitization cap provides the upper bound for the computed gas
+price.
 
 Example of a scaling computation:
 
@@ -203,7 +205,7 @@ Example of a scaling computation:
 
 ###### `recommendedGasPriceMultiplier`
 
-The base multiplier used to compute the gas price. Used to multiply the latest (or sanitized) gas price.
+The base multiplier used to compute the gas price. Used to multiply the latest gas price.
 
 ###### `sanitizationSamplingWindow`
 

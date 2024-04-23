@@ -12,12 +12,12 @@
         }
       },
       "gasSettings": {
-        "recommendedGasPriceMultiplier": 1.5,
+        "recommendedGasPriceMultiplier": 1,
         "sanitizationSamplingWindow": 900,
         "sanitizationPercentile": 80,
         "scalingWindow": 120,
         "maxScalingMultiplier": 2,
-        "sanitizationMultiplier": 2
+        "sanitizationMultiplier": 3
       },
       "dataFeedUpdateInterval": 30,
       "dataFeedBatchSize": 10,
