@@ -13,6 +13,7 @@ const gasSettings = {
   sanitizationPercentile: 80,
   scalingWindow: 120,
   maxScalingMultiplier: 2,
+  sanitizationMultiplier: 3,
 };
 
 test('validates example config', () => {

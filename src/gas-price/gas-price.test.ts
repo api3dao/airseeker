@@ -129,47 +129,67 @@ describe(getRecommendedGasPrice.name, () => {
     expect(logger.warn).toHaveBeenNthCalledWith(1, 'There is no gas price stored.');
   });
 
-  it('uses sanitized percentile gas price if the latest is above the percentile', () => {
+  it('caps the gas price if it is above the sanitization treshold', () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
+    // Make sure there are enough historical gas prices to sanitize.
+    const gasPrices = range(30).map((_, i) => ({
+      price: ethers.parseUnits(`10`, 'gwei') - BigInt(i) * 100_000_000n,
+      timestamp: timestampMock - 30 * (i + 1),
+    }));
+    // Add a huge latest gas price.
+    gasPrices.push({
+      price: ethers.parseUnits('100', 'gwei'),
+      timestamp: timestampMock,
+    });
     updateState((draft) => {
-      // Make sure there are enough historical gas prices to sanitize.
-      draft.gasPrices[chainId]![providerName] = range(30).map((_, i) => ({
-        price: ethers.parseUnits(`10`, 'gwei') - BigInt(i) * 100_000_000n,
-        timestamp: timestampMock - 30 * (i + 1),
-      }));
+      draft.gasPrices[chainId]![providerName] = gasPrices;
     });
     jest.spyOn(logger, 'warn');
 
     const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress);
 
-    expect(gasPrice).toStrictEqual(ethers.parseUnits('14.1', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
+    expect(gasPrice).toStrictEqual(ethers.parseUnits('17.2', 'gwei'));
+    const percentile = getPercentile(
+      testConfig.chains[chainId]!.gasSettings.sanitizationPercentile,
+      gasPrices.map((x) => x.price)
+    );
+    const expectedGasPrice = BigInt(
+      Number(percentile) * testConfig.chains[chainId]!.gasSettings.sanitizationMultiplier
+    );
+    expect(gasPrice).toStrictEqual(expectedGasPrice);
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenNthCalledWith(1, 'Sanitizing gas price.', {
-      gasPrice: '10000000000',
-      percentileGasPrice: '9400000000',
+      gasPrice: '120000000000',
+      sanitizationGasPriceCap: '17200000000',
     });
   });
 
   it('logs a warning when there is not enough data for sanitization', () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
+    const gasPrices = range(10).map((_, i) => ({
+      price: ethers.parseUnits(`10`, 'gwei') - BigInt(i) * 100_000_000n,
+      timestamp: timestampMock - 30 * (i + 1),
+    }));
+    // Add a huge latest gas price.
+    gasPrices.push({
+      price: ethers.parseUnits('100', 'gwei'),
+      timestamp: timestampMock,
+    });
     updateState((draft) => {
-      draft.gasPrices[chainId]![providerName] = range(10).map((_, i) => ({
-        price: ethers.parseUnits(`10`, 'gwei') - BigInt(i) * 100_000_000n,
-        timestamp: timestampMock - 30 * (i + 1),
-      }));
+      draft.gasPrices[chainId]![providerName] = gasPrices;
     });
     jest.spyOn(logger, 'warn');
 
     const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress);
 
-    expect(gasPrice).toStrictEqual(ethers.parseUnits('15', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
+    expect(gasPrice).toStrictEqual(ethers.parseUnits('120', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenNthCalledWith(
       1,
       'Gas price could be sanitized but there is not enough historical data.',
       {
-        gasPrice: '10000000000',
-        percentileGasPrice: '9800000000',
+        gasPrice: '120000000000',
+        sanitizationGasPriceCap: '19200000000',
       }
     );
   });
@@ -191,7 +211,7 @@ describe(getRecommendedGasPrice.name, () => {
     const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress);
 
     expect(latestStoredGasPrice).toStrictEqual(ethers.parseUnits('7.1', 'gwei'));
-    expect(gasPrice).toStrictEqual(ethers.parseUnits('10.65', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
+    expect(gasPrice).toStrictEqual(ethers.parseUnits('8.52', 'gwei')); // The price is multiplied by the recommendedGasPriceMultiplier.
     expect(logger.warn).toHaveBeenCalledTimes(0);
   });
 
@@ -211,12 +231,12 @@ describe(getRecommendedGasPrice.name, () => {
 
     const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress);
 
-    expect(gasPrice).toStrictEqual(ethers.parseUnits('19.075', 'gwei')); // The price is multiplied by the scaling multiplier.
+    expect(gasPrice).toStrictEqual(ethers.parseUnits('17.44', 'gwei')); // The price is multiplied by the scaling multiplier.
 
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenNthCalledWith(1, 'Scaling gas price.', {
       gasPrice: '10900000000',
-      multiplier: 1.75,
+      multiplier: 1.6,
       pendingPeriod: 60,
     });
   });
@@ -228,8 +248,39 @@ describe(getRecommendedGasPrice.name, () => {
       draft.firstMarkedUpdatableTimestamps[chainId]![providerName]![sponsorWalletAddress] = timestampMock - 60 * 60; // The feed is requires update for 1 hour.
       for (let i = 0; i < 20; i++) {
         draft.gasPrices[chainId]![providerName].unshift({
-          price: ethers.parseUnits('9', 'gwei') + BigInt(i) * 100_000_000n,
+          price: ethers.parseUnits('9', 'gwei') + BigInt(i) * 50_000_000n,
           timestamp: timestampMock - (20 - i) * 30,
+        });
+      }
+      // Make the most up to date gas price too little.
+      draft.gasPrices[chainId]![providerName].push({
+        price: ethers.parseUnits('5', 'gwei'),
+        timestamp: timestampMock,
+      });
+    });
+    jest.spyOn(logger, 'warn');
+
+    const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress);
+
+    expect(gasPrice).toStrictEqual(ethers.parseUnits('10', 'gwei'));
+
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenNthCalledWith(1, 'Scaling gas price.', {
+      gasPrice: '5000000000',
+      multiplier: 2,
+      pendingPeriod: 3600,
+    });
+  });
+
+  it('can sanitize and scale at the same time', () => {
+    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
+    updateState((draft) => {
+      draft.gasPrices[chainId]![providerName] = [];
+      draft.firstMarkedUpdatableTimestamps[chainId]![providerName]![sponsorWalletAddress] = timestampMock - 60 * 60; // The feed is requires update for 1 hour.
+      for (let i = 0; i < 30; i++) {
+        draft.gasPrices[chainId]![providerName].unshift({
+          price: ethers.parseUnits('9', 'gwei') + BigInt(i) * 50_000_000n,
+          timestamp: timestampMock - (30 - i) * 30,
         });
       }
     });
@@ -237,13 +288,17 @@ describe(getRecommendedGasPrice.name, () => {
 
     const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress);
 
-    expect(gasPrice).toStrictEqual(ethers.parseUnits('21.8', 'gwei')); // The price is multiplied by the scaling multiplier.
+    expect(gasPrice).toStrictEqual(ethers.parseUnits('19.4', 'gwei'));
 
-    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledTimes(2);
     expect(logger.warn).toHaveBeenNthCalledWith(1, 'Scaling gas price.', {
-      gasPrice: '10900000000',
+      gasPrice: '10450000000',
       multiplier: 2,
       pendingPeriod: 3600,
+    });
+    expect(logger.warn).toHaveBeenNthCalledWith(2, 'Sanitizing gas price.', {
+      gasPrice: '20900000000',
+      sanitizationGasPriceCap: '19400000000',
     });
   });
 });
