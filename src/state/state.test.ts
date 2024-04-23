@@ -1,5 +1,6 @@
+import { type Hex, deriveBeaconId } from '@api3/commons';
+
 import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
-import { deriveBeaconId } from '../utils';
 
 import { updateState, getState, type State } from './state';
 
@@ -18,7 +19,7 @@ const stateMock: State = {
     [deriveBeaconId(
       '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
       '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183'
-    )!]: {
+    ) as Hex]: {
       airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
       encodedValue: '0x000000000000000000000000000000000000000000000065954b143faff77440',
       templateId: '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183',
@@ -44,7 +45,7 @@ describe('state', () => {
   const beaconId = deriveBeaconId(
     '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
     '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183'
-  )!;
+  ) as Hex;
 
   const signedDataSample = {
     airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
@@ -53,7 +54,7 @@ describe('state', () => {
     signature:
       '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
     timestamp: '1687850583',
-  };
+  } as const;
 
   it('should update the state correctly', () => {
     const stateBefore = getState();

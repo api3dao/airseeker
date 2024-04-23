@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
+import type { Address, Hex } from '@api3/commons';
 import { ethers, type HDNodeWallet } from 'ethers';
 
 import type { SignedData } from '../src/types';
@@ -10,7 +11,7 @@ export const signData = async (signer: ethers.Signer, templateId: string, timest
     ethers.getBytes(ethers.solidityPackedKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, data]))
   );
 
-export const generateRandomBytes = (length: number) => `0x${randomBytes(length).toString('hex')}`;
+export const generateRandomBytes = (length: number): Hex => `0x${randomBytes(length).toString('hex')}`;
 
 export type DeepPartial<T> = T extends object
   ? {
@@ -35,12 +36,18 @@ export const encodeBeaconSetDetails = (dataFeed: Beacon[]) =>
 
 export const generateSignedData = async (
   airnodeWallet: HDNodeWallet,
-  templateId: string,
+  templateId: Hex,
   dataFeedTimestamp: string,
   apiValue = BigInt(generateRandomBytes(Math.floor(Math.random() * 27) + 1)) // Fits into uint224.
 ): Promise<SignedData> => {
   const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['uint224'], [BigInt(apiValue)]);
   const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
 
-  return { airnode: airnodeWallet.address, templateId, timestamp: dataFeedTimestamp, encodedValue, signature };
+  return {
+    airnode: airnodeWallet.address as Address,
+    templateId,
+    timestamp: dataFeedTimestamp,
+    encodedValue,
+    signature,
+  };
 };

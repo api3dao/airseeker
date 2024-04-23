@@ -1,4 +1,4 @@
-import { goSync } from '@api3/promise-utils';
+import type { Hex } from '@api3/commons';
 import { ethers } from 'ethers';
 
 import type { WalletDerivationScheme } from './config/schema';
@@ -8,11 +8,7 @@ export const abs = (n: bigint) => (n < 0n ? -n : n);
 
 export const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export function deriveBeaconId(airnodeAddress: string, templateId: string) {
-  return goSync(() => ethers.solidityPackedKeccak256(['address', 'bytes32'], [airnodeAddress, templateId])).data;
-}
-
-export const encodeDapiName = (decodedDapiName: string) => ethers.encodeBytes32String(decodedDapiName);
+export const encodeDapiName = (decodedDapiName: string) => ethers.encodeBytes32String(decodedDapiName) as Hex;
 
 export const decodeDapiName = (encodedDapiName: string) => ethers.decodeBytes32String(encodedDapiName);
 

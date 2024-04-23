@@ -1,10 +1,10 @@
+import { type Hex, deriveBeaconId } from '@api3/commons';
 import { goSync } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { SignedData, BeaconId } from '../types';
-import { deriveBeaconId } from '../utils';
+import type { SignedData } from '../types';
 
 export const verifySignedData = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
   // Verification is wrapped in goSync, because ethers methods can potentially throw on invalid input.
@@ -65,7 +65,7 @@ export const saveSignedData = (signedData: SignedData) => {
 
     const state = getState();
 
-    const dataFeedId = deriveBeaconId(airnode, templateId)!;
+    const dataFeedId = deriveBeaconId(airnode, templateId) as Hex;
 
     const existingValue = state.signedDatas[dataFeedId];
     if (existingValue && existingValue.timestamp >= timestamp) {
@@ -79,7 +79,7 @@ export const saveSignedData = (signedData: SignedData) => {
   });
 };
 
-export const getSignedData = (dataFeedId: BeaconId) => getState().signedDatas[dataFeedId];
+export const getSignedData = (dataFeedId: Hex) => getState().signedDatas[dataFeedId];
 
 export const isSignedDataFresh = (signedData: SignedData) =>
   BigInt(signedData.timestamp) > BigInt(Math.ceil(Date.now() / 1000 - 24 * 60 * 60));

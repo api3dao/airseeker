@@ -142,7 +142,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
         dataFeedUpdateInterval: 10,
         providers: { ['provider-name']: { url: 'provider-url' } },
         contracts: {
-          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
+          AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
         },
       }),
       '123'
@@ -162,22 +162,24 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     const thirdDataFeed = generateActiveDataFeedResponse();
     const decodedFirstDataFeed = {
       ...omit(firstDataFeed, ['dataFeedDetails', 'beaconValues', 'beaconTimestamps']),
+      decodedDapiName: utilsModule.decodeDapiName(firstDataFeed.dapiName),
       decodedUpdateParameters: contractsModule.decodeUpdateParameters(firstDataFeed.updateParameters),
       beaconsWithData: contractsModule.createBeaconsWithData(
         contractsModule.decodeDataFeedDetails(firstDataFeed.dataFeedDetails)!,
         firstDataFeed.beaconValues,
         firstDataFeed.beaconTimestamps
       ),
-    };
+    } as contractsModule.DecodedActiveDataFeedResponse;
     const decodedThirdDataFeed = {
       ...omit(thirdDataFeed, ['dataFeedDetails', 'beaconValues', 'beaconTimestamps']),
+      decodedDapiName: utilsModule.decodeDapiName(thirdDataFeed.dapiName),
       decodedUpdateParameters: contractsModule.decodeUpdateParameters(thirdDataFeed.updateParameters),
       beaconsWithData: contractsModule.createBeaconsWithData(
         contractsModule.decodeDataFeedDetails(thirdDataFeed.dataFeedDetails)!,
         thirdDataFeed.beaconValues,
         thirdDataFeed.beaconTimestamps
       ),
-    };
+    } as contractsModule.DecodedActiveDataFeedResponse;
     const airseekerRegistry = generateMockAirseekerRegistry();
     const getFeeDataSpy = jest.fn().mockResolvedValue({ gasPrice: ethers.parseUnits('5', 'gwei') });
     jest
@@ -251,7 +253,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
         dataFeedUpdateInterval: 0.3, // 300ms update interval to make the test run quicker.
         providers: { ['provider-name']: { url: 'provider-url' } },
         contracts: {
-          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
+          AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
         },
       }),
       '31337'
@@ -352,7 +354,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
         dataFeedUpdateInterval: 0.1,
         providers: { ['provider-name']: { url: 'provider-url' } },
         contracts: {
-          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
+          AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
         },
       }),
       '31337'
@@ -377,7 +379,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
       decodedUpdateParameters,
       beaconsWithData: contractsModule.createBeaconsWithData(beacons, dataFeed.beaconValues, dataFeed.beaconTimestamps),
       decodedDapiName: utilsModule.decodeDapiName(dataFeed.dapiName),
-    };
+    } as contractsModule.DecodedActiveDataFeedResponse;
     jest.spyOn(Date, 'now').mockReturnValue(Number(dataFeed.dataFeedTimestamp) * 1000);
     const testConfig = generateTestConfig();
     jest.spyOn(stateModule, 'getState').mockReturnValue(
@@ -425,7 +427,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
       decodedUpdateParameters,
       beaconsWithData: contractsModule.createBeaconsWithData(beacons, dataFeed.beaconValues, dataFeed.beaconTimestamps),
       decodedDapiName: utilsModule.decodeDapiName(dataFeed.dapiName),
-    };
+    } as contractsModule.DecodedActiveDataFeedResponse;
     const testConfig = generateTestConfig();
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
@@ -465,7 +467,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
       beaconsWithData: contractsModule.createBeaconsWithData(beacons, dataFeed.beaconValues, dataFeed.beaconTimestamps),
       decodedDapiName: utilsModule.decodeDapiName(dataFeed.dapiName),
       signedApiUrls: [],
-    };
+    } as contractsModule.DecodedActiveDataFeedResponse;
     const testConfig = generateTestConfig();
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({

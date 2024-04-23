@@ -8,7 +8,6 @@ import type { Chain } from '../config/schema';
 import { fetchAndStoreGasPrice, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { ChainId, ProviderName } from '../types';
 import { sleep } from '../utils';
 
 import {
@@ -150,7 +149,7 @@ export const readActiveDataFeedBatch = async (
   };
 };
 
-export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, chainId: ChainId) => {
+export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId: string) => {
   await logger.runWithContext(
     { chainName: chain.alias, providerName, updateFeedsCoordinatorId: Date.now().toString() },
     async () => {
@@ -275,9 +274,9 @@ export const runUpdateFeeds = async (providerName: ProviderName, chain: Chain, c
 
 export const processBatch = async (
   batch: DecodedActiveDataFeedResponse[],
-  providerName: ProviderName,
+  providerName: string,
   provider: ethers.JsonRpcProvider,
-  chainId: ChainId,
+  chainId: string,
   blockNumber: number
 ) => {
   logger.debug('Processing batch of active data feeds.', {

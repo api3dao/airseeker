@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { encode } from '@api3/airnode-abi';
+import { type Address, type Hex, deriveBeaconId } from '@api3/commons';
 import {
   AirseekerRegistry__factory as AirseekerRegistryFactory,
   AccessControlRegistry__factory as AccessControlRegistryFactory,
@@ -14,15 +15,14 @@ import { zip } from 'lodash';
 
 import { interpolateSecrets, parseSecrets } from '../../src/config/utils';
 import {
-  deriveBeaconId,
   deriveSponsorAddressHashForManagedFeed,
   deriveSponsorWalletFromSponsorAddressHash,
   encodeDapiName,
 } from '../../src/utils';
 
 interface RawBeaconData {
-  airnodeAddress: string;
-  endpointId: string;
+  airnodeAddress: Address;
+  endpointId: Hex;
   parameters: {
     type: string;
     name: string;
@@ -34,8 +34,8 @@ const deriveBeaconData = (beaconData: RawBeaconData) => {
   const { endpointId, parameters: parameters, airnodeAddress } = beaconData;
 
   const encodedParameters = encode(parameters);
-  const templateId = ethers.solidityPackedKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]);
-  const beaconId = deriveBeaconId(airnodeAddress, templateId)!;
+  const templateId = ethers.solidityPackedKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]) as Hex;
+  const beaconId = deriveBeaconId(airnodeAddress, templateId);
 
   return { endpointId, templateId, encodedParameters, beaconId, parameters, airnodeAddress };
 };

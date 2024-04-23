@@ -1,4 +1,4 @@
-import type { Address } from '@api3/commons';
+import type { Address, Hex } from '@api3/commons';
 import type { Api3ServerV1 } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
@@ -7,7 +7,6 @@ import type { WalletDerivationScheme } from '../config/schema';
 import { getRecommendedGasPrice } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { ChainId, DapiNameOrDataFeedId, ProviderName } from '../types';
 import { deriveSponsorWallet } from '../utils';
 
 import type { UpdatableDataFeed } from './get-updatable-feeds';
@@ -39,8 +38,8 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
 };
 
 export const submitTransaction = async (
-  chainId: ChainId,
-  providerName: ProviderName,
+  chainId: string,
+  providerName: string,
   provider: ethers.JsonRpcProvider,
   api3ServerV1: Api3ServerV1,
   updatableDataFeed: UpdatableDataFeed,
@@ -145,8 +144,8 @@ export const submitTransaction = async (
 };
 
 export const submitTransactions = async (
-  chainId: ChainId,
-  providerName: ProviderName,
+  chainId: string,
+  providerName: string,
   provider: ethers.JsonRpcProvider,
   api3ServerV1: Api3ServerV1,
   updatableDataFeeds: UpdatableDataFeed[],
@@ -190,7 +189,7 @@ export const estimateMulticallGasLimit = async (
 
 export const getDerivedSponsorWallet = (
   sponsorWalletMnemonic: string,
-  dapiNameOrDataFeedId: DapiNameOrDataFeedId,
+  dapiNameOrDataFeedId: Hex,
   updateParameters: string,
   walletDerivationScheme: WalletDerivationScheme
 ) => {
@@ -210,7 +209,7 @@ export const getDerivedSponsorWallet = (
   logger.debug('Derived new sponsor wallet.', { sponsorWalletAddress: sponsorWallet.address });
 
   updateState((draft) => {
-    draft.derivedSponsorWallets[dapiNameOrDataFeedId] = sponsorWallet.privateKey;
+    draft.derivedSponsorWallets[dapiNameOrDataFeedId] = sponsorWallet.privateKey as Hex;
   });
 
   return sponsorWallet;
