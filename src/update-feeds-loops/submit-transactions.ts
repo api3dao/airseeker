@@ -118,7 +118,8 @@ export const submitTransaction = async (
         });
         if (!goMulticall.success) {
           // It seems that in practice, this code is widely used. We can do a best-effort attempt to determine the error
-          // reason. Many times, the error is acceptable and results from the way Airseeker is designed.
+          // reason. Many times, the error is acceptable and results from the way Airseeker is designed. We can use
+          // different log levels and messages and have better alerts.
           const errorCode = (goMulticall.error as any).code;
           switch (errorCode) {
             case 'REPLACEMENT_UNDERPRICED': {
