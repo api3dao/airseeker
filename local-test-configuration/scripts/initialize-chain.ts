@@ -2,7 +2,14 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { encode } from '@api3/airnode-abi';
-import { type Address, type Hex, deriveBeaconId } from '@api3/commons';
+import {
+  type Address,
+  type Hex,
+  deriveBeaconId,
+  interpolateSecretsIntoConfig,
+  loadConfig,
+  loadSecrets,
+} from '@api3/commons';
 import {
   AirseekerRegistry__factory as AirseekerRegistryFactory,
   AccessControlRegistry__factory as AccessControlRegistryFactory,
@@ -13,7 +20,6 @@ import type { ContractTransactionResponse, Signer } from 'ethers';
 import { ethers } from 'ethers';
 import { zip } from 'lodash';
 
-import { interpolateSecrets, parseSecrets } from '../../src/config/utils';
 import {
   deriveSponsorAddressHashForManagedFeed,
   deriveSponsorWalletFromSponsorAddressHash,
@@ -100,11 +106,10 @@ const joinUrl = (url: string, path: string) => {
 
 const loadAirnodeFeedConfig = (airnodeFeedDir: 'airnode-feed-1' | 'airnode-feed-2') => {
   const configPath = join(__dirname, `/../`, airnodeFeedDir);
-  const rawConfig = JSON.parse(readFileSync(join(configPath, 'airnode-feed.json'), 'utf8'));
-  const rawSecrets = dotenv.parse(readFileSync(join(configPath, 'secrets.env'), 'utf8'));
+  const rawConfig = loadConfig(join(configPath, 'airnode-feed.json'));
+  const rawSecrets = loadSecrets(join(configPath, 'secrets.env'));
 
-  const secrets = parseSecrets(rawSecrets);
-  return interpolateSecrets(rawConfig, secrets);
+  return interpolateSecretsIntoConfig(rawConfig, rawSecrets);
 };
 
 const getBeaconSetNames = () => {

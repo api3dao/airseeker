@@ -1,12 +1,14 @@
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { cwd } from 'node:process';
 
+import {
+  interpolateSecretsIntoConfig,
+  loadConfig as loadConfigCommons,
+  loadSecrets as loadSecretsCommons,
+} from '@api3/commons';
 import { goSync } from '@api3/promise-utils';
-import dotenv from 'dotenv';
 
 import { configSchema } from './schema';
-import { interpolateSecrets, parseSecrets } from './utils';
 
 // When Airnode feed is built, the "/dist" file contains "src" folder and "package.json" and the config is expected to
 // be located next to the "/dist" folder. When run in development, the config is expected to be located next to the
@@ -14,16 +16,15 @@ import { interpolateSecrets, parseSecrets } from './utils';
 // dockerized, this is hidden from the user.
 const getConfigPath = () => join(cwd(), './config');
 
-export const loadRawConfig = () => JSON.parse(readFileSync(join(getConfigPath(), 'airseeker.json'), 'utf8'));
+export const loadRawConfig = () => loadConfigCommons(join(getConfigPath(), 'airseeker.json'));
 
-export const loadRawSecrets = () => dotenv.parse(readFileSync(join(getConfigPath(), 'secrets.env'), 'utf8'));
+export const loadRawSecrets = () => loadSecretsCommons(join(getConfigPath(), 'secrets.env'));
 
 export const loadConfig = () => {
   const goLoadConfig = goSync(() => {
     const rawConfig = loadRawConfig();
     const rawSecrets = loadRawSecrets();
-    const secrets = parseSecrets(rawSecrets);
-    return configSchema.parse(interpolateSecrets(rawConfig, secrets));
+    return configSchema.parse(interpolateSecretsIntoConfig(rawConfig, rawSecrets));
   });
 
   if (!goLoadConfig.success) throw new Error(`Unable to load configuration.`, { cause: goLoadConfig.error });

@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { interpolateSecretsIntoConfig } from '@api3/commons';
 import dotenv from 'dotenv';
 import { ZodError } from 'zod';
 
 import { chainsSchema, configSchema, deviationThresholdCoefficientSchema } from './schema';
-import { interpolateSecrets } from './utils';
 
 const gasSettings = {
   recommendedGasPriceMultiplier: 1.5,
@@ -37,7 +37,9 @@ test('validates example config', () => {
   );
 
   const exampleSecrets = dotenv.parse(readFileSync(join(__dirname, '../../config/secrets.example.env'), 'utf8'));
-  expect(configSchema.parse(interpolateSecrets(exampleConfig, exampleSecrets))).toStrictEqual(expect.any(Object));
+  expect(configSchema.parse(interpolateSecretsIntoConfig(exampleConfig, exampleSecrets))).toStrictEqual(
+    expect.any(Object)
+  );
 });
 
 describe('chains schema', () => {
