@@ -1,6 +1,5 @@
-import { go } from '@api3/promise-utils';
-import axios, { type AxiosResponse, type AxiosError } from 'axios';
-import { pick, uniq } from 'lodash';
+import { executeRequest } from '@api3/commons';
+import { uniq } from 'lodash';
 
 import { logger } from '../logger';
 import { getState } from '../state';
@@ -8,21 +7,6 @@ import { signedApiResponseSchema, type SignedData } from '../types';
 import { sleep } from '../utils';
 
 import { purgeOldSignedData, saveSignedData } from './signed-data-state';
-
-// Inspired by: https://axios-http.com/docs/handling_errors.
-//
-// The implementation differs by only picking fields that are important for debugging purposes to avoid cluttering the
-// logs.
-const parseAxiosError = (error: AxiosError) => {
-  const errorContext = pick(error, ['cause', 'code', 'name', 'message', 'stack', 'status']);
-
-  // The request was made and the server responded with a status code that falls out of the range of 2xx.
-  if (error.response) {
-    return { ...errorContext, response: pick(error.response, ['data', 'status', 'headers']) };
-  }
-
-  return errorContext;
-};
 
 export const startDataFetcherLoop = () => {
   const state = getState();
@@ -44,23 +28,25 @@ export const startDataFetcherLoop = () => {
  *   https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/handlers.ts#L81
  */
 export const callSignedApi = async (url: string, timeout: number): Promise<SignedData[] | null> => {
-  const goAxiosCall = await go<Promise<AxiosResponse>, AxiosError>(async () =>
-    axios({
-      method: 'get',
-      timeout,
-      url,
-      headers: {
-        Accept: 'application/json',
-      },
-    })
-  );
+  const executionResult = await executeRequest({
+    method: 'get',
+    timeout,
+    url,
+    headers: {
+      Accept: 'application/json',
+    },
+  });
 
-  if (!goAxiosCall.success) {
-    logger.warn('Failed to fetch data from signed API.', { url, ...parseAxiosError(goAxiosCall.error) });
+  if (!executionResult.success) {
+    logger.warn('Failed to fetch data from signed API.', {
+      url,
+      ...executionResult.errorData,
+      statusCode: executionResult.statusCode,
+    });
     return null;
   }
 
-  const parseResult = signedApiResponseSchema.safeParse(goAxiosCall.data?.data);
+  const parseResult = signedApiResponseSchema.safeParse(executionResult.data);
   if (!parseResult.success) {
     logger.warn('Failed to parse signed API response.', { url });
     return null;
