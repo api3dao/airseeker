@@ -60,9 +60,13 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
     return null;
   }
 
-  const { data } = signedApiResponseSchema.parse(goAxiosCall.data?.data);
+  const parseResult = signedApiResponseSchema.safeParse(goAxiosCall.data?.data);
+  if (!parseResult.success) {
+    logger.warn('Failed to parse signed API response.', { url });
+    return null;
+  }
 
-  return Object.values(data);
+  return Object.values(parseResult.data.data);
 };
 
 export const runDataFetcher = async () => {
