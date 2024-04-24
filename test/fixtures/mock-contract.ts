@@ -39,7 +39,7 @@ export const generateMockAirseekerRegistry = () => {
 export const generateMockApi3ServerV1 = () => {
   return {
     multicall: { estimateGas: jest.fn() },
-    updateBeaconWithSignedData: { estimateGas: jest.fn() },
+    updateBeaconWithSignedData: { estimateGas: jest.fn(), send: jest.fn() },
     updateBeaconSetWithBeacons: { estimateGas: jest.fn() },
     interface: {
       encodeFunctionData: jest.fn(),

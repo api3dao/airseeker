@@ -118,18 +118,14 @@ it('updates blockchain data', async () => {
 
   expect(logger.debug).toHaveBeenCalledTimes(7);
   expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching gas price and saving it to the state.');
-  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Creating calldatas.');
-  expect(logger.debug).toHaveBeenNthCalledWith(3, 'Estimating gas limit.');
-  expect(logger.debug).toHaveBeenNthCalledWith(4, 'Getting derived sponsor wallet.');
-  expect(logger.debug).toHaveBeenNthCalledWith(5, 'Derived new sponsor wallet.', expect.anything());
-  expect(logger.debug).toHaveBeenNthCalledWith(6, 'Getting nonce.');
-  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Getting recommended gas price.');
+  expect(logger.debug).toHaveBeenNthCalledWith(2, 'Getting derived sponsor wallet.');
+  expect(logger.debug).toHaveBeenNthCalledWith(3, 'Derived new sponsor wallet.', expect.anything());
+  expect(logger.debug).toHaveBeenNthCalledWith(4, 'Getting nonce.');
+  expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting recommended gas price.');
+  expect(logger.debug).toHaveBeenNthCalledWith(6, 'Creating calldatas.');
+  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Estimating beacon set update gas limit.');
   expect(logger.info).toHaveBeenCalledTimes(2);
   expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed.', expect.anything());
-  expect(logger.info).toHaveBeenNthCalledWith(
-    2,
-    'Successfully submitted the multicall transaction.',
-    expect.anything()
-  );
+  expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the update transaction.', expect.anything());
   expect(logger.warn).toHaveBeenCalledTimes(0);
 });
