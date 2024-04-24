@@ -432,7 +432,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
       gasLimit: '500000',
       gasPrice: '100000000',
       nonce: 0,
-      sponsorAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
+      sponsorWalletAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
     });
     expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the multicall transaction.');
 

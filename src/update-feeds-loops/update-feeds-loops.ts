@@ -292,6 +292,7 @@ export const processBatch = async (
       walletDerivationScheme,
       signedApiUrls: configSignedApiBaseUrls,
     },
+    firstMarkedUpdatableTimestamps,
   } = getState();
   const { contracts } = chains[chainId]!;
 
@@ -330,6 +331,9 @@ export const processBatch = async (
       logger.info(`Clearing data feed update timestamp because it no longer needs an update.`, {
         dapiName: decodedDapiName,
         dataFeedId,
+        totalPendingPeriod:
+          Math.floor(Date.now() / 1000) -
+          firstMarkedUpdatableTimestamps[chainId]![providerName]![sponsorWalletAddress]!,
       });
       clearFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress);
     }
