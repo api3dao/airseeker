@@ -1,5 +1,3 @@
-export const HTTP_SIGNED_DATA_API_TIMEOUT_MULTIPLIER = 0.9;
-
 export const RPC_PROVIDER_TIMEOUT_MS = 120_000;
 
 export const HUNDRED_PERCENT = 10n ** 8n;

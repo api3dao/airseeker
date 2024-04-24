@@ -68,7 +68,27 @@ describe('data fetcher', () => {
     expect(dataFetcherLoopModule.callSignedApi).toHaveBeenNthCalledWith(
       1,
       'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
-      9000
+      10_000
     );
+  });
+
+  it('handles parsing error from Signed API', async () => {
+    mockedAxios.mockResolvedValue(
+      Promise.resolve({
+        status: 200,
+        data: {
+          count: 1,
+          data: {
+            '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04': {
+              // Missing many properties that should be present
+              signature:
+                '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
+            },
+          },
+        },
+      })
+    );
+
+    await expect(dataFetcherLoopModule.callSignedApi('some-url', 10_000)).resolves.toBeNull();
   });
 });
