@@ -160,6 +160,7 @@ describe(getRecommendedGasPrice.name, () => {
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenNthCalledWith(1, 'Sanitizing gas price.', {
       gasPrice: '120000000000',
+      ratio: '6.98',
       sanitizationGasPriceCap: '17200000000',
     });
   });
@@ -298,6 +299,7 @@ describe(getRecommendedGasPrice.name, () => {
     });
     expect(logger.warn).toHaveBeenNthCalledWith(2, 'Sanitizing gas price.', {
       gasPrice: '20900000000',
+      ratio: '1.08',
       sanitizationGasPriceCap: '19400000000',
     });
   });

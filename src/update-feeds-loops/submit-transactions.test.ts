@@ -392,6 +392,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockReturnValue(BigInt(100_000_000));
     jest.spyOn(updatabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
     const api3ServerV1 = generateMockApi3ServerV1();
+    jest.spyOn(api3ServerV1.tryMulticall, 'send').mockReturnValue({ hash: '0xTransactionHash' });
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
@@ -434,7 +435,9 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
       nonce: 0,
       sponsorWalletAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
     });
-    expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the multicall transaction.');
+    expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the multicall transaction.', {
+      txHash: '0xTransactionHash',
+    });
 
     // Verify the flow of the update process via the debug logs. Note, that some debug log calls are not here because
     // many functions are mocked.
