@@ -1,4 +1,4 @@
-import { addressSchema, keccak256HashSchema } from '@api3/commons';
+import { addressSchema, hexSchema, keccak256HashSchema } from '@api3/commons';
 import { z } from 'zod';
 
 // Taken from https://github.com/api3dao/signed-api/blob/main/packages/api/src/schema.ts
@@ -6,8 +6,8 @@ export const signedDataSchema = z.object({
   airnode: addressSchema,
   templateId: keccak256HashSchema,
   timestamp: z.string(),
-  encodedValue: z.string(),
-  signature: z.string(),
+  encodedValue: hexSchema,
+  signature: hexSchema,
 });
 
 export type SignedData = z.infer<typeof signedDataSchema>;

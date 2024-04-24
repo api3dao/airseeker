@@ -1,4 +1,4 @@
-import type { Address, Hex } from '@api3/commons';
+import type { Address, ChainId, Hex } from '@api3/commons';
 import { produce, type Draft } from 'immer';
 
 import type { Config } from '../config/schema';
@@ -11,16 +11,16 @@ interface GasPriceInfo {
 
 export interface State {
   config: Config;
-  gasPrices: Record<string /* Chain ID */, Record<string /* Provider name */, GasPriceInfo[]>>;
+  gasPrices: Record<ChainId, Record<string /* Provider name */, GasPriceInfo[]>>;
   // The timestamp of when we last detected that the feed requires an update. Note, that if the feed requires an update
   // consecutively, the timestamp is not updated until the feed stops being updatable again.
   firstMarkedUpdatableTimestamps: Record<
-    string /* Chain ID */,
+    ChainId,
     Record<string /* Provider name */, Record<Address /* Sponsor wallet */, number | null>>
   >;
   derivedSponsorWallets: Record<string /* dAPI name or data feed ID */, Hex /* Private key */>;
   signedDatas: Record<Hex /* Beacon ID */, SignedData>;
-  signedApiUrls: Record<string /* Chain ID */, Record<string /* Provider name */, string[]>>;
+  signedApiUrls: Record<ChainId, Record<string /* Provider name */, string[]>>;
   // The timestamp of when the service was initialized. This can be treated as a "deployment" timestamp.
   deploymentTimestamp: string;
 }
