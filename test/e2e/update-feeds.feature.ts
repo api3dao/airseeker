@@ -126,6 +126,10 @@ it('updates blockchain data', async () => {
   expect(logger.debug).toHaveBeenNthCalledWith(7, 'Getting recommended gas price.');
   expect(logger.info).toHaveBeenCalledTimes(2);
   expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed.', expect.anything());
-  expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the multicall transaction.');
+  expect(logger.info).toHaveBeenNthCalledWith(
+    2,
+    'Successfully submitted the multicall transaction.',
+    expect.anything()
+  );
   expect(logger.warn).toHaveBeenCalledTimes(0);
 });

@@ -151,6 +151,7 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
     logger.warn('Sanitizing gas price.', {
       gasPrice: gasPriceToUse.toString(),
       sanitizationGasPriceCap: sanitizationGasPriceCap.toString(),
+      ratio: (Number(gasPriceToUse) / Number(sanitizationGasPriceCap)).toFixed(2),
     });
     return sanitizationGasPriceCap;
   }

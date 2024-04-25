@@ -89,7 +89,7 @@ export const submitTransaction = async (
         if (!gasPrice) return null;
 
         logger.info('Updating data feed.', {
-          sponsorAddress: sponsorWalletAddress,
+          sponsorWalletAddress,
           gasPrice: gasPrice.toString(),
           gasLimit: gasLimit.toString(),
           nonce,
@@ -129,7 +129,7 @@ export const submitTransaction = async (
           }
         }
 
-        logger.info('Successfully submitted the multicall transaction.');
+        logger.info('Successfully submitted the multicall transaction.', { txHash: goMulticall.data.hash });
         return goMulticall.data;
       },
       { totalTimeoutMs: dataFeedUpdateIntervalMs }
