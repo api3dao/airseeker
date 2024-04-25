@@ -26,6 +26,7 @@ it('reads blockchain data', async () => {
 
   initializeState(config);
   initializeGasState(chainId, providerName);
+  initializeFirstMarkedUpdatableTimestamp(chainId, providerName);
 
   await runUpdateFeeds(providerName, chain, chainId);
 
