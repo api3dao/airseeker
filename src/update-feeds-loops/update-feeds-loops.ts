@@ -25,6 +25,7 @@ import { getUpdatableFeeds } from './get-updatable-feeds';
 import { getDerivedSponsorWallet, submitTransactions } from './submit-transactions';
 import {
   clearFirstMarkedUpdatableTimestamp,
+  initializeFirstMarkedUpdatableTimestamp,
   isAlreadyUpdatable,
   setFirstMarkedUpdatableTimestamp,
 } from './updatability-timestamp';
@@ -52,7 +53,7 @@ export const startUpdateFeedsLoops = async () => {
 
       for (const providerName of Object.keys(providers)) {
         initializeGasState(chainId, providerName);
-
+        initializeFirstMarkedUpdatableTimestamp(chainId, providerName);
         logger.debug(`Starting update feeds loop.`, { chainName: alias, providerName });
         // Run the update feed loop manually for the first time, because setInterval first waits for the given period of
         // time before calling the callback function.
