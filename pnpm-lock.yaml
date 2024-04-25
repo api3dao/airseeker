@@ -15,8 +15,8 @@ dependencies:
     specifier: ^0.9.0
     version: 0.9.0(eslint@8.57.0)(jest@29.7.0)(typescript@5.4.5)
   '@api3/contracts':
-    specifier: 2.5.0
-    version: 2.5.0
+    specifier: 3.1.0
+    version: 3.1.0
   '@api3/promise-utils':
     specifier: ^0.4.0
     version: 0.4.0
@@ -197,9 +197,9 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@api3/contracts@2.5.0:
-    resolution: {integrity: sha512-tPrzkF2oA98wYT07fvJ1eu6LwJuXcUVI0Sljs4G17vXQopClkMyKcVUMcI9b6aI3ygwbqgy6XC1RONMSA3xFbA==}
-    engines: {node: ^20.12.1}
+  /@api3/contracts@3.1.0:
+    resolution: {integrity: sha512-G8LBt6pUoW/8zyJ0/gZ32Hc5YXMQaAXKkyOaPck6UqIaOg1KOn1WxEuSd+5b22GCxXNoMxT2WV6R5bDpZ+Nugg==}
+    engines: {node: '>=18.14.0'}
     dependencies:
       ethers: 6.12.0
     transitivePeerDependencies:
