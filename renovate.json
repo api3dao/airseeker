@@ -23,6 +23,6 @@
   "lockFileMaintenance": {
     "enabled": false
   },
-  "reviewers": ["aquarat"],
+  "reviewers": ["Siegrift"],
   "dependencyDashboard": false
 }
