@@ -29,5 +29,5 @@
   "signedApiUrls": [],
   "walletDerivationScheme": { "type": "managed" },
   "stage": "dev",
-  "version": "2.3.2"
+  "version": "3.0.0"
 }
