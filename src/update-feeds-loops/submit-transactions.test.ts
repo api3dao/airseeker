@@ -8,83 +8,10 @@ import { logger } from '../logger';
 import * as stateModule from '../state';
 import * as utilsModule from '../utils';
 
+import * as gasEstimationModule from './gas-estimation';
 import type { UpdatableDataFeed } from './get-updatable-feeds';
 import * as submitTransactionsModule from './submit-transactions';
 import * as updatabilityTimestampModule from './updatability-timestamp';
-
-describe(submitTransactionsModule.estimateMulticallGasLimit.name, () => {
-  it('estimates the gas limit for a multicall', async () => {
-    const mockApi3ServerV1 = generateMockApi3ServerV1();
-    mockApi3ServerV1.multicall.estimateGas.mockResolvedValueOnce(BigInt(500_000));
-
-    const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
-      mockApi3ServerV1 as unknown as Api3ServerV1,
-      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
-      undefined
-    );
-
-    expect(gasLimit).toStrictEqual(BigInt(550_000)); // Note that the gas limit is increased by 10%.
-  });
-
-  it('uses fallback gas limit when dummy data estimation fails', async () => {
-    const mockApi3ServerV1 = generateMockApi3ServerV1();
-    mockApi3ServerV1.multicall.estimateGas.mockRejectedValue(new Error('some-error'));
-    jest.spyOn(logger, 'warn');
-
-    const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
-      mockApi3ServerV1 as unknown as Api3ServerV1,
-      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
-      2_000_000
-    );
-
-    expect(gasLimit).toStrictEqual(BigInt(2_000_000));
-    expect(logger.warn).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenCalledWith('Unable to estimate gas for multicall using provider.', {
-      errorMessage: 'some-error',
-    });
-  });
-
-  it('returns null if no fallback is provided', async () => {
-    const mockApi3ServerV1 = generateMockApi3ServerV1();
-    mockApi3ServerV1.multicall.estimateGas.mockRejectedValue(new Error('some-error'));
-    jest.spyOn(logger, 'info');
-    jest.spyOn(logger, 'warn');
-
-    const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
-      mockApi3ServerV1 as unknown as Api3ServerV1,
-      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
-      undefined
-    );
-
-    expect(gasLimit).toBeNull();
-    expect(logger.info).toHaveBeenCalledTimes(1);
-    expect(logger.info).toHaveBeenCalledWith('No fallback gas limit provided. No gas limit to use.');
-    expect(logger.warn).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenCalledWith('Unable to estimate gas for multicall using provider.', {
-      errorMessage: 'some-error',
-    });
-  });
-
-  it('detects a contract revert due to timestamp check', async () => {
-    const mockApi3ServerV1 = generateMockApi3ServerV1();
-    mockApi3ServerV1.multicall.estimateGas.mockRejectedValue(new Error('Does not update timestamp'));
-    jest.spyOn(logger, 'info');
-    jest.spyOn(logger, 'warn');
-
-    const gasLimit = await submitTransactionsModule.estimateMulticallGasLimit(
-      mockApi3ServerV1 as unknown as Api3ServerV1,
-      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
-      2_000_000
-    );
-
-    expect(gasLimit).toBe(2_000_000n);
-    expect(logger.info).toHaveBeenCalledTimes(1);
-    expect(logger.info).toHaveBeenCalledWith('Gas estimation failed because of a contract revert.', {
-      errorMessage: 'Does not update timestamp',
-    });
-    expect(logger.warn).toHaveBeenCalledTimes(0);
-  });
-});
 
 describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
   it('creates beacon update calldata', () => {
@@ -388,7 +315,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     jest.spyOn(submitTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
     jest.spyOn(logger, 'debug');
     jest.spyOn(logger, 'info');
-    jest.spyOn(submitTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
+    jest.spyOn(gasEstimationModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
     jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockReturnValue(BigInt(100_000_000));
     jest.spyOn(updatabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
     const api3ServerV1 = generateMockApi3ServerV1();
@@ -419,9 +346,33 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
       provider,
       api3ServerV1 as unknown as Api3ServerV1,
       allowPartial<UpdatableDataFeed>({
+        updatableBeacons: [
+          {
+            beaconId: '0xBeaconId1',
+            signedData: {
+              airnode: '0xAirnode1',
+              templateId: '0xTemplateId1',
+              timestamp: '1629811000',
+              encodedValue: '0xEncodedValue',
+              signature: '0xSignature',
+            },
+          },
+        ],
         dataFeedInfo: {
           dapiName,
           dataFeedId: '0xBeaconSetId',
+          beaconsWithData: [
+            {
+              beaconId: '0xBeaconId1',
+              airnodeAddress: '0xAirnode1',
+              templateId: '0xTemplateId1',
+            },
+            {
+              beaconId: '0xBeaconId2',
+              airnodeAddress: '0xAirnode2',
+              templateId: '0xTemplateId2',
+            },
+          ],
         },
       }),
       123_456
@@ -435,27 +386,27 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
       nonce: 0,
       sponsorWalletAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
     });
-    expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the multicall transaction.', {
+    expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the update transaction.', {
       txHash: '0xTransactionHash',
     });
 
     // Verify the flow of the update process via the debug logs. Note, that some debug log calls are not here because
     // many functions are mocked.
     expect(logger.debug).toHaveBeenCalledTimes(6);
-    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Creating calldatas.');
-    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Estimating gas limit.');
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting derived sponsor wallet.');
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Derived new sponsor wallet.', {
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Getting derived sponsor wallet.');
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Derived new sponsor wallet.', {
       sponsorWalletAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting nonce.');
-    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Getting recommended gas price.');
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting nonce.');
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Getting recommended gas price.');
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Creating calldatas.');
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Estimating beacon set update gas limit.');
   });
 
   it('logs and error when getting nonce fails', async () => {
     jest.spyOn(submitTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
     jest.spyOn(logger, 'warn');
-    jest.spyOn(submitTransactionsModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
+    jest.spyOn(gasEstimationModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
     jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockReturnValue(BigInt(100_000_000));
     jest.spyOn(updatabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
     const api3ServerV1 = generateMockApi3ServerV1();
@@ -496,5 +447,110 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     // Verify that the data feed was not updated.
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenNthCalledWith(1, 'Failed to get nonce.', new Error('some-error'));
+  });
+});
+
+describe(submitTransactionsModule.submitUpdate.name, () => {
+  it('submits a single beacon update', async () => {
+    const api3ServerV1 = generateMockApi3ServerV1();
+    jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
+    jest.spyOn(api3ServerV1.updateBeaconWithSignedData, 'estimateGas').mockReturnValue(150_000n);
+    jest.spyOn(api3ServerV1.updateBeaconWithSignedData, 'send').mockReturnValue({ hash: '0xTransactionHash' });
+    jest.spyOn(logger, 'info');
+    const sponsorWallet = new ethers.Wallet('a0d8c3f6643d494b31914e7ec896215562aa358bf7ff68218afb53dfedd4167f');
+
+    const result = await submitTransactionsModule.submitUpdate(
+      api3ServerV1 as unknown as Api3ServerV1,
+      allowPartial<UpdatableDataFeed>({
+        dataFeedInfo: {
+          beaconsWithData: [
+            {
+              beaconId: '0xBeaconId',
+              airnodeAddress: '0xAirnode',
+              templateId: '0xTemplateId',
+            },
+          ],
+        },
+        updatableBeacons: [
+          {
+            beaconId: '0xBeaconId',
+            signedData: {
+              airnode: '0xAirnode',
+              templateId: '0xTemplateId',
+              timestamp: '1629811000',
+              encodedValue: '0xEncodedValue',
+              signature: '0xSignature',
+            },
+          },
+        ],
+      }),
+      undefined,
+      sponsorWallet,
+      BigInt(100_000_000),
+      11
+    );
+
+    expect(result).toStrictEqual({ hash: '0xTransactionHash' });
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith('Updating single beacon.', {
+      sponsorWalletAddress: '0xD8Ba840Cae5c24e5Dc148355Ea3cde3CFB12f8eF',
+      gasPrice: '100000000',
+      gasLimit: '150000',
+      nonce: 11,
+    });
+  });
+
+  it('submits a beacon set update', async () => {
+    const api3ServerV1 = generateMockApi3ServerV1();
+    jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
+    jest.spyOn(api3ServerV1.multicall, 'estimateGas').mockReturnValue(150_000n);
+    jest.spyOn(api3ServerV1.tryMulticall, 'send').mockReturnValue({ hash: '0xTransactionHash' });
+    jest.spyOn(logger, 'info');
+    const sponsorWallet = new ethers.Wallet('a0d8c3f6643d494b31914e7ec896215562aa358bf7ff68218afb53dfedd4167f');
+
+    const result = await submitTransactionsModule.submitUpdate(
+      api3ServerV1 as unknown as Api3ServerV1,
+      allowPartial<UpdatableDataFeed>({
+        dataFeedInfo: {
+          beaconsWithData: [
+            {
+              beaconId: '0xBeaconId1',
+              airnodeAddress: '0xAirnode1',
+              templateId: '0xTemplateId1',
+            },
+            {
+              beaconId: '0xBeaconId2',
+              airnodeAddress: '0xAirnode2',
+              templateId: '0xTemplateId2',
+            },
+          ],
+        },
+        updatableBeacons: [
+          {
+            beaconId: '0xBeaconId1',
+            signedData: {
+              airnode: '0xAirnode1',
+              templateId: '0xTemplateId1',
+              timestamp: '1629811000',
+              encodedValue: '0xEncodedValue',
+              signature: '0xSignature',
+            },
+          },
+        ],
+      }),
+      undefined,
+      sponsorWallet,
+      BigInt(100_000_000),
+      11
+    );
+
+    expect(result).toStrictEqual({ hash: '0xTransactionHash' });
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith('Updating data feed.', {
+      sponsorWalletAddress: '0xD8Ba840Cae5c24e5Dc148355Ea3cde3CFB12f8eF',
+      gasPrice: '100000000',
+      gasLimit: '165000',
+      nonce: 11,
+    });
   });
 });
