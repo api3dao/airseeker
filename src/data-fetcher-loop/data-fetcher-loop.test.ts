@@ -70,21 +70,21 @@ describe('data fetcher', () => {
   });
 
   it('handles parsing error from Signed API', async () => {
-    mockedAxios.mockResolvedValue(
-      Promise.resolve({
-        status: 200,
+    jest.spyOn(commonsModule, 'executeRequest').mockResolvedValue({
+      success: true,
+      errorData: undefined,
+      statusCode: 200,
+      data: {
+        count: 1,
         data: {
-          count: 1,
-          data: {
-            '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04': {
-              // Missing many properties that should be present
-              signature:
-                '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
-            },
+          '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04': {
+            // Missing many properties that should be present
+            signature:
+              '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
           },
         },
-      })
-    );
+      },
+    });
 
     await expect(dataFetcherLoopModule.callSignedApi('some-url', 10_000)).resolves.toBeNull();
   });
