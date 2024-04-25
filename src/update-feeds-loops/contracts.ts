@@ -1,3 +1,4 @@
+import { deriveBeaconId, type Address, type Hex } from '@api3/commons';
 import {
   type AirseekerRegistry,
   AirseekerRegistry__factory as AirseekerRegistryFactory,
@@ -7,8 +8,7 @@ import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 import { zip } from 'lodash';
 
-import type { AirnodeAddress, TemplateId } from '../types';
-import { decodeDapiName, deriveBeaconId } from '../utils';
+import { decodeDapiName } from '../utils';
 
 export const createProvider = async (chainId: string, chainAlias: string, providerUrl: string) => {
   // Create a static network provider (bound to a specific network) to avoid the overhead of fetching the chain ID
@@ -51,9 +51,9 @@ export const decodeGetBlockNumberResponse = Number;
 export const decodeGetChainIdResponse = Number;
 
 export interface Beacon {
-  airnodeAddress: AirnodeAddress;
-  templateId: TemplateId;
-  beaconId: string;
+  airnodeAddress: Address;
+  templateId: Hex;
+  beaconId: Hex;
 }
 
 export const decodeDataFeedDetails = (dataFeed: string): Beacon[] | null => {
@@ -66,7 +66,7 @@ export const decodeDataFeedDetails = (dataFeed: string): Beacon[] | null => {
   if (dataFeed.length === 2 + 32 * 2 + 32 * 2) {
     const [airnodeAddress, templateId] = ethers.AbiCoder.defaultAbiCoder().decode(['address', 'bytes32'], dataFeed);
 
-    const dataFeedId = deriveBeaconId(airnodeAddress, templateId)!;
+    const dataFeedId = deriveBeaconId(airnodeAddress, templateId) as Address;
 
     return [{ beaconId: dataFeedId, airnodeAddress, templateId }];
   }
@@ -76,9 +76,9 @@ export const decodeDataFeedDetails = (dataFeed: string): Beacon[] | null => {
     dataFeed
   );
 
-  const beacons = (airnodeAddresses as string[]).map((airnodeAddress: string, idx: number) => {
-    const templateId = templateIds[idx] as string;
-    const beaconId = deriveBeaconId(airnodeAddress, templateId)!;
+  const beacons = (airnodeAddresses as Address[]).map((airnodeAddress, idx) => {
+    const templateId = templateIds[idx] as Hex;
+    const beaconId = deriveBeaconId(airnodeAddress, templateId) as Address;
 
     return { beaconId, airnodeAddress, templateId };
   });
@@ -114,11 +114,11 @@ export interface BeaconWithData extends Beacon {
 }
 
 export interface DecodedActiveDataFeedResponse {
-  dapiName: string | null; // NOTE: Encoded dAPI name
+  dapiName: Hex | null; // NOTE: Encoded dAPI name
   decodedDapiName: string | null;
-  updateParameters: string; // NOTE: Encoded update parameters
+  updateParameters: Hex; // NOTE: Encoded update parameters
   decodedUpdateParameters: DecodedUpdateParameters;
-  dataFeedId: string;
+  dataFeedId: Hex;
   dataFeedValue: bigint;
   dataFeedTimestamp: bigint;
   beaconsWithData: BeaconWithData[];
@@ -162,11 +162,11 @@ export const decodeActiveDataFeedResponse = (
   const decodedDapiName = decodeDapiName(dapiName);
 
   return {
-    dapiName: decodedDapiName === '' ? null : dapiName,
+    dapiName: decodedDapiName === '' ? null : (dapiName as Hex),
     decodedDapiName: decodedDapiName === '' ? null : decodedDapiName,
-    updateParameters,
+    updateParameters: updateParameters as Hex,
     decodedUpdateParameters: decodeUpdateParameters(updateParameters),
-    dataFeedId,
+    dataFeedId: dataFeedId as Hex,
     dataFeedValue,
     dataFeedTimestamp,
     beaconsWithData,

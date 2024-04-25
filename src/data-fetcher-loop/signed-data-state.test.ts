@@ -1,10 +1,10 @@
+import { deriveBeaconId, type Hex } from '@api3/commons';
 import { ethers } from 'ethers';
 
 import { initializeState } from '../../test/fixtures/mock-config';
 import { allowPartial, generateRandomBytes, signData } from '../../test/utils';
 import { getState, updateState } from '../state';
 import type { SignedData } from '../types';
-import { deriveBeaconId } from '../utils';
 
 import * as signedDataStateModule from './signed-data-state';
 
@@ -16,7 +16,7 @@ describe('signed data state', () => {
     initializeState();
     const templateId = generateRandomBytes(32);
     const timestamp = Math.floor((Date.now() - 25 * 60 * 60 * 1000) / 1000).toString();
-    const airnode = signer.address;
+    const airnode = signer.address as Hex;
     const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [1n]);
 
     testDataPoint = {
@@ -31,7 +31,7 @@ describe('signed data state', () => {
   it('stores and gets a data point', () => {
     jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
     signedDataStateModule.saveSignedData(testDataPoint);
-    const dataFeedId = deriveBeaconId(testDataPoint.airnode, testDataPoint.templateId)!;
+    const dataFeedId = deriveBeaconId(testDataPoint.airnode, testDataPoint.templateId) as Hex;
 
     const datapoint = signedDataStateModule.getSignedData(dataFeedId);
 
@@ -41,7 +41,7 @@ describe('signed data state', () => {
   it('checks that the timestamp on signed data is not in the future', async () => {
     const templateId = generateRandomBytes(32);
     const timestamp = Math.floor((Date.now() + 61 * 60 * 1000) / 1000).toString();
-    const airnode = signer.address;
+    const airnode = signer.address as Hex;
     const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [1n]);
     const futureTestDataPoint = {
       airnode,
@@ -58,7 +58,7 @@ describe('signed data state', () => {
   it('checks the signature on signed data', async () => {
     const templateId = generateRandomBytes(32);
     const timestamp = Math.floor((Date.now() + 60 * 60 * 1000) / 1000).toString();
-    const airnode = ethers.Wallet.createRandom().address;
+    const airnode = ethers.Wallet.createRandom().address as Hex;
     const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [1n]);
 
     const badTestDataPoint = {

@@ -1,17 +1,10 @@
 import { references } from '@api3/airnode-protocol-v1';
 import { CHAINS } from '@api3/chains';
+import { addressSchema } from '@api3/commons';
 import { ethers } from 'ethers';
 import { z } from 'zod';
 
 import packageJson from '../../package.json';
-
-export const evmAddressSchema = z.string().regex(/^0x[\dA-Fa-f]{40}$/, 'Must be a valid EVM address');
-
-export type EvmAddress = z.infer<typeof evmAddressSchema>;
-
-export const evmIdSchema = z.string().regex(/^0x[\dA-Fa-f]{64}$/, 'Must be a valid EVM hash');
-
-export type EvmId = z.infer<typeof evmIdSchema>;
 
 export const providerSchema = z
   .object({
@@ -24,8 +17,8 @@ export type Provider = z.infer<typeof providerSchema>;
 export const optionalContractsSchema = z
   .object({
     // If unspecified, Api3ServerV1 will be loaded from "airnode-protocol-v1" or error out during validation.
-    Api3ServerV1: evmAddressSchema.optional(),
-    AirseekerRegistry: evmAddressSchema,
+    Api3ServerV1: addressSchema.optional(),
+    AirseekerRegistry: addressSchema,
   })
   .strict();
 

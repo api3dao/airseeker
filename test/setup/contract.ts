@@ -1,4 +1,5 @@
 import { encode } from '@api3/airnode-abi';
+import { deriveBeaconId, type Address, type Hex } from '@api3/commons';
 import {
   Api3ServerV1__factory as Api3ServerV1Factory,
   AccessControlRegistry__factory as AccessControlRegistryFactory,
@@ -9,7 +10,6 @@ import type { HDNodeWallet, JsonRpcProvider, Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
 import {
-  deriveBeaconId,
   deriveSponsorAddressHashForManagedFeed,
   deriveSponsorWalletFromSponsorAddressHash,
   encodeDapiName,
@@ -17,7 +17,7 @@ import {
 import { generateTestConfig } from '../fixtures/mock-config';
 import { signData } from '../utils';
 
-const createKrakenEthBeacon = (airnodeAddress: string) => ({
+const createKrakenEthBeacon = (airnodeAddress: Address) => ({
   airnodeAddress,
   endpoint: {
     oisTitle: 'Kraken API',
@@ -32,7 +32,7 @@ const createKrakenEthBeacon = (airnodeAddress: string) => ({
   ],
 });
 
-const createKrakenBtcBeacon = (airnodeAddress: string) => ({
+const createKrakenBtcBeacon = (airnodeAddress: Address) => ({
   airnodeAddress,
   endpoint: {
     oisTitle: 'Kraken API',
@@ -47,7 +47,7 @@ const createKrakenBtcBeacon = (airnodeAddress: string) => ({
   ],
 });
 
-const createBinanceEthBeacon = (airnodeAddress: string) => ({
+const createBinanceEthBeacon = (airnodeAddress: Address) => ({
   airnodeAddress,
   endpoint: {
     oisTitle: 'Binance API',
@@ -62,7 +62,7 @@ const createBinanceEthBeacon = (airnodeAddress: string) => ({
   ],
 });
 
-const createBinanceBtcBeacon = (airnodeAddress: string) => ({
+const createBinanceBtcBeacon = (airnodeAddress: Address) => ({
   airnodeAddress,
   endpoint: {
     oisTitle: 'Binance API',
@@ -78,7 +78,7 @@ const createBinanceBtcBeacon = (airnodeAddress: string) => ({
 });
 
 interface RawBeaconData {
-  airnodeAddress: string;
+  airnodeAddress: Address;
   endpoint: {
     oisTitle: string;
     endpointName: string;
@@ -95,10 +95,10 @@ const deriveBeaconData = (beaconData: RawBeaconData) => {
 
   const endpointId = ethers.keccak256(
     ethers.AbiCoder.defaultAbiCoder().encode(['string', 'string'], [endpoint.oisTitle, endpoint.endpointName])
-  );
+  ) as Hex;
   const encodedParameters = encode(templateParameters);
-  const templateId = ethers.solidityPackedKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]);
-  const beaconId = deriveBeaconId(airnodeAddress, templateId)!;
+  const templateId = ethers.solidityPackedKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]) as Hex;
+  const beaconId = deriveBeaconId(airnodeAddress, templateId);
 
   return { endpointId, templateId, encodedParameters, beaconId };
 };
@@ -160,10 +160,10 @@ export const deployAndUpdate = async () => {
   // Create templates
   const krakenAirnodeWallet = ethers.Wallet.createRandom();
   const binanceAirnodeWallet = ethers.Wallet.createRandom();
-  const krakenBtcBeacon = deriveBeaconData(createKrakenBtcBeacon(krakenAirnodeWallet.address));
-  const krakenEthBeacon = deriveBeaconData(createKrakenEthBeacon(krakenAirnodeWallet.address));
-  const binanceBtcBeacon = deriveBeaconData(createBinanceBtcBeacon(binanceAirnodeWallet.address));
-  const binanceEthBeacon = deriveBeaconData(createBinanceEthBeacon(binanceAirnodeWallet.address));
+  const krakenBtcBeacon = deriveBeaconData(createKrakenBtcBeacon(krakenAirnodeWallet.address as Address));
+  const krakenEthBeacon = deriveBeaconData(createKrakenEthBeacon(krakenAirnodeWallet.address as Address));
+  const binanceBtcBeacon = deriveBeaconData(createBinanceBtcBeacon(binanceAirnodeWallet.address as Address));
+  const binanceEthBeacon = deriveBeaconData(createBinanceEthBeacon(binanceAirnodeWallet.address as Address));
 
   // Update beacons with starting values
   await initializeBeacon(
@@ -275,8 +275,8 @@ export const deployAndUpdate = async () => {
   // Set up config
   const config = generateTestConfig();
   config.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
-  config.chains[31_337]!.contracts.Api3ServerV1 = await api3ServerV1.getAddress();
-  config.chains[31_337]!.contracts.AirseekerRegistry = await airseekerRegistry.getAddress();
+  config.chains[31_337]!.contracts.Api3ServerV1 = (await api3ServerV1.getAddress()) as Address;
+  config.chains[31_337]!.contracts.AirseekerRegistry = (await airseekerRegistry.getAddress()) as Address;
 
   return {
     accessControlRegistry,

@@ -11,7 +11,7 @@ export const generateTestConfig = (): Config => ({
       alias: 'hardhat',
       contracts: {
         Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
-        AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
+        AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
       },
       providers: { hardhat: { url: 'http://127.0.0.1:8545' } },
       gasSettings: {

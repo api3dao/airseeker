@@ -1,4 +1,4 @@
-import { goSync } from '@api3/promise-utils';
+import { type Address, deriveWalletPathFromSponsorAddress, type Hex } from '@api3/commons';
 import { ethers } from 'ethers';
 
 import type { WalletDerivationScheme } from './config/schema';
@@ -8,46 +8,29 @@ export const abs = (n: bigint) => (n < 0n ? -n : n);
 
 export const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export function deriveBeaconId(airnodeAddress: string, templateId: string) {
-  return goSync(() => ethers.solidityPackedKeccak256(['address', 'bytes32'], [airnodeAddress, templateId])).data;
-}
-
-export const encodeDapiName = (decodedDapiName: string) => ethers.encodeBytes32String(decodedDapiName);
+export const encodeDapiName = (decodedDapiName: string) => ethers.encodeBytes32String(decodedDapiName) as Hex;
 
 export const decodeDapiName = (encodedDapiName: string) => ethers.decodeBytes32String(encodedDapiName);
-
-export function deriveWalletPathFromSponsorAddress(sponsorAddress: string) {
-  const sponsorAddressBN = BigInt(sponsorAddress);
-  const paths = [];
-  for (let i = 0; i < 6; i++) {
-    const shiftedSponsorAddressBN = sponsorAddressBN >> BigInt(31 * i);
-    paths.push((shiftedSponsorAddressBN % 2n ** 31n).toString());
-  }
-  return `${AIRSEEKER_PROTOCOL_ID}/${paths.join('/')}`;
-}
 
 export const deriveSponsorAddressHashForManagedFeed = (dapiNameOrDataFeedId: string) => {
   // Hashing the dAPI name is important because we need to take the first 20 bytes of the hash which could result in
   // collisions for (encoded) dAPI names with the same prefix.
-  return ethers.keccak256(dapiNameOrDataFeedId);
+  return ethers.keccak256(dapiNameOrDataFeedId) as Hex;
 };
 
 export const deriveSponsorAddressHashForSelfFundedFeed = (dapiNameOrDataFeedId: string, updateParameters: string) => {
-  return ethers.keccak256(ethers.solidityPacked(['bytes32', 'bytes'], [dapiNameOrDataFeedId, updateParameters]));
+  return ethers.keccak256(ethers.solidityPacked(['bytes32', 'bytes'], [dapiNameOrDataFeedId, updateParameters])) as Hex;
 };
 
-export const deriveSponsorWalletFromSponsorAddressHash = (
-  sponsorWalletMnemonic: string,
-  sponsorAddressHash: string
-) => {
+export const deriveSponsorWalletFromSponsorAddressHash = (sponsorWalletMnemonic: string, sponsorAddressHash: Hex) => {
   // Take the first 20 bytes of the sponsor address hash + "0x" prefix.
-  const sponsorAddress = ethers.getAddress(sponsorAddressHash.slice(0, 42));
+  const sponsorAddress = ethers.getAddress(sponsorAddressHash.slice(0, 42)) as Address;
   // NOTE: Be sure not to use "ethers.Wallet.fromPhrase(sponsorWalletMnemonic).derivePath" because that produces a
   // different result.
   const sponsorWallet = ethers.HDNodeWallet.fromPhrase(
     sponsorWalletMnemonic,
     undefined,
-    `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress)}`
+    `m/44'/60'/0'/${deriveWalletPathFromSponsorAddress(sponsorAddress, AIRSEEKER_PROTOCOL_ID)}`
   );
 
   return sponsorWallet;

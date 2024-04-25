@@ -98,9 +98,9 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
           {
             beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
             signedData: {
-              airnode: 'airnode',
+              airnode: '0xAirnode',
               signature: 'some-signature',
-              templateId: 'template',
+              templateId: '0xTemplate',
               encodedValue: '0x0000000000000000000000000000000000000000000000000000000000000190',
               timestamp: '200',
             },
@@ -118,8 +118,8 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
 
     expect(api3ServerV1.interface.encodeFunctionData).toHaveBeenCalledTimes(1);
     expect(api3ServerV1.interface.encodeFunctionData).toHaveBeenCalledWith('updateBeaconWithSignedData', [
-      'airnode',
-      'template',
+      '0xAirnode',
+      '0xTemplate',
       '200',
       '0x0000000000000000000000000000000000000000000000000000000000000190',
       'some-signature',
@@ -137,9 +137,9 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
           {
             beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
             signedData: {
-              airnode: 'airnode-1',
+              airnode: '0xAirnode-1',
               signature: 'some-signature-1',
-              templateId: 'template-1',
+              templateId: '0xTemplate-1',
               encodedValue: '0x0000000000000000000000000000000000000000000000000000000000000190',
               timestamp: '200',
             },
@@ -147,9 +147,9 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
           {
             beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc7',
             signedData: {
-              airnode: 'airnode-2',
+              airnode: '0xAirnode-2',
               signature: 'some-signature-2',
-              templateId: 'template-2',
+              templateId: '0xTemplate-2',
               encodedValue: '0x0000000000000000000000000000000000000000000000000000000000000350',
               timestamp: '300',
             },
@@ -157,9 +157,9 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
           {
             beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
             signedData: {
-              airnode: 'airnode-3',
+              airnode: '0xAirnode-3',
               signature: 'some-signature-3',
-              templateId: 'template-3',
+              templateId: '0xTemplate-3',
               encodedValue: '0x0000000000000000000000000000000000000000000000000000000000000270',
               timestamp: '400',
             },
@@ -183,22 +183,22 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
 
     expect(api3ServerV1.interface.encodeFunctionData).toHaveBeenCalledTimes(4);
     expect(api3ServerV1.interface.encodeFunctionData).toHaveBeenNthCalledWith(1, 'updateBeaconWithSignedData', [
-      'airnode-1',
-      'template-1',
+      '0xAirnode-1',
+      '0xTemplate-1',
       '200',
       '0x0000000000000000000000000000000000000000000000000000000000000190',
       'some-signature-1',
     ]);
     expect(api3ServerV1.interface.encodeFunctionData).toHaveBeenNthCalledWith(2, 'updateBeaconWithSignedData', [
-      'airnode-2',
-      'template-2',
+      '0xAirnode-2',
+      '0xTemplate-2',
       '300',
       '0x0000000000000000000000000000000000000000000000000000000000000350',
       'some-signature-2',
     ]);
     expect(api3ServerV1.interface.encodeFunctionData).toHaveBeenNthCalledWith(3, 'updateBeaconWithSignedData', [
-      'airnode-3',
-      'template-3',
+      '0xAirnode-3',
+      '0xTemplate-3',
       '400',
       '0x0000000000000000000000000000000000000000000000000000000000000270',
       'some-signature-3',
@@ -223,9 +223,9 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
           {
             beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc8',
             signedData: {
-              airnode: 'airnode-3',
+              airnode: '0xAirnode-3',
               signature: 'some-signature-3',
-              templateId: 'template-3',
+              templateId: '0xTemplate-3',
               encodedValue: '0x0000000000000000000000000000000000000000000000000000000000000270',
               timestamp: '400',
             },
@@ -249,8 +249,8 @@ describe(submitTransactionsModule.createUpdateFeedCalldatas.name, () => {
 
     expect(api3ServerV1.interface.encodeFunctionData).toHaveBeenCalledTimes(2);
     expect(api3ServerV1.interface.encodeFunctionData).toHaveBeenNthCalledWith(1, 'updateBeaconWithSignedData', [
-      'airnode-3',
-      'template-3',
+      '0xAirnode-3',
+      '0xTemplate-3',
       '400',
       '0x0000000000000000000000000000000000000000000000000000000000000270',
       'some-signature-3',

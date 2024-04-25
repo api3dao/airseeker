@@ -40,7 +40,6 @@
     "@api3/commons": "^0.9.0",
     "@api3/contracts": "2.5.0",
     "@api3/promise-utils": "^0.4.0",
-    "axios": "^1.6.8",
     "dotenv": "^16.4.5",
     "ethers": "^6.12.0",
     "immer": "^10.0.4",

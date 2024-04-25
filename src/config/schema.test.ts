@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { interpolateSecretsIntoConfig } from '@api3/commons';
 import dotenv from 'dotenv';
 import { ZodError } from 'zod';
 
 import { chainsSchema, configSchema, deviationThresholdCoefficientSchema } from './schema';
-import { interpolateSecrets } from './utils';
 
 const gasSettings = {
   recommendedGasPriceMultiplier: 1.5,
@@ -37,7 +37,9 @@ test('validates example config', () => {
   );
 
   const exampleSecrets = dotenv.parse(readFileSync(join(__dirname, '../../config/secrets.example.env'), 'utf8'));
-  expect(configSchema.parse(interpolateSecrets(exampleConfig, exampleSecrets))).toStrictEqual(expect.any(Object));
+  expect(configSchema.parse(interpolateSecretsIntoConfig(exampleConfig, exampleSecrets))).toStrictEqual(
+    expect.any(Object)
+  );
 });
 
 describe('chains schema', () => {
@@ -46,7 +48,7 @@ describe('chains schema', () => {
       '31337': {
         contracts: {
           Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
-          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
+          AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
         },
         providers: {
           hardhat: {
@@ -63,7 +65,7 @@ describe('chains schema', () => {
 
     expect(parsed['31337']!.contracts).toStrictEqual({
       Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
-      AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
+      AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
     });
   });
 
@@ -79,7 +81,7 @@ describe('chains schema', () => {
         dataFeedBatchSize: 10,
         dataFeedUpdateInterval: 60,
         contracts: {
-          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
+          AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
         },
       },
     };
@@ -88,7 +90,7 @@ describe('chains schema', () => {
 
     expect(parsed['1']!.contracts).toStrictEqual({
       Api3ServerV1: '0x709944a48cAf83535e43471680fDA4905FB3920a',
-      AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
+      AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
     });
   });
 
@@ -101,7 +103,7 @@ describe('chains schema', () => {
           },
         },
         contracts: {
-          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
+          AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
         },
         gasSettings,
         dataFeedBatchSize: 10,
@@ -125,7 +127,7 @@ describe('chains schema', () => {
       '31337': {
         contracts: {
           Api3ServerV1: '0xInvalid',
-          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
+          AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
         },
         providers: {
           hardhat: {
@@ -141,9 +143,8 @@ describe('chains schema', () => {
     expect(() => chainsSchema.parse(chains)).toThrow(
       new ZodError([
         {
-          validation: 'regex',
-          code: 'invalid_string',
-          message: 'Must be a valid EVM address',
+          code: 'custom',
+          message: 'Invalid EVM address',
           path: ['31337', 'contracts', 'Api3ServerV1'],
         },
       ])
@@ -169,7 +170,7 @@ describe('chains schema', () => {
       '31337': {
         contracts: {
           Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
-          AirseekerRegistry: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0',
+          AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
         },
         providers: {},
         gasSettings,

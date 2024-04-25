@@ -3,6 +3,14 @@ import { join } from 'node:path';
 
 import { encode } from '@api3/airnode-abi';
 import {
+  type Address,
+  type Hex,
+  deriveBeaconId,
+  interpolateSecretsIntoConfig,
+  loadConfig,
+  loadSecrets,
+} from '@api3/commons';
+import {
   AirseekerRegistry__factory as AirseekerRegistryFactory,
   AccessControlRegistry__factory as AccessControlRegistryFactory,
   Api3ServerV1__factory as Api3ServerV1Factory,
@@ -12,17 +20,15 @@ import type { ContractTransactionResponse, Signer } from 'ethers';
 import { ethers } from 'ethers';
 import { zip } from 'lodash';
 
-import { interpolateSecrets, parseSecrets } from '../../src/config/utils';
 import {
-  deriveBeaconId,
   deriveSponsorAddressHashForManagedFeed,
   deriveSponsorWalletFromSponsorAddressHash,
   encodeDapiName,
 } from '../../src/utils';
 
 interface RawBeaconData {
-  airnodeAddress: string;
-  endpointId: string;
+  airnodeAddress: Address;
+  endpointId: Hex;
   parameters: {
     type: string;
     name: string;
@@ -34,8 +40,8 @@ const deriveBeaconData = (beaconData: RawBeaconData) => {
   const { endpointId, parameters: parameters, airnodeAddress } = beaconData;
 
   const encodedParameters = encode(parameters);
-  const templateId = ethers.solidityPackedKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]);
-  const beaconId = deriveBeaconId(airnodeAddress, templateId)!;
+  const templateId = ethers.solidityPackedKeccak256(['bytes32', 'bytes'], [endpointId, encodedParameters]) as Hex;
+  const beaconId = deriveBeaconId(airnodeAddress, templateId);
 
   return { endpointId, templateId, encodedParameters, beaconId, parameters, airnodeAddress };
 };
@@ -100,11 +106,10 @@ const joinUrl = (url: string, path: string) => {
 
 const loadAirnodeFeedConfig = (airnodeFeedDir: 'airnode-feed-1' | 'airnode-feed-2') => {
   const configPath = join(__dirname, `/../`, airnodeFeedDir);
-  const rawConfig = JSON.parse(readFileSync(join(configPath, 'airnode-feed.json'), 'utf8'));
-  const rawSecrets = dotenv.parse(readFileSync(join(configPath, 'secrets.env'), 'utf8'));
+  const rawConfig = loadConfig(join(configPath, 'airnode-feed.json'));
+  const rawSecrets = loadSecrets(join(configPath, 'secrets.env'));
 
-  const secrets = parseSecrets(rawSecrets);
-  return interpolateSecrets(rawConfig, secrets);
+  return interpolateSecretsIntoConfig(rawConfig, rawSecrets);
 };
 
 const getBeaconSetNames = () => {

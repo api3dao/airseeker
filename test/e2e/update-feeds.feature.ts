@@ -3,6 +3,7 @@ import { logger } from '../../src/logger';
 import * as stateModule from '../../src/state';
 import { runUpdateFeeds } from '../../src/update-feeds-loops';
 import {
+  type DecodedActiveDataFeedResponse,
   createBeaconsWithData,
   decodeDataFeedDetails,
   decodeUpdateParameters,
@@ -72,7 +73,7 @@ it('updates blockchain data', async () => {
     dataFeedTimestamp,
     signedApiUrls,
     beaconsWithData: createBeaconsWithData(beacons, beaconValues, beaconTimestamps),
-  };
+  } as DecodedActiveDataFeedResponse;
 
   const currentBlock = await provider.getBlock('latest');
   const currentBlockTimestamp = currentBlock!.timestamp;
