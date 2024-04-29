@@ -71,14 +71,14 @@ devDependencies:
     specifier: ^2.29.1
     version: 2.29.1(@typescript-eslint/parser@7.7.1)(eslint@8.57.0)
   eslint-plugin-jest:
-    specifier: ^28.2.0
-    version: 28.2.0(@typescript-eslint/eslint-plugin@7.7.1)(eslint@8.57.0)(jest@29.7.0)(typescript@5.4.5)
+    specifier: ^28.3.0
+    version: 28.3.0(@typescript-eslint/eslint-plugin@7.7.1)(eslint@8.57.0)(jest@29.7.0)(typescript@5.4.5)
   hardhat:
     specifier: ^2.22.3
     version: 2.22.3(ts-node@10.9.2)(typescript@5.4.5)
   hardhat-deploy:
-    specifier: ^0.12.2
-    version: 0.12.2
+    specifier: ^0.12.4
+    version: 0.12.4
   husky:
     specifier: ^9.0.11
     version: 9.0.11
@@ -3896,8 +3896,8 @@ packages:
       - typescript
     dev: false
 
-  /eslint-plugin-jest@28.2.0(@typescript-eslint/eslint-plugin@7.7.1)(eslint@8.57.0)(jest@29.7.0)(typescript@5.4.5):
-    resolution: {integrity: sha512-yRDti/a+f+SMSmNTiT9/M/MzXGkitl8CfzUxnpoQcTyfq8gUrXMriVcWU36W1X6BZSUoyUCJrDAWWUA2N4hE5g==}
+  /eslint-plugin-jest@28.3.0(@typescript-eslint/eslint-plugin@7.7.1)(eslint@8.57.0)(jest@29.7.0)(typescript@5.4.5):
+    resolution: {integrity: sha512-5LjCSSno8E+IUCOX4hJiIb/upPIgpkaDEcaN/40gOcw26t/5UTLHFc4JdxKjOOvGTh0XdCu+fNr0fpOVNvcxMA==}
     engines: {node: ^16.10.0 || ^18.12.0 || >=20.0.0}
     peerDependencies:
       '@typescript-eslint/eslint-plugin': ^6.0.0 || ^7.0.0
@@ -4779,8 +4779,8 @@ packages:
       uglify-js: 3.17.4
     dev: true
 
-  /hardhat-deploy@0.12.2:
-    resolution: {integrity: sha512-Xp/4Lb5lC/j3kvitaWW5IZN5Meqv5D3kTIifc3ZwBoQtFLN26/fDfRV6MWAAcRO9gH64hZVokvtcDdl/fd7w3A==}
+  /hardhat-deploy@0.12.4:
+    resolution: {integrity: sha512-bYO8DIyeGxZWlhnMoCBon9HNZb6ji0jQn7ngP1t5UmGhC8rQYhji7B73qETMOFhzt5ECZPr+U52duj3nubsqdQ==}
     dependencies:
       '@ethersproject/abi': 5.7.0
       '@ethersproject/abstract-signer': 5.7.0
@@ -6317,7 +6317,7 @@ packages:
     resolution: {integrity: sha512-4GUt3kSEYmk4ITxzB/b9vaIDfUVWN/Ml1Fwl11IlnIG2iaJ9O6WXZ9SrYM9NLI8OCBieN2Y8SWC2oJV0RQ7qYg==}
     hasBin: true
     dependencies:
-      abbrev: 1.0.9
+      abbrev: 1.1.1
     dev: true
 
   /normalize-package-data@2.5.0:
