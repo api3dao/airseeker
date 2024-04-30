@@ -9,14 +9,21 @@ interface GasPriceInfo {
   timestamp: number;
 }
 
+export interface PendingTransactionInfo {
+  // The timestamp of when we last detected that the feed requires an update. Note, that if the feed requires an update
+  // consecutively, the timestamp is not updated until the feed stops being updatable again.
+  firstUpdatableTimestamp: number;
+  // The number this feed has consecutively required an update. This is used to determine if the transaction is a retry
+  // or not.
+  consecutivelyUpdatableCount: number;
+}
+
 export interface State {
   config: Config;
   gasPrices: Record<ChainId, Record<string /* Provider name */, GasPriceInfo[]>>;
-  // The timestamp of when we last detected that the feed requires an update. Note, that if the feed requires an update
-  // consecutively, the timestamp is not updated until the feed stops being updatable again.
-  firstMarkedUpdatableTimestamps: Record<
+  pendingTransactionsInfo: Record<
     ChainId,
-    Record<string /* Provider name */, Record<Address /* Sponsor wallet */, number | null>>
+    Record<string /* Provider name */, Record<Address /* Sponsor wallet */, PendingTransactionInfo | null>>
   >;
   derivedSponsorWallets: Record<string /* dAPI name or data feed ID */, Hex /* Private key */>;
   signedDatas: Record<Hex /* Beacon ID */, SignedData>;
@@ -39,7 +46,7 @@ export const setInitialState = (config: Config) => {
   state = {
     config,
     gasPrices: {},
-    firstMarkedUpdatableTimestamps: {},
+    pendingTransactionsInfo: {},
     signedDatas: {},
     signedApiUrls: {},
     derivedSponsorWallets: {},

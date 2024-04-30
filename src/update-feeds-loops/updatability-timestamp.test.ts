@@ -1,11 +1,7 @@
 import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
-import { getState } from '../state';
+import { type PendingTransactionInfo, getState } from '../state';
 
-import {
-  clearFirstMarkedUpdatableTimestamp,
-  initializeFirstMarkedUpdatableTimestamp,
-  setFirstMarkedUpdatableTimestamp,
-} from './updatability-timestamp';
+import { initializePendingTransactionsInfo, setPendingTransactionInfo } from './updatability-timestamp';
 
 const chainId = '31337';
 const providerName = 'localhost';
@@ -15,25 +11,26 @@ const sponsorWalletAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
 beforeEach(() => {
   initializeState(generateTestConfig());
-  initializeFirstMarkedUpdatableTimestamp(chainId, providerName);
+  initializePendingTransactionsInfo(chainId, providerName);
 });
 
-describe(setFirstMarkedUpdatableTimestamp.name, () => {
-  it('sets the last update timestamp for the sponsor', () => {
-    setFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress, timestampMock);
+describe(setPendingTransactionInfo.name, () => {
+  it('sets the pending transaction info', () => {
+    const pendingTransactionInfo: PendingTransactionInfo = {
+      consecutivelyUpdatableCount: 1,
+      firstUpdatableTimestamp: timestampMock,
+    };
 
-    expect(getState().firstMarkedUpdatableTimestamps[chainId]![providerName]![sponsorWalletAddress]).toStrictEqual(
-      timestampMock
+    setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, pendingTransactionInfo);
+
+    expect(getState().pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]).toStrictEqual(
+      pendingTransactionInfo
     );
   });
-});
 
-describe(clearFirstMarkedUpdatableTimestamp.name, () => {
-  it('clears the last update timestamp for the sponsor', () => {
-    setFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress, timestampMock);
+  it('clears the pending transaction info', () => {
+    setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, null);
 
-    clearFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress);
-
-    expect(getState().firstMarkedUpdatableTimestamps[chainId]![providerName]![sponsorWalletAddress]).toBeNull();
+    expect(getState().pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]).toBeNull();
   });
 });

@@ -83,8 +83,7 @@ export const fetchAndStoreGasPrice = async (
 
 export const getRecommendedGasPrice = (chainId: string, providerName: string, sponsorWalletAddress: Address) => {
   const state = getState();
-  const firstExceededDeviationTimestamp =
-    state.firstMarkedUpdatableTimestamps[chainId]![providerName]![sponsorWalletAddress];
+  const pendingTransactionInfo = state.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress];
   const gasPrices = state.gasPrices[chainId]![providerName]!;
   const {
     gasSettings: {
@@ -108,8 +107,8 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
 
   // Check if the next update is a retry of a pending transaction and scale the gas price accordingly.
   let gasPriceToUse = multiplyBigNumber(latestGasPrice, recommendedGasPriceMultiplier);
-  if (firstExceededDeviationTimestamp) {
-    const pendingPeriod = Math.floor(Date.now() / 1000) - firstExceededDeviationTimestamp;
+  if (pendingTransactionInfo && pendingTransactionInfo.consecutivelyUpdatableCount > 1) {
+    const pendingPeriod = Math.floor(Date.now() / 1000) - pendingTransactionInfo.firstUpdatableTimestamp;
     const scalingMultiplier = calculateScalingMultiplier(
       recommendedGasPriceMultiplier,
       maxScalingMultiplier,

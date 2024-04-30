@@ -1,39 +1,20 @@
 import type { Address } from '@api3/commons';
 
-import { getState, updateState } from '../state';
+import { type PendingTransactionInfo, updateState } from '../state';
 
-export const isAlreadyUpdatable = (chainId: string, providerName: string, sponsorWalletAddress: Address) => {
-  const firstExceededDeviationTimestamp =
-    getState().firstMarkedUpdatableTimestamps[chainId]![providerName]![sponsorWalletAddress];
-
-  return !!firstExceededDeviationTimestamp;
-};
-
-export const initializeFirstMarkedUpdatableTimestamp = (chainId: string, providerName: string) =>
+export const initializePendingTransactionsInfo = (chainId: string, providerName: string) =>
   updateState((draft) => {
-    if (!draft.firstMarkedUpdatableTimestamps[chainId]) draft.firstMarkedUpdatableTimestamps[chainId] = {};
-    draft.firstMarkedUpdatableTimestamps[chainId]![providerName] = {};
+    if (!draft.pendingTransactionsInfo[chainId]) draft.pendingTransactionsInfo[chainId] = {};
+    draft.pendingTransactionsInfo[chainId]![providerName] = {};
   });
 
-export const setFirstMarkedUpdatableTimestamp = (
+export const setPendingTransactionInfo = (
   chainId: string,
   providerName: string,
   sponsorWalletAddress: Address,
-  timestamp: number
+  pendingTransactionInfo: PendingTransactionInfo | null
 ) => {
   updateState((draft) => {
-    draft.firstMarkedUpdatableTimestamps[chainId]![providerName]![sponsorWalletAddress] = timestamp;
+    draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress] = pendingTransactionInfo;
   });
 };
-
-export const clearFirstMarkedUpdatableTimestamp = (
-  chainId: string,
-  providerName: string,
-  sponsorWalletAddress: Address
-) =>
-  updateState((draft) => {
-    const exceededDeviationTimestamps = draft.firstMarkedUpdatableTimestamps[chainId]![providerName]!;
-    if (exceededDeviationTimestamps[sponsorWalletAddress]) {
-      exceededDeviationTimestamps[sponsorWalletAddress] = null;
-    }
-  });
