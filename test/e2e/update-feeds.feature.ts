@@ -8,8 +8,8 @@ import {
   decodeDataFeedDetails,
   decodeUpdateParameters,
 } from '../../src/update-feeds-loops/contracts';
-import { submitTransactions } from '../../src/update-feeds-loops/submit-transactions';
 import { initializePendingTransactionsInfo } from '../../src/update-feeds-loops/pending-transaction-info';
+import { submitTransactions } from '../../src/update-feeds-loops/submit-transactions';
 import { decodeDapiName } from '../../src/utils';
 import { initializeState } from '../fixtures/mock-config';
 import { deployAndUpdate } from '../setup/contract';
