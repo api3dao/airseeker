@@ -13,8 +13,8 @@ export interface PendingTransactionInfo {
   // The timestamp of when we last detected that the feed requires an update. Note, that if the feed requires an update
   // consecutively, the timestamp is not updated until the feed stops being updatable again.
   firstUpdatableTimestamp: number;
-  // The number this feed has consecutively required an update. This is used to determine if the transaction is a retry
-  // or not.
+  // The count of how many consecutive updates are required for this data feed. This is used to determine if the
+  // transaction is a retry or not.
   consecutivelyUpdatableCount: number;
 }
 

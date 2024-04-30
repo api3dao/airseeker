@@ -222,7 +222,7 @@ describe(getRecommendedGasPrice.name, () => {
       draft.gasPrices[chainId]![providerName] = [];
       draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress] = {
         consecutivelyUpdatableCount: 2,
-        firstUpdatableTimestamp: timestampMock - 60, // The feed is requires update for 1 minute.
+        firstUpdatableTimestamp: timestampMock - 60, // The feed requires update for 1 minute.
       };
       for (let i = 0; i < 20; i++) {
         draft.gasPrices[chainId]![providerName].unshift({
@@ -251,7 +251,7 @@ describe(getRecommendedGasPrice.name, () => {
       draft.gasPrices[chainId]![providerName] = [];
       draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress] = {
         consecutivelyUpdatableCount: 12,
-        firstUpdatableTimestamp: timestampMock - 60 * 60, // The feed is requires update for 1 hour.
+        firstUpdatableTimestamp: timestampMock - 60 * 60, // The feed requires update for 1 hour.
       };
       for (let i = 0; i < 20; i++) {
         draft.gasPrices[chainId]![providerName].unshift({
@@ -285,7 +285,7 @@ describe(getRecommendedGasPrice.name, () => {
       draft.gasPrices[chainId]![providerName] = [];
       draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress] = {
         consecutivelyUpdatableCount: 12,
-        firstUpdatableTimestamp: timestampMock - 60 * 60, // The feed is requires update for 1 hour.
+        firstUpdatableTimestamp: timestampMock - 60 * 60, // The feed requires update for 1 hour.
       };
       for (let i = 0; i < 30; i++) {
         draft.gasPrices[chainId]![providerName].unshift({
