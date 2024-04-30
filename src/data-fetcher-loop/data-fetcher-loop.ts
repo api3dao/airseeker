@@ -79,15 +79,16 @@ export const runDataFetcher = async () => {
       urls.map(async (url, index) => {
         await sleep(staggerTimeMs * index);
 
+        const now = Date.now();
         // NOTE: We allow each Signed API call to take full signedDataFetchIntervalMs. Because these calls are
         // staggered, it means that there can be pending requests from different data fetcher loops happening at the
         // same time. This does not matter much, because we only save the freshest signed data.
         const signedDataApiResponse = await callSignedApi(url, signedDataFetchIntervalMs);
         if (!signedDataApiResponse) return;
+        logger.info('Fetched signed data from Signed API.', { url, duration: Date.now() - now });
 
-        for (const signedData of signedDataApiResponse) {
-          saveSignedData(signedData);
-        }
+        for (const signedData of signedDataApiResponse) saveSignedData(signedData);
+        logger.info('Saved all signed data from Signed API.', { url, duration: Date.now() - now });
       })
     );
 
