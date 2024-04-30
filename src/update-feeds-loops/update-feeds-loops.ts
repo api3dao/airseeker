@@ -299,22 +299,10 @@ export const processBatch = async (
 
   const feedsToUpdate = getUpdatableFeeds(batch, deviationThresholdCoefficient);
 
-  // Fetch the gas price regardless of whether there are any feeds to be updated or not in order for gas oracle to
-  // maintain historical gas prices.
-  await fetchAndStoreGasPrice(chainId, providerName, provider);
-
-  const updatedFeeds = await submitTransactions(
-    chainId,
-    providerName,
-    provider,
-    getApi3ServerV1(contracts.Api3ServerV1, provider),
-    feedsToUpdate,
-    blockNumber
-  );
-  const successCount = updatedFeeds.filter(Boolean).length;
-
   // We need to update the first exceeded deviation timestamp for the feeds. We need to set them for feeds for which the
-  // deviation is exceeded for the first time and clear the timestamp for feeds that no longer need an update.
+  // deviation is exceeded for the first time and clear the timestamp for feeds that no longer need an update. We apply
+  // the logic immediately after checking the deviation to have the most accurate pending transaction timestamp.
+  const timeAtDeviationCheck = Date.now();
   for (const feed of batch) {
     const { dapiName, dataFeedId, decodedDapiName, updateParameters } = feed;
 
@@ -331,7 +319,7 @@ export const processBatch = async (
     const alreadyUpdatable = isAlreadyUpdatable(chainId, providerName, sponsorWalletAddress);
 
     if (isFeedUpdatable && !alreadyUpdatable) {
-      const timestamp = Math.floor(Date.now() / 1000);
+      const timestamp = Math.floor(timeAtDeviationCheck / 1000);
       logger.info('Setting timestamp when the feed is first updatable.', { timestamp });
       setFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress, timestamp);
     }
@@ -346,12 +334,26 @@ export const processBatch = async (
         dapiName: decodedDapiName,
         dataFeedId,
         totalPendingPeriod:
-          Math.floor(Date.now() / 1000) -
+          Math.floor(timeAtDeviationCheck / 1000) -
           firstMarkedUpdatableTimestamps[chainId]![providerName]![sponsorWalletAddress]!,
       });
       clearFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress);
     }
   }
+
+  // Fetch the gas price regardless of whether there are any feeds to be updated or not in order for gas oracle to
+  // maintain historical gas prices.
+  await fetchAndStoreGasPrice(chainId, providerName, provider);
+
+  const updatedFeeds = await submitTransactions(
+    chainId,
+    providerName,
+    provider,
+    getApi3ServerV1(contracts.Api3ServerV1, provider),
+    feedsToUpdate,
+    blockNumber
+  );
+  const successCount = updatedFeeds.filter(Boolean).length;
 
   // Generate signed API URLs for the batch
   const signedApiUrls = batch
