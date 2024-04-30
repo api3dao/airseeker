@@ -4,7 +4,7 @@ import { range } from 'lodash';
 import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import { initializePendingTransactionsInfo } from '../update-feeds-loops/updatability-timestamp';
+import { initializePendingTransactionsInfo } from '../update-feeds-loops/pending-transaction-info';
 
 import {
   getRecommendedGasPrice,

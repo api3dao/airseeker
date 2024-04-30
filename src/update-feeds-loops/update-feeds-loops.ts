@@ -1,4 +1,3 @@
-import type { Address } from '@api3/commons';
 import type { AirseekerRegistry } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
 import type { ethers } from 'ethers';
@@ -22,8 +21,8 @@ import {
   createProvider,
 } from './contracts';
 import { getUpdatableFeeds } from './get-updatable-feeds';
-import { getDerivedSponsorWallet, submitTransactions } from './submit-transactions';
-import { initializePendingTransactionsInfo, setPendingTransactionInfo } from './updatability-timestamp';
+import { initializePendingTransactionsInfo, updatePendingTransactionsInfo } from './pending-transaction-info';
+import { submitTransactions } from './submit-transactions';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -281,61 +280,12 @@ export const processBatch = async (
     blockNumber,
   });
   const {
-    config: {
-      sponsorWalletMnemonic,
-      chains,
-      deviationThresholdCoefficient,
-      walletDerivationScheme,
-      signedApiUrls: configSignedApiBaseUrls,
-    },
-    pendingTransactionsInfo: pendingTransactionsInfo,
+    config: { chains, deviationThresholdCoefficient, signedApiUrls: configSignedApiBaseUrls },
   } = getState();
   const { contracts } = chains[chainId]!;
 
   const feedsToUpdate = getUpdatableFeeds(batch, deviationThresholdCoefficient);
-
-  // We need to track pending update transactions for the feeds. We apply this logic immediately after checking the
-  // deviation to have the most accurate pending transaction timestamp.
-  const timestampAtUpdateCheck = Math.floor(Date.now() / 1000);
-  for (const feed of batch) {
-    const { dapiName, dataFeedId, decodedDapiName, updateParameters } = feed;
-
-    const isFeedUpdatable = feedsToUpdate.some(
-      (updatableFeed) =>
-        updatableFeed.dataFeedInfo.dapiName === dapiName && updatableFeed.dataFeedInfo.dataFeedId === dataFeedId
-    );
-    const sponsorWalletAddress = getDerivedSponsorWallet(
-      sponsorWalletMnemonic,
-      dapiName ?? dataFeedId,
-      updateParameters,
-      walletDerivationScheme
-    ).address as Address;
-    const pendingTransactionInfo = pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress];
-
-    if (isFeedUpdatable) {
-      const consecutivelyUpdatableCount = pendingTransactionInfo
-        ? pendingTransactionInfo.consecutivelyUpdatableCount + 1
-        : 1;
-      const firstUpdatableTimestamp = pendingTransactionInfo?.firstUpdatableTimestamp ?? timestampAtUpdateCheck;
-      const newPendingTransactionInfo = { consecutivelyUpdatableCount, firstUpdatableTimestamp };
-      logger.info('Updating pending transaction info.', newPendingTransactionInfo);
-      setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, newPendingTransactionInfo);
-    }
-    if (!isFeedUpdatable && pendingTransactionInfo) {
-      // NOTE: A data feed may stop needing an update for two reasons:
-      //  1. It has been updated by some other transaction. This could have been done by this Airseeker or some backup.
-      //  2. As a natural price shift in signed API data.
-      //
-      // We can't differentiate between these cases unless we check recent update transactions, which we don't want to
-      // do.
-      logger.info(`Clearing pending transaction info because it no longer needs an update.`, {
-        dapiName: decodedDapiName,
-        dataFeedId,
-        totalPendingPeriod: timestampAtUpdateCheck - pendingTransactionInfo.firstUpdatableTimestamp,
-      });
-      setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, null);
-    }
-  }
+  updatePendingTransactionsInfo(chainId, providerName, batch, feedsToUpdate);
 
   // Fetch the gas price regardless of whether there are any feeds to be updated or not in order for gas oracle to
   // maintain historical gas prices.

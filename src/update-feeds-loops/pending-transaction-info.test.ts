@@ -1,7 +1,7 @@
 import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
 import { type PendingTransactionInfo, getState } from '../state';
 
-import { initializePendingTransactionsInfo, setPendingTransactionInfo } from './updatability-timestamp';
+import { initializePendingTransactionsInfo, setPendingTransactionInfo } from './pending-transaction-info';
 
 const chainId = '31337';
 const providerName = 'localhost';

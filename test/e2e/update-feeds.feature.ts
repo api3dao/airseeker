@@ -9,7 +9,7 @@ import {
   decodeUpdateParameters,
 } from '../../src/update-feeds-loops/contracts';
 import { submitTransactions } from '../../src/update-feeds-loops/submit-transactions';
-import { initializePendingTransactionsInfo } from '../../src/update-feeds-loops/updatability-timestamp';
+import { initializePendingTransactionsInfo } from '../../src/update-feeds-loops/pending-transaction-info';
 import { decodeDapiName } from '../../src/utils';
 import { initializeState } from '../fixtures/mock-config';
 import { deployAndUpdate } from '../setup/contract';
