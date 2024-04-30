@@ -1,3 +1,4 @@
+import type { Hex } from '@api3/commons';
 import type { AirseekerRegistry } from '@api3/contracts';
 import { ethers } from 'ethers';
 import { omit } from 'lodash';
@@ -6,6 +7,7 @@ import { generateTestConfig } from '../../test/fixtures/mock-config';
 import { generateMockAirseekerRegistry, generateActiveDataFeedResponse } from '../../test/fixtures/mock-contract';
 import { allowPartial } from '../../test/utils';
 import type { Chain } from '../config/schema';
+import * as gasPriceModule from '../gas-price';
 import { logger } from '../logger';
 import * as stateModule from '../state';
 import * as utilsModule from '../utils';
@@ -278,10 +280,10 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     expect(logger.debug).toHaveBeenCalledTimes(10);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of data feeds batches.');
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active data feeds.', expect.anything());
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Derived new sponsor wallet.', {
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching gas price and saving it to the state.');
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Derived new sponsor wallet.', {
       sponsorWalletAddress: '0x4Fe33c7f5E9407c8A27B97144c98759C88B5b8dE',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching gas price and saving it to the state.');
     expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batches of active data feeds.', {
       batchesCount: 3,
       staggerTimeMs: 100,
@@ -293,10 +295,10 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       batchIndex: 2,
     });
     expect(logger.debug).toHaveBeenNthCalledWith(8, 'Processing batch of active data feeds.', expect.anything());
-    expect(logger.debug).toHaveBeenNthCalledWith(9, 'Derived new sponsor wallet.', {
+    expect(logger.debug).toHaveBeenNthCalledWith(9, 'Fetching gas price and saving it to the state.');
+    expect(logger.debug).toHaveBeenNthCalledWith(10, 'Derived new sponsor wallet.', {
       sponsorWalletAddress: '0x4Fe33c7f5E9407c8A27B97144c98759C88B5b8dE',
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(10, 'Fetching gas price and saving it to the state.');
 
     expect(logger.info).toHaveBeenCalledTimes(3);
     expect(logger.info).toHaveBeenNthCalledWith(
@@ -494,6 +496,57 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
 
     expect(signedApiUrls).toHaveLength(1);
     expect(signedApiUrls).toContain('http://config.url/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4');
+  });
+
+  it('does not scale gas price for the original (first) update transaction', async () => {
+    const dataFeed = generateActiveDataFeedResponse();
+    const beacons = contractsModule.decodeDataFeedDetails(dataFeed.dataFeedDetails)!;
+    const decodedUpdateParameters = contractsModule.decodeUpdateParameters(dataFeed.updateParameters);
+    const activeDataFeed = {
+      ...omit(dataFeed, ['dataFeedDetails', 'beaconValues', 'beaconTimestamps']),
+      decodedUpdateParameters,
+      beaconsWithData: contractsModule.createBeaconsWithData(beacons, dataFeed.beaconValues, dataFeed.beaconTimestamps),
+      decodedDapiName: utilsModule.decodeDapiName(dataFeed.dapiName),
+      signedApiUrls: [],
+    } as contractsModule.DecodedActiveDataFeedResponse;
+    const testConfig = generateTestConfig();
+    stateModule.setInitialState(testConfig);
+    stateModule.updateState(() =>
+      allowPartial<stateModule.State>({
+        config: testConfig,
+        signedApiUrls: {},
+        gasPrices: {
+          '31337': {
+            'default-provider': [{ price: 10n ** 9n, timestamp: 123 }],
+          },
+        },
+        firstMarkedUpdatableTimestamps: { '31337': { 'default-provider': {} } },
+      })
+    );
+    jest.spyOn(logger, 'warn');
+    jest.spyOn(logger, 'info');
+    const provider = new ethers.JsonRpcProvider();
+    jest.spyOn(provider, 'getTransactionCount').mockResolvedValue(123);
+
+    // Skip actions other than generating signed api urls.
+    jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([
+      allowPartial<getUpdatableFeedsModule.UpdatableDataFeed>({
+        dataFeedInfo: {
+          dapiName: dataFeed.dapiName as Hex,
+          dataFeedId: dataFeed.dataFeedId as Hex,
+        },
+      }),
+    ]);
+    jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
+    jest.spyOn(updatabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
+    jest.spyOn(gasPriceModule, 'fetchAndStoreGasPrice').mockImplementation();
+    jest.spyOn(submitTransactionModule, 'submitUpdate').mockImplementation();
+
+    await updateFeedsLoopsModule.processBatch([activeDataFeed], 'default-provider', provider, '31337', 123);
+
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith('Setting timestamp when the feed is first updatable.', expect.anything());
+    expect(logger.warn).toHaveBeenCalledTimes(0);
   });
 });
 

@@ -299,6 +299,20 @@ export const processBatch = async (
 
   const feedsToUpdate = getUpdatableFeeds(batch, deviationThresholdCoefficient);
 
+  // Fetch the gas price regardless of whether there are any feeds to be updated or not in order for gas oracle to
+  // maintain historical gas prices.
+  await fetchAndStoreGasPrice(chainId, providerName, provider);
+
+  const updatedFeeds = await submitTransactions(
+    chainId,
+    providerName,
+    provider,
+    getApi3ServerV1(contracts.Api3ServerV1, provider),
+    feedsToUpdate,
+    blockNumber
+  );
+  const successCount = updatedFeeds.filter(Boolean).length;
+
   // We need to update the first exceeded deviation timestamp for the feeds. We need to set them for feeds for which the
   // deviation is exceeded for the first time and clear the timestamp for feeds that no longer need an update.
   for (const feed of batch) {
@@ -321,7 +335,6 @@ export const processBatch = async (
       logger.info('Setting timestamp when the feed is first updatable.', { timestamp });
       setFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress, timestamp);
     }
-
     if (!isFeedUpdatable && alreadyUpdatable) {
       // NOTE: A data feed may stop needing an update for two reasons:
       //  1. It has been updated by some other transaction. This could have been done by this Airseeker or some backup.
@@ -339,20 +352,6 @@ export const processBatch = async (
       clearFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress);
     }
   }
-
-  // Fetch the gas price regardless of whether there are any feeds to be updated or not in order for gas oracle to
-  // maintain historical gas prices.
-  await fetchAndStoreGasPrice(chainId, providerName, provider);
-
-  const updatedFeeds = await submitTransactions(
-    chainId,
-    providerName,
-    provider,
-    getApi3ServerV1(contracts.Api3ServerV1, provider),
-    feedsToUpdate,
-    blockNumber
-  );
-  const successCount = updatedFeeds.filter(Boolean).length;
 
   // Generate signed API URLs for the batch
   const signedApiUrls = batch
