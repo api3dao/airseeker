@@ -7,7 +7,7 @@ import type { WalletDerivationScheme } from '../config/schema';
 import { getRecommendedGasPrice } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import { deriveSponsorWallet } from '../utils';
+import { deriveSponsorWallet, sanitizeEthersError } from '../utils';
 
 import { estimateMulticallGasLimit, estimateSingleBeaconGasLimit } from './gas-estimation';
 import type { UpdatableDataFeed } from './get-updatable-feeds';
@@ -131,7 +131,7 @@ export const submitTransaction = async (
         logger.debug('Getting nonce.');
         const goNonce = await go(async () => provider.getTransactionCount(sponsorWalletAddress, blockNumber));
         if (!goNonce.success) {
-          logger.warn(`Failed to get nonce.`, goNonce.error);
+          logger.warn(`Failed to get nonce.`, sanitizeEthersError(goNonce.error));
           return null;
         }
         const nonce = goNonce.data;
@@ -169,11 +169,14 @@ export const submitTransaction = async (
             }
             case 'INSUFFICIENT_FUNDS': {
               // This should never happen and monitoring should warn even before Airseeker comes to this point.
-              logger.error(`Failed to submit the transaction because of insufficient funds.`, goSubmitUpdate.error);
+              logger.error(
+                `Failed to submit the transaction because of insufficient funds.`,
+                sanitizeEthersError(goSubmitUpdate.error)
+              );
               return null;
             }
             default: {
-              logger.warn(`Failed to submit the update transaction.`, goSubmitUpdate.error);
+              logger.warn(`Failed to submit the update transaction.`, sanitizeEthersError(goSubmitUpdate.error));
               return null;
             }
           }
@@ -187,7 +190,7 @@ export const submitTransaction = async (
     );
 
     if (!goUpdate.success) {
-      logger.error(`Unexpected error during updating data feed.`, goUpdate.error);
+      logger.error(`Unexpected error during updating data feed.`, sanitizeEthersError(goUpdate.error));
       return null;
     }
     return goUpdate.data;

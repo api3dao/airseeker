@@ -7,7 +7,7 @@ import type { Chain } from '../config/schema';
 import { fetchAndStoreGasPrice, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import { sleep } from '../utils';
+import { sanitizeEthersError, sleep } from '../utils';
 
 import {
   decodeActiveDataFeedCountResponse,
@@ -169,7 +169,7 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
           { totalTimeoutMs: dataFeedUpdateIntervalMs }
         );
         if (!goFirstBatch.success) {
-          logger.error(`Failed to get first active data feeds batch.`, goFirstBatch.error);
+          logger.error(`Failed to get first active data feeds batch.`, sanitizeEthersError(goFirstBatch.error));
           return;
         }
 
@@ -220,7 +220,7 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
             return activeBatch;
           });
           if (!goBatch.success) {
-            logger.error(`Failed to get active data feeds batch.`, goBatch.error);
+            logger.error(`Failed to get active data feeds batch.`, sanitizeEthersError(goBatch.error));
             return;
           }
           if (goBatch.data === null) return;
@@ -261,7 +261,7 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
       });
 
       if (!goRunUpdateFeeds.success) {
-        logger.error(`Unexpected error when updating data feeds feeds.`, goRunUpdateFeeds.error);
+        logger.error(`Unexpected error when updating data feeds feeds.`, sanitizeEthersError(goRunUpdateFeeds.error));
       }
     }
   );
