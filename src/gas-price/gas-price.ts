@@ -5,7 +5,7 @@ import { maxBy, remove } from 'lodash';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import { multiplyBigNumber } from '../utils';
+import { multiplyBigNumber, sanitizeEthersError } from '../utils';
 
 export const initializeGasState = (chainId: string, providerName: string) =>
   updateState((draft) => {
@@ -64,7 +64,7 @@ export const fetchAndStoreGasPrice = async (
   });
   const gasPrice = goGasPrice.data;
   if (!goGasPrice.success) {
-    logger.error('Failed to fetch gas price from RPC provider.', goGasPrice.error);
+    logger.error('Failed to fetch gas price from RPC provider.', sanitizeEthersError(goGasPrice.error));
     return null;
   }
   if (!gasPrice) {

@@ -1,5 +1,5 @@
 import { type Address, deriveWalletPathFromSponsorAddress, type Hex } from '@api3/commons';
-import { ethers } from 'ethers';
+import { type ErrorCode, ethers, type EthersError } from 'ethers';
 
 import type { WalletDerivationScheme } from './config/schema';
 import { AIRSEEKER_PROTOCOL_ID, INT224_MAX, INT224_MIN } from './constants';
@@ -66,4 +66,28 @@ export const decodeBeaconValue = (encodedBeaconValue: string) => {
   }
 
   return decodedBeaconValue;
+};
+
+// eslint-disable-next-line functional/no-classes
+class SanitizedErrorsError extends Error {
+  public code: ErrorCode;
+
+  public constructor(code: ErrorCode, message: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
+// Ethers error messages are sometimes serialized into huge strings containing the raw transaction bytes that is
+// unnecessary. The serialized string is so big, that Grafana log forwarder needs to split the message into multiple
+// parts (messing up with our log format). As a workaround, we pick the most useful properties from the error message.
+export const sanitizeEthersError = (error: Error) => {
+  const ethersError = error as EthersError;
+
+  // We only care about ethers errors and they all should have a code.
+  if (!ethersError.code) return error;
+
+  // We don't care about the stack trace, nor error name - just the code and the message. According to the ethers
+  // sources, the short message should always be defined.
+  return new SanitizedErrorsError(ethersError.code, ethersError.shortMessage);
 };

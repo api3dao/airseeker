@@ -2,11 +2,12 @@ import type { Api3ServerV1 } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
 
 import { logger } from '../logger';
+import { sanitizeEthersError } from '../utils';
 
 import type { UpdatableBeacon } from './get-updatable-feeds';
 
 export const handleRpcGasLimitFailure = (error: Error, fallbackGasLimit: number | undefined) => {
-  const errorMessage = error.message;
+  const errorMessage = sanitizeEthersError(error).message;
   // It is possible that the gas estimation failed because of a contract revert due to timestamp check, because the feed
   // was updated by other provider in the meantime. Try to detect this expected case and log INFO instead.
   if (errorMessage.includes('Does not update timestamp')) {
