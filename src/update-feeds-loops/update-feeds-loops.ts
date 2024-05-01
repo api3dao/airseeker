@@ -250,6 +250,7 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
           skippedBatchesCount,
           dataFeedUpdates,
           dataFeedUpdateFailures,
+          activeDataFeedCount,
         });
 
         // Update the state with the signed API URLs.

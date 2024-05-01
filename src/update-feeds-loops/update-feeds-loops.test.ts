@@ -306,6 +306,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       dataFeedUpdateFailures: 2,
       dataFeedUpdates: 0,
       skippedBatchesCount: 1,
+      activeDataFeedCount: 3,
     });
   });
 
