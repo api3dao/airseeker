@@ -12,8 +12,15 @@ const stateMock: State = {
       hardhat: [{ price: 10n, timestamp: timestampMock }],
     },
   },
-  firstMarkedUpdatableTimestamps: {
-    '31337': { hardhat: { '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266': timestampMock } },
+  pendingTransactionsInfo: {
+    '31337': {
+      hardhat: {
+        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266': {
+          consecutivelyUpdatableCount: 1,
+          firstUpdatableTimestamp: timestampMock,
+        },
+      },
+    },
   },
   signedDatas: {
     [deriveBeaconId(

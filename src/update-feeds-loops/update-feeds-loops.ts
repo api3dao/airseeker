@@ -1,4 +1,3 @@
-import type { Address } from '@api3/commons';
 import type { AirseekerRegistry } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
 import type { ethers } from 'ethers';
@@ -22,13 +21,8 @@ import {
   createProvider,
 } from './contracts';
 import { getUpdatableFeeds } from './get-updatable-feeds';
-import { getDerivedSponsorWallet, submitTransactions } from './submit-transactions';
-import {
-  clearFirstMarkedUpdatableTimestamp,
-  initializeFirstMarkedUpdatableTimestamp,
-  isAlreadyUpdatable,
-  setFirstMarkedUpdatableTimestamp,
-} from './updatability-timestamp';
+import { initializePendingTransactionsInfo, updatePendingTransactionsInfo } from './pending-transaction-info';
+import { submitTransactions } from './submit-transactions';
 
 export const startUpdateFeedsLoops = async () => {
   const state = getState();
@@ -53,7 +47,7 @@ export const startUpdateFeedsLoops = async () => {
 
       for (const providerName of Object.keys(providers)) {
         initializeGasState(chainId, providerName);
-        initializeFirstMarkedUpdatableTimestamp(chainId, providerName);
+        initializePendingTransactionsInfo(chainId, providerName);
         logger.debug(`Starting update feeds loop.`, { chainName: alias, providerName });
         // Run the update feed loop manually for the first time, because setInterval first waits for the given period of
         // time before calling the callback function.
@@ -286,59 +280,12 @@ export const processBatch = async (
     blockNumber,
   });
   const {
-    config: {
-      sponsorWalletMnemonic,
-      chains,
-      deviationThresholdCoefficient,
-      walletDerivationScheme,
-      signedApiUrls: configSignedApiBaseUrls,
-    },
-    firstMarkedUpdatableTimestamps,
+    config: { chains, deviationThresholdCoefficient, signedApiUrls: configSignedApiBaseUrls },
   } = getState();
   const { contracts } = chains[chainId]!;
 
   const feedsToUpdate = getUpdatableFeeds(batch, deviationThresholdCoefficient);
-
-  // We need to update the first exceeded deviation timestamp for the feeds. We need to set them for feeds for which the
-  // deviation is exceeded for the first time and clear the timestamp for feeds that no longer need an update.
-  for (const feed of batch) {
-    const { dapiName, dataFeedId, decodedDapiName, updateParameters } = feed;
-
-    const isFeedUpdatable = feedsToUpdate.some(
-      (updatableFeed) =>
-        updatableFeed.dataFeedInfo.dapiName === dapiName && updatableFeed.dataFeedInfo.dataFeedId === dataFeedId
-    );
-    const sponsorWalletAddress = getDerivedSponsorWallet(
-      sponsorWalletMnemonic,
-      dapiName ?? dataFeedId,
-      updateParameters,
-      walletDerivationScheme
-    ).address as Address;
-    const alreadyUpdatable = isAlreadyUpdatable(chainId, providerName, sponsorWalletAddress);
-
-    if (isFeedUpdatable && !alreadyUpdatable) {
-      const timestamp = Math.floor(Date.now() / 1000);
-      logger.info('Setting timestamp when the feed is first updatable.', { timestamp });
-      setFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress, timestamp);
-    }
-
-    if (!isFeedUpdatable && alreadyUpdatable) {
-      // NOTE: A data feed may stop needing an update for two reasons:
-      //  1. It has been updated by some other transaction. This could have been done by this Airseeker or some backup.
-      //  2. As a natural price shift in signed API data.
-      //
-      // We can't differentiate between these cases unless we check recent update transactions, which we don't want to
-      // do.
-      logger.info(`Clearing data feed update timestamp because it no longer needs an update.`, {
-        dapiName: decodedDapiName,
-        dataFeedId,
-        totalPendingPeriod:
-          Math.floor(Date.now() / 1000) -
-          firstMarkedUpdatableTimestamps[chainId]![providerName]![sponsorWalletAddress]!,
-      });
-      clearFirstMarkedUpdatableTimestamp(chainId, providerName, sponsorWalletAddress);
-    }
-  }
+  updatePendingTransactionsInfo(chainId, providerName, batch, feedsToUpdate);
 
   // Fetch the gas price regardless of whether there are any feeds to be updated or not in order for gas oracle to
   // maintain historical gas prices.

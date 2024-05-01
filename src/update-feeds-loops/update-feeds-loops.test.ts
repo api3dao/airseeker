@@ -1,3 +1,4 @@
+import type { Hex } from '@api3/commons';
 import type { AirseekerRegistry } from '@api3/contracts';
 import { ethers } from 'ethers';
 import { omit } from 'lodash';
@@ -6,6 +7,7 @@ import { generateTestConfig } from '../../test/fixtures/mock-config';
 import { generateMockAirseekerRegistry, generateActiveDataFeedResponse } from '../../test/fixtures/mock-contract';
 import { allowPartial } from '../../test/utils';
 import type { Chain } from '../config/schema';
+import * as gasPriceModule from '../gas-price';
 import { logger } from '../logger';
 import * as stateModule from '../state';
 import * as utilsModule from '../utils';
@@ -13,7 +15,6 @@ import * as utilsModule from '../utils';
 import * as contractsModule from './contracts';
 import * as getUpdatableFeedsModule from './get-updatable-feeds';
 import * as submitTransactionModule from './submit-transactions';
-import * as updatabilityTimestampModule from './updatability-timestamp';
 import * as updateFeedsLoopsModule from './update-feeds-loops';
 
 describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
@@ -220,7 +221,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
         signedApiUrls: {},
         signedDatas: {},
         gasPrices: {},
-        firstMarkedUpdatableTimestamps: { 31_337: { ['provider-name']: {} } },
+        pendingTransactionsInfo: { '31337': { 'provider-name': {} } },
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
@@ -299,16 +300,8 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     expect(logger.debug).toHaveBeenNthCalledWith(10, 'Fetching gas price and saving it to the state.');
 
     expect(logger.info).toHaveBeenCalledTimes(3);
-    expect(logger.info).toHaveBeenNthCalledWith(
-      1,
-      'Setting timestamp when the feed is first updatable.',
-      expect.anything()
-    );
-    expect(logger.info).toHaveBeenNthCalledWith(
-      2,
-      'Setting timestamp when the feed is first updatable.',
-      expect.anything()
-    );
+    expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating pending transaction info.', expect.anything());
+    expect(logger.info).toHaveBeenNthCalledWith(2, 'Updating pending transaction info.', expect.anything());
     expect(logger.info).toHaveBeenNthCalledWith(3, 'Finished processing batches of active data feeds.', {
       dataFeedUpdateFailures: 2,
       dataFeedUpdates: 0,
@@ -407,6 +400,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
           },
         },
         gasPrices: {},
+        pendingTransactionsInfo: { '31337': { 'default-provider': {} } },
       })
     );
     jest.spyOn(logger, 'warn');
@@ -433,6 +427,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
       allowPartial<stateModule.State>({
         config: { ...testConfig, signedApiUrls: ['http://config.url'] },
         signedApiUrls: {},
+        pendingTransactionsInfo: { '31337': { 'default-provider': {} } },
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
@@ -442,7 +437,6 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     // Skip actions other than generating signed api urls.
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
     jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
-    jest.spyOn(updatabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
 
     const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(
       [activeDataFeed],
@@ -473,6 +467,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
       allowPartial<stateModule.State>({
         config: { ...testConfig, signedApiUrls: ['http://config.url'] },
         signedApiUrls: {},
+        pendingTransactionsInfo: { '31337': { 'default-provider': {} } },
       })
     );
     jest.spyOn(stateModule, 'updateState').mockImplementation();
@@ -482,7 +477,6 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     // Skip actions other than generating signed api urls.
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
     jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
-    jest.spyOn(updatabilityTimestampModule, 'isAlreadyUpdatable').mockReturnValue(false);
 
     const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(
       [activeDataFeed],
@@ -494,6 +488,56 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
 
     expect(signedApiUrls).toHaveLength(1);
     expect(signedApiUrls).toContain('http://config.url/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4');
+  });
+
+  it('does not scale gas price for the original (first) update transaction', async () => {
+    const dataFeed = generateActiveDataFeedResponse();
+    const beacons = contractsModule.decodeDataFeedDetails(dataFeed.dataFeedDetails)!;
+    const decodedUpdateParameters = contractsModule.decodeUpdateParameters(dataFeed.updateParameters);
+    const activeDataFeed = {
+      ...omit(dataFeed, ['dataFeedDetails', 'beaconValues', 'beaconTimestamps']),
+      decodedUpdateParameters,
+      beaconsWithData: contractsModule.createBeaconsWithData(beacons, dataFeed.beaconValues, dataFeed.beaconTimestamps),
+      decodedDapiName: utilsModule.decodeDapiName(dataFeed.dapiName),
+      signedApiUrls: [],
+    } as contractsModule.DecodedActiveDataFeedResponse;
+    const testConfig = generateTestConfig();
+    stateModule.setInitialState(testConfig);
+    stateModule.updateState(() =>
+      allowPartial<stateModule.State>({
+        config: testConfig,
+        signedApiUrls: {},
+        gasPrices: {
+          '31337': {
+            'default-provider': [{ price: 10n ** 9n, timestamp: 123 }],
+          },
+        },
+        pendingTransactionsInfo: { '31337': { 'default-provider': {} } },
+      })
+    );
+    jest.spyOn(logger, 'warn');
+    jest.spyOn(logger, 'info');
+    const provider = new ethers.JsonRpcProvider();
+    jest.spyOn(provider, 'getTransactionCount').mockResolvedValue(123);
+
+    // Skip actions other than generating signed api urls.
+    jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([
+      allowPartial<getUpdatableFeedsModule.UpdatableDataFeed>({
+        dataFeedInfo: {
+          dapiName: dataFeed.dapiName as Hex,
+          dataFeedId: dataFeed.dataFeedId as Hex,
+        },
+      }),
+    ]);
+    jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
+    jest.spyOn(gasPriceModule, 'fetchAndStoreGasPrice').mockImplementation();
+    jest.spyOn(submitTransactionModule, 'submitUpdate').mockImplementation();
+
+    await updateFeedsLoopsModule.processBatch([activeDataFeed], 'default-provider', provider, '31337', 123);
+
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith('Updating pending transaction info.', expect.anything());
+    expect(logger.warn).toHaveBeenCalledTimes(0);
   });
 });
 

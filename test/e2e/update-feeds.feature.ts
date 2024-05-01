@@ -8,8 +8,8 @@ import {
   decodeDataFeedDetails,
   decodeUpdateParameters,
 } from '../../src/update-feeds-loops/contracts';
+import { initializePendingTransactionsInfo } from '../../src/update-feeds-loops/pending-transaction-info';
 import { submitTransactions } from '../../src/update-feeds-loops/submit-transactions';
-import { initializeFirstMarkedUpdatableTimestamp } from '../../src/update-feeds-loops/updatability-timestamp';
 import { decodeDapiName } from '../../src/utils';
 import { initializeState } from '../fixtures/mock-config';
 import { deployAndUpdate } from '../setup/contract';
@@ -26,7 +26,7 @@ it('reads blockchain data', async () => {
 
   initializeState(config);
   initializeGasState(chainId, providerName);
-  initializeFirstMarkedUpdatableTimestamp(chainId, providerName);
+  initializePendingTransactionsInfo(chainId, providerName);
 
   await runUpdateFeeds(providerName, chain, chainId);
 
@@ -50,7 +50,7 @@ it('updates blockchain data', async () => {
     draft.config.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
   });
   initializeGasState(chainId, providerName);
-  initializeFirstMarkedUpdatableTimestamp(chainId, providerName);
+  initializePendingTransactionsInfo(chainId, providerName);
   const {
     dataFeedId,
     dapiName,
