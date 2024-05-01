@@ -1,7 +1,7 @@
 import type { Address, Hex } from '@api3/commons';
 import type { Api3ServerV1 } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
-import { ethers } from 'ethers';
+import { type EthersError, ethers } from 'ethers';
 
 import type { WalletDerivationScheme } from '../config/schema';
 import { getRecommendedGasPrice } from '../gas-price';
@@ -157,28 +157,20 @@ export const submitTransaction = async (
           // It seems that in practice, this code is widely used. We can do a best-effort attempt to determine the error
           // reason. Many times, the error is acceptable and results from the way Airseeker is designed. We can use
           // different log levels and messages and have better alerts.
-          const errorCode = (goSubmitUpdate.error as any).code;
-          switch (errorCode) {
-            case 'REPLACEMENT_UNDERPRICED': {
-              logger.info(`Failed to submit replacement transaction because it was underpriced.`);
-              return null;
-            }
-            case 'NONCE_EXPIRED': {
-              logger.info(`Failed to submit the transaction because the nonce was expired.`);
-              return null;
-            }
-            case 'INSUFFICIENT_FUNDS': {
-              // This should never happen and monitoring should warn even before Airseeker comes to this point.
-              logger.error(
-                `Failed to submit the transaction because of insufficient funds.`,
-                sanitizeEthersError(goSubmitUpdate.error)
-              );
-              return null;
-            }
-            default: {
-              logger.warn(`Failed to submit the update transaction.`, sanitizeEthersError(goSubmitUpdate.error));
-              return null;
-            }
+          const ethersError = goSubmitUpdate.error as EthersError;
+          if (ethersError.code === 'REPLACEMENT_UNDERPRICED') {
+            logger.info(`Failed to submit replacement transaction because it was underpriced.`);
+            return null;
+          } else if (ethersError.code === 'NONCE_EXPIRED' || ethersError.message.includes('invalid nonce')) {
+            logger.info(`Failed to submit the transaction because the nonce was expired.`);
+            return null;
+          } else if (ethersError.code === 'INSUFFICIENT_FUNDS') {
+            // This should never happen and monitoring should warn even before Airseeker comes to this point.
+            logger.error(`Failed to submit the transaction because of insufficient funds.`, ethersError);
+            return null;
+          } else {
+            logger.warn(`Failed to submit the update transaction.`, ethersError);
+            return null;
           }
         }
 
