@@ -8,7 +8,8 @@ import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 import { zip } from 'lodash';
 
-import { decodeDapiName } from '../utils';
+import { logger } from '../logger';
+import { decodeDapiName, sanitizeEthersError } from '../utils';
 
 export const createProvider = async (chainId: string, chainAlias: string, providerUrl: string) => {
   // Create a static network provider (bound to a specific network) to avoid the overhead of fetching the chain ID
@@ -24,7 +25,10 @@ export const createProvider = async (chainId: string, chainAlias: string, provid
 
   // Make sure the RPC is working by making a call to get the chain ID.
   const goChainId = await go(async () => provider.send('eth_chainId', []));
-  if (!goChainId.success) return null;
+  if (!goChainId.success) {
+    logger.warn('Failed to create provider. This is likely an RPC issue.', sanitizeEthersError(goChainId.error));
+    return null;
+  }
 
   return provider;
 };

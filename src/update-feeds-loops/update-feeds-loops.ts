@@ -156,10 +156,8 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
 
         // Create a provider and connect it to the AirseekerRegistry contract.
         const provider = await createProvider(chainId, alias, providers[providerName]!.url);
-        if (!provider) {
-          logger.warn('Failed to create provider. This is likely an RPC issue.');
-          return;
-        }
+        if (!provider) return;
+
         const airseekerRegistry = getAirseekerRegistry(contracts.AirseekerRegistry, provider);
 
         logger.debug(`Fetching first batch of data feeds batches.`);
