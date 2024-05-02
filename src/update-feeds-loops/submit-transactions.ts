@@ -166,10 +166,13 @@ export const submitTransaction = async (
             return null;
           } else if (ethersError.code === 'INSUFFICIENT_FUNDS') {
             // This should never happen and monitoring should warn even before Airseeker comes to this point.
-            logger.error(`Failed to submit the transaction because of insufficient funds.`, ethersError);
+            logger.error(
+              `Failed to submit the transaction because of insufficient funds.`,
+              sanitizeEthersError(ethersError)
+            );
             return null;
           } else {
-            logger.warn(`Failed to submit the update transaction.`, ethersError);
+            logger.warn(`Failed to submit the update transaction.`, sanitizeEthersError(ethersError));
             return null;
           }
         }
