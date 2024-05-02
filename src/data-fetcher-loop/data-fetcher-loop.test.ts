@@ -86,7 +86,7 @@ describe(dataFetcherLoopModule.runDataFetcher.name, () => {
       'Saved signed data from Signed API using a worker.',
       expect.objectContaining({
         url: 'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
-        signedDataForActiveBeacons: 2,
+        signedDataCount: 2,
       })
     );
   });

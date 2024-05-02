@@ -107,7 +107,7 @@ export const runDataFetcher = async () => {
         logger.info('Saved signed data from Signed API using a worker.', {
           url,
           duration: Date.now() - now,
-          signedDataForActiveBeacons: signedDataForActiveBeacons.length,
+          signedDataCount: signedDataForActiveBeacons.length,
         });
       })
     );
