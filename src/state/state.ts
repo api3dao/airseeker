@@ -30,6 +30,7 @@ export interface State {
   signedApiUrls: Record<ChainId, Record<string /* Provider name */, string[]>>;
   // The timestamp of when the service was initialized. This can be treated as a "deployment" timestamp.
   deploymentTimestamp: string;
+  activeDataFeedBeaconIds: Record<ChainId, Record<string /* Provider name */, Hex[]>>;
 }
 
 let state: State | undefined;
@@ -51,6 +52,7 @@ export const setInitialState = (config: Config) => {
     signedApiUrls: {},
     derivedSponsorWallets: {},
     deploymentTimestamp: Math.floor(Date.now() / 1000).toString(),
+    activeDataFeedBeaconIds: {},
   };
 };
 

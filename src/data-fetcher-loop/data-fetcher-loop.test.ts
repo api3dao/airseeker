@@ -61,7 +61,7 @@ describe('data fetcher', () => {
     await expect(dataFetcherPromise).resolves.toBeDefined();
 
     expect(commonsModule.executeRequest).toHaveBeenCalledTimes(1);
-    expect(saveSignedDataSpy).toHaveBeenCalledTimes(3);
+    expect(saveSignedDataSpy).toHaveBeenCalledTimes(1);
     expect(dataFetcherLoopModule.callSignedApi).toHaveBeenNthCalledWith(
       1,
       'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',

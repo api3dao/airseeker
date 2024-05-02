@@ -1,4 +1,4 @@
-import { executeRequest } from '@api3/commons';
+import { type Hex, executeRequest } from '@api3/commons';
 import { uniq } from 'lodash';
 
 import { logger } from '../logger';
@@ -27,7 +27,10 @@ export const startDataFetcherLoop = () => {
  * - Actual handler fn:
  *   https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/handlers.ts#L81
  */
-export const callSignedApi = async (url: string, timeout: number): Promise<SignedData[] | null> => {
+export const callSignedApi = async (
+  url: string,
+  timeout: number
+): Promise<Record<Hex /* Beacon ID */, SignedData> | null> => {
   const executionResult = await executeRequest({
     method: 'get',
     timeout,
@@ -52,7 +55,7 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
     return null;
   }
 
-  return Object.values(parseResult.data.data);
+  return parseResult.data.data;
 };
 
 export const runDataFetcher = async () => {
@@ -61,8 +64,17 @@ export const runDataFetcher = async () => {
     const {
       config: { signedDataFetchInterval },
       signedApiUrls,
+      activeDataFeedBeaconIds,
     } = state;
     const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
+
+    // Compute all the unique active beacon IDs reported by all data providers. Only signed data for these beacons will
+    // be saved by Airseeker.
+    const activeBeaconIds = new Set(
+      Object.values(activeDataFeedBeaconIds)
+        .map((beaconIdsPerProvider) => Object.values(beaconIdsPerProvider))
+        .flat(2)
+    );
 
     // Better to log the non-decomposed object to see which URL comes from which chain-provider group.
     logger.debug('Signed API URLs.', { signedApiUrls });
@@ -87,8 +99,16 @@ export const runDataFetcher = async () => {
         if (!signedDataBatch) return;
         logger.info('Fetched signed data from Signed API.', { url, duration: Date.now() - now });
 
-        await saveSignedData(signedDataBatch);
-        logger.info('Saved all signed data from Signed API using a worker.', { url, duration: Date.now() - now });
+        // Save only the signed data that is relevant to the active data feeds.
+        const signedDataForActiveBeacons = Object.entries(signedDataBatch)
+          .filter(([beaconId]) => activeBeaconIds.has(beaconId as Hex))
+          .map(([_, signedData]) => signedData);
+        await saveSignedData(signedDataForActiveBeacons);
+        logger.info('Saved signed data from Signed API using a worker.', {
+          url,
+          duration: Date.now() - now,
+          signedDataForActiveBeacons: signedDataForActiveBeacons.length,
+        });
       })
     );
 
