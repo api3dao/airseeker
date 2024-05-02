@@ -1,81 +1,53 @@
-import { type Hex, deriveBeaconId } from '@api3/commons';
-import { goSync } from '@api3/promise-utils';
-import { ethers } from 'ethers';
+import type { Hex } from '@api3/commons';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { SignedData } from '../types';
 
-export const verifySignedData = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
-  // Verification is wrapped in goSync, because ethers methods can potentially throw on invalid input.
-  const goVerifySignature = goSync(() => {
-    const message = ethers.getBytes(
-      ethers.solidityPackedKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, encodedValue])
-    );
+import { getVerifier } from './signed-data-verifier-pool';
 
-    const signerAddr = ethers.verifyMessage(message, signature);
-    if (signerAddr !== airnode) throw new Error('Signer address does not match');
-  });
-  if (!goVerifySignature.success) {
-    logger.error(`Signature verification failed.`, {
-      signature,
-      timestamp,
-      encodedValue,
-    });
-    return false;
-  }
-
-  return true;
-};
-
-const verifyTimestamp = (timestamp: number) => {
-  const timestampMs = timestamp * 1000;
-
-  if (timestampMs > Date.now() + 60 * 60 * 1000) {
-    logger.error(`Refusing to store sample as timestamp is more than one hour in the future.`, {
-      systemDateNow: new Date().toLocaleDateString(),
-      signedDataDate: new Date(timestampMs).toLocaleDateString(),
-    });
-    return false;
-  }
-
-  if (timestampMs > Date.now()) {
-    logger.warn(`Sample is in the future, but by less than an hour, therefore storing anyway.`, {
-      systemDateNow: new Date().toLocaleDateString(),
-      signedDataDate: new Date(timestampMs).toLocaleDateString(),
-    });
-  }
-
-  return true;
-};
-
-export const verifySignedDataIntegrity = (signedData: SignedData) => {
-  // TODO: Temporarily disable signed data verification.
-  return verifyTimestamp(Number.parseInt(signedData.timestamp, 10)) /* && verifySignedData(signedData) */;
-};
-
-export const saveSignedData = (signedData: SignedData) => {
+const verifyTimestamp = (signedData: SignedData) => {
   const { airnode, templateId, timestamp } = signedData;
 
-  // Make sure we run the verification checks with enough context.
-  logger.runWithContext({ airnode, templateId }, () => {
-    if (!verifySignedDataIntegrity(signedData)) {
-      return;
-    }
-
-    const state = getState();
-
-    const dataFeedId = deriveBeaconId(airnode, templateId) as Hex;
-
-    const existingValue = state.signedDatas[dataFeedId];
-    if (existingValue && existingValue.timestamp >= timestamp) {
-      logger.debug('Skipping state update. The signed data value is not fresher than the stored value.');
-      return;
-    }
-
-    updateState((draft) => {
-      draft.signedDatas[dataFeedId] = signedData;
+  // Verify the timestamp of the signed data.
+  const timestampMs = Number.parseInt(timestamp, 10) * 1000;
+  const nowMs = Date.now();
+  if (timestampMs > nowMs + 60 * 60 * 1000) {
+    logger.error(`Refusing to store sample as timestamp is more than one hour in the future.`, {
+      airnode,
+      templateId,
+      timestampMs,
+      nowMs,
     });
+    return false;
+  }
+  if (timestampMs > nowMs) {
+    logger.warn(`Sample is in the future, but by less than an hour, therefore storing anyway.`, {
+      airnode,
+      templateId,
+      timestampMs,
+      nowMs,
+    });
+  }
+
+  return true;
+};
+
+export const saveSignedData = async (signedDataBatch: SignedData[]) => {
+  // Filter out signed data with invalid timestamps.
+  signedDataBatch = signedDataBatch.filter((data) => verifyTimestamp(data));
+  if (signedDataBatch.length === 0) return;
+
+  const verifier = await getVerifier();
+  const beaconIdsOrErrorDetails = await verifier.verifySignedData(signedDataBatch);
+  if (!Array.isArray(beaconIdsOrErrorDetails)) {
+    logger.error('Failed to verify signed data.', beaconIdsOrErrorDetails);
+    return;
+  }
+  updateState((draft) => {
+    for (const [i, element] of signedDataBatch.entries()) {
+      draft.signedDatas[beaconIdsOrErrorDetails[i]!] = element;
+    }
   });
 };
 
