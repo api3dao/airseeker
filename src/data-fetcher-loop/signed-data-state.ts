@@ -8,7 +8,7 @@ import type { SignedData } from '../types';
 
 export const verifySignedData = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
   // Verification is wrapped in goSync, because ethers methods can potentially throw on invalid input.
-  const goVerify = goSync(() => {
+  const goVerifySignature = goSync(() => {
     const message = ethers.getBytes(
       ethers.solidityPackedKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, encodedValue])
     );
@@ -16,8 +16,7 @@ export const verifySignedData = ({ airnode, templateId, timestamp, signature, en
     const signerAddr = ethers.verifyMessage(message, signature);
     if (signerAddr !== airnode) throw new Error('Signer address does not match');
   });
-
-  if (!goVerify.success) {
+  if (!goVerifySignature.success) {
     logger.error(`Signature verification failed.`, {
       signature,
       timestamp,
