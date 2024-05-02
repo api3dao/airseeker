@@ -10,7 +10,7 @@ import type { SignedData } from '../types';
 import * as signedDataStateModule from './signed-data-state';
 import * as signedDataVerifierPoolModule from './signed-data-verifier-pool';
 
-describe('signed data state', () => {
+describe(signedDataStateModule.saveSignedData.name, () => {
   let validSignedData: SignedData;
   const signer = ethers.Wallet.fromPhrase('test test test test test test test test test test test junk');
 
@@ -24,21 +24,43 @@ describe('signed data state', () => {
     validSignedData = {
       airnode,
       encodedValue,
-      signature: await signData(signer, templateId, timestamp, encodedValue),
       templateId,
       timestamp,
+      signature: await signData(signer, templateId, timestamp, encodedValue),
     };
   });
 
-  it('stores and gets a data point', async () => {
+  it('stores signed data', async () => {
     jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
     jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
     const beaconId = deriveBeaconId(validSignedData.airnode, validSignedData.templateId) as Hex;
 
     await signedDataStateModule.saveSignedData([[beaconId, validSignedData]]);
-    const signedData = signedDataStateModule.getSignedData(beaconId);
 
+    const signedData = signedDataStateModule.getSignedData(beaconId);
     expect(signedData).toStrictEqual(validSignedData);
+  });
+
+  it('does not store signed data that is older than already stored one', async () => {
+    const beaconId = deriveBeaconId(validSignedData.airnode, validSignedData.templateId) as Hex;
+    const timestamp = String(Number(validSignedData.timestamp) + 10); // 10s newer.
+    const storedSignedData = {
+      ...validSignedData,
+      timestamp,
+      signature: await signData(signer, validSignedData.templateId, timestamp, validSignedData.encodedValue),
+    };
+    updateState((draft) => {
+      draft.signedDatas[beaconId] = storedSignedData;
+    });
+    jest.spyOn(logger, 'debug');
+
+    await signedDataStateModule.saveSignedData([[beaconId, validSignedData]]);
+
+    expect(signedDataStateModule.getSignedData(beaconId)).toStrictEqual(storedSignedData);
+    expect(logger.debug).toHaveBeenCalledTimes(1);
+    expect(logger.debug).toHaveBeenCalledWith(
+      'Skipping state update. The signed data value is not fresher than the stored value.'
+    );
   });
 
   it('does not accept signed data that is too far in the future', async () => {
@@ -124,7 +146,9 @@ describe('signed data state', () => {
     expect(logger.error).toHaveBeenCalledWith('Failed to verify signed data.', badSignedData);
     expect(logger.warn).toHaveBeenCalledTimes(0);
   });
+});
 
+describe(signedDataStateModule.purgeOldSignedData.name, () => {
   it('purges old data from the state', () => {
     const baseTime = 1_700_126_230_000;
     jest.useFakeTimers().setSystemTime(baseTime);

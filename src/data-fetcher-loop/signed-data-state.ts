@@ -6,11 +6,18 @@ import type { SignedData, SignedDataRecordEntry } from '../types';
 
 import { getVerifier } from './signed-data-verifier-pool';
 
-const verifyTimestamp = (signedData: SignedData) => {
+const verifyTimestamp = ([beaconId, signedData]: SignedDataRecordEntry) => {
   const { airnode, templateId, timestamp } = signedData;
 
+  // Check that the signed data is fresher than the one stored in state.
+  const timestampMs = Number(timestamp) * 1000;
+  const storedValue = getState().signedDatas[beaconId];
+  if (storedValue && Number(storedValue.timestamp) * 1000 >= timestampMs) {
+    logger.debug('Skipping state update. The signed data value is not fresher than the stored value.');
+    return false;
+  }
+
   // Verify the timestamp of the signed data.
-  const timestampMs = Number.parseInt(timestamp, 10) * 1000;
   const nowMs = Date.now();
   if (timestampMs > nowMs + 60 * 60 * 1000) {
     logger.error(`Refusing to store sample as timestamp is more than one hour in the future.`, {
@@ -34,8 +41,8 @@ const verifyTimestamp = (signedData: SignedData) => {
 };
 
 export const saveSignedData = async (signedDataBatch: SignedDataRecordEntry[]) => {
-  // Filter out signed data with invalid timestamps.
-  signedDataBatch = signedDataBatch.filter(([_, data]) => verifyTimestamp(data));
+  // Filter out signed data with invalid timestamps or we already have a fresher signed data stored in state.
+  signedDataBatch = signedDataBatch.filter((signedDataEntry) => verifyTimestamp(signedDataEntry));
   if (signedDataBatch.length === 0) return;
 
   const verifier = await getVerifier();
