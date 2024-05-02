@@ -1,24 +1,21 @@
 import { deriveBeaconId, type Hex } from '@api3/commons';
 import { ethers } from 'ethers';
-import type { Pool } from 'workerpool';
 
 import { initializeState } from '../../test/fixtures/mock-config';
-import { allowPartial, generateRandomBytes, signData } from '../../test/utils';
+import { allowPartial, createMockSignedDataVerifier, generateRandomBytes, signData } from '../../test/utils';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { SignedData } from '../types';
 
 import * as signedDataStateModule from './signed-data-state';
-import { initializeVerifierPool } from './signed-data-verifier-pool';
+import * as signedDataVerifierPoolModule from './signed-data-verifier-pool';
 
 describe('signed data state', () => {
   let validSignedData: SignedData;
-  let pool: Pool;
   const signer = ethers.Wallet.fromPhrase('test test test test test test test test test test test junk');
 
   beforeAll(async () => {
     initializeState();
-    pool = initializeVerifierPool();
     const templateId = generateRandomBytes(32);
     const timestamp = Math.floor((Date.now() - 25 * 60 * 60 * 1000) / 1000).toString();
     const airnode = signer.address as Hex;
@@ -33,12 +30,9 @@ describe('signed data state', () => {
     };
   });
 
-  afterAll(async () => {
-    await pool.terminate();
-  });
-
   it('stores and gets a data point', async () => {
     jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
+    jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
     const dataFeedId = deriveBeaconId(validSignedData.airnode, validSignedData.templateId) as Hex;
 
     await signedDataStateModule.saveSignedData([validSignedData]);
@@ -59,6 +53,7 @@ describe('signed data state', () => {
       templateId,
       timestamp,
     };
+    jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'error');
 
@@ -85,6 +80,7 @@ describe('signed data state', () => {
       templateId,
       timestamp,
     };
+    jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'error');
 
@@ -106,6 +102,7 @@ describe('signed data state', () => {
     const timestamp = Math.floor((Date.now() - 0.5 * 1000) / 1000).toString();
     const airnode = ethers.Wallet.createRandom().address as Hex;
     const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [1n]);
+    jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'error');
 

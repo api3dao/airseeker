@@ -3,6 +3,8 @@ import { randomBytes } from 'node:crypto';
 import type { Address, Hex } from '@api3/commons';
 import { ethers, type HDNodeWallet } from 'ethers';
 
+import { verifySignedData } from '../src/data-fetcher-loop/signed-data-verifier';
+import type { getVerifier } from '../src/data-fetcher-loop/signed-data-verifier-pool';
 import type { SignedData } from '../src/types';
 import type { Beacon } from '../src/update-feeds-loops/contracts';
 
@@ -50,4 +52,11 @@ export const generateSignedData = async (
     encodedValue,
     signature,
   };
+};
+
+export const createMockSignedDataVerifier = () => {
+  return {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    verifySignedData: async (signedDataBatch: SignedData[]) => verifySignedData(signedDataBatch),
+  } as unknown as Awaited<ReturnType<typeof getVerifier>>;
 };

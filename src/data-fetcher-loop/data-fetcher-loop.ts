@@ -86,7 +86,7 @@ export const runDataFetcher = async () => {
 
     const urlCount = urls.length;
     const staggerTimeMs = signedDataFetchIntervalMs / urlCount;
-    logger.info('Fetching signed data', { urlCount, staggerTimeMs });
+    logger.info('Fetching signed data.', { urlCount, staggerTimeMs });
     const fetchResults = await Promise.all(
       urls.map(async (url, index) => {
         await sleep(staggerTimeMs * index);

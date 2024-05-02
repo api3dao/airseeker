@@ -1,7 +1,6 @@
 import { type Hex, deriveBeaconId } from '@api3/commons';
 import { goSync } from '@api3/promise-utils';
 import { ethers } from 'ethers';
-import workerpool from 'workerpool';
 
 import type { SignedData } from '../types';
 
@@ -31,8 +30,3 @@ export const verifySignedData = (signedDataBatch: SignedData[]): Hex[] | SignedD
 
   return beaconIds;
 };
-
-// Create a worker from this module and register public functions.
-workerpool.worker({
-  verifySignedData,
-});
