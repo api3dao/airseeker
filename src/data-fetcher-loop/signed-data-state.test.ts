@@ -91,7 +91,7 @@ describe(signedDataStateModule.saveSignedData.name, () => {
     expect(logger.warn).toHaveBeenCalledTimes(0);
   });
 
-  it('accepts signed data that is a bit in the future', async () => {
+  it('accepts signed data that is less then 1h in the future', async () => {
     const templateId = generateRandomBytes(32);
     const timestamp = Math.floor((Date.now() + 30 * 60 * 1000) / 1000).toString();
     const airnode = signer.address as Hex;

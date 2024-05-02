@@ -56,6 +56,8 @@ export const saveSignedData = async (signedDataBatch: SignedDataRecordEntry[]) =
       draft.signedDatas[beaconId] = signedData;
     }
   });
+
+  return signedDataBatch.length;
 };
 
 export const getSignedData = (dataFeedId: Hex) => getState().signedDatas[dataFeedId];

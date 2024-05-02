@@ -65,8 +65,8 @@ export const runDataFetcher = async () => {
     } = state;
     const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
 
-    // Compute all the unique active beacon IDs reported by all data providers. Only signed data for these beacons will
-    // be saved by Airseeker.
+    // Compute all the unique active beacon IDs reported across all data providers. Only signed data for these beacons
+    // will be saved by Airseeker.
     const activeBeaconIds = new Set(
       Object.values(activeDataFeedBeaconIds)
         .map((beaconIdsPerProvider) => Object.values(beaconIdsPerProvider))
@@ -100,11 +100,11 @@ export const runDataFetcher = async () => {
         const signedDataForActiveBeacons = Object.entries(signedDataBatch).filter(([beaconId]) =>
           activeBeaconIds.has(beaconId as Hex)
         );
-        await saveSignedData(signedDataForActiveBeacons as SignedDataRecordEntry[]);
+        const signedDataCount = await saveSignedData(signedDataForActiveBeacons as SignedDataRecordEntry[]);
         logger.info('Saved signed data from Signed API using a worker.', {
           url,
           duration: Date.now() - now,
-          signedDataCount: signedDataForActiveBeacons.length,
+          signedDataCount,
         });
       })
     );
