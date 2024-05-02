@@ -22,14 +22,12 @@
   "triggers": {
     "signedApiUpdates": [
       {
-        "signedApiName": "localhost",
         "templateIds": [
           "0xa5419706d8edb3bbafad83fe2b4e7dc851de5e4cd9529f9f27bb393016c81ae5",
           "0x8f255387c5fdb03117d82372b8fa5c7813881fd9a8202b7cc373f1a5868496b2",
           "0x89bbdb4e2d7510abf1ca0ed53295e31c00a6939fc12e77d67bf3a4cb3c31f61c"
         ],
-        "fetchInterval": 10,
-        "updateDelay": 0
+        "fetchInterval": 10
       }
     ]
   },
@@ -94,7 +92,7 @@
     }
   ],
   "nodeSettings": {
-    "nodeVersion": "0.4.0",
+    "nodeVersion": "1.0.0",
     "airnodeWalletMnemonic": "${AIRNODE_WALLET_MNEMONIC}",
     "stage": "local-example"
   }

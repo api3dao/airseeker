@@ -1,11 +1,10 @@
-import type { Address, ChainId } from '@api3/commons';
+import type { ChainId, Hex } from '@api3/commons';
 
 import { logger } from '../logger';
-import { type PendingTransactionInfo, updateState, getState } from '../state';
+import { getState, updateState, type PendingTransactionInfo } from '../state';
 
 import type { DecodedActiveDataFeedResponse } from './contracts';
 import type { UpdatableDataFeed } from './get-updatable-feeds';
-import { getDerivedSponsorWallet } from './submit-transactions';
 
 export const initializePendingTransactionsInfo = (chainId: string, providerName: string) =>
   updateState((draft) => {
@@ -16,11 +15,11 @@ export const initializePendingTransactionsInfo = (chainId: string, providerName:
 export const setPendingTransactionInfo = (
   chainId: string,
   providerName: string,
-  sponsorWalletAddress: Address,
+  dataFeedId: Hex,
   pendingTransactionInfo: PendingTransactionInfo | null
 ) => {
   updateState((draft) => {
-    draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress] = pendingTransactionInfo;
+    draft.pendingTransactionsInfo[chainId]![providerName]![dataFeedId] = pendingTransactionInfo;
   });
 };
 
@@ -30,35 +29,29 @@ export const updatePendingTransactionsInfo = (
   batch: DecodedActiveDataFeedResponse[],
   feedsToUpdate: UpdatableDataFeed[]
 ) => {
-  const {
-    config: { sponsorWalletMnemonic, walletDerivationScheme },
-    pendingTransactionsInfo: pendingTransactionsInfo,
-  } = getState();
+  const { pendingTransactionsInfo: pendingTransactionsInfo } = getState();
 
   const currentTimestamp = Math.floor(Date.now() / 1000);
   for (const feed of batch) {
-    const { dapiName, dataFeedId, decodedDapiName, updateParameters } = feed;
+    const { dapiName, dataFeedId, decodedDapiName } = feed;
 
     const isFeedUpdatable = feedsToUpdate.some(
       (updatableFeed) =>
         updatableFeed.dataFeedInfo.dapiName === dapiName && updatableFeed.dataFeedInfo.dataFeedId === dataFeedId
     );
-    const sponsorWalletAddress = getDerivedSponsorWallet(
-      sponsorWalletMnemonic,
-      dapiName ?? dataFeedId,
-      updateParameters,
-      walletDerivationScheme
-    ).address as Address;
-    const pendingTransactionInfo = pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress];
+
+    const pendingTransactionInfo = pendingTransactionsInfo[chainId]![providerName]![dataFeedId];
 
     if (isFeedUpdatable) {
-      const consecutivelyUpdatableCount = pendingTransactionInfo
-        ? pendingTransactionInfo.consecutivelyUpdatableCount + 1
-        : 1;
+      const consecutivelyUpdatableCount = (pendingTransactionInfo?.consecutivelyUpdatableCount ?? 0) + 1;
       const firstUpdatableTimestamp = pendingTransactionInfo?.firstUpdatableTimestamp ?? currentTimestamp;
       const newPendingTransactionInfo = { consecutivelyUpdatableCount, firstUpdatableTimestamp };
-      logger.info('Updating pending transaction info.', newPendingTransactionInfo);
-      setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, newPendingTransactionInfo);
+      logger.info('Updating pending transaction info.', {
+        dapiName: decodedDapiName,
+        dataFeedId,
+        newPendingTransactionInfo,
+      });
+      setPendingTransactionInfo(chainId, providerName, dataFeedId, newPendingTransactionInfo);
     }
     if (!isFeedUpdatable && pendingTransactionInfo) {
       // NOTE: A data feed may stop needing an update for two reasons:
@@ -72,7 +65,7 @@ export const updatePendingTransactionsInfo = (
         dataFeedId,
         totalPendingPeriod: currentTimestamp - pendingTransactionInfo.firstUpdatableTimestamp,
       });
-      setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, null);
+      setPendingTransactionInfo(chainId, providerName, dataFeedId, null);
     }
   }
 };

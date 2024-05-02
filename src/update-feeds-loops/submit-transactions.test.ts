@@ -285,6 +285,11 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
 
 describe(submitTransactionsModule.submitTransactions.name, () => {
   it('updates all feeds', async () => {
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: { walletDerivationScheme: { type: 'managed' } },
+      })
+    );
     jest.spyOn(submitTransactionsModule, 'submitTransaction').mockImplementation();
 
     await submitTransactionsModule.submitTransactions(

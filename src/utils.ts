@@ -1,5 +1,5 @@
-import { type Address, deriveWalletPathFromSponsorAddress, type Hex } from '@api3/commons';
-import { type ErrorCode, ethers, type EthersError } from 'ethers';
+import { deriveWalletPathFromSponsorAddress, type Address, type Hex } from '@api3/commons';
+import { ethers, type ErrorCode, type EthersError } from 'ethers';
 
 import type { WalletDerivationScheme } from './config/schema';
 import { AIRSEEKER_PROTOCOL_ID, INT224_MAX, INT224_MIN } from './constants';
@@ -47,10 +47,21 @@ export const deriveSponsorWallet = (
   //
   // For self-funded feeds it's more suitable to derive the hash also from update parameters. This does not apply to
   // mananaged feeds which want to be funded by the same wallet independently of the update parameters.
-  const sponsorAddressHash =
-    walletDerivationScheme.type === 'self-funded'
-      ? deriveSponsorAddressHashForSelfFundedFeed(dapiNameOrDataFeedId, updateParameters)
-      : deriveSponsorAddressHashForManagedFeed(dapiNameOrDataFeedId);
+  let sponsorAddressHash: Hex;
+  switch (walletDerivationScheme.type) {
+    case 'self-funded': {
+      sponsorAddressHash = deriveSponsorAddressHashForSelfFundedFeed(dapiNameOrDataFeedId, updateParameters);
+      break;
+    }
+    case 'managed': {
+      sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiNameOrDataFeedId);
+      break;
+    }
+    case 'fallback': {
+      sponsorAddressHash = walletDerivationScheme.sponsorAddress!;
+      break;
+    }
+  }
 
   return deriveSponsorWalletFromSponsorAddressHash(sponsorWalletMnemonic, sponsorAddressHash);
 };

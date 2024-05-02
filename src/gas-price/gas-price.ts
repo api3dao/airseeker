@@ -1,10 +1,10 @@
-import type { Address } from '@api3/commons';
+import type { Hex } from '@api3/commons';
 import { go } from '@api3/promise-utils';
 import type { ethers } from 'ethers';
-import { maxBy, remove } from 'lodash';
+import { maxBy, minBy, remove } from 'lodash';
 
 import { logger } from '../logger';
-import { getState, updateState } from '../state';
+import { type PendingTransactionInfo, getState, updateState } from '../state';
 import { multiplyBigNumber, sanitizeEthersError } from '../utils';
 
 export const initializeGasState = (chainId: string, providerName: string) =>
@@ -81,9 +81,18 @@ export const fetchAndStoreGasPrice = async (
   return gasPrice;
 };
 
-export const getRecommendedGasPrice = (chainId: string, providerName: string, sponsorWalletAddress: Address) => {
+export const getRecommendedGasPrice = (chainId: string, providerName: string, dataFeedIds: Hex[]) => {
   const state = getState();
-  const pendingTransactionInfo = state.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress];
+  const pendingTransactionInfos = dataFeedIds.reduce((acc: PendingTransactionInfo[], dataFeedId) => {
+    const pendingTransactionInfo = state.pendingTransactionsInfo[chainId]![providerName]![dataFeedId];
+    if (!pendingTransactionInfo) {
+      return acc;
+    }
+    return [...acc, pendingTransactionInfo];
+  }, []);
+  // Get the oldest PendingTransactionInfo
+  const pendingTransactionInfo = minBy(pendingTransactionInfos, (info) => info?.firstUpdatableTimestamp);
+
   const gasPrices = state.gasPrices[chainId]![providerName]!;
   const {
     gasSettings: {

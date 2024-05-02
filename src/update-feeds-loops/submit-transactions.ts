@@ -1,7 +1,8 @@
 import type { Address, Hex } from '@api3/commons';
 import type { Api3ServerV1 } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
-import { type EthersError, ethers } from 'ethers';
+import { ethers, type EthersError } from 'ethers';
+import { isEmpty } from 'lodash';
 
 import type { WalletDerivationScheme } from '../config/schema';
 import { getRecommendedGasPrice } from '../gas-price';
@@ -42,7 +43,7 @@ export const submitUpdate = async (
   api3ServerV1: Api3ServerV1,
   updatableDataFeed: UpdatableDataFeed,
   fallbackGasLimit: number | undefined,
-  connectedSponsorWallet: ethers.HDNodeWallet | ethers.Wallet,
+  sponsorWallet: ethers.HDNodeWallet | ethers.Wallet,
   gasPrice: bigint,
   nonce: number
 ) => {
@@ -50,7 +51,7 @@ export const submitUpdate = async (
     updatableBeacons,
     dataFeedInfo: { beaconsWithData },
   } = updatableDataFeed;
-  const sponsorWalletAddress = connectedSponsorWallet.address as Address;
+  const sponsorWalletAddress = (await sponsorWallet.getAddress()) as Address;
   const isSingleBeaconUpdate = beaconsWithData.length === 1;
 
   if (isSingleBeaconUpdate) {
@@ -70,7 +71,7 @@ export const submitUpdate = async (
       signedData: { airnode, templateId, timestamp, encodedValue, signature },
     } = beacon;
     return api3ServerV1
-      .connect(connectedSponsorWallet)
+      .connect(sponsorWallet)
       .updateBeaconWithSignedData.send(airnode, templateId, timestamp, encodedValue, signature, {
         gasPrice,
         gasLimit,
@@ -91,10 +92,120 @@ export const submitUpdate = async (
     gasLimit: gasLimit.toString(),
     nonce,
   });
-  return api3ServerV1
-    .connect(connectedSponsorWallet)
-    .tryMulticall.send(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
+  return api3ServerV1.connect(sponsorWallet).tryMulticall.send(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
 };
+
+async function submitBatchTransaction(
+  chainId: string,
+  providerName: string,
+  provider: ethers.JsonRpcProvider,
+  api3ServerV1: Api3ServerV1,
+  updatableDataFeeds: UpdatableDataFeed[],
+  blockNumber: number
+) {
+  const {
+    config: { chains, sponsorWalletMnemonic, walletDerivationScheme },
+  } = getState();
+
+  const [decodedDapiNames, dataFeedIds] = updatableDataFeeds.reduce(
+    (acc: [(string | null)[], Hex[]], { dataFeedInfo: { decodedDapiName, dataFeedId } }) => {
+      const [decodedDapiNames, dataFeedIds] = acc;
+      return [
+        [...(decodedDapiNames ?? []), decodedDapiName],
+        [...dataFeedIds, dataFeedId],
+      ];
+    },
+    [[], []]
+  );
+
+  const dataFeedUpdateCalldatas = updatableDataFeeds.flatMap((updatableDataFeed) =>
+    createUpdateFeedCalldatas(api3ServerV1, updatableDataFeed)
+  );
+
+  const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
+  const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
+
+  return logger.runWithContext({ dapiNames: decodedDapiNames, dataFeedIds, blockNumber }, async () => {
+    // NOTE: We use go mainly to set a timeout for the whole update process. We expect the function not to throw and
+    // handle errors internally.
+    const goUpdate = await go(
+      async () => {
+        logger.debug('Getting derived sponsor wallet.');
+        const sponsorWallet = getDerivedSponsorWallet(
+          sponsorWalletMnemonic,
+          ethers.ZeroHash as Hex,
+          '',
+          walletDerivationScheme
+        ).connect(provider);
+        const sponsorWalletAddress = (await sponsorWallet.getAddress()) as Address;
+
+        logger.debug('Getting nonce.');
+        const goNonce = await go(async () => provider.getTransactionCount(sponsorWalletAddress, 'latest'));
+        if (!goNonce.success) {
+          logger.warn(`Failed to get nonce.`, goNonce.error);
+          return null;
+        }
+        const nonce = goNonce.data;
+
+        logger.debug('Getting recommended gas price.');
+        const gasPrice = getRecommendedGasPrice(chainId, providerName, dataFeedIds);
+        if (!gasPrice) return null;
+
+        logger.debug('Estimating beacon set update gas limit.');
+        const gasLimit = await estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas, fallbackGasLimit);
+        if (!gasLimit) return null;
+
+        const goSubmitUpdate = await go(async () => {
+          logger.info('Updating data feeds in batch.', {
+            sponsorWalletAddress,
+            gasPrice: gasPrice.toString(),
+            gasLimit: gasLimit.toString(),
+            nonce,
+          });
+          return api3ServerV1
+            .connect(sponsorWallet)
+            .tryMulticall.send(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
+        });
+        if (!goSubmitUpdate.success) {
+          // It seems that in practice, this code is widely used. We can do a best-effort attempt to determine the error
+          // reason. Many times, the error is acceptable and results from the way Airseeker is designed. We can use
+          // different log levels and messages and have better alerts.
+          const errorCode = (goSubmitUpdate.error as any).code;
+          switch (errorCode) {
+            case 'REPLACEMENT_UNDERPRICED': {
+              logger.info(`Failed to submit replacement transaction because it was underpriced.`);
+              return null;
+            }
+            case 'NONCE_EXPIRED': {
+              logger.info(`Failed to submit the transaction because the nonce was expired.`);
+              return null;
+            }
+            case 'INSUFFICIENT_FUNDS': {
+              // This should never happen and monitoring should warn even before Airseeker comes to this point.
+              logger.error(`Failed to submit the transaction because of insufficient funds.`, goSubmitUpdate.error);
+              return null;
+            }
+            default: {
+              logger.warn(`Failed to submit the update transaction.`, goSubmitUpdate.error);
+              return null;
+            }
+          }
+        }
+
+        if (!goSubmitUpdate.data) return null; // There was a handled error during submission.
+        logger.info('Successfully submitted the update transaction.', { txHash: goSubmitUpdate.data.hash });
+        return goSubmitUpdate.data;
+      },
+      { totalTimeoutMs: dataFeedUpdateIntervalMs }
+    );
+
+    if (!goUpdate.success) {
+      logger.error(`Unexpected error during updating data feeds.`, goUpdate.error);
+      return null;
+    }
+    return goUpdate.data;
+  });
+}
 
 export const submitTransaction = async (
   chainId: string,
@@ -125,8 +236,8 @@ export const submitTransaction = async (
           dapiName ?? dataFeedId,
           updateParameters,
           walletDerivationScheme
-        );
-        const sponsorWalletAddress = sponsorWallet.address as Address;
+        ).connect(provider);
+        const sponsorWalletAddress = (await sponsorWallet.getAddress()) as Address;
 
         logger.debug('Getting nonce.');
         const goNonce = await go(async () => provider.getTransactionCount(sponsorWalletAddress, blockNumber));
@@ -137,21 +248,11 @@ export const submitTransaction = async (
         const nonce = goNonce.data;
 
         logger.debug('Getting recommended gas price.');
-        const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress);
+        const gasPrice = getRecommendedGasPrice(chainId, providerName, [dataFeedId]);
         if (!gasPrice) return null;
 
         const goSubmitUpdate = await go(async () => {
-          // When we add the sponsor wallet (signer) without connecting it to the provider, the provider of the
-          // contract will be set to "null". We need to connect the sponsor wallet to the provider of the contract.
-          const connectedSponsorWallet = sponsorWallet.connect(provider);
-          return submitUpdate(
-            api3ServerV1,
-            updatableDataFeed,
-            fallbackGasLimit,
-            connectedSponsorWallet,
-            gasPrice,
-            nonce
-          );
+          return submitUpdate(api3ServerV1, updatableDataFeed, fallbackGasLimit, sponsorWallet, gasPrice, nonce);
         });
         if (!goSubmitUpdate.success) {
           // It seems that in practice, this code is widely used. We can do a best-effort attempt to determine the error
@@ -196,12 +297,25 @@ export const submitTransactions = async (
   api3ServerV1: Api3ServerV1,
   updatableDataFeeds: UpdatableDataFeed[],
   blockNumber: number
-) =>
-  Promise.all(
-    updatableDataFeeds.map(async (dataFeed) =>
-      submitTransaction(chainId, providerName, provider, api3ServerV1, dataFeed, blockNumber)
-    )
-  );
+) => {
+  const {
+    config: { walletDerivationScheme },
+  } = getState();
+  if (walletDerivationScheme.type === 'fallback') {
+    if (isEmpty(updatableDataFeeds)) {
+      return [];
+    }
+    return Array.from({ length: updatableDataFeeds.length }).fill(
+      await submitBatchTransaction(chainId, providerName, provider, api3ServerV1, updatableDataFeeds, blockNumber)
+    );
+  } else {
+    return Promise.all(
+      updatableDataFeeds.map(async (dataFeed) =>
+        submitTransaction(chainId, providerName, provider, api3ServerV1, dataFeed, blockNumber)
+      )
+    );
+  }
+};
 
 export const getDerivedSponsorWallet = (
   sponsorWalletMnemonic: string,
