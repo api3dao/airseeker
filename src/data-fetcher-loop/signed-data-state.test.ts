@@ -33,10 +33,10 @@ describe('signed data state', () => {
   it('stores and gets a data point', async () => {
     jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
     jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
-    const dataFeedId = deriveBeaconId(validSignedData.airnode, validSignedData.templateId) as Hex;
+    const beaconId = deriveBeaconId(validSignedData.airnode, validSignedData.templateId) as Hex;
 
-    await signedDataStateModule.saveSignedData([validSignedData]);
-    const signedData = signedDataStateModule.getSignedData(dataFeedId);
+    await signedDataStateModule.saveSignedData([[beaconId, validSignedData]]);
+    const signedData = signedDataStateModule.getSignedData(beaconId);
 
     expect(signedData).toStrictEqual(validSignedData);
   });
@@ -53,13 +53,14 @@ describe('signed data state', () => {
       templateId,
       timestamp,
     };
+    const beaconId = deriveBeaconId(airnode, templateId) as Hex;
     jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'error');
 
-    await signedDataStateModule.saveSignedData([futureSignedData]);
+    await signedDataStateModule.saveSignedData([[beaconId, futureSignedData]]);
 
-    expect(signedDataStateModule.getSignedData(deriveBeaconId(airnode, templateId) as Hex)).toBeUndefined();
+    expect(signedDataStateModule.getSignedData(beaconId)).toBeUndefined();
     expect(logger.error).toHaveBeenCalledTimes(1);
     expect(logger.error).toHaveBeenCalledWith(
       'Refusing to store sample as timestamp is more than one hour in the future.',
@@ -80,11 +81,12 @@ describe('signed data state', () => {
       templateId,
       timestamp,
     };
+    const beaconId = deriveBeaconId(airnode, templateId) as Hex;
     jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'error');
 
-    await signedDataStateModule.saveSignedData([futureSignedData]);
+    await signedDataStateModule.saveSignedData([[beaconId, futureSignedData]]);
 
     expect(signedDataStateModule.getSignedData(deriveBeaconId(airnode, templateId) as Hex)).toStrictEqual(
       futureSignedData
@@ -113,8 +115,9 @@ describe('signed data state', () => {
       templateId,
       timestamp,
     };
+    const beaconId = deriveBeaconId(airnode, templateId) as Hex;
 
-    await signedDataStateModule.saveSignedData([badSignedData]);
+    await signedDataStateModule.saveSignedData([[beaconId, badSignedData]]);
 
     expect(signedDataStateModule.getSignedData(deriveBeaconId(airnode, templateId) as Hex)).toBeUndefined();
     expect(logger.error).toHaveBeenCalledTimes(1);

@@ -5,7 +5,7 @@ import { ethers, type HDNodeWallet } from 'ethers';
 
 import { verifySignedData } from '../src/data-fetcher-loop/signed-data-verifier';
 import type { getVerifier } from '../src/data-fetcher-loop/signed-data-verifier-pool';
-import type { SignedData } from '../src/types';
+import type { SignedData, SignedDataRecordEntry } from '../src/types';
 import type { Beacon } from '../src/update-feeds-loops/contracts';
 
 export const signData = async (signer: ethers.Signer, templateId: string, timestamp: string, data: string) =>
@@ -57,6 +57,6 @@ export const generateSignedData = async (
 export const createMockSignedDataVerifier = () => {
   return {
     // eslint-disable-next-line @typescript-eslint/require-await
-    verifySignedData: async (signedDataBatch: SignedData[]) => verifySignedData(signedDataBatch),
+    verifySignedData: async (signedDataBatch: SignedDataRecordEntry[]) => verifySignedData(signedDataBatch),
   } as unknown as Awaited<ReturnType<typeof getVerifier>>;
 };

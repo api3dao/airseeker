@@ -2,7 +2,7 @@ import type { Hex } from '@api3/commons';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { SignedData } from '../types';
+import type { SignedData, SignedDataRecordEntry } from '../types';
 
 import { getVerifier } from './signed-data-verifier-pool';
 
@@ -33,20 +33,20 @@ const verifyTimestamp = (signedData: SignedData) => {
   return true;
 };
 
-export const saveSignedData = async (signedDataBatch: SignedData[]) => {
+export const saveSignedData = async (signedDataBatch: SignedDataRecordEntry[]) => {
   // Filter out signed data with invalid timestamps.
-  signedDataBatch = signedDataBatch.filter((data) => verifyTimestamp(data));
+  signedDataBatch = signedDataBatch.filter(([_, data]) => verifyTimestamp(data));
   if (signedDataBatch.length === 0) return;
 
   const verifier = await getVerifier();
-  const beaconIdsOrErrorDetails = await verifier.verifySignedData(signedDataBatch);
-  if (!Array.isArray(beaconIdsOrErrorDetails)) {
-    logger.error('Failed to verify signed data.', beaconIdsOrErrorDetails);
+  const verificationResult = await verifier.verifySignedData(signedDataBatch);
+  if (verificationResult !== true) {
+    logger.error('Failed to verify signed data.', verificationResult);
     return;
   }
   updateState((draft) => {
-    for (const [i, element] of signedDataBatch.entries()) {
-      draft.signedDatas[beaconIdsOrErrorDetails[i]!] = element;
+    for (const [beaconId, signedData] of signedDataBatch) {
+      draft.signedDatas[beaconId] = signedData;
     }
   });
 };
@@ -58,14 +58,14 @@ export const isSignedDataFresh = (signedData: SignedData) =>
 
 export const purgeOldSignedData = () => {
   const state = getState();
-  const oldSignedData = Object.values(state.signedDatas).filter((signedData) => isSignedDataFresh(signedData));
+  const oldSignedData = Object.values(state.signedDatas).filter((signedData) => isSignedDataFresh(signedData!));
   if (oldSignedData.length > 0) {
     logger.debug(`Purging some old signed data.`, { oldSignedData });
   }
 
   updateState((draft) => {
     draft.signedDatas = Object.fromEntries(
-      Object.entries(draft.signedDatas).filter(([_dataFeedId, signedData]) => isSignedDataFresh(signedData))
+      Object.entries(draft.signedDatas).filter(([_dataFeedId, signedData]) => isSignedDataFresh(signedData!))
     );
   });
 };
