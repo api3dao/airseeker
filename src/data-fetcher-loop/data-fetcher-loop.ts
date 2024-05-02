@@ -56,7 +56,7 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
 };
 
 export const runDataFetcher = async () => {
-  return logger.runWithContext({ dataFetcherCoordinatorId: Date.now().toString() }, async () => {
+  return logger.runWithContext({ dataFetcherCoordinatorId: new Date().toISOString() }, async () => {
     const state = getState();
     const {
       config: { signedDataFetchInterval },

@@ -146,7 +146,7 @@ export const readActiveDataFeedBatch = async (
 
 export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId: string) => {
   await logger.runWithContext(
-    { chainName: chain.alias, providerName, updateFeedsCoordinatorId: Date.now().toString() },
+    { chainName: chain.alias, providerName, updateFeedsCoordinatorId: new Date().toISOString() },
     async () => {
       // We do not expect this function to throw, but its possible that some execution path is incorrectly handled and we
       // want to process the error ourselves, for example log the error using the configured format.
