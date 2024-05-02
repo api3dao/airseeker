@@ -60,7 +60,7 @@ export const saveSignedData = async (signedDataBatch: SignedDataRecordEntry[]) =
   return signedDataBatch.length;
 };
 
-export const getSignedData = (dataFeedId: Hex) => getState().signedDatas[dataFeedId];
+export const getSignedData = (beaconId: Hex) => getState().signedDatas[beaconId];
 
 export const isSignedDataFresh = (signedData: SignedData) =>
   BigInt(signedData.timestamp) > BigInt(Math.ceil(Date.now() / 1000 - 24 * 60 * 60));
@@ -74,7 +74,7 @@ export const purgeOldSignedData = () => {
 
   updateState((draft) => {
     draft.signedDatas = Object.fromEntries(
-      Object.entries(draft.signedDatas).filter(([_dataFeedId, signedData]) => isSignedDataFresh(signedData!))
+      Object.entries(draft.signedDatas).filter(([_beaconId, signedData]) => isSignedDataFresh(signedData!))
     );
   });
 };
