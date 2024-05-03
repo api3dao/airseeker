@@ -21,6 +21,7 @@ import { zip } from 'lodash';
 
 import {
   deriveSponsorAddressHashForManagedFeed,
+  deriveSponsorAddressHashForSelfFundedFeed,
   deriveSponsorWalletFromSponsorAddressHash,
   encodeDapiName,
 } from '../../src/utils';
@@ -56,6 +57,18 @@ export const deriveRole = (adminRole: string, roleDescription: string) => {
   );
 };
 
+function encodeUpdateParameters() {
+  const HUNDRED_PERCENT = 1e8;
+  const deviationThresholdInPercentage = HUNDRED_PERCENT / 100; // 1%
+  const deviationReference = 0;
+  const heartbeatInterval = 86_400; // 24 hrs
+  const updateParameters = ethers.AbiCoder.defaultAbiCoder().encode(
+    ['uint256', 'int224', 'uint256'],
+    [deviationThresholdInPercentage, deviationReference, heartbeatInterval]
+  );
+  return updateParameters;
+}
+
 // NOTE: This function is not used by the initialization script, but you can use it after finishing Airseeker test on a
 // public testnet to refund test ETH from sponsor wallets to the funder wallet.
 export const refundFunder = async (funderWallet: ethers.NonceManager) => {
@@ -69,11 +82,23 @@ export const refundFunder = async (funderWallet: ethers.NonceManager) => {
   const beaconSetNames = await getBeaconSetNames();
   for (const beaconSetName of beaconSetNames) {
     const dapiName = encodeDapiName(beaconSetName);
+    const updateParameters = encodeUpdateParameters();
 
-    const sponsorAddressHash =
-      rawConfig.walletDerivationScheme.type === 'fallback'
-        ? rawConfig.walletDerivationScheme.sponsorAddress
-        : deriveSponsorAddressHashForManagedFeed(dapiName);
+    let sponsorAddressHash;
+    switch (rawConfig.walletDerivationScheme.type) {
+      case 'self-funded': {
+        sponsorAddressHash = deriveSponsorAddressHashForSelfFundedFeed(dapiName, updateParameters);
+        break;
+      }
+      case 'managed': {
+        sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiName);
+        break;
+      }
+      case 'fallback': {
+        sponsorAddressHash = rawConfig.walletDerivationScheme.sponsorAddress;
+        break;
+      }
+    }
     const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(
       airseekerWalletMnemonic,
       sponsorAddressHash
@@ -140,11 +165,23 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.NonceManag
   const beaconSetNames = await getBeaconSetNames();
   for (const beaconSetName of beaconSetNames) {
     const dapiName = encodeDapiName(beaconSetName);
+    const updateParameters = encodeUpdateParameters();
 
-    const sponsorAddressHash =
-      rawConfig.walletDerivationScheme.type === 'fallback'
-        ? rawConfig.walletDerivationScheme.sponsorAddress
-        : deriveSponsorAddressHashForManagedFeed(dapiName);
+    let sponsorAddressHash;
+    switch (rawConfig.walletDerivationScheme.type) {
+      case 'self-funded': {
+        sponsorAddressHash = deriveSponsorAddressHashForSelfFundedFeed(dapiName, updateParameters);
+        break;
+      }
+      case 'managed': {
+        sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiName);
+        break;
+      }
+      case 'fallback': {
+        sponsorAddressHash = rawConfig.walletDerivationScheme.sponsorAddress;
+        break;
+      }
+    }
     const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(airseekerWalletMnemonic, sponsorAddressHash);
     const sponsorWalletAddress = await sponsorWallet.getAddress();
     const sponsorWalletBalance = await funderWallet.provider!.getBalance(sponsorWalletAddress);
@@ -242,10 +279,7 @@ export const deploy = async (funderWallet: ethers.NonceManager, provider: ethers
     );
     const registerDataFeedTx = await airseekerRegistry.connect(randomPerson).registerDataFeed(encodedBeaconSetData);
     await registerDataFeedTx.wait();
-    const HUNDRED_PERCENT = 1e8;
-    const deviationThresholdInPercentage = BigInt(HUNDRED_PERCENT / 100); // 1%
-    const deviationReference = 0n;
-    const heartbeatInterval = BigInt(86_400); // 24 hrs
+    const updateParameters = encodeUpdateParameters();
     const setDapiNameTx = await api3ServerV1.connect(deployerAndManager).setDapiName(dapiName, beaconSetId);
     await setDapiNameTx.wait();
     const setDapiNameToBeActivatedTx = await airseekerRegistry
@@ -254,13 +288,7 @@ export const deploy = async (funderWallet: ethers.NonceManager, provider: ethers
     await setDapiNameToBeActivatedTx.wait();
     const setDapiNameUpdateParametersTx = await airseekerRegistry
       .connect(deployerAndManager)
-      .setDapiNameUpdateParameters(
-        dapiName,
-        ethers.AbiCoder.defaultAbiCoder().encode(
-          ['uint256', 'uint256', 'uint256'],
-          [deviationThresholdInPercentage, deviationReference, heartbeatInterval]
-        )
-      );
+      .setDapiNameUpdateParameters(dapiName, updateParameters);
     await setDapiNameUpdateParametersTx.wait();
   }
 
