@@ -23,7 +23,10 @@ export interface State {
   gasPrices: Record<ChainId, Record<string /* Provider name */, GasPriceInfo[]>>;
   pendingTransactionsInfo: Record<
     ChainId,
-    Record<string /* Provider name */, Record<Address /* Sponsor wallet */, PendingTransactionInfo | null>>
+    Record<
+      string /* Provider name */,
+      Record<Address /* Sponsor wallet */, Record<Hex /* Data Feed ID */, PendingTransactionInfo | null>>
+    >
   >;
   derivedSponsorWallets: Record<string /* dAPI name or data feed ID */, Hex /* Private key */>;
   signedDatas: Record<Hex /* Beacon ID */, SignedData>;

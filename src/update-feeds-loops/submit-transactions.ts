@@ -148,7 +148,7 @@ async function submitBatchTransaction(
         const nonce = goNonce.data;
 
         logger.debug('Getting recommended gas price.');
-        const gasPrice = getRecommendedGasPrice(chainId, providerName, dataFeedIds);
+        const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress, dataFeedIds);
         if (!gasPrice) return null;
 
         logger.debug('Estimating beacon set update gas limit.');
@@ -248,7 +248,7 @@ export const submitTransaction = async (
         const nonce = goNonce.data;
 
         logger.debug('Getting recommended gas price.');
-        const gasPrice = getRecommendedGasPrice(chainId, providerName, [dataFeedId]);
+        const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress, [dataFeedId]);
         if (!gasPrice) return null;
 
         const goSubmitUpdate = await go(async () => {

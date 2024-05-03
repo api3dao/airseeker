@@ -1,4 +1,4 @@
-import type { Hex } from '@api3/commons';
+import type { Address, Hex } from '@api3/commons';
 import { go } from '@api3/promise-utils';
 import type { ethers } from 'ethers';
 import { maxBy, minBy, remove } from 'lodash';
@@ -81,10 +81,16 @@ export const fetchAndStoreGasPrice = async (
   return gasPrice;
 };
 
-export const getRecommendedGasPrice = (chainId: string, providerName: string, dataFeedIds: Hex[]) => {
+export const getRecommendedGasPrice = (
+  chainId: string,
+  providerName: string,
+  sponsorWalletAddress: Address,
+  dataFeedIds: Hex[]
+) => {
   const state = getState();
   const pendingTransactionInfos = dataFeedIds.reduce((acc: PendingTransactionInfo[], dataFeedId) => {
-    const pendingTransactionInfo = state.pendingTransactionsInfo[chainId]![providerName]![dataFeedId];
+    const pendingTransactionInfo =
+      state.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]![dataFeedId];
     if (!pendingTransactionInfo) {
       return acc;
     }
