@@ -1,3 +1,4 @@
+import type { Hex } from '@api3/commons';
 import { ethers } from 'ethers';
 import { range } from 'lodash';
 
@@ -15,7 +16,6 @@ import {
   getPercentile,
   fetchAndStoreGasPrice,
 } from './gas-price';
-import { Hex } from '@api3/commons';
 
 const chainId = '31337';
 const providerName = 'localhost';
@@ -344,7 +344,7 @@ describe(getRecommendedGasPrice.name, () => {
             consecutivelyUpdatableCount: 2,
             firstUpdatableTimestamp: timestampMock - 60,
           },
-          [yetAnotherDataFeedId]: null
+          [yetAnotherDataFeedId]: null,
         },
       };
       for (let i = 0; i < 20; i++) {
@@ -356,7 +356,11 @@ describe(getRecommendedGasPrice.name, () => {
     });
     jest.spyOn(logger, 'warn');
 
-    const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress, [dataFeedId, anotherDataFeedId, yetAnotherDataFeedId]);
+    const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress, [
+      dataFeedId,
+      anotherDataFeedId,
+      yetAnotherDataFeedId,
+    ]);
 
     expect(gasPrice).toStrictEqual(ethers.parseUnits('17.44', 'gwei')); // The price is multiplied by the scaling multiplier.
 

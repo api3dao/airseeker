@@ -5,7 +5,12 @@ import { interpolateSecretsIntoConfig } from '@api3/commons';
 import dotenv from 'dotenv';
 import { ZodError } from 'zod';
 
-import { chainsSchema, configSchema, deviationThresholdCoefficientSchema, walletDerivationSchemeSchema } from './schema';
+import {
+  chainsSchema,
+  configSchema,
+  deviationThresholdCoefficientSchema,
+  walletDerivationSchemeSchema,
+} from './schema';
 
 const gasSettings = {
   recommendedGasPriceMultiplier: 1.5,
@@ -205,14 +210,14 @@ describe('chains schema', () => {
 
 describe('walletDerivationScheme schema', () => {
   it('parses the walletDerivationScheme as "fixed"', () => {
-    const walletDerivationScheme = { "type": "fixed", "sponsorAddress": "0x0000000000000000000000000000000000000001" };
+    const walletDerivationScheme = { type: 'fixed', sponsorAddress: '0x0000000000000000000000000000000000000001' };
     const parsed = walletDerivationSchemeSchema.parse(walletDerivationScheme);
 
     expect(parsed).toStrictEqual(walletDerivationScheme);
   });
 
   it('sponsorAddress is present when walletDerivationScheme is "fixed"', () => {
-    const walletDerivationScheme = { "type": "fixed" };
+    const walletDerivationScheme = { type: 'fixed' };
 
     expect(() => walletDerivationSchemeSchema.parse(walletDerivationScheme)).toThrow(
       new ZodError([
@@ -226,7 +231,7 @@ describe('walletDerivationScheme schema', () => {
   });
 
   it('sponsorAddress must be a valid EVM address when walletDerivationScheme is "fixed"', () => {
-    const walletDerivationScheme = { "type": "fixed" };
+    const walletDerivationScheme = { type: 'fixed' };
 
     expect(() => walletDerivationSchemeSchema.parse({ ...walletDerivationScheme, sponsorAddress: '' })).toThrow(
       new ZodError([
@@ -237,7 +242,9 @@ describe('walletDerivationScheme schema', () => {
         },
       ])
     );
-    expect(() => walletDerivationSchemeSchema.parse({ ...walletDerivationScheme, sponsorAddress: '0xinvalid' })).toThrow(
+    expect(() =>
+      walletDerivationSchemeSchema.parse({ ...walletDerivationScheme, sponsorAddress: '0xinvalid' })
+    ).toThrow(
       new ZodError([
         {
           code: 'custom',
