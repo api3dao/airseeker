@@ -276,22 +276,28 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       'Failed to get active data feeds batch.',
       new Error('One of the multicalls failed')
     );
-    expect(logger.debug).toHaveBeenCalledTimes(8);
+    expect(logger.debug).toHaveBeenCalledTimes(10);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of data feeds batches.');
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active data feeds.', expect.anything());
-    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Fetching gas price and saving it to the state.');
-    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching batches of active data feeds.', {
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Derived new sponsor wallet.', {
+      sponsorWalletAddress: '0x4Fe33c7f5E9407c8A27B97144c98759C88B5b8dE',
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching gas price and saving it to the state.');
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batches of active data feeds.', {
       batchesCount: 3,
       staggerTimeMs: 100,
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Fetching batch of active data feeds.', {
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Fetching batch of active data feeds.', {
       batchIndex: 1,
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Fetching batch of active data feeds.', {
+    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Fetching batch of active data feeds.', {
       batchIndex: 2,
     });
-    expect(logger.debug).toHaveBeenNthCalledWith(7, 'Processing batch of active data feeds.', expect.anything());
-    expect(logger.debug).toHaveBeenNthCalledWith(8, 'Fetching gas price and saving it to the state.');
+    expect(logger.debug).toHaveBeenNthCalledWith(8, 'Processing batch of active data feeds.', expect.anything());
+    expect(logger.debug).toHaveBeenNthCalledWith(9, 'Derived new sponsor wallet.', {
+      sponsorWalletAddress: '0x4Fe33c7f5E9407c8A27B97144c98759C88B5b8dE',
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(10, 'Fetching gas price and saving it to the state.');
 
     expect(logger.info).toHaveBeenCalledTimes(3);
     expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating pending transaction info.', expect.anything());

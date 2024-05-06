@@ -90,7 +90,7 @@ export const getRecommendedGasPrice = (
   const state = getState();
   const pendingTransactionInfos = dataFeedIds.reduce((acc: PendingTransactionInfo[], dataFeedId) => {
     const pendingTransactionInfo =
-      state.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]![dataFeedId];
+      state.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]?.[dataFeedId];
     if (!pendingTransactionInfo) {
       return acc;
     }

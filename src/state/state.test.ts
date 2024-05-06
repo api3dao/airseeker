@@ -1,10 +1,14 @@
-import { type Hex, deriveBeaconId } from '@api3/commons';
+import { deriveBeaconId, type Hex } from '@api3/commons';
 
 import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
 
-import { updateState, getState, type State } from './state';
+import { getState, updateState, type State } from './state';
 
 const timestampMock = 1_696_930_907_351;
+const beaconId = deriveBeaconId(
+  '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+  '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183'
+) as Hex;
 const stateMock: State = {
   config: generateTestConfig(),
   gasPrices: {
@@ -16,17 +20,16 @@ const stateMock: State = {
     '31337': {
       hardhat: {
         '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266': {
-          consecutivelyUpdatableCount: 1,
-          firstUpdatableTimestamp: timestampMock,
+          [beaconId]: {
+            consecutivelyUpdatableCount: 1,
+            firstUpdatableTimestamp: timestampMock,
+          },
         },
       },
     },
   },
   signedDatas: {
-    [deriveBeaconId(
-      '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
-      '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183'
-    ) as Hex]: {
+    [beaconId]: {
       airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
       encodedValue: '0x000000000000000000000000000000000000000000000065954b143faff77440',
       templateId: '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183',
@@ -48,11 +51,6 @@ describe('state', () => {
   beforeEach(() => {
     updateState(() => stateMock);
   });
-
-  const beaconId = deriveBeaconId(
-    '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
-    '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183'
-  ) as Hex;
 
   const signedDataSample = {
     airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
