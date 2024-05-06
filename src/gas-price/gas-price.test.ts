@@ -15,6 +15,7 @@ import {
   getPercentile,
   fetchAndStoreGasPrice,
 } from './gas-price';
+import { Hex } from '@api3/commons';
 
 const chainId = '31337';
 const providerName = 'localhost';
@@ -323,6 +324,47 @@ describe(getRecommendedGasPrice.name, () => {
       gasPrice: '20900000000',
       ratio: '1.08',
       sanitizationGasPriceCap: '19400000000',
+    });
+  });
+
+  it('applies scaling based on oldest non-null PendingTransactionInfo when multiple dataFeedIds are passed', () => {
+    const anotherDataFeedId = ethers.hexlify(ethers.randomBytes(32)) as Hex;
+    const yetAnotherDataFeedId = ethers.hexlify(ethers.randomBytes(32)) as Hex;
+
+    jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
+    updateState((draft) => {
+      draft.gasPrices[chainId]![providerName] = [];
+      draft.pendingTransactionsInfo[chainId]![providerName] = {
+        [sponsorWalletAddress]: {
+          [dataFeedId]: {
+            consecutivelyUpdatableCount: 2,
+            firstUpdatableTimestamp: timestampMock - 59,
+          },
+          [anotherDataFeedId]: {
+            consecutivelyUpdatableCount: 2,
+            firstUpdatableTimestamp: timestampMock - 60,
+          },
+          [yetAnotherDataFeedId]: null
+        },
+      };
+      for (let i = 0; i < 20; i++) {
+        draft.gasPrices[chainId]![providerName].unshift({
+          price: ethers.parseUnits('9', 'gwei') + BigInt(i) * 100_000_000n,
+          timestamp: timestampMock - (20 - i) * 30,
+        });
+      }
+    });
+    jest.spyOn(logger, 'warn');
+
+    const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress, [dataFeedId, anotherDataFeedId, yetAnotherDataFeedId]);
+
+    expect(gasPrice).toStrictEqual(ethers.parseUnits('17.44', 'gwei')); // The price is multiplied by the scaling multiplier.
+
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenNthCalledWith(1, 'Scaling gas price.', {
+      gasPrice: '10900000000',
+      multiplier: 1.6,
+      pendingPeriod: 60,
     });
   });
 });
