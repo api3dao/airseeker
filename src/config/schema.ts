@@ -170,7 +170,10 @@ export const walletDerivationSchemeSchema = z
   .strict()
   .refine(
     (scheme) => scheme.type !== 'fixed' || !!scheme.sponsorAddress,
-    "sponsorAddress is required for 'fixed' derivation type"
+    {
+      message: 'sponsorAddress is required for "fixed" derivation type',
+      path: ['walletDerivationScheme'],
+    }
   );
 
 export type WalletDerivationScheme = z.infer<typeof walletDerivationSchemeSchema>;
