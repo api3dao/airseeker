@@ -77,6 +77,17 @@ describe(deriveSponsorWallet.name, () => {
 
     expect(sponsorWallet.address).toBe('0x1e0cb43e47bf4335d21812C2d652fC83F2CB64Bb'); // Note, that the address is different if the sponsor address hash is derived using the "managed" scheme.
   });
+
+  it('derives a wallet for a fixed feed', () => {
+    const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
+
+    const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, 'does-not-matter', 'does-not-matter', {
+      type: 'fixed',
+      sponsorAddress: '0x0000000000000000000000000000000000000001',
+    });
+
+    expect(sponsorWallet.address).toBe('0xFaFF9C2E67716d2209552f46Fa9829D46830aCcB');
+  });
 });
 
 test('ethers compatibility for Wallet.fromMnemonic', () => {
