@@ -31,11 +31,11 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
   // If there are multiple beacons in the data feed it's a beacons set which we need to update as well.
   return allBeacons.length > 1
     ? [
-        ...beaconUpdateCalls,
-        api3ServerV1.interface.encodeFunctionData('updateBeaconSetWithBeacons', [
-          allBeacons.map(({ beaconId }) => beaconId),
-        ]),
-      ]
+      ...beaconUpdateCalls,
+      api3ServerV1.interface.encodeFunctionData('updateBeaconSetWithBeacons', [
+        allBeacons.map(({ beaconId }) => beaconId),
+      ]),
+    ]
     : beaconUpdateCalls;
 };
 
@@ -301,7 +301,7 @@ export const submitTransactions = async (
   const {
     config: { walletDerivationScheme },
   } = getState();
-  if (walletDerivationScheme.type === 'fallback') {
+  if (walletDerivationScheme.type === 'fixed') {
     if (isEmpty(updatableDataFeeds)) {
       return [];
     }

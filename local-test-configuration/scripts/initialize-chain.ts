@@ -94,7 +94,7 @@ export const refundFunder = async (funderWallet: ethers.NonceManager) => {
         sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiName);
         break;
       }
-      case 'fallback': {
+      case 'fixed': {
         sponsorAddressHash = rawConfig.walletDerivationScheme.sponsorAddress;
         break;
       }
@@ -177,7 +177,7 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.NonceManag
         sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiName);
         break;
       }
-      case 'fallback': {
+      case 'fixed': {
         sponsorAddressHash = rawConfig.walletDerivationScheme.sponsorAddress;
         break;
       }

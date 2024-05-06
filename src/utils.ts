@@ -57,7 +57,7 @@ export const deriveSponsorWallet = (
       sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiNameOrDataFeedId);
       break;
     }
-    case 'fallback': {
+    case 'fixed': {
       sponsorAddressHash = walletDerivationScheme.sponsorAddress!;
       break;
     }
