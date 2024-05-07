@@ -4,6 +4,11 @@ import { ethers } from 'ethers';
 import { encodeDapiName } from '../../src/utils';
 import { type DeepPartial, encodeBeaconDetails } from '../utils';
 
+const contractFunction = Object.assign(jest.fn(), {
+  estimateGas: jest.fn(),
+  staticCall: jest.fn(),
+});
+
 export const generateActiveDataFeedResponse = () =>
   ({
     dapiName: encodeDapiName('MOCK_FEED'),
@@ -30,7 +35,7 @@ export const generateMockAirseekerRegistry = () => {
       encodeFunctionData: jest.fn(),
       decodeFunctionResult: jest.fn(),
     },
-    tryMulticall: { staticCall: jest.fn(), send: jest.fn() },
+    tryMulticall: contractFunction,
     activeDataFeed: jest.fn(),
     activeDataFeedCount: jest.fn(),
   } satisfies DeepPartial<AirseekerRegistry>;
@@ -38,13 +43,13 @@ export const generateMockAirseekerRegistry = () => {
 
 export const generateMockApi3ServerV1 = () => {
   return {
-    multicall: { estimateGas: jest.fn() },
-    updateBeaconWithSignedData: { estimateGas: jest.fn(), send: jest.fn() },
-    updateBeaconSetWithBeacons: { estimateGas: jest.fn() },
+    multicall: contractFunction,
+    updateBeaconWithSignedData: contractFunction,
+    updateBeaconSetWithBeacons: contractFunction,
     interface: {
       encodeFunctionData: jest.fn(),
     },
     connect: jest.fn(),
-    tryMulticall: { staticCall: jest.fn(), send: jest.fn() },
+    tryMulticall: contractFunction,
   } satisfies DeepPartial<Api3ServerV1>;
 };

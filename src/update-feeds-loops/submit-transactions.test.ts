@@ -284,7 +284,7 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
 });
 
 describe(submitTransactionsModule.submitTransactions.name, () => {
-  it('updates all feeds', async () => {
+  it('submits a transaction for each feed to update in the batch', async () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: { walletDerivationScheme: { type: 'managed' } },
@@ -310,6 +310,177 @@ describe(submitTransactionsModule.submitTransactions.name, () => {
 
     expect(submitTransactionsModule.submitTransaction).toHaveBeenCalledTimes(2);
   });
+
+  it('submits a single transaction for updating all feeds in the batch', async () => {
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: {
+          walletDerivationScheme: { type: 'fixed', sponsorAddress: '0x0000000000000000000000000000000000000001' },
+        },
+      })
+    );
+    jest.spyOn(submitTransactionsModule, 'submitBatchTransaction').mockImplementation();
+
+    await submitTransactionsModule.submitTransactions(
+      '31337',
+      'evm-local',
+      new ethers.JsonRpcProvider(),
+      generateMockApi3ServerV1() as unknown as Api3ServerV1,
+      [
+        allowPartial<UpdatableDataFeed>({
+          dataFeedInfo: { dapiName: utilsModule.encodeDapiName('ETH/USD') },
+        }),
+        allowPartial<UpdatableDataFeed>({
+          dataFeedInfo: { dapiName: utilsModule.encodeDapiName('BTC/USD') },
+        }),
+      ],
+      123_456
+    );
+
+    expect(submitTransactionsModule.submitBatchTransaction).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe(submitTransactionsModule.submitBatchTransaction.name, () => {
+  const dapiNames = [utilsModule.encodeDapiName('BTC/USD'), utilsModule.encodeDapiName('ETH/USD')];
+
+  it('updates all dAPIs', async () => {
+    jest.spyOn(submitTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
+    jest.spyOn(logger, 'debug');
+    jest.spyOn(logger, 'info');
+    jest.spyOn(gasEstimationModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
+    jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockReturnValue(BigInt(100_000_000));
+    const api3ServerV1 = generateMockApi3ServerV1();
+    jest.spyOn(api3ServerV1, 'tryMulticall').mockReturnValue({ hash: '0xTransactionHash' });
+    jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: {
+          chains: {
+            '31337': {
+              dataFeedUpdateInterval: 60,
+              fallbackGasLimit: undefined,
+            },
+          },
+          walletDerivationScheme: { type: 'fixed', sponsorAddress: '0x0000000000000000000000000000000000000001' },
+          sponsorWalletMnemonic: 'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+        },
+      })
+    );
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
+    const provider = {
+      getTransactionCount: jest.fn().mockResolvedValue(0),
+    } as unknown as ethers.JsonRpcProvider;
+
+    await submitTransactionsModule.submitBatchTransaction(
+      '31337',
+      'evm-local',
+      provider,
+      api3ServerV1 as unknown as Api3ServerV1,
+      dapiNames.map((dapiName) =>
+        allowPartial<UpdatableDataFeed>({
+          updatableBeacons: [
+            {
+              beaconId: '0xBeaconId1',
+              signedData: {
+                airnode: '0xAirnode1',
+                templateId: '0xTemplateId1',
+                timestamp: '1629811000',
+                encodedValue: '0xEncodedValue',
+                signature: '0xSignature',
+              },
+            },
+          ],
+          dataFeedInfo: {
+            dapiName,
+            dataFeedId: '0xBeaconSetId',
+            beaconsWithData: [
+              {
+                beaconId: '0xBeaconId1',
+                airnodeAddress: '0xAirnode1',
+                templateId: '0xTemplateId1',
+              },
+              {
+                beaconId: '0xBeaconId2',
+                airnodeAddress: '0xAirnode2',
+                templateId: '0xTemplateId2',
+              },
+            ],
+          },
+        })
+      ),
+      123_456
+    );
+
+    // Verify that the data feed was updated successfully.
+    expect(logger.info).toHaveBeenCalledTimes(2);
+    expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feeds in batch.', {
+      sponsorWalletAddress: '0xFaFF9C2E67716d2209552f46Fa9829D46830aCcB',
+      gasLimit: '500000',
+      gasPrice: '100000000',
+      nonce: 0,
+    });
+    expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the update transaction.', {
+      txHash: '0xTransactionHash',
+    });
+
+    // Verify the flow of the update process via the debug logs. Note, that some debug log calls are not here because
+    // many functions are mocked.
+    expect(logger.debug).toHaveBeenCalledTimes(6);
+    expect(logger.debug).toHaveBeenNthCalledWith(1, 'Getting derived sponsor wallet.');
+    expect(logger.debug).toHaveBeenNthCalledWith(2, 'Derived new sponsor wallet.', {
+      sponsorWalletAddress: '0xFaFF9C2E67716d2209552f46Fa9829D46830aCcB',
+    });
+    expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting nonce.');
+    expect(logger.debug).toHaveBeenNthCalledWith(4, 'Getting recommended gas price.');
+    expect(logger.debug).toHaveBeenNthCalledWith(5, 'Creating calldatas.');
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Estimating batch update gas limit.');
+  });
+
+  it('logs and error when getting nonce fails', async () => {
+    jest.spyOn(submitTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
+    jest.spyOn(logger, 'warn');
+    jest.spyOn(gasEstimationModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
+    jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockReturnValue(BigInt(100_000_000));
+    const api3ServerV1 = generateMockApi3ServerV1();
+    jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: {
+          chains: {
+            '31337': {
+              dataFeedUpdateInterval: 60,
+              fallbackGasLimit: undefined,
+            },
+          },
+          walletDerivationScheme: { type: 'managed' },
+          sponsorWalletMnemonic: 'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+        },
+      })
+    );
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
+    const provider = {
+      getTransactionCount: jest.fn().mockRejectedValue(new Error('some-error')),
+    } as unknown as ethers.JsonRpcProvider;
+
+    await submitTransactionsModule.submitTransaction(
+      '31337',
+      'evm-local',
+      provider,
+      api3ServerV1 as unknown as Api3ServerV1,
+      allowPartial<UpdatableDataFeed>({
+        dataFeedInfo: {
+          dapiName: dapiNames[1]!,
+          dataFeedId: '0xBeaconSetId',
+        },
+      }),
+      123_456
+    );
+
+    // Verify that the data feed was not updated.
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenNthCalledWith(1, 'Failed to get nonce.', new Error('some-error'));
+  });
 });
 
 describe(submitTransactionsModule.submitTransaction.name, () => {
@@ -322,7 +493,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     jest.spyOn(gasEstimationModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
     jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockReturnValue(BigInt(100_000_000));
     const api3ServerV1 = generateMockApi3ServerV1();
-    jest.spyOn(api3ServerV1.tryMulticall, 'send').mockReturnValue({ hash: '0xTransactionHash' });
+    jest.spyOn(api3ServerV1, 'tryMulticall').mockReturnValue({ hash: '0xTransactionHash' });
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
@@ -457,7 +628,7 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
     jest.spyOn(api3ServerV1.updateBeaconWithSignedData, 'estimateGas').mockReturnValue(150_000n);
-    jest.spyOn(api3ServerV1.updateBeaconWithSignedData, 'send').mockReturnValue({ hash: '0xTransactionHash' });
+    jest.spyOn(api3ServerV1, 'updateBeaconWithSignedData').mockReturnValue({ hash: '0xTransactionHash' });
     jest.spyOn(logger, 'info');
     const sponsorWallet = new ethers.Wallet('a0d8c3f6643d494b31914e7ec896215562aa358bf7ff68218afb53dfedd4167f');
 
@@ -506,7 +677,7 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
     jest.spyOn(api3ServerV1.multicall, 'estimateGas').mockReturnValue(150_000n);
-    jest.spyOn(api3ServerV1.tryMulticall, 'send').mockReturnValue({ hash: '0xTransactionHash' });
+    jest.spyOn(api3ServerV1, 'tryMulticall').mockReturnValue({ hash: '0xTransactionHash' });
     jest.spyOn(logger, 'info');
     const sponsorWallet = new ethers.Wallet('a0d8c3f6643d494b31914e7ec896215562aa358bf7ff68218afb53dfedd4167f');
 

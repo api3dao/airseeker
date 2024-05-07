@@ -72,7 +72,7 @@ export const submitUpdate = async (
     } = beacon;
     return api3ServerV1
       .connect(sponsorWallet)
-      .updateBeaconWithSignedData.send(airnode, templateId, timestamp, encodedValue, signature, {
+      .updateBeaconWithSignedData(airnode, templateId, timestamp, encodedValue, signature, {
         gasPrice,
         gasLimit,
         nonce,
@@ -92,17 +92,17 @@ export const submitUpdate = async (
     gasLimit: gasLimit.toString(),
     nonce,
   });
-  return api3ServerV1.connect(sponsorWallet).tryMulticall.send(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
+  return api3ServerV1.connect(sponsorWallet).tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
 };
 
-async function submitBatchTransaction(
+export const submitBatchTransaction = async (
   chainId: string,
   providerName: string,
   provider: ethers.JsonRpcProvider,
   api3ServerV1: Api3ServerV1,
   updatableDataFeeds: UpdatableDataFeed[],
   blockNumber: number
-) {
+) => {
   const {
     config: { chains, sponsorWalletMnemonic, walletDerivationScheme },
   } = getState();
@@ -116,10 +116,6 @@ async function submitBatchTransaction(
       ];
     },
     [[], []]
-  );
-
-  const dataFeedUpdateCalldatas = updatableDataFeeds.flatMap((updatableDataFeed) =>
-    createUpdateFeedCalldatas(api3ServerV1, updatableDataFeed)
   );
 
   const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
@@ -151,7 +147,12 @@ async function submitBatchTransaction(
         const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress, dataFeedIds);
         if (!gasPrice) return null;
 
-        logger.debug('Estimating beacon set update gas limit.');
+        logger.debug('Creating calldatas.');
+        const dataFeedUpdateCalldatas = updatableDataFeeds.flatMap((updatableDataFeed) =>
+          createUpdateFeedCalldatas(api3ServerV1, updatableDataFeed)
+        );
+
+        logger.debug('Estimating batch update gas limit.');
         const gasLimit = await estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas, fallbackGasLimit);
         if (!gasLimit) return null;
 
@@ -164,7 +165,7 @@ async function submitBatchTransaction(
           });
           return api3ServerV1
             .connect(sponsorWallet)
-            .tryMulticall.send(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
+            .tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
         });
         if (!goSubmitUpdate.success) {
           // It seems that in practice, this code is widely used. We can do a best-effort attempt to determine the error
@@ -205,7 +206,7 @@ async function submitBatchTransaction(
     }
     return goUpdate.data;
   });
-}
+};
 
 export const submitTransaction = async (
   chainId: string,
