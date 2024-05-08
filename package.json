@@ -52,6 +52,7 @@
     "@api3/ois": "^2.3.2",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@total-typescript/ts-reset": "^0.5.1",
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.17.1",
     "@types/node": "^20.12.11",
