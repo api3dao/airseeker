@@ -13,8 +13,11 @@ describe(dataFetcherLoopModule.runDataFetcher.name, () => {
   beforeEach(() => {
     initializeState();
     updateState((draft) => {
-      draft.signedApiUrls = {
+      draft.signedApiUrlsFromConfig = {
         '31337': { hardhat: ['http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182'] },
+      };
+      draft.signedApiUrlsFromContract = {
+        '31337': { hardhat: [] },
       };
       draft.activeDataFeedBeaconIds = {
         '31337': {

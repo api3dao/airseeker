@@ -60,7 +60,8 @@ export const runDataFetcher = async () => {
     const state = getState();
     const {
       config: { signedDataFetchInterval },
-      signedApiUrls,
+      signedApiUrlsFromConfig,
+      signedApiUrlsFromContract,
       activeDataFeedBeaconIds,
     } = state;
     const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
@@ -73,10 +74,17 @@ export const runDataFetcher = async () => {
         .flat(2)
     );
 
+    // Compute the set of URLs coming from the config. These are trusted and don't need to be verified.
+    const trustedUrls = new Set(
+      Object.values(signedApiUrlsFromConfig)
+        .map((urlsPerProvider) => Object.values(urlsPerProvider))
+        .flat(2)
+    );
+
     // Better to log the non-decomposed object to see which URL comes from which chain-provider group.
-    logger.debug('Signed API URLs.', { signedApiUrls });
+    logger.debug('Signed API URLs.', { signedApiUrlsFromConfig, signedApiUrlsFromContract });
     const urls = uniq(
-      Object.values(signedApiUrls)
+      [...Object.values(signedApiUrlsFromConfig), ...Object.values(signedApiUrlsFromContract)]
         .map((urlsPerProvider) => Object.values(urlsPerProvider))
         .flat(2)
     );
@@ -100,7 +108,10 @@ export const runDataFetcher = async () => {
         const signedDataForActiveBeacons = Object.entries(signedDataBatch).filter(([beaconId]) =>
           activeBeaconIds.has(beaconId as Hex)
         );
-        const signedDataCount = await saveSignedData(signedDataForActiveBeacons as SignedDataRecordEntry[]);
+        const signedDataCount = await saveSignedData(
+          signedDataForActiveBeacons as SignedDataRecordEntry[],
+          trustedUrls.has(url)
+        );
         logger.info('Saved signed data from Signed API using a worker.', {
           url,
           duration: Date.now() - now,
