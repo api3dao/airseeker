@@ -46,6 +46,8 @@ export const saveSignedData = async (signedDataBatch: SignedDataRecordEntry[]) =
   if (signedDataBatch.length === 0) return;
 
   const verifier = await getVerifier();
+  // We are skipping the whole batch even if there is only one invalid signed data. This is consistent with the Signed
+  // API approach.
   const verificationResult = await verifier.verifySignedData(signedDataBatch);
   if (verificationResult !== true) {
     logger.error('Failed to verify signed data.', verificationResult);

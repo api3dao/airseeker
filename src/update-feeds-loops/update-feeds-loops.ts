@@ -261,7 +261,7 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
         // Overwrite the state with the new signed API URLs instead of merging them to avoid keeping stale URLs.
         updateState((draft) => {
           set(draft, ['signedApiUrls', chainId, providerName], signedApiUrls);
-          set(draft, ['beaconIds', chainId, providerName], beaconIds);
+          set(draft, ['activeDataFeedBeaconIds', chainId, providerName], beaconIds);
         });
       });
 
