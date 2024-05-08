@@ -79,8 +79,7 @@ export const refundFunder = async (funderWallet: ethers.NonceManager) => {
   if (!airseekerWalletMnemonic) throw new Error('SPONSOR_WALLET_MNEMONIC not found in Airseeker secrets');
 
   // Initialize sponsor wallets
-  const beaconSetNames = await getBeaconSetNames();
-  for (const beaconSetName of beaconSetNames) {
+  for (const beaconSetName of getBeaconSetNames()) {
     const dapiName = encodeDapiName(beaconSetName);
     const updateParameters = encodeUpdateParameters();
 
@@ -103,9 +102,8 @@ export const refundFunder = async (funderWallet: ethers.NonceManager) => {
       airseekerWalletMnemonic,
       sponsorAddressHash
     ).connect(funderWallet.provider);
-    const sponsorWalletAddress = await sponsorWallet.getAddress();
-    const sponsorWalletBalance = await funderWallet.provider!.getBalance(sponsorWalletAddress);
-    console.info('Sponsor wallet balance:', sponsorWalletAddress, ethers.formatEther(sponsorWalletBalance.toString()));
+    const sponsorWalletBalance = await funderWallet.provider!.getBalance(sponsorWallet);
+    console.info('Sponsor wallet balance:', sponsorWallet.address, ethers.formatEther(sponsorWalletBalance.toString()));
 
     const feeData = await sponsorWallet.provider!.getFeeData();
     const { gasPrice } = feeData;
@@ -117,7 +115,7 @@ export const refundFunder = async (funderWallet: ethers.NonceManager) => {
       continue;
     }
     const tx = await sponsorWallet.sendTransaction({
-      to: await funderWallet.getAddress(),
+      to: funderWallet,
       gasPrice,
       gasLimit: BigInt(21_000),
       value: sponsorWalletBalance - gasFee,
@@ -126,7 +124,7 @@ export const refundFunder = async (funderWallet: ethers.NonceManager) => {
 
     console.info(`Refunding funder wallet from sponsor wallet`, {
       dapiName,
-      sponsorWalletAddress,
+      sponsorWalletAddress: sponsorWallet.address,
     });
   }
 };
@@ -143,12 +141,11 @@ const loadAirnodeFeedConfig = (airnodeFeedDir: 'airnode-feed-1' | 'airnode-feed-
   return interpolateSecretsIntoConfig(rawConfig, rawSecrets);
 };
 
-const getBeaconSetNames = async () => {
+const getBeaconSetNames = () => {
   const airnodeFeed = loadAirnodeFeedConfig('airnode-feed-1');
   const airnodeFeedWallet = ethers.Wallet.fromPhrase(airnodeFeed.nodeSettings.airnodeWalletMnemonic);
-  const airnodeFeedWalletAddress = await airnodeFeedWallet.getAddress();
   const airnodeFeedBeacons = Object.values(airnodeFeed.templates).map((template: any) => {
-    return deriveBeaconData({ ...template, airnodeAddress: airnodeFeedWalletAddress });
+    return deriveBeaconData({ ...template, airnodeAddress: airnodeFeedWallet.address });
   });
 
   return airnodeFeedBeacons.map((beacon) => beacon.parameters[0]!.value);
@@ -162,8 +159,7 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.NonceManag
   if (!airseekerWalletMnemonic) throw new Error('SPONSOR_WALLET_MNEMONIC not found in Airseeker secrets');
 
   // Initialize sponsor wallets
-  const beaconSetNames = await getBeaconSetNames();
-  for (const beaconSetName of beaconSetNames) {
+  for (const beaconSetName of getBeaconSetNames()) {
     const dapiName = encodeDapiName(beaconSetName);
     const updateParameters = encodeUpdateParameters();
 
@@ -183,12 +179,11 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.NonceManag
       }
     }
     const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(airseekerWalletMnemonic, sponsorAddressHash);
-    const sponsorWalletAddress = await sponsorWallet.getAddress();
-    const sponsorWalletBalance = await funderWallet.provider!.getBalance(sponsorWalletAddress);
+    const sponsorWalletBalance = await funderWallet.provider!.getBalance(sponsorWallet);
     console.info('Sponsor wallet balance:', ethers.formatEther(sponsorWalletBalance.toString()));
 
     const tx = await funderWallet.sendTransaction({
-      to: sponsorWalletAddress,
+      to: sponsorWallet,
       value: ethers.parseEther('0.1'),
     });
     await tx.wait();
@@ -196,7 +191,7 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.NonceManag
     console.info(`Funding sponsor wallets`, {
       dapiName,
       decodedDapiName: ethers.decodeBytes32String(dapiName),
-      sponsorWalletAddress,
+      sponsorWalletAddress: sponsorWallet.address,
     });
   }
 };
@@ -204,11 +199,10 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.NonceManag
 export const deploy = async (funderWallet: ethers.NonceManager, provider: ethers.JsonRpcProvider) => {
   // NOTE: It is OK if all of these roles are done via the funder wallet.
   const deployerAndManager = funderWallet;
-  const deployerAndManagerAddress = await deployerAndManager.getAddress();
 
   const randomPerson = ethers.Wallet.createRandom().connect(deployerAndManager.provider);
   const fundRandomPersonTx = await deployerAndManager.sendTransaction({
-    to: await randomPerson.getAddress(),
+    to: randomPerson,
     value: ethers.parseEther('1'),
   });
   await fundRandomPersonTx.wait();
@@ -220,15 +214,15 @@ export const deploy = async (funderWallet: ethers.NonceManager, provider: ethers
   const api3ServerV1Factory = new Api3ServerV1Factory(deployerAndManager);
   const api3ServerV1AdminRoleDescription = 'Api3ServerV1 admin';
   const api3ServerV1 = await api3ServerV1Factory.deploy(
-    await accessControlRegistry.getAddress(),
+    accessControlRegistry.getAddress(),
     api3ServerV1AdminRoleDescription,
-    deployerAndManagerAddress
+    deployerAndManager
   );
   await api3ServerV1.waitForDeployment();
   const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager);
   const airseekerRegistry = await airseekerRegistryFactory.deploy(
-    deployerAndManagerAddress,
-    await api3ServerV1.getAddress()
+    deployerAndManager,
+    api3ServerV1.getAddress()
   );
   await airseekerRegistry.waitForDeployment();
 
@@ -238,20 +232,18 @@ export const deploy = async (funderWallet: ethers.NonceManager, provider: ethers
   const airnodeFeed1Wallet = ethers.Wallet.fromPhrase(airnodeFeed1.nodeSettings.airnodeWalletMnemonic).connect(
     provider
   );
-  const airnodeFeed1WalletAddress = await airnodeFeed1Wallet.getAddress();
   const airnodeFeed2Wallet = ethers.Wallet.fromPhrase(airnodeFeed2.nodeSettings.airnodeWalletMnemonic, provider);
-  const airnodeFeed2WalletAddress = await airnodeFeed2Wallet.getAddress();
   const airnodeFeed1Beacons = Object.values(airnodeFeed1.templates).map((template: any) => {
-    return deriveBeaconData({ ...template, airnodeAddress: airnodeFeed1WalletAddress });
+    return deriveBeaconData({ ...template, airnodeAddress: airnodeFeed1Wallet.address });
   });
   const airnodeFeed2Beacons = Object.values(airnodeFeed2.templates).map((template: any) => {
-    return deriveBeaconData({ ...template, airnodeAddress: airnodeFeed2WalletAddress });
+    return deriveBeaconData({ ...template, airnodeAddress: airnodeFeed2Wallet.address });
   });
 
   // Set active dAPIs
   const apiTreeValues = [
-    [airnodeFeed1WalletAddress, joinUrl(airnodeFeed1.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the signed API, but we need to query it additional path.
-    [airnodeFeed2WalletAddress, joinUrl(airnodeFeed2.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the signed API, but we need to query it additional path.
+    [airnodeFeed1Wallet.address, joinUrl(airnodeFeed1.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the signed API, but we need to query it additional path.
+    [airnodeFeed2Wallet.address, joinUrl(airnodeFeed2.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the signed API, but we need to query it additional path.
   ] as const;
   for (const [airnode, url] of apiTreeValues) {
     const setSignedApiUrlTx = await airseekerRegistry.connect(deployerAndManager).setSignedApiUrl(airnode, url);
@@ -319,7 +311,7 @@ async function main() {
   const funderWallet = new NonceManager(ethers.Wallet.fromPhrase(process.env.FUNDER_MNEMONIC, provider));
 
   await refundFunder(funderWallet);
-  const balance = await provider.getBalance(await funderWallet.getAddress());
+  const balance = await provider.getBalance(funderWallet);
   console.info('Funder balance:', ethers.formatEther(balance.toString()));
   console.info();
 

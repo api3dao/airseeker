@@ -146,7 +146,7 @@ export const deployAndUpdate = async () => {
   );
   const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager as Signer);
   const airseekerRegistry = await airseekerRegistryFactory.deploy(
-    await (deployerAndManager as Signer).getAddress(),
+    deployerAndManager!.address,
     api3ServerV1.getAddress()
   );
 

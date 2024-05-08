@@ -31,11 +31,11 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
   // If there are multiple beacons in the data feed it's a beacons set which we need to update as well.
   return allBeacons.length > 1
     ? [
-        ...beaconUpdateCalls,
-        api3ServerV1.interface.encodeFunctionData('updateBeaconSetWithBeacons', [
-          allBeacons.map(({ beaconId }) => beaconId),
-        ]),
-      ]
+      ...beaconUpdateCalls,
+      api3ServerV1.interface.encodeFunctionData('updateBeaconSetWithBeacons', [
+        allBeacons.map(({ beaconId }) => beaconId),
+      ]),
+    ]
     : beaconUpdateCalls;
 };
 
@@ -51,7 +51,7 @@ export const submitUpdate = async (
     updatableBeacons,
     dataFeedInfo: { beaconsWithData },
   } = updatableDataFeed;
-  const sponsorWalletAddress = (await sponsorWallet.getAddress()) as Address;
+  const sponsorWalletAddress = sponsorWallet.address as Address;
   const isSingleBeaconUpdate = beaconsWithData.length === 1;
 
   if (isSingleBeaconUpdate) {
@@ -133,7 +133,7 @@ export const submitBatchTransaction = async (
           '',
           walletDerivationScheme
         ).connect(provider);
-        const sponsorWalletAddress = (await sponsorWallet.getAddress()) as Address;
+        const sponsorWalletAddress = sponsorWallet.address as Address;
 
         logger.debug('Getting nonce.');
         const goNonce = await go(async () => provider.getTransactionCount(sponsorWalletAddress, 'latest'));
@@ -238,10 +238,8 @@ export const submitTransaction = async (
           updateParameters,
           walletDerivationScheme
         ).connect(provider);
-        const sponsorWalletAddress = (await sponsorWallet.getAddress()) as Address;
-
         logger.debug('Getting nonce.');
-        const goNonce = await go(async () => provider.getTransactionCount(sponsorWalletAddress, blockNumber));
+        const goNonce = await go(async () => provider.getTransactionCount(sponsorWallet, blockNumber));
         if (!goNonce.success) {
           logger.warn(`Failed to get nonce.`, sanitizeEthersError(goNonce.error));
           return null;
@@ -249,7 +247,7 @@ export const submitTransaction = async (
         const nonce = goNonce.data;
 
         logger.debug('Getting recommended gas price.');
-        const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress, [dataFeedId]);
+        const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWallet.address as Address, [dataFeedId]);
         if (!gasPrice) return null;
 
         const goSubmitUpdate = await go(async () => {
