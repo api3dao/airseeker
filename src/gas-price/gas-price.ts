@@ -88,18 +88,12 @@ export const getRecommendedGasPrice = (
   dataFeedIds: Hex[]
 ) => {
   const state = getState();
-  const pendingTransactionInfos = dataFeedIds.reduce((acc: PendingTransactionInfo[], dataFeedId) => {
-    const pendingTransactionInfo =
-      state.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]?.[dataFeedId];
-    if (!pendingTransactionInfo) {
-      return acc;
-    }
-    return [...acc, pendingTransactionInfo];
-  }, []);
   // Get the oldest PendingTransactionInfo and if the oldest is not a single object then minBy will return the one with the largest consecutivelyUpdatableCount.
   const pendingTransactionInfo = minBy(
-    pendingTransactionInfos.sort((a, b) => b.consecutivelyUpdatableCount - a.consecutivelyUpdatableCount),
-    (info) => info.firstUpdatableTimestamp
+    dataFeedIds
+      .map((dataFeedId) => state.pendingTransactionsInfo[chainId]?.[providerName]?.[sponsorWalletAddress]?.[dataFeedId])
+      .sort((a, b) => (b?.consecutivelyUpdatableCount ?? 0) - (a?.consecutivelyUpdatableCount ?? 0)), // Sort by consecutivelyUpdatableCount
+    (info) => info?.firstUpdatableTimestamp
   );
 
   const gasPrices = state.gasPrices[chainId]![providerName]!;
