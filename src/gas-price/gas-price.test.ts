@@ -327,7 +327,7 @@ describe(getRecommendedGasPrice.name, () => {
     });
   });
 
-  it('applies scaling based on oldest non-null PendingTransactionInfo when multiple dataFeedIds are passed', () => {
+  it('applies scaling based on oldest non-null pending data feed when multiple data feed IDs are passed', () => {
     const anotherDataFeedId = ethers.hexlify(ethers.randomBytes(32)) as Hex;
     const yetAnotherDataFeedId = ethers.hexlify(ethers.randomBytes(32)) as Hex;
 

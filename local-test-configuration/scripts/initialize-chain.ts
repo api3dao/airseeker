@@ -25,6 +25,7 @@ import {
   deriveSponsorWalletFromSponsorAddressHash,
   encodeDapiName,
 } from '../../src/utils';
+import { WalletDerivationScheme } from '../../src/config/schema';
 
 interface RawBeaconData {
   airnodeAddress: Address;
@@ -57,6 +58,31 @@ export const deriveRole = (adminRole: string, roleDescription: string) => {
   );
 };
 
+function deriveSponsorWallet(
+  walletDerivationScheme: WalletDerivationScheme,
+  dapiName: string,
+  updateParameters: string,
+  airseekerWalletMnemonic: string
+) {
+  let sponsorAddressHash;
+  switch (walletDerivationScheme.type) {
+    case 'self-funded': {
+      sponsorAddressHash = deriveSponsorAddressHashForSelfFundedFeed(dapiName, updateParameters);
+      break;
+    }
+    case 'managed': {
+      sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiName);
+      break;
+    }
+    case 'fixed': {
+      sponsorAddressHash = walletDerivationScheme.sponsorAddress;
+      break;
+    }
+  }
+  const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(airseekerWalletMnemonic, sponsorAddressHash);
+  return sponsorWallet;
+}
+
 function encodeUpdateParameters() {
   const HUNDRED_PERCENT = 1e8;
   const deviationThresholdInPercentage = HUNDRED_PERCENT / 100; // 1%
@@ -83,29 +109,18 @@ export const refundFunder = async (funderWallet: ethers.NonceManager) => {
     const dapiName = encodeDapiName(beaconSetName);
     const updateParameters = encodeUpdateParameters();
 
-    let sponsorAddressHash;
-    switch (rawConfig.walletDerivationScheme.type) {
-      case 'self-funded': {
-        sponsorAddressHash = deriveSponsorAddressHashForSelfFundedFeed(dapiName, updateParameters);
-        break;
-      }
-      case 'managed': {
-        sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiName);
-        break;
-      }
-      case 'fixed': {
-        sponsorAddressHash = rawConfig.walletDerivationScheme.sponsorAddress;
-        break;
-      }
-    }
-    const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(
-      airseekerWalletMnemonic,
-      sponsorAddressHash
-    ).connect(funderWallet.provider);
-    const sponsorWalletBalance = await funderWallet.provider!.getBalance(sponsorWallet);
+    const provider = funderWallet.provider!;
+
+    const sponsorWallet = deriveSponsorWallet(
+      rawConfig.walletDerivationScheme,
+      dapiName,
+      updateParameters,
+      airseekerWalletMnemonic
+    ).connect(provider);
+    const sponsorWalletBalance = await provider.getBalance(sponsorWallet);
     console.info('Sponsor wallet balance:', sponsorWallet.address, ethers.formatEther(sponsorWalletBalance.toString()));
 
-    const feeData = await sponsorWallet.provider!.getFeeData();
+    const feeData = await provider.getFeeData();
     const { gasPrice } = feeData;
     // We assume the legacy gas price will always exist. See:
     // https://api3workspace.slack.com/archives/C05TQPT7PNJ/p1699098552350519
@@ -163,23 +178,13 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.NonceManag
     const dapiName = encodeDapiName(beaconSetName);
     const updateParameters = encodeUpdateParameters();
 
-    let sponsorAddressHash;
-    switch (rawConfig.walletDerivationScheme.type) {
-      case 'self-funded': {
-        sponsorAddressHash = deriveSponsorAddressHashForSelfFundedFeed(dapiName, updateParameters);
-        break;
-      }
-      case 'managed': {
-        sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiName);
-        break;
-      }
-      case 'fixed': {
-        sponsorAddressHash = rawConfig.walletDerivationScheme.sponsorAddress;
-        break;
-      }
-    }
     const provider = funderWallet.provider!;
-    const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(airseekerWalletMnemonic, sponsorAddressHash);
+    const sponsorWallet = deriveSponsorWallet(
+      rawConfig.walletDerivationScheme,
+      dapiName,
+      updateParameters,
+      airseekerWalletMnemonic
+    );
     const sponsorWalletBalance = await provider.getBalance(sponsorWallet);
     console.info('Sponsor wallet balance:', ethers.formatEther(sponsorWalletBalance.toString()));
 
