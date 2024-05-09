@@ -178,8 +178,9 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.NonceManag
         break;
       }
     }
+    const provider = funderWallet.provider!;
     const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(airseekerWalletMnemonic, sponsorAddressHash);
-    const sponsorWalletBalance = await funderWallet.provider!.getBalance(sponsorWallet);
+    const sponsorWalletBalance = await provider.getBalance(sponsorWallet);
     console.info('Sponsor wallet balance:', ethers.formatEther(sponsorWalletBalance.toString()));
 
     const tx = await funderWallet.sendTransaction({
@@ -192,6 +193,7 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.NonceManag
       dapiName,
       decodedDapiName: ethers.decodeBytes32String(dapiName),
       sponsorWalletAddress: sponsorWallet.address,
+      balance: ethers.formatEther(await provider.getBalance(sponsorWallet)),
     });
   }
 };
@@ -220,10 +222,7 @@ export const deploy = async (funderWallet: ethers.NonceManager, provider: ethers
   );
   await api3ServerV1.waitForDeployment();
   const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager);
-  const airseekerRegistry = await airseekerRegistryFactory.deploy(
-    deployerAndManager,
-    api3ServerV1.getAddress()
-  );
+  const airseekerRegistry = await airseekerRegistryFactory.deploy(deployerAndManager, api3ServerV1.getAddress());
   await airseekerRegistry.waitForDeployment();
 
   // Create templates

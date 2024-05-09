@@ -156,20 +156,15 @@ export type DeviationThresholdCoefficient = z.infer<typeof deviationThresholdCoe
 
 export const walletDerivationTypeSchema = z.union([z.literal('self-funded'), z.literal('managed'), z.literal('fixed')]);
 
-export type WalletDerivationType = z.infer<typeof walletDerivationTypeSchema>;
-
-export const walletDerivationSchemeSchema = z
-  .object({
-    type: walletDerivationTypeSchema,
-    sponsorAddress: addressSchema.optional(),
-  })
-  .strict()
-  .refine((scheme) => scheme.type !== 'fixed' || !!scheme.sponsorAddress, {
-    message: 'sponsorAddress is required for "fixed" derivation type',
-    path: ['walletDerivationScheme'],
-  });
+export const walletDerivationSchemeSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('self-funded') }).strict(),
+  z.object({ type: z.literal('managed') }).strict(),
+  z.object({ type: z.literal('fixed'), sponsorAddress: addressSchema }).strict(),
+]);
 
 export type WalletDerivationScheme = z.infer<typeof walletDerivationSchemeSchema>;
+
+export type WalletDerivationType = WalletDerivationScheme['type'];
 
 export const configSchema = z
   .object({

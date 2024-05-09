@@ -222,9 +222,11 @@ describe('walletDerivationScheme schema', () => {
     expect(() => walletDerivationSchemeSchema.parse(walletDerivationScheme)).toThrow(
       new ZodError([
         {
-          code: 'custom',
-          message: 'sponsorAddress is required for "fixed" derivation type',
-          path: ['walletDerivationScheme'],
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['sponsorAddress'],
+          message: 'Required',
         },
       ])
     );
