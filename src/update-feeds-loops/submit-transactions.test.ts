@@ -437,7 +437,7 @@ describe(submitTransactionsModule.submitBatchTransaction.name, () => {
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Estimating batch update gas limit.');
   });
 
-  it('logs and error when getting nonce fails', async () => {
+  it('logs an error when getting nonce fails', async () => {
     jest.spyOn(submitTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
     jest.spyOn(logger, 'warn');
     jest.spyOn(gasEstimationModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
@@ -577,7 +577,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     expect(logger.debug).toHaveBeenNthCalledWith(6, 'Estimating beacon set update gas limit.');
   });
 
-  it('logs and error when getting nonce fails', async () => {
+  it('logs an error when getting nonce fails', async () => {
     jest.spyOn(submitTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
     jest.spyOn(logger, 'warn');
     jest.spyOn(gasEstimationModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
