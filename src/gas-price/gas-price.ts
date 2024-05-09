@@ -88,8 +88,7 @@ export const getRecommendedGasPrice = (
   dataFeedIds: Hex[]
 ) => {
   const state = getState();
-  // Get the oldest PendingTransactionInfo and if the oldest is not a single object then minBy will return the one with the largest consecutivelyUpdatableCount.
-  const pendingTransactionInfo = minBy(
+  const oldestPendingTransactionInfo = minBy(
     dataFeedIds
       .map((dataFeedId) => state.pendingTransactionsInfo[chainId]?.[providerName]?.[sponsorWalletAddress]?.[dataFeedId])
       .sort((a, b) => (b?.consecutivelyUpdatableCount ?? 0) - (a?.consecutivelyUpdatableCount ?? 0)), // Sort by consecutivelyUpdatableCount
@@ -119,8 +118,8 @@ export const getRecommendedGasPrice = (
 
   // Check if the next update is a retry of a pending transaction and scale the gas price accordingly.
   let gasPriceToUse = multiplyBigNumber(latestGasPrice, recommendedGasPriceMultiplier);
-  if (pendingTransactionInfo && pendingTransactionInfo.consecutivelyUpdatableCount > 1) {
-    const pendingPeriod = Math.floor(Date.now() / 1000) - pendingTransactionInfo.firstUpdatableTimestamp;
+  if (oldestPendingTransactionInfo && oldestPendingTransactionInfo.consecutivelyUpdatableCount > 1) {
+    const pendingPeriod = Math.floor(Date.now() / 1000) - oldestPendingTransactionInfo.firstUpdatableTimestamp;
     const scalingMultiplier = calculateScalingMultiplier(
       recommendedGasPriceMultiplier,
       maxScalingMultiplier,
