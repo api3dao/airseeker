@@ -28,7 +28,7 @@ export interface State {
       Record<Address /* Sponsor wallet */, Record<Hex /* Data Feed ID */, PendingTransactionInfo | null>>
     >
   >;
-  derivedSponsorWallets: Record<string /* dAPI name or data feed ID */, Hex /* Private key */>;
+  derivedSponsorWallets: Record<Address /* Sponsor */, Hex /* Private key */>;
   signedDatas: Record<Hex /* Beacon ID */, SignedData>;
   signedApiUrls: Record<ChainId, Record<string /* Provider name */, string[]>>;
   // The timestamp of when the service was initialized. This can be treated as a "deployment" timestamp.

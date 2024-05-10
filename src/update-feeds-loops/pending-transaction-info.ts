@@ -51,12 +51,11 @@ export const updatePendingTransactionsInfo = (
         updatableFeed.dataFeedInfo.dapiName === dapiName && updatableFeed.dataFeedInfo.dataFeedId === dataFeedId
     );
 
-    const sponsorWalletAddress = getDerivedSponsorWallet(
-      sponsorWalletMnemonic,
-      dapiName ?? dataFeedId,
+    const sponsorWalletAddress = getDerivedSponsorWallet(sponsorWalletMnemonic, {
+      walletDerivationScheme,
+      dapiNameOrDataFeedId: dapiName ?? dataFeedId,
       updateParameters,
-      walletDerivationScheme
-    ).address as Address;
+    }).address as Address;
 
     const pendingTransactionInfo = pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]?.[dataFeedId];
 

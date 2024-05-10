@@ -19,13 +19,7 @@ import dotenv from 'dotenv';
 import { NonceManager, ethers } from 'ethers';
 import { zip } from 'lodash';
 
-import {
-  deriveSponsorAddressHashForManagedFeed,
-  deriveSponsorAddressHashForSelfFundedFeed,
-  deriveSponsorWalletFromSponsorAddressHash,
-  encodeDapiName,
-} from '../../src/utils';
-import { WalletDerivationScheme } from '../../src/config/schema';
+import { deriveSponsorWallet, encodeDapiName } from '../../src/utils';
 
 interface RawBeaconData {
   airnodeAddress: Address;
@@ -58,31 +52,6 @@ export const deriveRole = (adminRole: string, roleDescription: string) => {
   );
 };
 
-function deriveSponsorWallet(
-  walletDerivationScheme: WalletDerivationScheme,
-  dapiName: string,
-  updateParameters: string,
-  airseekerWalletMnemonic: string
-) {
-  let sponsorAddressHash;
-  switch (walletDerivationScheme.type) {
-    case 'self-funded': {
-      sponsorAddressHash = deriveSponsorAddressHashForSelfFundedFeed(dapiName, updateParameters);
-      break;
-    }
-    case 'managed': {
-      sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiName);
-      break;
-    }
-    case 'fixed': {
-      sponsorAddressHash = walletDerivationScheme.sponsorAddress;
-      break;
-    }
-  }
-  const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(airseekerWalletMnemonic, sponsorAddressHash);
-  return sponsorWallet;
-}
-
 function encodeUpdateParameters() {
   const HUNDRED_PERCENT = 1e8;
   const deviationThresholdInPercentage = HUNDRED_PERCENT / 100; // 1%
@@ -111,12 +80,11 @@ export const refundFunder = async (funderWallet: ethers.NonceManager) => {
 
     const provider = funderWallet.provider!;
 
-    const sponsorWallet = deriveSponsorWallet(
-      rawConfig.walletDerivationScheme,
-      dapiName,
+    const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, {
+      walletDerivationScheme: rawConfig.walletDerivationScheme,
+      dapiNameOrDataFeedId: dapiName,
       updateParameters,
-      airseekerWalletMnemonic
-    ).connect(provider);
+    }).connect(provider);
     const sponsorWalletBalance = await provider.getBalance(sponsorWallet);
     console.info('Sponsor wallet balance:', sponsorWallet.address, ethers.formatEther(sponsorWalletBalance.toString()));
 
@@ -179,12 +147,11 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.NonceManag
     const updateParameters = encodeUpdateParameters();
 
     const provider = funderWallet.provider!;
-    const sponsorWallet = deriveSponsorWallet(
-      rawConfig.walletDerivationScheme,
-      dapiName,
+    const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, {
+      walletDerivationScheme: rawConfig.walletDerivationScheme,
+      dapiNameOrDataFeedId: dapiName,
       updateParameters,
-      airseekerWalletMnemonic
-    );
+    });
     const sponsorWalletBalance = await provider.getBalance(sponsorWallet);
     console.info('Sponsor wallet balance:', ethers.formatEther(sponsorWalletBalance.toString()));
 

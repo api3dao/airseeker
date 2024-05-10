@@ -195,23 +195,23 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
   describe('managed feeds', () => {
     it('returns the derived sponsor wallet for a dAPI', () => {
       const dapiName = utilsModule.encodeDapiName('ETH/USD');
+      const sponsorAddress = utilsModule.deriveSponsorAddressForManagedFeed(dapiName);
       jest.spyOn(stateModule, 'getState').mockReturnValue(
         allowPartial<stateModule.State>({
           derivedSponsorWallets: {
-            [dapiName]: '0x034e238bdc2622122e7b2191ee5be5df38597b6f58e45b25c6d32cae3110ebfa',
+            [sponsorAddress]: '0x034e238bdc2622122e7b2191ee5be5df38597b6f58e45b25c6d32cae3110ebfa',
           },
         })
       );
-      jest.spyOn(utilsModule, 'deriveSponsorWallet');
+      jest.spyOn(utilsModule, 'deriveSponsorWalletFromSponsorAddress');
 
-      const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
-        'some-mnemonic',
-        dapiName,
-        'does-not-matter',
-        { type: 'managed' }
-      );
+      const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet('some-mnemonic', {
+        walletDerivationScheme: { type: 'managed' },
+        dapiNameOrDataFeedId: dapiName,
+        updateParameters: 'does-not-matter',
+      });
 
-      expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(0);
+      expect(utilsModule.deriveSponsorWalletFromSponsorAddress).toHaveBeenCalledTimes(0);
       expect(sponsorWallet.privateKey).toBe('0x034e238bdc2622122e7b2191ee5be5df38597b6f58e45b25c6d32cae3110ebfa');
     });
 
@@ -223,16 +223,18 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
         })
       );
       jest.spyOn(stateModule, 'updateState').mockImplementation();
-      jest.spyOn(utilsModule, 'deriveSponsorWallet');
+      jest.spyOn(utilsModule, 'deriveSponsorWalletFromSponsorAddress');
 
       const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
         'diamond result history offer forest diagram crop armed stumble orchard stage glance',
-        dapiName,
-        'does-not-matter',
-        { type: 'managed' }
+        {
+          walletDerivationScheme: { type: 'managed' },
+          dapiNameOrDataFeedId: dapiName,
+          updateParameters: 'does-not-matter',
+        }
       );
 
-      expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(1);
+      expect(utilsModule.deriveSponsorWalletFromSponsorAddress).toHaveBeenCalledTimes(1);
       expect(sponsorWallet.privateKey).toBe('0xd4cc2592775d876d6af59163bb7894272d84f538439e3c53af3bebdc0668b49d');
     });
 
@@ -243,16 +245,18 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
         })
       );
       jest.spyOn(stateModule, 'updateState').mockImplementation();
-      jest.spyOn(utilsModule, 'deriveSponsorWallet');
+      jest.spyOn(utilsModule, 'deriveSponsorWalletFromSponsorAddress');
 
       const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
         'diamond result history offer forest diagram crop armed stumble orchard stage glance',
-        '0x173ec7594911a9d584d577bc8e8b9bb546018667d820a67685df49201a11ae9b',
-        'does-not-matter',
-        { type: 'managed' }
+        {
+          walletDerivationScheme: { type: 'managed' },
+          dapiNameOrDataFeedId: '0x173ec7594911a9d584d577bc8e8b9bb546018667d820a67685df49201a11ae9b',
+          updateParameters: 'does-not-matter',
+        }
       );
 
-      expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(1);
+      expect(utilsModule.deriveSponsorWalletFromSponsorAddress).toHaveBeenCalledTimes(1);
       expect(sponsorWallet.privateKey).toBe('0x1a193892271d2a8c1e39b9d78281a9e7f8c080965dc3ed744eac7746c47b700e');
     });
   });
@@ -268,16 +272,18 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
         })
       );
       jest.spyOn(stateModule, 'updateState').mockImplementation();
-      jest.spyOn(utilsModule, 'deriveSponsorWallet');
+      jest.spyOn(utilsModule, 'deriveSponsorWalletFromSponsorAddress');
 
       const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
         'diamond result history offer forest diagram crop armed stumble orchard stage glance',
-        dapiName,
-        updateParameters,
-        { type: 'self-funded' }
+        {
+          walletDerivationScheme: { type: 'self-funded' },
+          dapiNameOrDataFeedId: dapiName,
+          updateParameters: updateParameters,
+        }
       );
 
-      expect(utilsModule.deriveSponsorWallet).toHaveBeenCalledTimes(1);
+      expect(utilsModule.deriveSponsorWalletFromSponsorAddress).toHaveBeenCalledTimes(1);
       expect(sponsorWallet.privateKey).toBe('0x858cd2fbfc60014023911f94190ee4f4bb2d5acf8910a4c0c47596db5717ce5a');
     });
   });
@@ -429,6 +435,7 @@ describe(submitTransactionsModule.submitBatchTransaction.name, () => {
     expect(logger.debug).toHaveBeenCalledTimes(6);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Getting derived sponsor wallet.');
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Derived new sponsor wallet.', {
+      sponsorAddress: expect.any(String),
       sponsorWalletAddress: '0xFaFF9C2E67716d2209552f46Fa9829D46830aCcB',
     });
     expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting nonce.');
@@ -569,6 +576,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     expect(logger.debug).toHaveBeenCalledTimes(6);
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Getting derived sponsor wallet.');
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Derived new sponsor wallet.', {
+      sponsorAddress: expect.any(String),
       sponsorWalletAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
     });
     expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting nonce.');

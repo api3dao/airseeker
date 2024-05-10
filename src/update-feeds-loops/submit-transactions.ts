@@ -4,12 +4,12 @@ import { go } from '@api3/promise-utils';
 import { ethers, type EthersError } from 'ethers';
 import { isEmpty } from 'lodash';
 
-import type { WalletDerivationScheme } from '../config/schema';
 import { getRecommendedGasPrice } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import { deriveSponsorWallet, sanitizeEthersError } from '../utils';
+import { deriveSponsorAddress, deriveSponsorWalletFromSponsorAddress, sanitizeEthersError } from '../utils';
 
+import type { SponsorParams } from '../types';
 import { estimateMulticallGasLimit, estimateSingleBeaconGasLimit } from './gas-estimation';
 import type { UpdatableDataFeed } from './get-updatable-feeds';
 
@@ -127,12 +127,9 @@ export const submitBatchTransaction = async (
     const goUpdate = await go(
       async () => {
         logger.debug('Getting derived sponsor wallet.');
-        const sponsorWallet = getDerivedSponsorWallet(
-          sponsorWalletMnemonic,
-          ethers.ZeroHash as Hex,
-          '',
-          walletDerivationScheme
-        ).connect(provider);
+        const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, { walletDerivationScheme }).connect(
+          provider
+        );
         const sponsorWalletAddress = sponsorWallet.address as Address;
 
         logger.debug('Getting nonce.');
@@ -232,12 +229,11 @@ export const submitTransaction = async (
     const goUpdate = await go(
       async () => {
         logger.debug('Getting derived sponsor wallet.');
-        const sponsorWallet = getDerivedSponsorWallet(
-          sponsorWalletMnemonic,
-          dapiName ?? dataFeedId,
+        const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, {
+          walletDerivationScheme,
+          dapiNameOrDataFeedId: dapiName ?? dataFeedId,
           updateParameters,
-          walletDerivationScheme
-        ).connect(provider);
+        }).connect(provider);
         logger.debug('Getting nonce.');
         const goNonce = await go(async () => provider.getTransactionCount(sponsorWallet, blockNumber));
         if (!goNonce.success) {
@@ -316,30 +312,19 @@ export const submitTransactions = async (
   }
 };
 
-export const getDerivedSponsorWallet = (
-  sponsorWalletMnemonic: string,
-  dapiNameOrDataFeedId: Hex,
-  updateParameters: string,
-  walletDerivationScheme: WalletDerivationScheme
-) => {
+export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, sponsorParams: SponsorParams) => {
   const { derivedSponsorWallets } = getState();
-
-  const privateKey = derivedSponsorWallets?.[dapiNameOrDataFeedId];
+  const sponsorAddress = deriveSponsorAddress(sponsorParams);
+  const privateKey = derivedSponsorWallets?.[sponsorAddress];
   if (privateKey) {
-    return new ethers.Wallet(privateKey);
+    const sponsorWallet = new ethers.Wallet(privateKey);
+    logger.debug('Found derived sponsor wallet.', { sponsorAddress, sponsorWalletAddress: sponsorWallet.address });
+    return sponsorWallet;
   }
-
-  const sponsorWallet = deriveSponsorWallet(
-    sponsorWalletMnemonic,
-    dapiNameOrDataFeedId,
-    updateParameters,
-    walletDerivationScheme
-  );
-  logger.debug('Derived new sponsor wallet.', { sponsorWalletAddress: sponsorWallet.address });
-
+  const sponsorWallet = deriveSponsorWalletFromSponsorAddress(sponsorWalletMnemonic, sponsorAddress);
+  logger.debug('Derived new sponsor wallet.', { sponsorAddress, sponsorWalletAddress: sponsorWallet.address });
   updateState((draft) => {
-    draft.derivedSponsorWallets[dapiNameOrDataFeedId] = sponsorWallet.privateKey as Hex;
+    draft.derivedSponsorWallets[sponsorAddress] = sponsorWallet.privateKey as Hex;
   });
-
   return sponsorWallet;
 };
