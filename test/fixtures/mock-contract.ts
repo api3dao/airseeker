@@ -2,12 +2,7 @@ import type { AirseekerRegistry, Api3ServerV1 } from '@api3/contracts';
 import { ethers } from 'ethers';
 
 import { encodeDapiName } from '../../src/utils';
-import { type DeepPartial, encodeBeaconDetails } from '../utils';
-
-const contractFunction = Object.assign(jest.fn(), {
-  estimateGas: jest.fn(),
-  staticCall: jest.fn(),
-});
+import { encodeBeaconDetails, type DeepPartial } from '../utils';
 
 export const generateActiveDataFeedResponse = () =>
   ({
@@ -35,7 +30,7 @@ export const generateMockAirseekerRegistry = () => {
       encodeFunctionData: jest.fn(),
       decodeFunctionResult: jest.fn(),
     },
-    tryMulticall: contractFunction,
+    tryMulticall: { staticCall: jest.fn(), send: jest.fn() },
     activeDataFeed: jest.fn(),
     activeDataFeedCount: jest.fn(),
   } satisfies DeepPartial<AirseekerRegistry>;
@@ -43,13 +38,13 @@ export const generateMockAirseekerRegistry = () => {
 
 export const generateMockApi3ServerV1 = () => {
   return {
-    multicall: contractFunction,
-    updateBeaconWithSignedData: contractFunction,
-    updateBeaconSetWithBeacons: contractFunction,
+    multicall: { estimateGas: jest.fn() },
+    updateBeaconWithSignedData: { estimateGas: jest.fn(), send: jest.fn() },
+    updateBeaconSetWithBeacons: { estimateGas: jest.fn() },
     interface: {
       encodeFunctionData: jest.fn(),
     },
     connect: jest.fn(),
-    tryMulticall: contractFunction,
+    tryMulticall: { staticCall: jest.fn(), send: jest.fn() },
   } satisfies DeepPartial<Api3ServerV1>;
 };

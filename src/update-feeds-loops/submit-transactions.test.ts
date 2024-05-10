@@ -357,7 +357,7 @@ describe(submitTransactionsModule.submitBatchTransaction.name, () => {
     jest.spyOn(gasEstimationModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
     jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockReturnValue(BigInt(100_000_000));
     const api3ServerV1 = generateMockApi3ServerV1();
-    jest.spyOn(api3ServerV1, 'tryMulticall').mockReturnValue({ hash: '0xTransactionHash' });
+    jest.spyOn(api3ServerV1.tryMulticall, 'send').mockReturnValue({ hash: '0xTransactionHash' });
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
@@ -500,7 +500,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     jest.spyOn(gasEstimationModule, 'estimateMulticallGasLimit').mockResolvedValue(BigInt(500_000));
     jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockReturnValue(BigInt(100_000_000));
     const api3ServerV1 = generateMockApi3ServerV1();
-    jest.spyOn(api3ServerV1, 'tryMulticall').mockReturnValue({ hash: '0xTransactionHash' });
+    jest.spyOn(api3ServerV1.tryMulticall, 'send').mockReturnValue({ hash: '0xTransactionHash' });
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
@@ -636,7 +636,7 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
     jest.spyOn(api3ServerV1.updateBeaconWithSignedData, 'estimateGas').mockReturnValue(150_000n);
-    jest.spyOn(api3ServerV1, 'updateBeaconWithSignedData').mockReturnValue({ hash: '0xTransactionHash' });
+    jest.spyOn(api3ServerV1.updateBeaconWithSignedData, 'send').mockReturnValue({ hash: '0xTransactionHash' });
     jest.spyOn(logger, 'info');
     const sponsorWallet = new ethers.Wallet('a0d8c3f6643d494b31914e7ec896215562aa358bf7ff68218afb53dfedd4167f');
 
@@ -685,7 +685,7 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
     const api3ServerV1 = generateMockApi3ServerV1();
     jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
     jest.spyOn(api3ServerV1.multicall, 'estimateGas').mockReturnValue(150_000n);
-    jest.spyOn(api3ServerV1, 'tryMulticall').mockReturnValue({ hash: '0xTransactionHash' });
+    jest.spyOn(api3ServerV1.tryMulticall, 'send').mockReturnValue({ hash: '0xTransactionHash' });
     jest.spyOn(logger, 'info');
     const sponsorWallet = new ethers.Wallet('a0d8c3f6643d494b31914e7ec896215562aa358bf7ff68218afb53dfedd4167f');
 

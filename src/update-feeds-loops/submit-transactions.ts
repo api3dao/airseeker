@@ -72,7 +72,7 @@ export const submitUpdate = async (
     } = beacon;
     return api3ServerV1
       .connect(sponsorWallet)
-      .updateBeaconWithSignedData(airnode, templateId, timestamp, encodedValue, signature, {
+      .updateBeaconWithSignedData.send(airnode, templateId, timestamp, encodedValue, signature, {
         gasPrice,
         gasLimit,
         nonce,
@@ -92,7 +92,7 @@ export const submitUpdate = async (
     gasLimit: gasLimit.toString(),
     nonce,
   });
-  return api3ServerV1.connect(sponsorWallet).tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
+  return api3ServerV1.connect(sponsorWallet).tryMulticall.send(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
 };
 
 export const submitBatchTransaction = async (
@@ -162,7 +162,7 @@ export const submitBatchTransaction = async (
           });
           return api3ServerV1
             .connect(sponsorWallet)
-            .tryMulticall(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
+            .tryMulticall.send(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
         });
         if (!goSubmitUpdate.success) {
           // It seems that in practice, this code is widely used. We can do a best-effort attempt to determine the error
