@@ -279,7 +279,7 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
         {
           walletDerivationScheme: { type: 'self-funded' },
           dapiNameOrDataFeedId: dapiName,
-          updateParameters: updateParameters,
+          updateParameters,
         }
       );
 

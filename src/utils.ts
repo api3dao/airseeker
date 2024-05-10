@@ -2,7 +2,7 @@ import { deriveWalletPathFromSponsorAddress, type Address, type Hex } from '@api
 import { ethers, type ErrorCode, type EthersError } from 'ethers';
 
 import { AIRSEEKER_PROTOCOL_ID, INT224_MAX, INT224_MIN } from './constants';
-import { ManagedParams, SelfFundedParams, SponsorParams } from './types';
+import type { ManagedParams, SelfFundedParams, SponsorParams } from './types';
 
 export const abs = (n: bigint) => (n < 0n ? -n : n);
 

@@ -7,9 +7,9 @@ import { isEmpty } from 'lodash';
 import { getRecommendedGasPrice } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
+import type { SponsorParams } from '../types';
 import { deriveSponsorAddress, deriveSponsorWalletFromSponsorAddress, sanitizeEthersError } from '../utils';
 
-import type { SponsorParams } from '../types';
 import { estimateMulticallGasLimit, estimateSingleBeaconGasLimit } from './gas-estimation';
 import type { UpdatableDataFeed } from './get-updatable-feeds';
 

@@ -1,6 +1,7 @@
 import { addressSchema, hexSchema, keccak256HashSchema } from '@api3/commons';
 import { z } from 'zod';
-import { WalletDerivationScheme } from './config/schema';
+
+import type { WalletDerivationScheme } from './config/schema';
 
 // Taken from https://github.com/api3dao/signed-api/blob/main/packages/api/src/schema.ts
 export const signedDataSchema = z.object({
@@ -23,17 +24,17 @@ interface BaseParams {
   updateParameters: string;
 }
 
-export type SelfFundedParams = {
-  walletDerivationScheme: WalletDerivationScheme;
-} & BaseParams;
-
-export type ManagedParams = {
-  walletDerivationScheme: WalletDerivationScheme;
-  dapiNameOrDataFeedId: string;
-} & Omit<BaseParams, 'updateParameters'>;
-
-export type FixedParams = {
+export type SelfFundedParams = BaseParams & {
   walletDerivationScheme: WalletDerivationScheme;
 };
 
-export type SponsorParams = SelfFundedParams | ManagedParams | FixedParams;
+export type ManagedParams = Omit<BaseParams, 'updateParameters'> & {
+  walletDerivationScheme: WalletDerivationScheme;
+  dapiNameOrDataFeedId: string;
+};
+
+export interface FixedParams {
+  walletDerivationScheme: WalletDerivationScheme;
+}
+
+export type SponsorParams = FixedParams | ManagedParams | SelfFundedParams;

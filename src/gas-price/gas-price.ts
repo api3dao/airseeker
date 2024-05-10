@@ -4,7 +4,7 @@ import type { ethers } from 'ethers';
 import { maxBy, minBy, remove } from 'lodash';
 
 import { logger } from '../logger';
-import { type PendingTransactionInfo, getState, updateState } from '../state';
+import { getState, updateState } from '../state';
 import { multiplyBigNumber, sanitizeEthersError } from '../utils';
 
 export const initializeGasState = (chainId: string, providerName: string) =>
