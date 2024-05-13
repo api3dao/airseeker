@@ -4,7 +4,7 @@ import { uniq } from 'lodash';
 import { logger } from '../logger';
 import { getState } from '../state';
 import { type SignedDataRecord, signedApiResponseSchema, type SignedDataRecordEntry } from '../types';
-import { sleep } from '../utils';
+import { generateRandomId, sleep } from '../utils';
 
 import { purgeOldSignedData, saveSignedData } from './signed-data-state';
 
@@ -56,7 +56,7 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
 };
 
 export const runDataFetcher = async () => {
-  return logger.runWithContext({ dataFetcherCoordinatorId: new Date().toISOString() }, async () => {
+  return logger.runWithContext({ dataFetcherCoordinatorId: generateRandomId() }, async () => {
     const state = getState();
     const {
       config: { signedDataFetchInterval },
@@ -83,7 +83,7 @@ export const runDataFetcher = async () => {
 
     const urlCount = urls.length;
     const staggerTimeMs = signedDataFetchIntervalMs / urlCount;
-    logger.info('Fetching signed data.', { urlCount, staggerTimeMs });
+    logger.info('Fetching signed data.', { urlCount, staggerTimeMs, currentTime: new Date().toISOString() });
     const fetchResults = await Promise.all(
       urls.map(async (url, index) => {
         await sleep(staggerTimeMs * index);
