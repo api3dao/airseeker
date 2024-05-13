@@ -40,19 +40,23 @@ const verifyTimestamp = ([beaconId, signedData]: SignedDataRecordEntry) => {
   return true;
 };
 
-export const saveSignedData = async (signedDataBatch: SignedDataRecordEntry[]) => {
+export const saveSignedData = async (signedDataBatch: SignedDataRecordEntry[], isTrustedApi: boolean) => {
   // Filter out signed data with invalid timestamps or we already have a fresher signed data stored in state.
   signedDataBatch = signedDataBatch.filter((signedDataEntry) => verifyTimestamp(signedDataEntry));
   if (signedDataBatch.length === 0) return;
 
-  const verifier = await getVerifier();
-  // We are skipping the whole batch even if there is only one invalid signed data. This is consistent with the Signed
-  // API approach.
-  const verificationResult = await verifier.verifySignedData(signedDataBatch);
-  if (verificationResult !== true) {
-    logger.error('Failed to verify signed data.', verificationResult);
-    return;
+  // Only verify the signed data if it is not coming from a trusted API.
+  if (!isTrustedApi) {
+    const verifier = await getVerifier();
+    // We are skipping the whole batch even if there is only one invalid signed data. This is consistent with the Signed
+    // API approach.
+    const verificationResult = await verifier.verifySignedData(signedDataBatch);
+    if (verificationResult !== true) {
+      logger.error('Failed to verify signed data.', verificationResult);
+      return;
+    }
   }
+
   updateState((draft) => {
     for (const [beaconId, signedData] of signedDataBatch) {
       draft.signedDatas[beaconId] = signedData;

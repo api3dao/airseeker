@@ -27,7 +27,8 @@ export interface State {
   >;
   derivedSponsorWallets: Record<string /* dAPI name or data feed ID */, Hex /* Private key */>;
   signedDatas: SignedDataRecord;
-  signedApiUrls: Record<ChainId, Record<string /* Provider name */, string[]>>;
+  signedApiUrlsFromConfig: Record<ChainId, Record<string /* Provider name */, string[]>>;
+  signedApiUrlsFromContract: Record<ChainId, Record<string /* Provider name */, string[]>>;
   // The timestamp of when the service was initialized. This can be treated as a "deployment" timestamp.
   deploymentTimestamp: string;
   activeDataFeedBeaconIds: Record<ChainId, Record<string /* Provider name */, Hex[]>>;
@@ -49,7 +50,8 @@ export const setInitialState = (config: Config) => {
     gasPrices: {},
     pendingTransactionsInfo: {},
     signedDatas: {},
-    signedApiUrls: {},
+    signedApiUrlsFromConfig: {},
+    signedApiUrlsFromContract: {},
     derivedSponsorWallets: {},
     deploymentTimestamp: Math.floor(Date.now() / 1000).toString(),
     activeDataFeedBeaconIds: {},

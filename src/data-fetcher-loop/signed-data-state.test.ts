@@ -35,7 +35,7 @@ describe(signedDataStateModule.saveSignedData.name, () => {
     jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
     const beaconId = deriveBeaconId(validSignedData.airnode, validSignedData.templateId) as Hex;
 
-    await signedDataStateModule.saveSignedData([[beaconId, validSignedData]]);
+    await signedDataStateModule.saveSignedData([[beaconId, validSignedData]], false);
 
     const signedData = signedDataStateModule.getSignedData(beaconId);
     expect(signedData).toStrictEqual(validSignedData);
@@ -54,7 +54,7 @@ describe(signedDataStateModule.saveSignedData.name, () => {
     });
     jest.spyOn(logger, 'debug');
 
-    await signedDataStateModule.saveSignedData([[beaconId, validSignedData]]);
+    await signedDataStateModule.saveSignedData([[beaconId, validSignedData]], false);
 
     expect(signedDataStateModule.getSignedData(beaconId)).toStrictEqual(storedSignedData);
     expect(logger.debug).toHaveBeenCalledTimes(1);
@@ -80,7 +80,7 @@ describe(signedDataStateModule.saveSignedData.name, () => {
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'error');
 
-    await signedDataStateModule.saveSignedData([[beaconId, futureSignedData]]);
+    await signedDataStateModule.saveSignedData([[beaconId, futureSignedData]], false);
 
     expect(signedDataStateModule.getSignedData(beaconId)).toBeUndefined();
     expect(logger.error).toHaveBeenCalledTimes(1);
@@ -108,7 +108,7 @@ describe(signedDataStateModule.saveSignedData.name, () => {
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'error');
 
-    await signedDataStateModule.saveSignedData([[beaconId, futureSignedData]]);
+    await signedDataStateModule.saveSignedData([[beaconId, futureSignedData]], false);
 
     expect(signedDataStateModule.getSignedData(deriveBeaconId(airnode, templateId) as Hex)).toStrictEqual(
       futureSignedData
@@ -139,12 +139,38 @@ describe(signedDataStateModule.saveSignedData.name, () => {
     };
     const beaconId = deriveBeaconId(airnode, templateId) as Hex;
 
-    await signedDataStateModule.saveSignedData([[beaconId, badSignedData]]);
+    await signedDataStateModule.saveSignedData([[beaconId, badSignedData]], false);
 
     expect(signedDataStateModule.getSignedData(deriveBeaconId(airnode, templateId) as Hex)).toBeUndefined();
     expect(logger.error).toHaveBeenCalledTimes(1);
     expect(logger.error).toHaveBeenCalledWith('Failed to verify signed data.', badSignedData);
     expect(logger.warn).toHaveBeenCalledTimes(0);
+  });
+
+  it('only verifies the signed data for untrusted APIs', async () => {
+    const templateId = generateRandomBytes(32);
+    const airnode = ethers.Wallet.createRandom().address as Hex;
+    jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
+    jest.spyOn(logger, 'warn');
+    jest.spyOn(logger, 'error');
+    const beaconId = deriveBeaconId(airnode, templateId) as Hex;
+
+    // First save data for trusted API and expect it to be saved without verification.
+    await signedDataStateModule.saveSignedData([[beaconId, validSignedData]], true);
+    expect(signedDataVerifierPoolModule.getVerifier).not.toHaveBeenCalled();
+
+    // Then save data for untrusted API and expect it to be verified.
+    const timestamp = Math.floor((Date.now() - 30 * 60 * 1000) / 1000).toString();
+    const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [123n]);
+    const otherSignedData = {
+      airnode,
+      encodedValue,
+      signature: await signData(signer, templateId, timestamp, encodedValue),
+      templateId,
+      timestamp,
+    };
+    await signedDataStateModule.saveSignedData([[beaconId, otherSignedData]], false);
+    expect(signedDataVerifierPoolModule.getVerifier).toHaveBeenCalledTimes(1);
   });
 });
 

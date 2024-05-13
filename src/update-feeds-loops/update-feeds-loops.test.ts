@@ -218,7 +218,8 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrls: {},
+        signedApiUrlsFromConfig: {},
+        signedApiUrlsFromContract: {},
         signedDatas: {},
         gasPrices: {},
         pendingTransactionsInfo: { '31337': { 'provider-name': {} } },
@@ -329,7 +330,8 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrls: {},
+        signedApiUrlsFromConfig: {},
+        signedApiUrlsFromContract: {},
         signedDatas: {},
         gasPrices: {},
       })
@@ -380,7 +382,8 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrls: {},
+        signedApiUrlsFromConfig: {},
+        signedApiUrlsFromContract: {},
         signedDatas: {
           '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
             airnode: '0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4',
@@ -428,7 +431,8 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: { ...testConfig, signedApiUrls: ['http://config.url'] },
-        signedApiUrls: {},
+        signedApiUrlsFromConfig: {},
+        signedApiUrlsFromContract: {},
         pendingTransactionsInfo: { '31337': { 'default-provider': {} } },
       })
     );
@@ -440,7 +444,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
     jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
 
-    const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(
+    const { signedApiUrlsFromConfig, signedApiUrlsFromContract } = await updateFeedsLoopsModule.processBatch(
       [activeDataFeed],
       'default-provider',
       new ethers.JsonRpcProvider(),
@@ -448,9 +452,10 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
       123
     );
 
-    expect(signedApiUrls).toHaveLength(2);
-    expect(signedApiUrls).toContain('http://config.url/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4');
-    expect(signedApiUrls).toContain('http://localhost:8080/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4');
+    expect(signedApiUrlsFromConfig).toHaveLength(1);
+    expect(signedApiUrlsFromConfig).toContain('http://config.url/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4');
+    expect(signedApiUrlsFromContract).toHaveLength(1);
+    expect(signedApiUrlsFromContract).toContain('http://localhost:8080/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4');
   });
 
   it('generates airnode-populated signed api urls when only config defines base url', async () => {
@@ -468,7 +473,8 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
       allowPartial<stateModule.State>({
         config: { ...testConfig, signedApiUrls: ['http://config.url'] },
-        signedApiUrls: {},
+        signedApiUrlsFromConfig: {},
+        signedApiUrlsFromContract: {},
         pendingTransactionsInfo: { '31337': { 'default-provider': {} } },
       })
     );
@@ -480,7 +486,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
     jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
 
-    const { signedApiUrls } = await updateFeedsLoopsModule.processBatch(
+    const { signedApiUrlsFromConfig } = await updateFeedsLoopsModule.processBatch(
       [activeDataFeed],
       'default-provider',
       new ethers.JsonRpcProvider(),
@@ -488,8 +494,8 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
       123
     );
 
-    expect(signedApiUrls).toHaveLength(1);
-    expect(signedApiUrls).toContain('http://config.url/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4');
+    expect(signedApiUrlsFromConfig).toHaveLength(1);
+    expect(signedApiUrlsFromConfig).toContain('http://config.url/0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4');
   });
 
   it('does not scale gas price for the original (first) update transaction', async () => {
@@ -508,7 +514,8 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     stateModule.updateState(() =>
       allowPartial<stateModule.State>({
         config: testConfig,
-        signedApiUrls: {},
+        signedApiUrlsFromConfig: {},
+        signedApiUrlsFromContract: {},
         gasPrices: {
           '31337': {
             'default-provider': [{ price: 10n ** 9n, timestamp: 123 }],

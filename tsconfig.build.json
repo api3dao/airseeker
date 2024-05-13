@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["./src/**/*"],
+  "include": ["./src/**/*", "./reset.d.ts"],
   "exclude": ["./src/**/*.test.ts"]
 }
