@@ -44,7 +44,7 @@
     "ethers": "^6.12.1",
     "immer": "^10.1.1",
     "lodash": "^4.17.21",
-    "zod": "^3.23.7"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@api3/airnode-abi": "^0.14.1",
