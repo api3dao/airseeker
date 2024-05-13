@@ -7,7 +7,7 @@ import type { Chain } from '../config/schema';
 import { fetchAndStoreGasPrice, initializeGasState } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import { sanitizeEthersError, sleep } from '../utils';
+import { generateRandomId, sanitizeEthersError, sleep } from '../utils';
 
 import {
   decodeActiveDataFeedCountResponse,
@@ -146,8 +146,10 @@ export const readActiveDataFeedBatch = async (
 
 export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId: string) => {
   await logger.runWithContext(
-    { chainName: chain.alias, providerName, updateFeedsCoordinatorId: Date.now().toString() },
+    { chainName: chain.alias, providerName, updateFeedsCoordinatorId: generateRandomId() },
     async () => {
+      logger.info(`Running update feeds loop.`, { currentTime: new Date().toISOString() });
+
       // We do not expect this function to throw, but its possible that some execution path is incorrectly handled and we
       // want to process the error ourselves, for example log the error using the configured format.
       const goRunUpdateFeeds = await go(async () => {

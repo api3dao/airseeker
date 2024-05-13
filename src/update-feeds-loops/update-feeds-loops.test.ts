@@ -299,10 +299,11 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     });
     expect(logger.debug).toHaveBeenNthCalledWith(10, 'Fetching gas price and saving it to the state.');
 
-    expect(logger.info).toHaveBeenCalledTimes(3);
-    expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating pending transaction info.', expect.anything());
+    expect(logger.info).toHaveBeenCalledTimes(4);
+    expect(logger.info).toHaveBeenNthCalledWith(1, 'Running update feeds loop.', expect.anything());
     expect(logger.info).toHaveBeenNthCalledWith(2, 'Updating pending transaction info.', expect.anything());
-    expect(logger.info).toHaveBeenNthCalledWith(3, 'Finished processing batches of active data feeds.', {
+    expect(logger.info).toHaveBeenNthCalledWith(3, 'Updating pending transaction info.', expect.anything());
+    expect(logger.info).toHaveBeenNthCalledWith(4, 'Finished processing batches of active data feeds.', {
       dataFeedUpdateFailures: 2,
       dataFeedUpdates: 0,
       skippedBatchesCount: 1,

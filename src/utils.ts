@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+
 import { type Address, deriveWalletPathFromSponsorAddress, type Hex } from '@api3/commons';
 import { type ErrorCode, ethers, type EthersError } from 'ethers';
 
@@ -91,3 +93,5 @@ export const sanitizeEthersError = (error: Error) => {
   // sources, the short message should always be defined.
   return new SanitizedErrorsError(ethersError.code, ethersError.shortMessage);
 };
+
+export const generateRandomId = () => randomBytes(32).toString('hex');

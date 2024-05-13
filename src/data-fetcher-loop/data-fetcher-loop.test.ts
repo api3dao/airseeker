@@ -79,7 +79,11 @@ describe(dataFetcherLoopModule.runDataFetcher.name, () => {
       10_000
     );
     expect(logger.info).toHaveBeenCalledTimes(3);
-    expect(logger.info).toHaveBeenNthCalledWith(1, 'Fetching signed data.', { urlCount: 1, staggerTimeMs: 10_000 });
+    expect(logger.info).toHaveBeenNthCalledWith(
+      1,
+      'Fetching signed data.',
+      expect.objectContaining({ urlCount: 1, staggerTimeMs: 10_000 })
+    );
     expect(logger.info).toHaveBeenNthCalledWith(2, 'Fetched signed data from Signed API.', expect.any(Object));
     expect(logger.info).toHaveBeenNthCalledWith(
       3,
