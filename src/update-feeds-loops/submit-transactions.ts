@@ -107,16 +107,8 @@ export const submitBatchTransaction = async (
     config: { chains, sponsorWalletMnemonic, walletDerivationScheme },
   } = getState();
 
-  const [decodedDapiNames, dataFeedIds] = updatableDataFeeds.reduce(
-    (acc: [(string | null)[], Hex[]], { dataFeedInfo: { decodedDapiName, dataFeedId } }) => {
-      const [decodedDapiNames, dataFeedIds] = acc;
-      return [
-        [...(decodedDapiNames ?? []), decodedDapiName],
-        [...dataFeedIds, dataFeedId],
-      ];
-    },
-    [[], []]
-  );
+  const decodedDapiNames = updatableDataFeeds.map(({ dataFeedInfo: { decodedDapiName } }) => decodedDapiName);
+  const dataFeedIds = updatableDataFeeds.map(({ dataFeedInfo: { dataFeedId } }) => dataFeedId);
 
   const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
   const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
