@@ -1,100 +1,82 @@
-import { type Hex, deriveBeaconId } from '@api3/commons';
-import { goSync } from '@api3/promise-utils';
-import { ethers } from 'ethers';
+import type { Hex } from '@api3/commons';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { SignedData } from '../types';
+import type { SignedData, SignedDataRecordEntry } from '../types';
 
-export const verifySignedData = ({ airnode, templateId, timestamp, signature, encodedValue }: SignedData) => {
-  // Verification is wrapped in goSync, because ethers methods can potentially throw on invalid input.
-  const goVerify = goSync(() => {
-    const message = ethers.getBytes(
-      ethers.solidityPackedKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, encodedValue])
-    );
+import { getVerifier } from './signed-data-verifier-pool';
 
-    const signerAddr = ethers.verifyMessage(message, signature);
-    if (signerAddr !== airnode) throw new Error('Signer address does not match');
-  });
-
-  if (!goVerify.success) {
-    logger.error(`Signature verification failed.`, {
-      signature,
-      timestamp,
-      encodedValue,
-    });
-    return false;
-  }
-
-  return true;
-};
-
-const verifyTimestamp = (timestamp: number) => {
-  const timestampMs = timestamp * 1000;
-
-  if (timestampMs > Date.now() + 60 * 60 * 1000) {
-    logger.error(`Refusing to store sample as timestamp is more than one hour in the future.`, {
-      systemDateNow: new Date().toLocaleDateString(),
-      signedDataDate: new Date(timestampMs).toLocaleDateString(),
-    });
-    return false;
-  }
-
-  if (timestampMs > Date.now()) {
-    logger.warn(`Sample is in the future, but by less than an hour, therefore storing anyway.`, {
-      systemDateNow: new Date().toLocaleDateString(),
-      signedDataDate: new Date(timestampMs).toLocaleDateString(),
-    });
-  }
-
-  return true;
-};
-
-export const verifySignedDataIntegrity = (signedData: SignedData) => {
-  // TODO: Temporarily disable signed data verification.
-  return verifyTimestamp(Number.parseInt(signedData.timestamp, 10)) /* && verifySignedData(signedData) */;
-};
-
-export const saveSignedData = (signedData: SignedData) => {
+const verifyTimestamp = ([beaconId, signedData]: SignedDataRecordEntry) => {
   const { airnode, templateId, timestamp } = signedData;
 
-  // Make sure we run the verification checks with enough context.
-  logger.runWithContext({ airnode, templateId }, () => {
-    if (!verifySignedDataIntegrity(signedData)) {
-      return;
-    }
+  // Check that the signed data is fresher than the one stored in state.
+  const timestampMs = Number(timestamp) * 1000;
+  const storedValue = getState().signedDatas[beaconId];
+  if (storedValue && Number(storedValue.timestamp) * 1000 >= timestampMs) {
+    logger.debug('Skipping state update. The signed data value is not fresher than the stored value.');
+    return false;
+  }
 
-    const state = getState();
-
-    const dataFeedId = deriveBeaconId(airnode, templateId) as Hex;
-
-    const existingValue = state.signedDatas[dataFeedId];
-    if (existingValue && existingValue.timestamp >= timestamp) {
-      logger.debug('Skipping state update. The signed data value is not fresher than the stored value.');
-      return;
-    }
-
-    updateState((draft) => {
-      draft.signedDatas[dataFeedId] = signedData;
+  // Verify the timestamp of the signed data.
+  const nowMs = Date.now();
+  if (timestampMs > nowMs + 60 * 60 * 1000) {
+    logger.error(`Refusing to store sample as timestamp is more than one hour in the future.`, {
+      airnode,
+      templateId,
+      timestampMs,
+      nowMs,
     });
-  });
+    return false;
+  }
+  if (timestampMs > nowMs) {
+    logger.warn(`Sample is in the future, but by less than an hour, therefore storing anyway.`, {
+      airnode,
+      templateId,
+      timestampMs,
+      nowMs,
+    });
+  }
+
+  return true;
 };
 
-export const getSignedData = (dataFeedId: Hex) => getState().signedDatas[dataFeedId];
+export const saveSignedData = async (signedDataBatch: SignedDataRecordEntry[]) => {
+  // Filter out signed data with invalid timestamps or we already have a fresher signed data stored in state.
+  signedDataBatch = signedDataBatch.filter((signedDataEntry) => verifyTimestamp(signedDataEntry));
+  if (signedDataBatch.length === 0) return;
+
+  const verifier = await getVerifier();
+  // We are skipping the whole batch even if there is only one invalid signed data. This is consistent with the Signed
+  // API approach.
+  const verificationResult = await verifier.verifySignedData(signedDataBatch);
+  if (verificationResult !== true) {
+    logger.error('Failed to verify signed data.', verificationResult);
+    return;
+  }
+  updateState((draft) => {
+    for (const [beaconId, signedData] of signedDataBatch) {
+      draft.signedDatas[beaconId] = signedData;
+    }
+  });
+
+  return signedDataBatch.length;
+};
+
+export const getSignedData = (beaconId: Hex) => getState().signedDatas[beaconId];
 
 export const isSignedDataFresh = (signedData: SignedData) =>
   BigInt(signedData.timestamp) > BigInt(Math.ceil(Date.now() / 1000 - 24 * 60 * 60));
 
 export const purgeOldSignedData = () => {
   const state = getState();
-  const oldSignedData = Object.values(state.signedDatas).filter((signedData) => isSignedDataFresh(signedData));
+  const oldSignedData = Object.values(state.signedDatas).filter((signedData) => isSignedDataFresh(signedData!));
   if (oldSignedData.length > 0) {
     logger.debug(`Purging some old signed data.`, { oldSignedData });
   }
 
   updateState((draft) => {
     draft.signedDatas = Object.fromEntries(
-      Object.entries(draft.signedDatas).filter(([_dataFeedId, signedData]) => isSignedDataFresh(signedData))
+      Object.entries(draft.signedDatas).filter(([_beaconId, signedData]) => isSignedDataFresh(signedData!))
     );
   });
 };

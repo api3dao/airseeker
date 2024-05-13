@@ -2,14 +2,16 @@ import { deriveBeaconId, type Hex } from '@api3/commons';
 import { ethers } from 'ethers';
 
 import { initializeState } from '../../test/fixtures/mock-config';
-import { allowPartial, generateRandomBytes, signData } from '../../test/utils';
+import { allowPartial, createMockSignedDataVerifier, generateRandomBytes, signData } from '../../test/utils';
+import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { SignedData } from '../types';
 
 import * as signedDataStateModule from './signed-data-state';
+import * as signedDataVerifierPoolModule from './signed-data-verifier-pool';
 
-describe('signed data state', () => {
-  let testDataPoint: SignedData;
+describe(signedDataStateModule.saveSignedData.name, () => {
+  let validSignedData: SignedData;
   const signer = ethers.Wallet.fromPhrase('test test test test test test test test test test test junk');
 
   beforeAll(async () => {
@@ -19,60 +21,134 @@ describe('signed data state', () => {
     const airnode = signer.address as Hex;
     const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [1n]);
 
-    testDataPoint = {
+    validSignedData = {
       airnode,
       encodedValue,
-      signature: await signData(signer, templateId, timestamp, encodedValue),
       templateId,
       timestamp,
+      signature: await signData(signer, templateId, timestamp, encodedValue),
     };
   });
 
-  it('stores and gets a data point', () => {
+  it('stores signed data', async () => {
     jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
-    signedDataStateModule.saveSignedData(testDataPoint);
-    const dataFeedId = deriveBeaconId(testDataPoint.airnode, testDataPoint.templateId) as Hex;
+    jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
+    const beaconId = deriveBeaconId(validSignedData.airnode, validSignedData.templateId) as Hex;
 
-    const datapoint = signedDataStateModule.getSignedData(dataFeedId);
+    await signedDataStateModule.saveSignedData([[beaconId, validSignedData]]);
 
-    expect(datapoint).toStrictEqual(testDataPoint);
+    const signedData = signedDataStateModule.getSignedData(beaconId);
+    expect(signedData).toStrictEqual(validSignedData);
   });
 
-  it('checks that the timestamp on signed data is not in the future', async () => {
+  it('does not store signed data that is older than already stored one', async () => {
+    const beaconId = deriveBeaconId(validSignedData.airnode, validSignedData.templateId) as Hex;
+    const timestamp = String(Number(validSignedData.timestamp) + 10); // 10s newer.
+    const storedSignedData = {
+      ...validSignedData,
+      timestamp,
+      signature: await signData(signer, validSignedData.templateId, timestamp, validSignedData.encodedValue),
+    };
+    updateState((draft) => {
+      draft.signedDatas[beaconId] = storedSignedData;
+    });
+    jest.spyOn(logger, 'debug');
+
+    await signedDataStateModule.saveSignedData([[beaconId, validSignedData]]);
+
+    expect(signedDataStateModule.getSignedData(beaconId)).toStrictEqual(storedSignedData);
+    expect(logger.debug).toHaveBeenCalledTimes(1);
+    expect(logger.debug).toHaveBeenCalledWith(
+      'Skipping state update. The signed data value is not fresher than the stored value.'
+    );
+  });
+
+  it('does not accept signed data that is too far in the future', async () => {
     const templateId = generateRandomBytes(32);
     const timestamp = Math.floor((Date.now() + 61 * 60 * 1000) / 1000).toString();
     const airnode = signer.address as Hex;
     const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [1n]);
-    const futureTestDataPoint = {
+    const futureSignedData = {
       airnode,
       encodedValue,
       signature: await signData(signer, templateId, timestamp, encodedValue),
       templateId,
       timestamp,
     };
+    const beaconId = deriveBeaconId(airnode, templateId) as Hex;
+    jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
+    jest.spyOn(logger, 'warn');
+    jest.spyOn(logger, 'error');
 
-    expect(signedDataStateModule.verifySignedDataIntegrity(testDataPoint)).toBeTruthy();
-    expect(signedDataStateModule.verifySignedDataIntegrity(futureTestDataPoint)).toBeFalsy();
+    await signedDataStateModule.saveSignedData([[beaconId, futureSignedData]]);
+
+    expect(signedDataStateModule.getSignedData(beaconId)).toBeUndefined();
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(
+      'Refusing to store sample as timestamp is more than one hour in the future.',
+      expect.any(Object)
+    );
+    expect(logger.warn).toHaveBeenCalledTimes(0);
   });
 
-  // eslint-disable-next-line jest/no-disabled-tests
-  it.skip('checks the signature on signed data', async () => {
+  it('accepts signed data that is less then 1h in the future', async () => {
     const templateId = generateRandomBytes(32);
-    const timestamp = Math.floor((Date.now() + 60 * 60 * 1000) / 1000).toString();
+    const timestamp = Math.floor((Date.now() + 30 * 60 * 1000) / 1000).toString();
+    const airnode = signer.address as Hex;
+    const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [1n]);
+    const futureSignedData = {
+      airnode,
+      encodedValue,
+      signature: await signData(signer, templateId, timestamp, encodedValue),
+      templateId,
+      timestamp,
+    };
+    const beaconId = deriveBeaconId(airnode, templateId) as Hex;
+    jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
+    jest.spyOn(logger, 'warn');
+    jest.spyOn(logger, 'error');
+
+    await signedDataStateModule.saveSignedData([[beaconId, futureSignedData]]);
+
+    expect(signedDataStateModule.getSignedData(deriveBeaconId(airnode, templateId) as Hex)).toStrictEqual(
+      futureSignedData
+    );
+    expect(logger.error).toHaveBeenCalledTimes(0);
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Sample is in the future, but by less than an hour, therefore storing anyway.',
+      expect.any(Object)
+    );
+  });
+
+  it('checks the signature on signed data', async () => {
+    const templateId = generateRandomBytes(32);
+    const timestamp = Math.floor((Date.now() - 0.5 * 1000) / 1000).toString();
     const airnode = ethers.Wallet.createRandom().address as Hex;
     const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [1n]);
+    jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
+    jest.spyOn(logger, 'warn');
+    jest.spyOn(logger, 'error');
 
-    const badTestDataPoint = {
+    const badSignedData = {
       airnode,
       encodedValue,
       signature: await signData(signer, templateId, timestamp, encodedValue),
       templateId,
       timestamp,
     };
+    const beaconId = deriveBeaconId(airnode, templateId) as Hex;
 
-    expect(signedDataStateModule.verifySignedDataIntegrity(badTestDataPoint)).toBeFalsy();
+    await signedDataStateModule.saveSignedData([[beaconId, badSignedData]]);
+
+    expect(signedDataStateModule.getSignedData(deriveBeaconId(airnode, templateId) as Hex)).toBeUndefined();
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith('Failed to verify signed data.', badSignedData);
+    expect(logger.warn).toHaveBeenCalledTimes(0);
   });
+});
 
+describe(signedDataStateModule.purgeOldSignedData.name, () => {
   it('purges old data from the state', () => {
     const baseTime = 1_700_126_230_000;
     jest.useFakeTimers().setSystemTime(baseTime);

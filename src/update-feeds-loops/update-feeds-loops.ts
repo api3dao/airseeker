@@ -251,12 +251,18 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
           activeDataFeedCount,
         });
 
-        // Update the state with the signed API URLs.
+        // Merge the signed API URLs and active beacons from all the batches.
         const signedApiUrls = uniq(
           processedBatches.reduce<string[]>((acc, batch) => (batch ? [...acc, ...batch.signedApiUrls] : acc), [])
         );
-        // Overwrite the state with the new signed API URLs instead of merging them to avoid stale URLs.
-        updateState((draft) => set(draft, ['signedApiUrls', chainId, providerName], signedApiUrls));
+        const beaconIds = uniq(
+          processedBatches.reduce<string[]>((acc, batch) => (batch ? [...acc, ...batch.beaconIds] : acc), [])
+        );
+        // Overwrite the state with the new signed API URLs instead of merging them to avoid keeping stale URLs.
+        updateState((draft) => {
+          set(draft, ['signedApiUrls', chainId, providerName], signedApiUrls);
+          set(draft, ['activeDataFeedBeaconIds', chainId, providerName], beaconIds);
+        });
       });
 
       if (!goRunUpdateFeeds.success) {
@@ -300,7 +306,7 @@ export const processBatch = async (
   );
   const successCount = updatedFeeds.filter(Boolean).length;
 
-  // Generate signed API URLs for the batch
+  // Generate signed API URLs for the batch.
   const signedApiUrls = batch
     .map((dataFeed) =>
       dataFeed.beaconsWithData.map((beacon, index) => {
@@ -316,5 +322,8 @@ export const processBatch = async (
       })
     )
     .flat(2);
-  return { signedApiUrls, successCount, errorCount: size(feedsToUpdate) - successCount };
+  // Get the beacon IDs for the active data feeds.
+  const beaconIds = batch.flatMap((dataFeed) => dataFeed.beaconsWithData.map((beacon) => beacon.beaconId));
+
+  return { signedApiUrls, beaconIds, successCount, errorCount: size(feedsToUpdate) - successCount };
 };
