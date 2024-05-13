@@ -20,7 +20,7 @@ describe('checks README', () => {
   it('checks that the README contains all configuration keys in airseeker.example.json', () => {
     const exampleConfigData = actualFs.readFileSync(path.join(__dirname, '../config/airseeker.example.json'));
     const exampleSecretsData = actualFs.readFileSync(path.join(__dirname, '../config/secrets.example.env'));
-    const readmeData = actualFs.readFileSync(path.join(__dirname, '../README.md')).toString();
+    const readmeData = actualFs.readFileSync(path.join(__dirname, '../config/configuration.md')).toString();
 
     expect(exampleConfigData).toBeDefined();
     expect(exampleSecretsData).toBeDefined();
