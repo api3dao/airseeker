@@ -57,7 +57,11 @@ export const updatePendingTransactionsInfo = (
         : 1;
       const firstUpdatableTimestamp = pendingTransactionInfo?.firstUpdatableTimestamp ?? currentTimestamp;
       const newPendingTransactionInfo = { consecutivelyUpdatableCount, firstUpdatableTimestamp };
-      logger.info('Updating pending transaction info.', newPendingTransactionInfo);
+      logger.info('Updating pending transaction info.', {
+        ...newPendingTransactionInfo,
+        dapiName: decodedDapiName,
+        dataFeedId,
+      });
       setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, newPendingTransactionInfo);
     }
     if (!isFeedUpdatable && pendingTransactionInfo) {

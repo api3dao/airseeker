@@ -91,7 +91,12 @@ export const sanitizeEthersError = (error: Error) => {
 
   // We don't care about the stack trace, nor error name - just the code and the message. According to the ethers
   // sources, the short message should always be defined.
-  return new SanitizedErrorsError(ethersError.code, ethersError.shortMessage);
+  const sanitizedError = new SanitizedErrorsError(ethersError.code, ethersError.shortMessage);
+  // NOTE: We don't need the stack trace, because the errors are usually easy to find by the developer message and the
+  // stack can be traced manually. This reduces the risk of the stack trace being too large and "exploding" the log
+  // size.
+  delete sanitizedError.stack;
+  return sanitizedError;
 };
 
 export const generateRandomId = () => randomBytes(32).toString('hex');
