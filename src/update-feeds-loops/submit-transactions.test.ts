@@ -420,7 +420,7 @@ describe(submitTransactionsModule.submitBatchTransaction.name, () => {
 
     // Verify that the data feed was updated successfully.
     expect(logger.info).toHaveBeenCalledTimes(2);
-    expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feeds in batch.', {
+    expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed(s).', {
       sponsorWalletAddress: '0xFaFF9C2E67716d2209552f46Fa9829D46830aCcB',
       gasLimit: '500000',
       gasPrice: '100000000',
@@ -441,7 +441,7 @@ describe(submitTransactionsModule.submitBatchTransaction.name, () => {
     expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting nonce.');
     expect(logger.debug).toHaveBeenNthCalledWith(4, 'Getting recommended gas price.');
     expect(logger.debug).toHaveBeenNthCalledWith(5, 'Creating calldatas.');
-    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Estimating batch update gas limit.');
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Estimating multicall update gas limit.');
   });
 
   it('logs an error when getting nonce fails', async () => {
@@ -561,7 +561,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
 
     // Verify that the data feed was updated successfully.
     expect(logger.info).toHaveBeenCalledTimes(2);
-    expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed.', {
+    expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed(s).', {
       gasLimit: '500000',
       gasPrice: '100000000',
       nonce: 0,
@@ -582,7 +582,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     expect(logger.debug).toHaveBeenNthCalledWith(3, 'Getting nonce.');
     expect(logger.debug).toHaveBeenNthCalledWith(4, 'Getting recommended gas price.');
     expect(logger.debug).toHaveBeenNthCalledWith(5, 'Creating calldatas.');
-    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Estimating beacon set update gas limit.');
+    expect(logger.debug).toHaveBeenNthCalledWith(6, 'Estimating multicall update gas limit.');
   });
 
   it('logs an error when getting nonce fails', async () => {
@@ -642,29 +642,31 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
 
     const result = await submitTransactionsModule.submitUpdate(
       api3ServerV1 as unknown as Api3ServerV1,
-      allowPartial<UpdatableDataFeed>({
-        dataFeedInfo: {
-          beaconsWithData: [
+      [
+        allowPartial<UpdatableDataFeed>({
+          dataFeedInfo: {
+            beaconsWithData: [
+              {
+                beaconId: '0xBeaconId',
+                airnodeAddress: '0xAirnode',
+                templateId: '0xTemplateId',
+              },
+            ],
+          },
+          updatableBeacons: [
             {
               beaconId: '0xBeaconId',
-              airnodeAddress: '0xAirnode',
-              templateId: '0xTemplateId',
+              signedData: {
+                airnode: '0xAirnode',
+                templateId: '0xTemplateId',
+                timestamp: '1629811000',
+                encodedValue: '0xEncodedValue',
+                signature: '0xSignature',
+              },
             },
           ],
-        },
-        updatableBeacons: [
-          {
-            beaconId: '0xBeaconId',
-            signedData: {
-              airnode: '0xAirnode',
-              templateId: '0xTemplateId',
-              timestamp: '1629811000',
-              encodedValue: '0xEncodedValue',
-              signature: '0xSignature',
-            },
-          },
-        ],
-      }),
+        }),
+      ],
       undefined,
       sponsorWallet,
       BigInt(100_000_000),
@@ -691,34 +693,36 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
 
     const result = await submitTransactionsModule.submitUpdate(
       api3ServerV1 as unknown as Api3ServerV1,
-      allowPartial<UpdatableDataFeed>({
-        dataFeedInfo: {
-          beaconsWithData: [
+      [
+        allowPartial<UpdatableDataFeed>({
+          dataFeedInfo: {
+            beaconsWithData: [
+              {
+                beaconId: '0xBeaconId1',
+                airnodeAddress: '0xAirnode1',
+                templateId: '0xTemplateId1',
+              },
+              {
+                beaconId: '0xBeaconId2',
+                airnodeAddress: '0xAirnode2',
+                templateId: '0xTemplateId2',
+              },
+            ],
+          },
+          updatableBeacons: [
             {
               beaconId: '0xBeaconId1',
-              airnodeAddress: '0xAirnode1',
-              templateId: '0xTemplateId1',
-            },
-            {
-              beaconId: '0xBeaconId2',
-              airnodeAddress: '0xAirnode2',
-              templateId: '0xTemplateId2',
+              signedData: {
+                airnode: '0xAirnode1',
+                templateId: '0xTemplateId1',
+                timestamp: '1629811000',
+                encodedValue: '0xEncodedValue',
+                signature: '0xSignature',
+              },
             },
           ],
-        },
-        updatableBeacons: [
-          {
-            beaconId: '0xBeaconId1',
-            signedData: {
-              airnode: '0xAirnode1',
-              templateId: '0xTemplateId1',
-              timestamp: '1629811000',
-              encodedValue: '0xEncodedValue',
-              signature: '0xSignature',
-            },
-          },
-        ],
-      }),
+        }),
+      ],
       undefined,
       sponsorWallet,
       BigInt(100_000_000),
@@ -727,7 +731,7 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
 
     expect(result).toStrictEqual({ hash: '0xTransactionHash' });
     expect(logger.info).toHaveBeenCalledTimes(1);
-    expect(logger.info).toHaveBeenCalledWith('Updating data feed.', {
+    expect(logger.info).toHaveBeenCalledWith('Updating data feed(s).', {
       sponsorWalletAddress: '0xD8Ba840Cae5c24e5Dc148355Ea3cde3CFB12f8eF',
       gasPrice: '100000000',
       gasLimit: '165000',

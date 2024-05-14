@@ -31,30 +31,28 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
   // If there are multiple beacons in the data feed it's a beacons set which we need to update as well.
   return allBeacons.length > 1
     ? [
-      ...beaconUpdateCalls,
-      api3ServerV1.interface.encodeFunctionData('updateBeaconSetWithBeacons', [
-        allBeacons.map(({ beaconId }) => beaconId),
-      ]),
-    ]
+        ...beaconUpdateCalls,
+        api3ServerV1.interface.encodeFunctionData('updateBeaconSetWithBeacons', [
+          allBeacons.map(({ beaconId }) => beaconId),
+        ]),
+      ]
     : beaconUpdateCalls;
 };
 
 export const submitUpdate = async (
   api3ServerV1: Api3ServerV1,
-  updatableDataFeed: UpdatableDataFeed,
+  updatableDataFeeds: UpdatableDataFeed[],
   fallbackGasLimit: number | undefined,
   sponsorWallet: ethers.HDNodeWallet | ethers.Wallet,
   gasPrice: bigint,
   nonce: number
 ) => {
-  const {
-    updatableBeacons,
-    dataFeedInfo: { beaconsWithData },
-  } = updatableDataFeed;
   const sponsorWalletAddress = sponsorWallet.address as Address;
-  const isSingleBeaconUpdate = beaconsWithData.length === 1;
 
+  const isSingleBeaconUpdate =
+    updatableDataFeeds.length === 1 && updatableDataFeeds[0]?.dataFeedInfo.beaconsWithData.length === 1;
   if (isSingleBeaconUpdate) {
+    const { updatableBeacons } = updatableDataFeeds[0]!;
     const beacon = updatableBeacons[0]!;
 
     logger.debug('Estimating single beacon update gas limit.');
@@ -80,13 +78,15 @@ export const submitUpdate = async (
   }
 
   logger.debug('Creating calldatas.');
-  const dataFeedUpdateCalldatas = createUpdateFeedCalldatas(api3ServerV1, updatableDataFeed);
+  const dataFeedUpdateCalldatas = updatableDataFeeds.flatMap((updatableDataFeed) =>
+    createUpdateFeedCalldatas(api3ServerV1, updatableDataFeed)
+  );
 
-  logger.debug('Estimating beacon set update gas limit.');
+  logger.debug('Estimating multicall update gas limit.');
   const gasLimit = await estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas, fallbackGasLimit);
   if (!gasLimit) return null;
 
-  logger.info('Updating data feed.', {
+  logger.info('Updating data feed(s).', {
     sponsorWalletAddress,
     gasPrice: gasPrice.toString(),
     gasLimit: gasLimit.toString(),
@@ -109,7 +109,6 @@ export const submitBatchTransaction = async (
 
   const decodedDapiNames = updatableDataFeeds.map(({ dataFeedInfo: { decodedDapiName } }) => decodedDapiName);
   const dataFeedIds = updatableDataFeeds.map(({ dataFeedInfo: { dataFeedId } }) => dataFeedId);
-
   const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
   const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
@@ -125,7 +124,7 @@ export const submitBatchTransaction = async (
         const sponsorWalletAddress = sponsorWallet.address as Address;
 
         logger.debug('Getting nonce.');
-        const goNonce = await go(async () => provider.getTransactionCount(sponsorWalletAddress, 'latest'));
+        const goNonce = await go(async () => provider.getTransactionCount(sponsorWalletAddress, blockNumber));
         if (!goNonce.success) {
           logger.warn(`Failed to get nonce.`, goNonce.error);
           return null;
@@ -136,25 +135,8 @@ export const submitBatchTransaction = async (
         const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress, dataFeedIds);
         if (!gasPrice) return null;
 
-        logger.debug('Creating calldatas.');
-        const dataFeedUpdateCalldatas = updatableDataFeeds.flatMap((updatableDataFeed) =>
-          createUpdateFeedCalldatas(api3ServerV1, updatableDataFeed)
-        );
-
-        logger.debug('Estimating batch update gas limit.');
-        const gasLimit = await estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas, fallbackGasLimit);
-        if (!gasLimit) return null;
-
         const goSubmitUpdate = await go(async () => {
-          logger.info('Updating data feeds in batch.', {
-            sponsorWalletAddress,
-            gasPrice: gasPrice.toString(),
-            gasLimit: gasLimit.toString(),
-            nonce,
-          });
-          return api3ServerV1
-            .connect(sponsorWallet)
-            .tryMulticall.send(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
+          return submitUpdate(api3ServerV1, updatableDataFeeds, fallbackGasLimit, sponsorWallet, gasPrice, nonce);
         });
         if (!goSubmitUpdate.success) {
           // It seems that in practice, this code is widely used. We can do a best-effort attempt to determine the error
@@ -205,13 +187,13 @@ export const submitTransaction = async (
   updatableDataFeed: UpdatableDataFeed,
   blockNumber: number
 ) => {
-  const state = getState();
   const {
     config: { chains, sponsorWalletMnemonic, walletDerivationScheme },
-  } = state;
+  } = getState();
 
-  const { dataFeedInfo } = updatableDataFeed;
-  const { dapiName, dataFeedId, decodedDapiName, updateParameters } = dataFeedInfo;
+  const {
+    dataFeedInfo: { dapiName, dataFeedId, decodedDapiName, updateParameters },
+  } = updatableDataFeed;
   const { dataFeedUpdateInterval, fallbackGasLimit } = chains[chainId]!;
   const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
@@ -226,8 +208,10 @@ export const submitTransaction = async (
           dapiNameOrDataFeedId: dapiName ?? dataFeedId,
           updateParameters,
         }).connect(provider);
+        const sponsorWalletAddress = sponsorWallet.address as Address;
+
         logger.debug('Getting nonce.');
-        const goNonce = await go(async () => provider.getTransactionCount(sponsorWallet, blockNumber));
+        const goNonce = await go(async () => provider.getTransactionCount(sponsorWalletAddress, blockNumber));
         if (!goNonce.success) {
           logger.warn(`Failed to get nonce.`, sanitizeEthersError(goNonce.error));
           return null;
@@ -235,11 +219,11 @@ export const submitTransaction = async (
         const nonce = goNonce.data;
 
         logger.debug('Getting recommended gas price.');
-        const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWallet.address as Address, [dataFeedId]);
+        const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress, [dataFeedId]);
         if (!gasPrice) return null;
 
         const goSubmitUpdate = await go(async () => {
-          return submitUpdate(api3ServerV1, updatableDataFeed, fallbackGasLimit, sponsorWallet, gasPrice, nonce);
+          return submitUpdate(api3ServerV1, [updatableDataFeed], fallbackGasLimit, sponsorWallet, gasPrice, nonce);
         });
         if (!goSubmitUpdate.success) {
           // It seems that in practice, this code is widely used. We can do a best-effort attempt to determine the error
