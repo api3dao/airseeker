@@ -2,7 +2,6 @@ import type { Address, Hex } from '@api3/commons';
 import type { Api3ServerV1 } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
-import { isEmpty } from 'lodash';
 
 import { getRecommendedGasPrice } from '../gas-price';
 import { logger } from '../logger';
@@ -255,12 +254,11 @@ export const submitTransactions = async (
     config: { walletDerivationScheme },
   } = getState();
   if (walletDerivationScheme.type === 'fixed') {
-    if (isEmpty(updatableDataFeeds)) {
-      return [];
-    }
-    return Array.from({ length: updatableDataFeeds.length }).fill(
-      await submitBatchTransaction(chainId, providerName, provider, api3ServerV1, updatableDataFeeds, blockNumber)
-    );
+    return updatableDataFeeds.length > 0
+      ? Array.from({ length: updatableDataFeeds.length }).fill(
+          await submitBatchTransaction(chainId, providerName, provider, api3ServerV1, updatableDataFeeds, blockNumber)
+        )
+      : [];
   }
 
   return Promise.all(
