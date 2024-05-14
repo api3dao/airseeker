@@ -674,12 +674,15 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
     );
 
     expect(result).toStrictEqual({ hash: '0xTransactionHash' });
-    expect(logger.info).toHaveBeenCalledTimes(1);
-    expect(logger.info).toHaveBeenCalledWith('Updating single beacon.', {
+    expect(logger.info).toHaveBeenCalledTimes(2);
+    expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating single beacon.', {
       sponsorWalletAddress: '0xD8Ba840Cae5c24e5Dc148355Ea3cde3CFB12f8eF',
       gasPrice: '100000000',
       gasLimit: '150000',
       nonce: 11,
+    });
+    expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the update transaction.', {
+      txHash: '0xTransactionHash',
     });
   });
 
@@ -730,12 +733,15 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
     );
 
     expect(result).toStrictEqual({ hash: '0xTransactionHash' });
-    expect(logger.info).toHaveBeenCalledTimes(1);
-    expect(logger.info).toHaveBeenCalledWith('Updating data feed(s).', {
+    expect(logger.info).toHaveBeenCalledTimes(2);
+    expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed(s).', {
       sponsorWalletAddress: '0xD8Ba840Cae5c24e5Dc148355Ea3cde3CFB12f8eF',
       gasPrice: '100000000',
       gasLimit: '165000',
       nonce: 11,
+    });
+    expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the update transaction.', {
+      txHash: '0xTransactionHash',
     });
   });
 });

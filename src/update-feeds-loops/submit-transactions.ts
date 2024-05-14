@@ -1,7 +1,7 @@
 import type { Address, Hex } from '@api3/commons';
 import type { Api3ServerV1 } from '@api3/contracts';
 import { go } from '@api3/promise-utils';
-import { ethers, type EthersError } from 'ethers';
+import { ethers } from 'ethers';
 import { isEmpty } from 'lodash';
 
 import { getRecommendedGasPrice } from '../gas-price';
@@ -47,52 +47,85 @@ export const submitUpdate = async (
   gasPrice: bigint,
   nonce: number
 ) => {
-  const sponsorWalletAddress = sponsorWallet.address as Address;
+  const goSubmitUpdate = await go(async () => {
+    const sponsorWalletAddress = sponsorWallet.address as Address;
 
-  const isSingleBeaconUpdate =
-    updatableDataFeeds.length === 1 && updatableDataFeeds[0]?.dataFeedInfo.beaconsWithData.length === 1;
-  if (isSingleBeaconUpdate) {
-    const { updatableBeacons } = updatableDataFeeds[0]!;
-    const beacon = updatableBeacons[0]!;
+    const isSingleBeaconUpdate =
+      updatableDataFeeds.length === 1 && updatableDataFeeds[0]?.dataFeedInfo.beaconsWithData.length === 1;
+    if (isSingleBeaconUpdate) {
+      const { updatableBeacons } = updatableDataFeeds[0]!;
+      const beacon = updatableBeacons[0]!;
 
-    logger.debug('Estimating single beacon update gas limit.');
-    const gasLimit = await estimateSingleBeaconGasLimit(api3ServerV1, beacon, fallbackGasLimit);
+      logger.debug('Estimating single beacon update gas limit.');
+      const gasLimit = await estimateSingleBeaconGasLimit(api3ServerV1, beacon, fallbackGasLimit);
+      if (!gasLimit) return null;
+
+      logger.info('Updating single beacon.', {
+        sponsorWalletAddress,
+        gasPrice: gasPrice.toString(),
+        gasLimit: gasLimit.toString(),
+        nonce,
+      });
+      const {
+        signedData: { airnode, templateId, timestamp, encodedValue, signature },
+      } = beacon;
+      return api3ServerV1
+        .connect(sponsorWallet)
+        .updateBeaconWithSignedData.send(airnode, templateId, timestamp, encodedValue, signature, {
+          gasPrice,
+          gasLimit,
+          nonce,
+        });
+    }
+
+    logger.debug('Creating calldatas.');
+    const dataFeedUpdateCalldatas = updatableDataFeeds.flatMap((updatableDataFeed) =>
+      createUpdateFeedCalldatas(api3ServerV1, updatableDataFeed)
+    );
+
+    logger.debug('Estimating multicall update gas limit.');
+    const gasLimit = await estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas, fallbackGasLimit);
     if (!gasLimit) return null;
 
-    logger.info('Updating single beacon.', {
+    logger.info('Updating data feed(s).', {
       sponsorWalletAddress,
       gasPrice: gasPrice.toString(),
       gasLimit: gasLimit.toString(),
       nonce,
     });
-    const {
-      signedData: { airnode, templateId, timestamp, encodedValue, signature },
-    } = beacon;
     return api3ServerV1
       .connect(sponsorWallet)
-      .updateBeaconWithSignedData.send(airnode, templateId, timestamp, encodedValue, signature, {
-        gasPrice,
-        gasLimit,
-        nonce,
-      });
+      .tryMulticall.send(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
+  });
+  if (!goSubmitUpdate.success) {
+    // It seems that in practice, this code is widely used. We can do a best-effort attempt to determine the error
+    // reason. Many times, the error is acceptable and results from the way Airseeker is designed. We can use
+    // different log levels and messages and have better alerts.
+    const errorCode = (goSubmitUpdate.error as any).code;
+    switch (errorCode) {
+      case 'REPLACEMENT_UNDERPRICED': {
+        logger.info(`Failed to submit replacement transaction because it was underpriced.`);
+        return null;
+      }
+      case 'NONCE_EXPIRED': {
+        logger.info(`Failed to submit the transaction because the nonce was expired.`);
+        return null;
+      }
+      case 'INSUFFICIENT_FUNDS': {
+        // This should never happen and monitoring should warn even before Airseeker comes to this point.
+        logger.error(`Failed to submit the transaction because of insufficient funds.`, goSubmitUpdate.error);
+        return null;
+      }
+      default: {
+        logger.warn(`Failed to submit the update transaction.`, goSubmitUpdate.error);
+        return null;
+      }
+    }
   }
 
-  logger.debug('Creating calldatas.');
-  const dataFeedUpdateCalldatas = updatableDataFeeds.flatMap((updatableDataFeed) =>
-    createUpdateFeedCalldatas(api3ServerV1, updatableDataFeed)
-  );
-
-  logger.debug('Estimating multicall update gas limit.');
-  const gasLimit = await estimateMulticallGasLimit(api3ServerV1, dataFeedUpdateCalldatas, fallbackGasLimit);
-  if (!gasLimit) return null;
-
-  logger.info('Updating data feed(s).', {
-    sponsorWalletAddress,
-    gasPrice: gasPrice.toString(),
-    gasLimit: gasLimit.toString(),
-    nonce,
-  });
-  return api3ServerV1.connect(sponsorWallet).tryMulticall.send(dataFeedUpdateCalldatas, { gasPrice, gasLimit, nonce });
+  if (!goSubmitUpdate.data) return null; // There was a handled error during submission.
+  logger.info('Successfully submitted the update transaction.', { txHash: goSubmitUpdate.data.hash });
+  return goSubmitUpdate.data;
 };
 
 export const submitBatchTransaction = async (
@@ -135,38 +168,7 @@ export const submitBatchTransaction = async (
         const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress, dataFeedIds);
         if (!gasPrice) return null;
 
-        const goSubmitUpdate = await go(async () => {
-          return submitUpdate(api3ServerV1, updatableDataFeeds, fallbackGasLimit, sponsorWallet, gasPrice, nonce);
-        });
-        if (!goSubmitUpdate.success) {
-          // It seems that in practice, this code is widely used. We can do a best-effort attempt to determine the error
-          // reason. Many times, the error is acceptable and results from the way Airseeker is designed. We can use
-          // different log levels and messages and have better alerts.
-          const errorCode = (goSubmitUpdate.error as any).code;
-          switch (errorCode) {
-            case 'REPLACEMENT_UNDERPRICED': {
-              logger.info(`Failed to submit replacement transaction because it was underpriced.`);
-              return null;
-            }
-            case 'NONCE_EXPIRED': {
-              logger.info(`Failed to submit the transaction because the nonce was expired.`);
-              return null;
-            }
-            case 'INSUFFICIENT_FUNDS': {
-              // This should never happen and monitoring should warn even before Airseeker comes to this point.
-              logger.error(`Failed to submit the transaction because of insufficient funds.`, goSubmitUpdate.error);
-              return null;
-            }
-            default: {
-              logger.warn(`Failed to submit the update transaction.`, goSubmitUpdate.error);
-              return null;
-            }
-          }
-        }
-
-        if (!goSubmitUpdate.data) return null; // There was a handled error during submission.
-        logger.info('Successfully submitted the update transaction.', { txHash: goSubmitUpdate.data.hash });
-        return goSubmitUpdate.data;
+        return submitUpdate(api3ServerV1, updatableDataFeeds, fallbackGasLimit, sponsorWallet, gasPrice, nonce);
       },
       { totalTimeoutMs: dataFeedUpdateIntervalMs }
     );
@@ -222,33 +224,7 @@ export const submitTransaction = async (
         const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress, [dataFeedId]);
         if (!gasPrice) return null;
 
-        const goSubmitUpdate = await go(async () => {
-          return submitUpdate(api3ServerV1, [updatableDataFeed], fallbackGasLimit, sponsorWallet, gasPrice, nonce);
-        });
-        if (!goSubmitUpdate.success) {
-          // It seems that in practice, this code is widely used. We can do a best-effort attempt to determine the error
-          // reason. Many times, the error is acceptable and results from the way Airseeker is designed. We can use
-          // different log levels and messages and have better alerts.
-          const ethersError = goSubmitUpdate.error as EthersError;
-          if (ethersError.code === 'REPLACEMENT_UNDERPRICED') {
-            logger.info(`Failed to submit replacement transaction because it was underpriced.`);
-            return null;
-          } else if (ethersError.code === 'NONCE_EXPIRED' || ethersError.message.includes('invalid nonce')) {
-            logger.info(`Failed to submit the transaction because the nonce was expired.`);
-            return null;
-          } else if (ethersError.code === 'INSUFFICIENT_FUNDS') {
-            // This should never happen and monitoring should warn even before Airseeker comes to this point.
-            logger.error(`Failed to submit the transaction because of insufficient funds.`, ethersError);
-            return null;
-          } else {
-            logger.warn(`Failed to submit the update transaction.`, ethersError);
-            return null;
-          }
-        }
-
-        if (!goSubmitUpdate.data) return null; // There was a handled error during submission.
-        logger.info('Successfully submitted the update transaction.', { txHash: goSubmitUpdate.data.hash });
-        return goSubmitUpdate.data;
+        return submitUpdate(api3ServerV1, [updatableDataFeed], fallbackGasLimit, sponsorWallet, gasPrice, nonce);
       },
       { totalTimeoutMs: dataFeedUpdateIntervalMs }
     );
