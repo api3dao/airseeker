@@ -7,8 +7,12 @@ import { isEmpty } from 'lodash';
 import { getRecommendedGasPrice } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { SponsorParams } from '../types';
-import { deriveSponsorAddress, deriveSponsorWalletFromSponsorAddress, sanitizeEthersError } from '../utils';
+import {
+  deriveSponsorAddress,
+  deriveSponsorWalletFromSponsorAddress,
+  sanitizeEthersError,
+  type SponsorAddressDerivationParams,
+} from '../utils';
 
 import { estimateMulticallGasLimit, estimateSingleBeaconGasLimit } from './gas-estimation';
 import type { UpdatableDataFeed } from './get-updatable-feeds';
@@ -151,9 +155,11 @@ export const submitBatchTransaction = async (
     const goUpdate = await go(
       async () => {
         logger.debug('Getting derived sponsor wallet.');
-        const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, { walletDerivationScheme }).connect(
-          provider
-        );
+        const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, {
+          ...walletDerivationScheme,
+          dapiNameOrDataFeedId: '', // Not needed because using fixed sponsor wallet derivation type
+          updateParameters: '', // Not needed because using fixed sponsor wallet derivation type
+        }).connect(provider);
         const sponsorWalletAddress = sponsorWallet.address as Address;
 
         logger.debug('Getting nonce.');
@@ -206,7 +212,7 @@ export const submitTransaction = async (
       async () => {
         logger.debug('Getting derived sponsor wallet.');
         const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, {
-          walletDerivationScheme,
+          ...walletDerivationScheme,
           dapiNameOrDataFeedId: dapiName ?? dataFeedId,
           updateParameters,
         }).connect(provider);
@@ -264,9 +270,9 @@ export const submitTransactions = async (
   );
 };
 
-export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, sponsorParams: SponsorParams) => {
+export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, params: SponsorAddressDerivationParams) => {
   const { derivedSponsorWallets } = getState();
-  const sponsorAddress = deriveSponsorAddress(sponsorParams);
+  const sponsorAddress = deriveSponsorAddress(params);
   const privateKey = derivedSponsorWallets?.[sponsorAddress];
   if (privateKey) {
     const sponsorWallet = new ethers.Wallet(privateKey);

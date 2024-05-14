@@ -1,8 +1,8 @@
 import { deriveWalletPathFromSponsorAddress, type Address, type Hex } from '@api3/commons';
 import { ethers, type ErrorCode, type EthersError } from 'ethers';
 
+import type { WalletDerivationScheme } from './config/schema';
 import { AIRSEEKER_PROTOCOL_ID, INT224_MAX, INT224_MIN } from './constants';
-import type { ManagedParams, SelfFundedParams, SponsorParams } from './types';
 
 export const abs = (n: bigint) => (n < 0n ? -n : n);
 
@@ -38,24 +38,29 @@ export const deriveSponsorWalletFromSponsorAddress = (sponsorWalletMnemonic: str
   return sponsorWallet;
 };
 
-export const deriveSponsorAddress = (sponsorParams: SponsorParams) => {
+export type SponsorAddressDerivationParams = WalletDerivationScheme & {
+  updateParameters: string;
+  dapiNameOrDataFeedId: string;
+};
+
+export const deriveSponsorAddress = (params: SponsorAddressDerivationParams) => {
   let sponsorAddress: Address;
-  switch (sponsorParams.walletDerivationScheme.type) {
+  switch (params.type) {
     case 'self-funded': {
       // Airseeker will derive a sponsor wallet for updating each dAPI name or data feed + update parameters combination.
-      const { dapiNameOrDataFeedId, updateParameters } = sponsorParams as SelfFundedParams;
+      const { dapiNameOrDataFeedId, updateParameters } = params;
       sponsorAddress = deriveSponsorAddressForSelfFundedFeed(dapiNameOrDataFeedId, updateParameters);
       break;
     }
     case 'managed': {
       // Here it will derive a single sponsor wallet for updating  each dAPI name or data feed.
-      const { dapiNameOrDataFeedId } = sponsorParams as ManagedParams;
+      const { dapiNameOrDataFeedId } = params;
       sponsorAddress = deriveSponsorAddressForManagedFeed(dapiNameOrDataFeedId);
       break;
     }
     case 'fixed': {
       // Here it will derive a single sponsor wallet for updating all dAPI names or data feeds.
-      sponsorAddress = sponsorParams.walletDerivationScheme.sponsorAddress!;
+      sponsorAddress = params.sponsorAddress!;
       break;
     }
   }
@@ -63,7 +68,7 @@ export const deriveSponsorAddress = (sponsorParams: SponsorParams) => {
   return sponsorAddress;
 };
 
-export const deriveSponsorWallet = (sponsorWalletMnemonic: string, sponsorParams: SponsorParams) => {
+export const deriveSponsorWallet = (sponsorWalletMnemonic: string, sponsorParams: SponsorAddressDerivationParams) => {
   const sponsorAddress: Address = deriveSponsorAddress(sponsorParams);
   return deriveSponsorWalletFromSponsorAddress(sponsorWalletMnemonic, sponsorAddress);
 };

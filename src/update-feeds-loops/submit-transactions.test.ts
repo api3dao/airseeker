@@ -206,7 +206,7 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
       jest.spyOn(utilsModule, 'deriveSponsorWalletFromSponsorAddress');
 
       const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet('some-mnemonic', {
-        walletDerivationScheme: { type: 'managed' },
+        type: 'managed',
         dapiNameOrDataFeedId: dapiName,
         updateParameters: 'does-not-matter',
       });
@@ -228,7 +228,7 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
       const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
         'diamond result history offer forest diagram crop armed stumble orchard stage glance',
         {
-          walletDerivationScheme: { type: 'managed' },
+          type: 'managed',
           dapiNameOrDataFeedId: dapiName,
           updateParameters: 'does-not-matter',
         }
@@ -250,7 +250,7 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
       const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
         'diamond result history offer forest diagram crop armed stumble orchard stage glance',
         {
-          walletDerivationScheme: { type: 'managed' },
+          type: 'managed',
           dapiNameOrDataFeedId: '0x173ec7594911a9d584d577bc8e8b9bb546018667d820a67685df49201a11ae9b',
           updateParameters: 'does-not-matter',
         }
@@ -277,7 +277,7 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
       const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
         'diamond result history offer forest diagram crop armed stumble orchard stage glance',
         {
-          walletDerivationScheme: { type: 'self-funded' },
+          type: 'self-funded',
           dapiNameOrDataFeedId: dapiName,
           updateParameters,
         }

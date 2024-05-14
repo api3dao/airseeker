@@ -81,7 +81,7 @@ export const refundFunder = async (funderWallet: ethers.NonceManager) => {
     const provider = funderWallet.provider!;
 
     const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, {
-      walletDerivationScheme: rawConfig.walletDerivationScheme,
+      ...rawConfig.walletDerivationScheme,
       dapiNameOrDataFeedId: dapiName,
       updateParameters,
     }).connect(provider);
@@ -148,7 +148,7 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.NonceManag
 
     const provider = funderWallet.provider!;
     const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, {
-      walletDerivationScheme: rawConfig.walletDerivationScheme,
+      ...rawConfig.walletDerivationScheme,
       dapiNameOrDataFeedId: dapiName,
       updateParameters,
     });

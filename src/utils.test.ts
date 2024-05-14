@@ -50,6 +50,20 @@ describe(deriveSponsorWalletFromSponsorAddress.name, () => {
       expect(sponsorWallet.address).toBe('0x08E47E2dF1440492289da760B58d036b3abb1A43'); // Note, that the address is different if the sponsor address hash is derived using the "managed" scheme.
     });
   });
+
+  describe('fixed sponsor address read from airseeker.json', () => {
+    it('derives a wallet for a fixed feed', () => {
+      const sponsorWalletMnemonic =
+        'diamond result history offer forest diagram crop armed stumble orchard stage glance';
+
+      const sponsorWallet = deriveSponsorWalletFromSponsorAddress(
+        sponsorWalletMnemonic,
+        '0x0000000000000000000000000000000000000001'
+      );
+
+      expect(sponsorWallet.address).toBe('0xFaFF9C2E67716d2209552f46Fa9829D46830aCcB');
+    });
+  });
 });
 
 describe(deriveSponsorWallet.name, () => {
@@ -58,7 +72,7 @@ describe(deriveSponsorWallet.name, () => {
     const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
 
     const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, {
-      walletDerivationScheme: { type: 'managed' },
+      type: 'managed',
       dapiNameOrDataFeedId: dapiName,
       updateParameters: 'does-not-matter',
     });
@@ -73,7 +87,7 @@ describe(deriveSponsorWallet.name, () => {
     const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
 
     const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, {
-      walletDerivationScheme: { type: 'self-funded' },
+      type: 'self-funded',
       dapiNameOrDataFeedId: dapiName,
       updateParameters,
     });
@@ -85,7 +99,8 @@ describe(deriveSponsorWallet.name, () => {
     const sponsorWalletMnemonic = 'diamond result history offer forest diagram crop armed stumble orchard stage glance';
 
     const sponsorWallet = deriveSponsorWallet(sponsorWalletMnemonic, {
-      walletDerivationScheme: { type: 'fixed', sponsorAddress: '0x0000000000000000000000000000000000000001' },
+      type: 'fixed',
+      sponsorAddress: '0x0000000000000000000000000000000000000001',
       dapiNameOrDataFeedId: 'does-not-matter',
       updateParameters: 'does-not-matter',
     });

@@ -52,7 +52,7 @@ export const updatePendingTransactionsInfo = (
     );
 
     const sponsorWalletAddress = getDerivedSponsorWallet(sponsorWalletMnemonic, {
-      walletDerivationScheme,
+      ...walletDerivationScheme,
       dapiNameOrDataFeedId: dapiName ?? dataFeedId,
       updateParameters,
     }).address as Address;
