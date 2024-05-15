@@ -47,12 +47,12 @@ const main = () => {
   console.info('Making sure we have the latest version of the dependencies...');
   execSyncWithErrorHandling('pnpm install');
 
-  const currentVersion = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8')).version;
+  const currentVersion = (JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8')) as any).version;
   console.info(`Current version is ${currentVersion}...`);
 
   console.info('Bumping root package.json version...');
   execSyncWithErrorHandling(`pnpm version --no-git-tag-version ${versionBump}`);
-  const newVersion = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8')).version;
+  const newVersion = (JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8')) as any).version;
 
   console.info('Updating versions in example files and fixtures...');
   const replacements = [

@@ -2,7 +2,7 @@ import type { Address, ChainId, Hex } from '@api3/commons';
 import { produce, type Draft } from 'immer';
 
 import type { Config } from '../config/schema';
-import type { SignedData } from '../types';
+import type { SignedDataRecord } from '../types';
 
 interface GasPriceInfo {
   price: bigint;
@@ -34,10 +34,12 @@ export interface State {
     >
   >;
   derivedSponsorWallets: Record<Address /* Sponsor */, Hex /* Private key */>;
-  signedDatas: Record<Hex /* Beacon ID */, SignedData>;
-  signedApiUrls: Record<ChainId, Record<string /* Provider name */, string[]>>;
+  signedDatas: SignedDataRecord;
+  signedApiUrlsFromConfig: Record<ChainId, Record<string /* Provider name */, string[]>>;
+  signedApiUrlsFromContract: Record<ChainId, Record<string /* Provider name */, string[]>>;
   // The timestamp of when the service was initialized. This can be treated as a "deployment" timestamp.
   deploymentTimestamp: string;
+  activeDataFeedBeaconIds: Record<ChainId, Record<string /* Provider name */, Hex[]>>;
 }
 
 let state: State | undefined;
@@ -56,9 +58,11 @@ export const setInitialState = (config: Config) => {
     gasPrices: {},
     pendingTransactionsInfo: {},
     signedDatas: {},
-    signedApiUrls: {},
+    signedApiUrlsFromConfig: {},
+    signedApiUrlsFromContract: {},
     derivedSponsorWallets: {},
     deploymentTimestamp: Math.floor(Date.now() / 1000).toString(),
+    activeDataFeedBeaconIds: {},
   };
 };
 

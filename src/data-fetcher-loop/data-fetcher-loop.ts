@@ -1,10 +1,10 @@
-import { executeRequest } from '@api3/commons';
+import { type Hex, executeRequest } from '@api3/commons';
 import { uniq } from 'lodash';
 
 import { logger } from '../logger';
 import { getState } from '../state';
-import { signedApiResponseSchema, type SignedData } from '../types';
-import { sleep } from '../utils';
+import { type SignedDataRecord, signedApiResponseSchema, type SignedDataRecordEntry } from '../types';
+import { generateRandomId, sleep } from '../utils';
 
 import { purgeOldSignedData, saveSignedData } from './signed-data-state';
 
@@ -27,7 +27,7 @@ export const startDataFetcherLoop = () => {
  * - Actual handler fn:
  *   https://github.com/api3dao/signed-api/blob/b6e0d0700dd9e7547b37eaa65e98b50120220105/packages/api/src/handlers.ts#L81
  */
-export const callSignedApi = async (url: string, timeout: number): Promise<SignedData[] | null> => {
+export const callSignedApi = async (url: string, timeout: number): Promise<SignedDataRecord | null> => {
   const executionResult = await executeRequest({
     method: 'get',
     timeout,
@@ -52,29 +52,46 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
     return null;
   }
 
-  return Object.values(parseResult.data.data);
+  return parseResult.data.data;
 };
 
 export const runDataFetcher = async () => {
-  return logger.runWithContext({ dataFetcherCoordinatorId: Date.now().toString() }, async () => {
+  return logger.runWithContext({ dataFetcherCoordinatorId: generateRandomId() }, async () => {
     const state = getState();
     const {
       config: { signedDataFetchInterval },
-      signedApiUrls,
+      signedApiUrlsFromConfig,
+      signedApiUrlsFromContract,
+      activeDataFeedBeaconIds,
     } = state;
     const signedDataFetchIntervalMs = signedDataFetchInterval * 1000;
 
+    // Compute all the unique active beacon IDs reported across all data providers. Only signed data for these beacons
+    // will be saved by Airseeker.
+    const activeBeaconIds = new Set(
+      Object.values(activeDataFeedBeaconIds)
+        .map((beaconIdsPerProvider) => Object.values(beaconIdsPerProvider))
+        .flat(2)
+    );
+
+    // Compute the set of URLs coming from the config. These are trusted and don't need to be verified.
+    const trustedUrls = new Set(
+      Object.values(signedApiUrlsFromConfig)
+        .map((urlsPerProvider) => Object.values(urlsPerProvider))
+        .flat(2)
+    );
+
     // Better to log the non-decomposed object to see which URL comes from which chain-provider group.
-    logger.debug('Signed API URLs.', { signedApiUrls });
+    logger.debug('Signed API URLs.', { signedApiUrlsFromConfig, signedApiUrlsFromContract });
     const urls = uniq(
-      Object.values(signedApiUrls)
+      [...Object.values(signedApiUrlsFromConfig), ...Object.values(signedApiUrlsFromContract)]
         .map((urlsPerProvider) => Object.values(urlsPerProvider))
         .flat(2)
     );
 
     const urlCount = urls.length;
     const staggerTimeMs = signedDataFetchIntervalMs / urlCount;
-    logger.info('Fetching signed data', { urlCount, staggerTimeMs });
+    logger.info('Fetching signed data.', { urlCount, staggerTimeMs, currentTime: new Date().toISOString() });
     const fetchResults = await Promise.all(
       urls.map(async (url, index) => {
         await sleep(staggerTimeMs * index);
@@ -83,12 +100,23 @@ export const runDataFetcher = async () => {
         // NOTE: We allow each Signed API call to take full signedDataFetchIntervalMs. Because these calls are
         // staggered, it means that there can be pending requests from different data fetcher loops happening at the
         // same time. This does not matter much, because we only save the freshest signed data.
-        const signedDataApiResponse = await callSignedApi(url, signedDataFetchIntervalMs);
-        if (!signedDataApiResponse) return;
+        const signedDataBatch = await callSignedApi(url, signedDataFetchIntervalMs);
+        if (!signedDataBatch) return;
         logger.info('Fetched signed data from Signed API.', { url, duration: Date.now() - now });
 
-        for (const signedData of signedDataApiResponse) saveSignedData(signedData);
-        logger.info('Saved all signed data from Signed API.', { url, duration: Date.now() - now });
+        // Save only the signed data that is relevant to the active data feeds.
+        const signedDataForActiveBeacons = Object.entries(signedDataBatch).filter(([beaconId]) =>
+          activeBeaconIds.has(beaconId as Hex)
+        );
+        const signedDataCount = await saveSignedData(
+          signedDataForActiveBeacons as SignedDataRecordEntry[],
+          trustedUrls.has(url)
+        );
+        logger.info('Saved signed data from Signed API using a worker.', {
+          url,
+          duration: Date.now() - now,
+          signedDataCount,
+        });
       })
     );
 

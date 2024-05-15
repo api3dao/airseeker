@@ -64,10 +64,10 @@ export const updatePendingTransactionsInfo = (
       const firstUpdatableTimestamp = pendingTransactionInfo?.firstUpdatableTimestamp ?? currentTimestamp;
       const newPendingTransactionInfo = { consecutivelyUpdatableCount, firstUpdatableTimestamp };
       logger.info('Updating pending transaction info.', {
+        ...newPendingTransactionInfo,
         dapiName: decodedDapiName,
-        sponsorWalletAddress,
         dataFeedId,
-        newPendingTransactionInfo,
+        sponsorWalletAddress,
       });
       setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, dataFeedId, newPendingTransactionInfo);
     }

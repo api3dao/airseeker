@@ -1,6 +1,6 @@
 {
   "name": "@api3/airseeker",
-  "version": "3.0.3",
+  "version": "3.1.0",
   "keywords": [],
   "license": "MIT",
   "engines": {
@@ -44,13 +44,15 @@
     "ethers": "^6.12.1",
     "immer": "^10.1.1",
     "lodash": "^4.17.21",
-    "zod": "^3.23.7"
+    "workerpool": "^9.1.1",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@api3/airnode-abi": "^0.14.1",
     "@api3/ois": "^2.3.2",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@total-typescript/ts-reset": "^0.5.1",
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.17.1",
     "@types/node": "^20.12.11",
@@ -66,7 +68,7 @@
     "jest": "^29.7.0",
     "nodemon": "^3.1.0",
     "prettier": "^3.2.5",
-    "rimraf": "^5.0.5",
+    "rimraf": "^5.0.7",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"

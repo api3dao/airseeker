@@ -6,6 +6,7 @@ import {
   deriveSponsorWallet,
   deriveSponsorWalletFromSponsorAddress,
   encodeDapiName,
+  generateRandomId,
 } from './utils';
 
 describe(deriveSponsorWalletFromSponsorAddress.name, () => {
@@ -115,4 +116,10 @@ test('ethers compatibility for Wallet.fromMnemonic', () => {
   );
 
   expect(wallet.address).toBe('0xE1f7E4662F92e5DaDB9529Efb2EE61ec63b028e3');
+});
+
+describe(generateRandomId.name, () => {
+  it('generates an ID', () => {
+    expect(generateRandomId()).toMatch(/^[\da-f]{64}$/); // There is no 0x prefix.
+  });
 });

@@ -1,22 +1,36 @@
 import * as commonsModule from '@api3/commons';
 
 import { initializeState } from '../../test/fixtures/mock-config';
+import { createMockSignedDataVerifier } from '../../test/utils';
+import { logger } from '../logger';
 import { updateState } from '../state';
 
 import * as dataFetcherLoopModule from './data-fetcher-loop';
 import * as signedDataStateModule from './signed-data-state';
+import * as signedDataVerifierPoolModule from './signed-data-verifier-pool';
 
-describe('data fetcher', () => {
+describe(dataFetcherLoopModule.runDataFetcher.name, () => {
   beforeEach(() => {
     initializeState();
     updateState((draft) => {
-      draft.signedApiUrls = {
+      draft.signedApiUrlsFromConfig = {
         '31337': { hardhat: ['http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182'] },
+      };
+      draft.signedApiUrlsFromContract = {
+        '31337': { hardhat: [] },
+      };
+      draft.activeDataFeedBeaconIds = {
+        '31337': {
+          hardhat: [
+            '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04',
+            '0xddc6ca9cc6f5768d9bfa8cc59f79bde8cf97a6521d0b95835255951ce06f19e6',
+          ],
+        },
       };
     });
   });
 
-  it('retrieves signed data from urls', async () => {
+  it('saves signed data for active data feeds', async () => {
     const saveSignedDataSpy = jest.spyOn(signedDataStateModule, 'saveSignedData');
 
     jest.spyOn(commonsModule, 'executeRequest').mockResolvedValue({
@@ -53,22 +67,39 @@ describe('data fetcher', () => {
         },
       },
     });
-
     jest.spyOn(dataFetcherLoopModule, 'callSignedApi');
     jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
+    jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
+    jest.spyOn(logger, 'info');
 
-    const dataFetcherPromise = dataFetcherLoopModule.runDataFetcher();
-    await expect(dataFetcherPromise).resolves.toBeDefined();
+    await expect(dataFetcherLoopModule.runDataFetcher()).resolves.toBeDefined();
 
     expect(commonsModule.executeRequest).toHaveBeenCalledTimes(1);
-    expect(saveSignedDataSpy).toHaveBeenCalledTimes(3);
+    expect(saveSignedDataSpy).toHaveBeenCalledTimes(1);
     expect(dataFetcherLoopModule.callSignedApi).toHaveBeenNthCalledWith(
       1,
       'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
       10_000
     );
+    expect(logger.info).toHaveBeenCalledTimes(3);
+    expect(logger.info).toHaveBeenNthCalledWith(
+      1,
+      'Fetching signed data.',
+      expect.objectContaining({ urlCount: 1, staggerTimeMs: 10_000 })
+    );
+    expect(logger.info).toHaveBeenNthCalledWith(2, 'Fetched signed data from Signed API.', expect.any(Object));
+    expect(logger.info).toHaveBeenNthCalledWith(
+      3,
+      'Saved signed data from Signed API using a worker.',
+      expect.objectContaining({
+        url: 'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+        signedDataCount: 2,
+      })
+    );
   });
+});
 
+describe(dataFetcherLoopModule.callSignedApi.name, () => {
   it('handles parsing error from Signed API', async () => {
     jest.spyOn(commonsModule, 'executeRequest').mockResolvedValue({
       success: true,
@@ -85,7 +116,11 @@ describe('data fetcher', () => {
         },
       },
     });
+    jest.spyOn(logger, 'warn');
 
     await expect(dataFetcherLoopModule.callSignedApi('some-url', 10_000)).resolves.toBeNull();
+
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith('Failed to parse signed API response.', { url: 'some-url' });
   });
 });

@@ -33,6 +33,7 @@
     "jest-e2e.config.js",
     "jest-unit.config.js",
 
-    "./local-test-configuration/**/*"
+    "./local-test-configuration/**/*",
+    "./reset.d.ts"
   ]
 }

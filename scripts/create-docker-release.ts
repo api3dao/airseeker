@@ -23,7 +23,7 @@ const execSyncWithErrorHandling = (command: string) => {
 export const isMacOrWindows = () => process.platform === 'win32' || process.platform === 'darwin' || isWsl;
 
 const main = () => {
-  const { version } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'));
+  const { version } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8')) as any;
   console.info(`Building docker image with semantic version ${version}...`);
 
   if (isMacOrWindows()) {
