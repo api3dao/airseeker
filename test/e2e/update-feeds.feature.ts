@@ -124,9 +124,9 @@ it('updates blockchain data', async () => {
   expect(logger.debug).toHaveBeenNthCalledWith(4, 'Getting nonce.');
   expect(logger.debug).toHaveBeenNthCalledWith(5, 'Getting recommended gas price.');
   expect(logger.debug).toHaveBeenNthCalledWith(6, 'Creating calldatas.');
-  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Estimating beacon set update gas limit.');
+  expect(logger.debug).toHaveBeenNthCalledWith(7, 'Estimating multicall update gas limit.');
   expect(logger.info).toHaveBeenCalledTimes(2);
-  expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed.', expect.anything());
+  expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed(s).', expect.anything());
   expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the update transaction.', expect.anything());
   expect(logger.warn).toHaveBeenCalledTimes(0);
 });
