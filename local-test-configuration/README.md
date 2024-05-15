@@ -58,7 +58,7 @@ pnpm run dev:eth-node
 - Deploy the test contracts and fund respective Airseeker sponsor wallets:
 
 ```sh
-pnpm ts-node -T ./local-test-configuration/scripts/initialize-chain.ts
+pnpm ts-node --transpileOnly ./local-test-configuration/scripts/initialize-chain.ts
 ```
 
 This command gives you the addresses of the deployed contracts. These need to be put into the Airseeker secrets and are
