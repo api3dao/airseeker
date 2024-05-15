@@ -17,7 +17,7 @@ const signedDataRecord = z.record(keccak256HashSchema, signedDataSchema);
 export type SignedDataRecord = z.infer<typeof signedDataRecord>;
 
 export const signedApiResponseSchema = z.object({
-  count: z.number().positive(),
+  count: z.number().nonnegative(),
   data: signedDataRecord,
 });
 
