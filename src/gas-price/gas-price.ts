@@ -89,9 +89,9 @@ export const getRecommendedGasPrice = (
 ) => {
   const state = getState();
   const oldestPendingTransactionInfo = minBy(
-    dataFeedIds
-      .map((dataFeedId) => state.pendingTransactionsInfo[chainId]?.[providerName]?.[sponsorWalletAddress]?.[dataFeedId])
-      .sort((a, b) => (b?.consecutivelyUpdatableCount ?? 0) - (a?.consecutivelyUpdatableCount ?? 0)),
+    dataFeedIds.map(
+      (dataFeedId) => state.pendingTransactionsInfo[chainId]?.[providerName]?.[sponsorWalletAddress]?.[dataFeedId]
+    ),
     (info) => info?.firstUpdatableTimestamp
   );
 
