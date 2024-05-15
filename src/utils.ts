@@ -1,6 +1,8 @@
 import { randomBytes } from 'node:crypto';
+
 import { deriveWalletPathFromSponsorAddress, type Address, type Hex } from '@api3/commons';
 import { ethers, type ErrorCode, type EthersError } from 'ethers';
+
 import type { WalletDerivationScheme } from './config/schema';
 import { AIRSEEKER_PROTOCOL_ID, INT224_MAX, INT224_MIN } from './constants';
 
