@@ -10,8 +10,8 @@ import type { HDNodeWallet, JsonRpcProvider, Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
 import {
-  deriveSponsorAddressHashForManagedFeed,
-  deriveSponsorWalletFromSponsorAddressHash,
+  deriveSponsorAddressForManagedFeed,
+  deriveSponsorWalletFromSponsorAddress,
   encodeDapiName,
 } from '../../src/utils';
 import { generateTestConfig } from '../fixtures/mock-config';
@@ -146,7 +146,7 @@ export const deployAndUpdate = async () => {
   );
   const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager as Signer);
   const airseekerRegistry = await airseekerRegistryFactory.deploy(
-    await (deployerAndManager as Signer).getAddress(),
+    deployerAndManager!.address,
     api3ServerV1.getAddress()
   );
 
@@ -261,11 +261,8 @@ export const deployAndUpdate = async () => {
     await airseekerRegistry.connect(deployerAndManager).setDapiNameToBeActivated(dapiName);
 
     // Initialize sponsor wallets
-    const sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiName);
-    const sponsorWallet = deriveSponsorWalletFromSponsorAddressHash(
-      airseekerWallet.mnemonic!.phrase,
-      sponsorAddressHash
-    );
+    const sponsorAddress = deriveSponsorAddressForManagedFeed(dapiName);
+    const sponsorWallet = deriveSponsorWalletFromSponsorAddress(airseekerWallet.mnemonic!.phrase, sponsorAddress);
     await walletFunder!.sendTransaction({
       to: sponsorWallet.address,
       value: ethers.parseEther('1'),

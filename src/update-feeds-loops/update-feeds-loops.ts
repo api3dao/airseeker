@@ -10,15 +10,15 @@ import { getState, updateState } from '../state';
 import { generateRandomId, sanitizeEthersError, sleep } from '../utils';
 
 import {
+  createProvider,
   decodeActiveDataFeedCountResponse,
   decodeActiveDataFeedResponse,
-  getAirseekerRegistry,
-  verifyMulticallResponse,
-  type DecodedActiveDataFeedResponse,
-  getApi3ServerV1,
   decodeGetBlockNumberResponse,
   decodeGetChainIdResponse,
-  createProvider,
+  getAirseekerRegistry,
+  getApi3ServerV1,
+  verifyMulticallResponse,
+  type DecodedActiveDataFeedResponse,
 } from './contracts';
 import { getUpdatableFeeds } from './get-updatable-feeds';
 import { initializePendingTransactionsInfo, updatePendingTransactionsInfo } from './pending-transaction-info';
@@ -294,13 +294,14 @@ export const processBatch = async (
   const { contracts } = chains[chainId]!;
 
   const feedsToUpdate = getUpdatableFeeds(batch, deviationThresholdCoefficient);
+
   updatePendingTransactionsInfo(chainId, providerName, batch, feedsToUpdate);
 
   // Fetch the gas price regardless of whether there are any feeds to be updated or not in order for gas oracle to
   // maintain historical gas prices.
   await fetchAndStoreGasPrice(chainId, providerName, provider);
 
-  const updatedFeeds = await submitTransactions(
+  const successCount = await submitTransactions(
     chainId,
     providerName,
     provider,
@@ -308,7 +309,6 @@ export const processBatch = async (
     feedsToUpdate,
     blockNumber
   );
-  const successCount = updatedFeeds.filter(Boolean).length;
 
   // Generate signed API URLs for the batch.
   const signedApiUrlsFromConfig = batch.flatMap((dataFeed) =>

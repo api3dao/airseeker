@@ -154,15 +154,11 @@ export const deviationThresholdCoefficientSchema = z
 
 export type DeviationThresholdCoefficient = z.infer<typeof deviationThresholdCoefficientSchema>;
 
-export const walletDerivationTypeSchema = z.union([z.literal('self-funded'), z.literal('managed')]);
-
-export type WalletDerivationType = z.infer<typeof walletDerivationTypeSchema>;
-
-export const walletDerivationSchemeSchema = z
-  .object({
-    type: walletDerivationTypeSchema,
-  })
-  .strict();
+export const walletDerivationSchemeSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('self-funded') }).strict(),
+  z.object({ type: z.literal('managed') }).strict(),
+  z.object({ type: z.literal('fixed'), sponsorAddress: addressSchema }).strict(),
+]);
 
 export type WalletDerivationScheme = z.infer<typeof walletDerivationSchemeSchema>;
 

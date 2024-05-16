@@ -234,6 +234,8 @@ The following options are available:
   parameters. This is the scheme that was originally used by Nodary for self-funded data feeds.
 - `managed` - Derives the wallet from the hash of the dAPI name (or data feed ID). This means the wallet derivation is
   agnostic to update parameters, and the same wallet is used when the dAPI is upgraded/downgraded.
+- `fixed` - Derives the wallet from the specified `sponsorAddress`. All data feed updates will be done via this single
+  wallet.
 
 ### `stage`
 

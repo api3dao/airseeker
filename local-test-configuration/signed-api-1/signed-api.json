@@ -8,5 +8,5 @@
   ],
   "allowedAirnodes": [{ "address": "0xaC0653E412acAE526Da3a33af0135205A34E21AF", "authTokens": null }],
   "stage": "signed-api-1",
-  "version": "0.4.0"
+  "version": "1.0.0"
 }

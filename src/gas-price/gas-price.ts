@@ -1,7 +1,7 @@
-import type { Address } from '@api3/commons';
+import type { Address, Hex } from '@api3/commons';
 import { go } from '@api3/promise-utils';
 import type { ethers } from 'ethers';
-import { maxBy, remove } from 'lodash';
+import { maxBy, minBy, remove } from 'lodash';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
@@ -81,9 +81,20 @@ export const fetchAndStoreGasPrice = async (
   return gasPrice;
 };
 
-export const getRecommendedGasPrice = (chainId: string, providerName: string, sponsorWalletAddress: Address) => {
+export const getRecommendedGasPrice = (
+  chainId: string,
+  providerName: string,
+  sponsorWalletAddress: Address,
+  dataFeedIds: Hex[]
+) => {
   const state = getState();
-  const pendingTransactionInfo = state.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress];
+  const oldestPendingTransactionInfo = minBy(
+    dataFeedIds.map(
+      (dataFeedId) => state.pendingTransactionsInfo[chainId]?.[providerName]?.[sponsorWalletAddress]?.[dataFeedId]
+    ),
+    (info) => info?.firstUpdatableTimestamp
+  );
+
   const gasPrices = state.gasPrices[chainId]![providerName]!;
   const {
     gasSettings: {
@@ -107,8 +118,8 @@ export const getRecommendedGasPrice = (chainId: string, providerName: string, sp
 
   // Check if the next update is a retry of a pending transaction and scale the gas price accordingly.
   let gasPriceToUse = multiplyBigNumber(latestGasPrice, recommendedGasPriceMultiplier);
-  if (pendingTransactionInfo && pendingTransactionInfo.consecutivelyUpdatableCount > 1) {
-    const pendingPeriod = Math.floor(Date.now() / 1000) - pendingTransactionInfo.firstUpdatableTimestamp;
+  if (oldestPendingTransactionInfo && oldestPendingTransactionInfo.consecutivelyUpdatableCount > 1) {
+    const pendingPeriod = Math.floor(Date.now() / 1000) - oldestPendingTransactionInfo.firstUpdatableTimestamp;
     const scalingMultiplier = calculateScalingMultiplier(
       recommendedGasPriceMultiplier,
       maxScalingMultiplier,

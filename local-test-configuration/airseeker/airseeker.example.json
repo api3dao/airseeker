@@ -2,6 +2,7 @@
   "sponsorWalletMnemonic": "${SPONSOR_WALLET_MNEMONIC}",
   "chains": {
     "31337": {
+      "alias": "hardhat",
       "contracts": {
         "Api3ServerV1": "${API3_SERVER_V1_ADDRESS}",
         "AirseekerRegistry": "${AIRSEEKER_REGISTRY_ADDRESS}"
@@ -19,13 +20,14 @@
         "maxScalingMultiplier": 2,
         "sanitizationMultiplier": 3
       },
-      "dataFeedUpdateInterval": 30,
-      "dataFeedBatchSize": 10,
-      "fallbackGasLimit": 2000000
+      "dataFeedUpdateInterval": 60,
+      "dataFeedBatchSize": 10
     }
   },
   "deviationThresholdCoefficient": 1,
   "signedDataFetchInterval": 10,
   "signedApiUrls": [],
-  "walletDerivationScheme": { "type": "managed" }
+  "walletDerivationScheme": { "type": "managed" },
+  "stage": "dev",
+  "version": "3.1.0"
 }

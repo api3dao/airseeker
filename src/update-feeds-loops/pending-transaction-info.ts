@@ -1,7 +1,7 @@
-import type { Address, ChainId } from '@api3/commons';
+import type { Address, ChainId, Hex } from '@api3/commons';
 
 import { logger } from '../logger';
-import { type PendingTransactionInfo, updateState, getState } from '../state';
+import { getState, updateState, type PendingTransactionInfo } from '../state';
 
 import type { DecodedActiveDataFeedResponse } from './contracts';
 import type { UpdatableDataFeed } from './get-updatable-feeds';
@@ -17,10 +17,14 @@ export const setPendingTransactionInfo = (
   chainId: string,
   providerName: string,
   sponsorWalletAddress: Address,
+  dataFeedId: Hex,
   pendingTransactionInfo: PendingTransactionInfo | null
 ) => {
   updateState((draft) => {
-    draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress] = pendingTransactionInfo;
+    if (!draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]) {
+      draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress] = {};
+    }
+    draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]![dataFeedId] = pendingTransactionInfo;
   });
 };
 
@@ -43,26 +47,26 @@ export const updatePendingTransactionsInfo = (
       (updatableFeed) =>
         updatableFeed.dataFeedInfo.dapiName === dapiName && updatableFeed.dataFeedInfo.dataFeedId === dataFeedId
     );
-    const sponsorWalletAddress = getDerivedSponsorWallet(
-      sponsorWalletMnemonic,
-      dapiName ?? dataFeedId,
+
+    const sponsorWalletAddress = getDerivedSponsorWallet(sponsorWalletMnemonic, {
+      ...walletDerivationScheme,
+      dapiNameOrDataFeedId: dapiName ?? dataFeedId,
       updateParameters,
-      walletDerivationScheme
-    ).address as Address;
-    const pendingTransactionInfo = pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress];
+    }).address as Address;
+
+    const pendingTransactionInfo = pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]?.[dataFeedId];
 
     if (isFeedUpdatable) {
-      const consecutivelyUpdatableCount = pendingTransactionInfo
-        ? pendingTransactionInfo.consecutivelyUpdatableCount + 1
-        : 1;
+      const consecutivelyUpdatableCount = (pendingTransactionInfo?.consecutivelyUpdatableCount ?? 0) + 1;
       const firstUpdatableTimestamp = pendingTransactionInfo?.firstUpdatableTimestamp ?? currentTimestamp;
       const newPendingTransactionInfo = { consecutivelyUpdatableCount, firstUpdatableTimestamp };
       logger.info('Updating pending transaction info.', {
         ...newPendingTransactionInfo,
         dapiName: decodedDapiName,
         dataFeedId,
+        sponsorWalletAddress,
       });
-      setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, newPendingTransactionInfo);
+      setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, dataFeedId, newPendingTransactionInfo);
     }
     if (!isFeedUpdatable && pendingTransactionInfo) {
       // NOTE: A data feed may stop needing an update for two reasons:
@@ -76,7 +80,7 @@ export const updatePendingTransactionsInfo = (
         dataFeedId,
         totalPendingPeriod: currentTimestamp - pendingTransactionInfo.firstUpdatableTimestamp,
       });
-      setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, null);
+      setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, dataFeedId, null);
     }
   }
 };

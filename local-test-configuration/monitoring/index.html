@@ -730,10 +730,13 @@
     const rpcUrl = urlParams.get('rpcUrl'),
       airseekerRegistryAddress = urlParams.get('airseekerRegistryAddress'),
       airseekerMnemonic = decodeURIComponent(urlParams.get('airseekerMnemonic')),
-      walletDerivationScheme = decodeURIComponent(urlParams.get('walletDerivationScheme'));
+      walletDerivationScheme = decodeURIComponent(urlParams.get('walletDerivationScheme')),
+      sponsorAddress = decodeURIComponent(urlParams.get('sponsorAddress'));
 
     if (!airseekerRegistryAddress) throw new Error('airseekerRegistryAddress must be provided as URL parameter');
     if (!airseekerMnemonic) throw new Error('airseekerMnemonic must be provided as URL parameter');
+    if (walletDerivationScheme === 'fallback' && !sponsorAddress)
+      throw new Error('sponsorAddress must be provided as URL parameter when walletDerivationScheme is "fallback"');
 
     // See: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-953187833
     BigInt.prototype.toJSON = function () {
@@ -876,10 +879,18 @@
       //
       // For self-funded feeds it's more suitable to derive the hash also from update parameters. This does not apply to
       // mananaged feeds which want to be funded by the same wallet independently of the update parameters.
-      const sponsorAddressHash =
-        walletDerivationScheme === 'self-funded'
-          ? deriveSponsorAddressHashForSelfFundedFeed(dapiNameOrDataFeedId, updateParameters)
-          : deriveSponsorAddressHashForManagedFeed(dapiNameOrDataFeedId);
+      let sponsorAddressHash;
+      switch (walletDerivationScheme.type) {
+        case 'self-funded':
+          sponsorAddressHash = deriveSponsorAddressHashForSelfFundedFeed(dapiNameOrDataFeedId, updateParameters);
+          break;
+        case 'managed':
+          sponsorAddressHash = deriveSponsorAddressHashForManagedFeed(dapiNameOrDataFeedId);
+          break;
+        case 'fixed':
+          sponsorAddressHash = walletDerivationScheme.sponsorAddress;
+          break;
+      }
 
       return deriveSponsorWalletFromSponsorAddressHash(sponsorWalletMnemonic, sponsorAddressHash);
     };
@@ -938,7 +949,10 @@
           airseekerMnemonic,
           dapiName ?? dataFeed.dataFeedId,
           updateParameters,
-          walletDerivationScheme
+          {
+            type: walletDerivationScheme,
+            ...(sponsorAddress && { sponsorAddress }),
+          }
         );
         const dataFeedInfo = {
           dapiName: dapiName,

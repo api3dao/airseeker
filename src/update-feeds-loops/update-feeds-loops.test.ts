@@ -238,7 +238,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
           dataFeedInfo: decodedThirdDataFeed,
         }),
       ]);
-    jest.spyOn(submitTransactionModule, 'submitTransactions').mockResolvedValue([null, null]);
+    jest.spyOn(submitTransactionModule, 'submitTransactions').mockResolvedValue(0);
     const processBatchCalls = [] as number[];
     const originalProcessBatch = updateFeedsLoopsModule.processBatch;
     jest
@@ -281,6 +281,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     expect(logger.debug).toHaveBeenNthCalledWith(1, 'Fetching first batch of data feeds batches.');
     expect(logger.debug).toHaveBeenNthCalledWith(2, 'Processing batch of active data feeds.', expect.anything());
     expect(logger.debug).toHaveBeenNthCalledWith(3, 'Derived new sponsor wallet.', {
+      sponsorAddress: expect.any(String),
       sponsorWalletAddress: '0x4Fe33c7f5E9407c8A27B97144c98759C88B5b8dE',
     });
     expect(logger.debug).toHaveBeenNthCalledWith(4, 'Fetching gas price and saving it to the state.');
@@ -296,6 +297,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
     });
     expect(logger.debug).toHaveBeenNthCalledWith(8, 'Processing batch of active data feeds.', expect.anything());
     expect(logger.debug).toHaveBeenNthCalledWith(9, 'Derived new sponsor wallet.', {
+      sponsorAddress: expect.any(String),
       sponsorWalletAddress: '0x4Fe33c7f5E9407c8A27B97144c98759C88B5b8dE',
     });
     expect(logger.debug).toHaveBeenNthCalledWith(10, 'Fetching gas price and saving it to the state.');

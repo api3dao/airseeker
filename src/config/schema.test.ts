@@ -5,7 +5,12 @@ import { interpolateSecretsIntoConfig } from '@api3/commons';
 import dotenv from 'dotenv';
 import { ZodError } from 'zod';
 
-import { chainsSchema, configSchema, deviationThresholdCoefficientSchema } from './schema';
+import {
+  chainsSchema,
+  configSchema,
+  deviationThresholdCoefficientSchema,
+  walletDerivationSchemeSchema,
+} from './schema';
 
 const gasSettings = {
   recommendedGasPriceMultiplier: 1.5,
@@ -197,6 +202,56 @@ describe('chains schema', () => {
           code: 'custom',
           message: 'Invalid deviationThresholdCoefficient. A maximum of 2 decimals are supported.',
           path: ['deviationThresholdCoefficient'],
+        },
+      ])
+    );
+  });
+});
+
+describe('walletDerivationScheme schema', () => {
+  it('parses the walletDerivationScheme as "fixed"', () => {
+    const walletDerivationScheme = { type: 'fixed', sponsorAddress: '0x0000000000000000000000000000000000000001' };
+    const parsed = walletDerivationSchemeSchema.parse(walletDerivationScheme);
+
+    expect(parsed).toStrictEqual(walletDerivationScheme);
+  });
+
+  it('sponsorAddress is present when walletDerivationScheme is "fixed"', () => {
+    const walletDerivationScheme = { type: 'fixed' };
+
+    expect(() => walletDerivationSchemeSchema.parse(walletDerivationScheme)).toThrow(
+      new ZodError([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['sponsorAddress'],
+          message: 'Required',
+        },
+      ])
+    );
+  });
+
+  it('sponsorAddress must be a valid EVM address when walletDerivationScheme is "fixed"', () => {
+    const walletDerivationScheme = { type: 'fixed' };
+
+    expect(() => walletDerivationSchemeSchema.parse({ ...walletDerivationScheme, sponsorAddress: '' })).toThrow(
+      new ZodError([
+        {
+          code: 'custom',
+          message: 'Invalid EVM address',
+          path: ['sponsorAddress'],
+        },
+      ])
+    );
+    expect(() =>
+      walletDerivationSchemeSchema.parse({ ...walletDerivationScheme, sponsorAddress: '0xinvalid' })
+    ).toThrow(
+      new ZodError([
+        {
+          code: 'custom',
+          message: 'Invalid EVM address',
+          path: ['sponsorAddress'],
         },
       ])
     );
