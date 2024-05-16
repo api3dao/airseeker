@@ -24,7 +24,7 @@ export interface State {
   // This is used to keep track of the first time Airseeker detects that a data feed requires an update.
   // The object with the update information is grouped by sponsor wallet and data feed ID. This is because Airseeker uses different schemes to derive sponsor wallets:
   // `managed`: The sponsor wallet is derived from the dAPI name resulting in a single sponsor wallet per data feed.
-  // `self-funded`: The sponsor wallet is derived from the dAPI name and update parameters resulting in multiple sponsor wallets per data feed.
+  // `self-funded`: The sponsor wallet is derived from the dAPI name (or data feed ID) and update parameters resulting in multiple sponsor wallets per data feed.
   // `fixed`: The sponsor wallet is derived from a pre-defined sponsor address resulting in a single sponsor wallet for all data feeds.
   pendingTransactionsInfo: Record<
     ChainId,
