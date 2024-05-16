@@ -21,13 +21,10 @@ export const setPendingTransactionInfo = (
   pendingTransactionInfo: PendingTransactionInfo | null
 ) => {
   updateState((draft) => {
-    draft.pendingTransactionsInfo[chainId]![providerName] = {
-      ...draft.pendingTransactionsInfo[chainId]![providerName],
-      [sponsorWalletAddress]: {
-        ...draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress],
-        [dataFeedId]: pendingTransactionInfo,
-      },
-    };
+    if (!draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]) {
+      draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress] = {};
+    }
+    draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]![dataFeedId] = pendingTransactionInfo;
   });
 };
 
