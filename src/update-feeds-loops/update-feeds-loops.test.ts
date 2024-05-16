@@ -238,7 +238,7 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
           dataFeedInfo: decodedThirdDataFeed,
         }),
       ]);
-    jest.spyOn(submitTransactionModule, 'submitTransactions').mockResolvedValue([null, null]);
+    jest.spyOn(submitTransactionModule, 'submitTransactions').mockResolvedValue(0);
     const processBatchCalls = [] as number[];
     const originalProcessBatch = updateFeedsLoopsModule.processBatch;
     jest

@@ -245,22 +245,31 @@ export const submitTransactions = async (
   updatableDataFeeds: UpdatableDataFeed[],
   blockNumber: number
 ) => {
+  if (updatableDataFeeds.length === 0) {
+    return 0;
+  }
+
   const {
     config: { walletDerivationScheme },
   } = getState();
   if (walletDerivationScheme.type === 'fixed') {
-    return updatableDataFeeds.length > 0
-      ? Array.from({ length: updatableDataFeeds.length }).fill(
-          await submitBatchTransaction(chainId, providerName, provider, api3ServerV1, updatableDataFeeds, blockNumber)
-        )
-      : [];
+    const result = await submitBatchTransaction(
+      chainId,
+      providerName,
+      provider,
+      api3ServerV1,
+      updatableDataFeeds,
+      blockNumber
+    );
+    return result ? updatableDataFeeds.length : 0;
   }
 
-  return Promise.all(
+  const result = await Promise.all(
     updatableDataFeeds.map(async (dataFeed) =>
       submitTransaction(chainId, providerName, provider, api3ServerV1, dataFeed, blockNumber)
     )
   );
+  return result.filter(Boolean).length;
 };
 
 export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, params: SponsorAddressDerivationParams) => {

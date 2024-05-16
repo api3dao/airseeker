@@ -301,7 +301,7 @@ export const processBatch = async (
   // maintain historical gas prices.
   await fetchAndStoreGasPrice(chainId, providerName, provider);
 
-  const updatedFeeds = await submitTransactions(
+  const successCount = await submitTransactions(
     chainId,
     providerName,
     provider,
@@ -309,8 +309,6 @@ export const processBatch = async (
     feedsToUpdate,
     blockNumber
   );
-
-  const successCount = updatedFeeds.filter(Boolean).length;
 
   // Generate signed API URLs for the batch.
   const signedApiUrlsFromConfig = batch.flatMap((dataFeed) =>
