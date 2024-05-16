@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+
 import workerpool, { type Pool } from 'workerpool';
 
 // Create a worker pool using an external worker script.
@@ -31,8 +33,11 @@ export const initializeVerifierPool = () => {
           },
         }
       : baseOptions;
-  pool = workerpool.pool(`${__dirname}/signed-data-verifier.${extension}`, options);
 
+  // The worker pool does not throw when a non-existing path is provided, but instead fails silently.
+  const path = `${__dirname}/signed-data-verifier-worker.${extension}`;
+  if (!existsSync(path)) throw new Error(`Worker script not found at path: ${path}`);
+  pool = workerpool.pool(path, options);
   return pool;
 };
 
