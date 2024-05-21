@@ -10,7 +10,7 @@
     "dist",
     "src"
   ],
-  "main": "./dist/npm-exports.js",
+  "main": "./dist/src/npm-exports.js",
   "sideEffects": false,
   "repository": {
     "type": "git",
