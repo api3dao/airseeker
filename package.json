@@ -10,14 +10,14 @@
     "dist",
     "src"
   ],
-  "main": "./dist/npm-exports.js",
+  "main": "./dist/src/npm-exports.js",
   "sideEffects": false,
   "repository": {
     "type": "git",
     "url": "https://github.com/api3dao/airseeker-v2"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
+    "build": "rm -rf dist && tsc --project tsconfig.build.json",
     "clean": "rm -rf coverage dist artifacts cache",
     "create-release:docker": "ts-node scripts/create-docker-release.ts",
     "create-release:npm": "ts-node scripts/create-npm-release.ts",
