@@ -17,7 +17,7 @@
     "url": "https://github.com/api3dao/airseeker-v2"
   },
   "scripts": {
-    "build": "rm -rf dist && tsc --project tsconfig.build.json",
+    "build": "tsc --project tsconfig.build.json",
     "clean": "rm -rf coverage dist artifacts cache",
     "create-release:docker": "ts-node scripts/create-docker-release.ts",
     "create-release:npm": "ts-node scripts/create-npm-release.ts",
