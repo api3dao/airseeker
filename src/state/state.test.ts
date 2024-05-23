@@ -23,6 +23,7 @@ const stateMock: State = {
           [beaconId]: {
             consecutivelyUpdatableCount: 1,
             firstUpdatableTimestamp: timestampMock,
+            onChainTimestamp: 1_696_930_907n,
           },
         },
       },
