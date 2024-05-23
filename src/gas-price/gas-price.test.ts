@@ -227,6 +227,7 @@ describe(getRecommendedGasPrice.name, () => {
           [dataFeedId]: {
             consecutivelyUpdatableCount: 2,
             firstUpdatableTimestamp: timestampMock - 60, // The feed requires update for 1 minute.
+            onChainTimestamp: BigInt(timestampMock - 65),
           },
         },
       };
@@ -260,6 +261,7 @@ describe(getRecommendedGasPrice.name, () => {
           [dataFeedId]: {
             consecutivelyUpdatableCount: 12,
             firstUpdatableTimestamp: timestampMock - 60 * 60, // The feed requires update for 1 hour.
+            onChainTimestamp: BigInt(timestampMock - 60 * 60 + 5),
           },
         },
       };
@@ -298,6 +300,7 @@ describe(getRecommendedGasPrice.name, () => {
           [dataFeedId]: {
             consecutivelyUpdatableCount: 12,
             firstUpdatableTimestamp: timestampMock - 60 * 60, // The feed requires update for 1 hour.
+            onChainTimestamp: BigInt(timestampMock - 60 * 60 + 5),
           },
         },
       };
@@ -339,10 +342,12 @@ describe(getRecommendedGasPrice.name, () => {
           [dataFeedId]: {
             consecutivelyUpdatableCount: 2,
             firstUpdatableTimestamp: timestampMock - 59,
+            onChainTimestamp: BigInt(timestampMock - 65),
           },
           [anotherDataFeedId]: {
             consecutivelyUpdatableCount: 2,
             firstUpdatableTimestamp: timestampMock - 60,
+            onChainTimestamp: BigInt(timestampMock - 65),
           },
           [yetAnotherDataFeedId]: null,
         },

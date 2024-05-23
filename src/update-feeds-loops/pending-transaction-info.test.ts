@@ -20,6 +20,7 @@ describe(setPendingTransactionInfo.name, () => {
     const pendingTransactionInfo: PendingTransactionInfo = {
       consecutivelyUpdatableCount: 1,
       firstUpdatableTimestamp: timestampMock,
+      onChainTimestamp: 1_696_930_907n,
     };
 
     setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, dataFeedId, pendingTransactionInfo);
