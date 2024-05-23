@@ -1,7 +1,18 @@
-import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
-import { type PendingTransactionInfo, getState } from '../state';
+import type { ethers } from 'ethers';
 
-import { initializePendingTransactionsInfo, setPendingTransactionInfo } from './pending-transaction-info';
+import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
+import { allowPartial } from '../../test/utils';
+import { logger } from '../logger';
+import * as stateModule from '../state';
+
+import type { DecodedActiveDataFeedResponse } from './contracts';
+import type { UpdatableDataFeed } from './get-updatable-feeds';
+import {
+  initializePendingTransactionsInfo,
+  setPendingTransactionInfo,
+  updatePendingTransactionsInfo,
+} from './pending-transaction-info';
+import * as submitTransactionsModule from './submit-transactions';
 
 const chainId = '31337';
 const providerName = 'localhost';
@@ -17,7 +28,7 @@ beforeEach(() => {
 
 describe(setPendingTransactionInfo.name, () => {
   it('sets the pending transaction info', () => {
-    const pendingTransactionInfo: PendingTransactionInfo = {
+    const pendingTransactionInfo: stateModule.PendingTransactionInfo = {
       consecutivelyUpdatableCount: 1,
       firstUpdatableTimestamp: timestampMock,
       onChainTimestamp: 1_696_930_907n,
@@ -26,13 +37,84 @@ describe(setPendingTransactionInfo.name, () => {
     setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, dataFeedId, pendingTransactionInfo);
 
     expect(
-      getState().pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]![dataFeedId]
+      stateModule.getState().pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]![dataFeedId]
     ).toStrictEqual(pendingTransactionInfo);
   });
 
   it('clears the pending transaction info', () => {
     setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, dataFeedId, null);
 
-    expect(getState().pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]![dataFeedId]).toBeNull();
+    expect(
+      stateModule.getState().pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]![dataFeedId]
+    ).toBeNull();
+  });
+});
+
+describe(updatePendingTransactionsInfo.name, () => {
+  it('resets the pending transaction info if the on-chain timestamp is different', () => {
+    jest.spyOn(logger, 'info');
+    jest.spyOn(stateModule, 'getState').mockReturnValueOnce(
+      allowPartial<stateModule.State>({
+        config: {},
+        pendingTransactionsInfo: {
+          [chainId]: {
+            [providerName]: {
+              [sponsorWalletAddress]: {
+                [dataFeedId]: {
+                  consecutivelyUpdatableCount: 2,
+                  firstUpdatableTimestamp: timestampMock,
+                  onChainTimestamp: 1_696_930_906n,
+                },
+              },
+            },
+          },
+        },
+      })
+    );
+    jest
+      .spyOn(submitTransactionsModule, 'getDerivedSponsorWallet')
+      .mockReturnValue({ address: sponsorWalletAddress } as ethers.Wallet);
+    const now = Date.now();
+    jest.useFakeTimers().setSystemTime(now);
+
+    updatePendingTransactionsInfo(
+      chainId,
+      providerName,
+      allowPartial<DecodedActiveDataFeedResponse[]>([
+        {
+          dapiName: '0xDapiName',
+          dataFeedId,
+          decodedDapiName: 'decodedDapiName',
+          updateParameters: '0xUpdateParameters',
+          dataFeedTimestamp: 1_696_930_907n, // The current data feed on-chain timestamp is different.
+        },
+      ]),
+      allowPartial<UpdatableDataFeed[]>([
+        {
+          dataFeedInfo: {
+            dapiName: '0xDapiName',
+            dataFeedId,
+          },
+        },
+      ])
+    );
+
+    // We expect the pending transaction info to be reset.
+    expect(
+      stateModule.getState().pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]![dataFeedId]
+    ).toStrictEqual({
+      consecutivelyUpdatableCount: 1,
+      firstUpdatableTimestamp: Math.floor(now / 1000),
+      onChainTimestamp: 1_696_930_907n,
+    });
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith('Updating pending transaction info.', {
+      dapiName: 'decodedDapiName',
+      dataFeedId,
+      sponsorWalletAddress,
+      consecutivelyUpdatableCount: 1,
+      firstUpdatableTimestamp: Math.floor(now / 1000),
+      onChainTimestamp: 1_696_930_907n,
+    });
   });
 });
