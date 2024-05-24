@@ -121,6 +121,38 @@ describe(dataFetcherLoopModule.callSignedApi.name, () => {
     await expect(dataFetcherLoopModule.callSignedApi('some-url', 10_000)).resolves.toBeNull();
 
     expect(logger.warn).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenCalledWith('Failed to parse signed API response.', { url: 'some-url' });
+    expect(logger.warn).toHaveBeenCalledWith('Failed to parse signed API response.', {
+      url: 'some-url',
+      errors: JSON.stringify([
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['data', '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04', 'airnode'],
+          message: 'Required',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['data', '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04', 'templateId'],
+          message: 'Required',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['data', '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04', 'timestamp'],
+          message: 'Required',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['data', '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04', 'encodedValue'],
+          message: 'Required',
+        },
+      ]),
+    });
   });
 });
