@@ -283,7 +283,7 @@ export const processBatch = async (
   chainId: string,
   blockNumber: number
 ) => {
-  logger.debug('Processing batch of active data feeds.', {
+  logger.info('Processing batch of active data feeds.', {
     dapiNames: batch.map((dataFeed) => dataFeed.decodedDapiName),
     dataFeedIds: batch.map((dataFeed) => dataFeed.dataFeedId),
     blockNumber,
