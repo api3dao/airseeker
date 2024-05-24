@@ -48,7 +48,10 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
 
   const parseResult = signedApiResponseSchema.safeParse(executionResult.data);
   if (!parseResult.success) {
-    logger.warn('Failed to parse signed API response.', { url });
+    logger.warn('Failed to parse signed API response.', {
+      url,
+      errors: JSON.stringify(parseResult.error.errors).slice(0, 1000),
+    });
     return null;
   }
 
