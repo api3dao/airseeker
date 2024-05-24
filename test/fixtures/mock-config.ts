@@ -24,6 +24,7 @@ export const generateTestConfig = (): Config => ({
       },
       dataFeedBatchSize: 10,
       dataFeedUpdateInterval: 60,
+      enforceRpcBlockNumber: false,
     },
   },
   signedDataFetchInterval: 10,

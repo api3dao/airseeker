@@ -22,7 +22,8 @@
       },
       "dataFeedUpdateInterval": 60,
       "dataFeedBatchSize": 10
-    }
+    },
+    "enforceRpcBlockNumber": false
   },
   "deviationThresholdCoefficient": 1,
   "signedDataFetchInterval": 10,

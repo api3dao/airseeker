@@ -214,6 +214,14 @@ The batch size of active data feeds that are to be fetched in a single RPC call.
 The fallback gas limit used when the gas limit estimation using the RPC provider fails. If not specified, Airseeker will
 only rely on the RPC provider for gas limit estimation and will skip an update if this fails.
 
+#### `enforceRpcBlockNumber`
+
+When set to `false`, Airseeker uses the block number returned by the `AirseekerRegistry` contract. The block number is
+used to determine the right nonce for the update transaction. On some chains, the on-chain `block.number` has a
+different meaning, e.g. Arbitrum returns the block number of L1.
+
+Setting this flag to `true`, will always use the block number returned by the RPC provider.
+
 ### `signedDataFetchInterval`
 
 The fetch interval in seconds between retrievals of signed API data.

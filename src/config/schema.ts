@@ -68,6 +68,7 @@ export const optionalChainSchema = z
     dataFeedUpdateInterval: z.number().positive(),
     dataFeedBatchSize: z.number().positive(),
     fallbackGasLimit: z.number().positive().optional(),
+    enforceRpcBlockNumber: z.boolean(),
   })
   .strict();
 

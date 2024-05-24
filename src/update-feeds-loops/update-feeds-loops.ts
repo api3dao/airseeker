@@ -85,7 +85,8 @@ export const readActiveDataFeedBatch = async (
   airseekerRegistry: AirseekerRegistry,
   chainId: string,
   fromIndex: number,
-  toIndex: number
+  toIndex: number,
+  enforceRpcBlockNumber: boolean
 ) => {
   const calldatas: string[] = [];
   if (fromIndex === 0) calldatas.push(airseekerRegistry.interface.encodeFunctionData('activeDataFeedCount'));
@@ -131,11 +132,9 @@ export const readActiveDataFeedBatch = async (
       return isRegistered;
     });
 
-  // NOTE: https://api3workspace.slack.com/archives/C05TQPT7PNJ/p1713441156074839?thread_ts=1713438669.278119&cid=C05TQPT7PNJ
-  const blockNumber =
-    chainId === '42161' || chainId === '421614'
-      ? await provider.getBlockNumber()
-      : decodeGetBlockNumberResponse(getBlockNumberReturndata!);
+  const blockNumber = enforceRpcBlockNumber
+    ? await provider.getBlockNumber()
+    : decodeGetBlockNumberResponse(getBlockNumberReturndata!);
 
   return {
     batch,
@@ -153,7 +152,7 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
       // We do not expect this function to throw, but its possible that some execution path is incorrectly handled and we
       // want to process the error ourselves, for example log the error using the configured format.
       const goRunUpdateFeeds = await go(async () => {
-        const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts, alias } = chain;
+        const { dataFeedBatchSize, dataFeedUpdateInterval, providers, contracts, alias, enforceRpcBlockNumber } = chain;
         const dataFeedUpdateIntervalMs = dataFeedUpdateInterval * 1000;
 
         // Create a provider and connect it to the AirseekerRegistry contract.
@@ -165,7 +164,8 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
         logger.debug(`Fetching first batch of data feeds batches.`);
         const firstBatchStartTimeMs = Date.now();
         const goFirstBatch = await go(
-          async () => readActiveDataFeedBatch(provider, airseekerRegistry, chainId, 0, dataFeedBatchSize),
+          async () =>
+            readActiveDataFeedBatch(provider, airseekerRegistry, chainId, 0, dataFeedBatchSize, enforceRpcBlockNumber),
           { totalTimeoutMs: dataFeedUpdateIntervalMs }
         );
         if (!goFirstBatch.success) {
@@ -214,7 +214,8 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
               airseekerRegistry,
               chainId,
               dataFeedBatchIndexStart,
-              dataFeedBatchIndexEnd
+              dataFeedBatchIndexEnd,
+              enforceRpcBlockNumber
             );
 
             return activeBatch;
