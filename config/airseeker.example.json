@@ -21,9 +21,9 @@
         "sanitizationMultiplier": 3
       },
       "dataFeedUpdateInterval": 60,
-      "dataFeedBatchSize": 10
-    },
-    "enforceRpcBlockNumber": false
+      "dataFeedBatchSize": 10,
+      "enforceRpcBlockNumber": false
+    }
   },
   "deviationThresholdCoefficient": 1,
   "signedDataFetchInterval": 10,
