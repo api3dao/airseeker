@@ -373,6 +373,12 @@ describe(gasPriceModule.getGasPrice.name, () => {
     expect(provider.send).toHaveBeenCalledWith('eth_gasPrice', []);
     expect(gasPrice).toBe(BigInt('0x1a13b8600'));
   });
+
+  it('throws when internal rpc call fails', async () => {
+    jest.spyOn(provider, 'send').mockRejectedValueOnce(new Error('Provider error'));
+
+    await expect(gasPriceModule.getGasPrice(provider)).rejects.toThrow('Provider error');
+  });
 });
 
 describe(gasPriceModule.fetchAndStoreGasPrice.name, () => {
