@@ -16,9 +16,10 @@ import {
   Api3ServerV1__factory as Api3ServerV1Factory,
 } from '@api3/contracts';
 import dotenv from 'dotenv';
-import { NonceManager, ethers } from 'ethers';
+import { type JsonRpcProvider, NonceManager, ethers } from 'ethers';
 import { zip } from 'lodash';
 
+import { getGasPrice } from '../../src/gas-price';
 import { deriveSponsorWallet, encodeDapiName } from '../../src/utils';
 
 interface RawBeaconData {
@@ -66,7 +67,7 @@ function encodeUpdateParameters() {
 
 // NOTE: This function is not used by the initialization script, but you can use it after finishing Airseeker test on a
 // public testnet to refund test ETH from sponsor wallets to the funder wallet.
-export const refundFunder = async (funderWallet: ethers.NonceManager) => {
+export const refundFunder = async (funderWallet: ethers.NonceManager, provider: JsonRpcProvider) => {
   const configPath = join(__dirname, `/../airseeker`);
   const rawConfig = loadConfig(join(configPath, 'airseeker.json'));
   const airseekerSecrets = dotenv.parse(readFileSync(join(configPath, 'secrets.env'), 'utf8'));
@@ -78,8 +79,6 @@ export const refundFunder = async (funderWallet: ethers.NonceManager) => {
     const dapiName = encodeDapiName(beaconSetName);
     const updateParameters = encodeUpdateParameters();
 
-    const provider = funderWallet.provider!;
-
     const sponsorWallet = deriveSponsorWallet(airseekerWalletMnemonic, {
       ...rawConfig.walletDerivationScheme,
       dapiNameOrDataFeedId: dapiName,
@@ -88,11 +87,11 @@ export const refundFunder = async (funderWallet: ethers.NonceManager) => {
     const sponsorWalletBalance = await provider.getBalance(sponsorWallet);
     console.info('Sponsor wallet balance:', sponsorWallet.address, ethers.formatEther(sponsorWalletBalance.toString()));
 
-    const feeData = await provider.getFeeData();
-    const { gasPrice } = feeData;
+    const gasPrice = await getGasPrice(provider);
+
     // We assume the legacy gas price will always exist. See:
     // https://api3workspace.slack.com/archives/C05TQPT7PNJ/p1699098552350519
-    const gasFee = gasPrice! * BigInt(21_000);
+    const gasFee = gasPrice * BigInt(21_000);
     if (sponsorWalletBalance < gasFee) {
       console.info('Sponsor wallet balance is too low, skipping refund');
       continue;
@@ -281,7 +280,7 @@ async function main() {
   });
   const funderWallet = new NonceManager(ethers.Wallet.fromPhrase(process.env.FUNDER_MNEMONIC, provider));
 
-  await refundFunder(funderWallet);
+  await refundFunder(funderWallet, provider);
   const balance = await provider.getBalance(funderWallet);
   console.info('Funder balance:', ethers.formatEther(balance.toString()));
   console.info();

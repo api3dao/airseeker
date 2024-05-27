@@ -1,6 +1,6 @@
 import type { Hex } from '@api3/commons';
 import type { AirseekerRegistry } from '@api3/contracts';
-import { ethers } from 'ethers';
+import { ethers, toBeHex } from 'ethers';
 import { omit } from 'lodash';
 
 import { generateTestConfig } from '../../test/fixtures/mock-config';
@@ -182,10 +182,11 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       ),
     } as contractsModule.DecodedActiveDataFeedResponse;
     const airseekerRegistry = generateMockAirseekerRegistry();
-    const getFeeDataSpy = jest.fn().mockResolvedValue({ gasPrice: ethers.parseUnits('5', 'gwei') });
+    const getGasPriceSpy = jest.fn().mockResolvedValue(toBeHex(ethers.parseUnits('5', 'gwei')));
     jest
       .spyOn(contractsModule, 'createProvider')
-      .mockResolvedValue({ getFeeData: getFeeDataSpy } as any as ethers.JsonRpcProvider);
+      .mockResolvedValue({ send: getGasPriceSpy } as any as ethers.JsonRpcProvider);
+
     jest
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
@@ -443,6 +444,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     jest.spyOn(logger, 'info');
 
     // Skip actions other than generating signed api urls.
+    jest.spyOn(gasPriceModule, 'fetchAndStoreGasPrice').mockImplementation();
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
     jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
 
@@ -485,6 +487,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     jest.spyOn(logger, 'info');
 
     // Skip actions other than generating signed api urls.
+    jest.spyOn(gasPriceModule, 'fetchAndStoreGasPrice').mockImplementation();
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
     jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
 
@@ -532,6 +535,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     jest.spyOn(provider, 'getTransactionCount').mockResolvedValue(123);
 
     // Skip actions other than generating signed api urls.
+    jest.spyOn(gasPriceModule, 'fetchAndStoreGasPrice').mockImplementation();
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([
       allowPartial<getUpdatableFeedsModule.UpdatableDataFeed>({
         dataFeedInfo: {
