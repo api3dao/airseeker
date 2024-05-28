@@ -128,8 +128,12 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
 
 describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
   it('aborts when fetching first data feed batch fails', async () => {
+    const getBlockNumberSpy = jest.fn().mockResolvedValue(123n);
+    jest
+      .spyOn(contractsModule, 'createProvider')
+      .mockResolvedValue({ getBlockNumber: getBlockNumberSpy } as any as ethers.JsonRpcProvider);
+
     const airseekerRegistry = generateMockAirseekerRegistry();
-    jest.spyOn(contractsModule, 'createProvider').mockResolvedValue(123 as any as ethers.JsonRpcProvider);
     jest
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
@@ -182,28 +186,27 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
       ),
     } as contractsModule.DecodedActiveDataFeedResponse;
     const airseekerRegistry = generateMockAirseekerRegistry();
+    const getBlockNumberSpy = jest.fn().mockResolvedValue(123n);
     const getGasPriceSpy = jest.fn().mockResolvedValue(toBeHex(ethers.parseUnits('5', 'gwei')));
     jest
       .spyOn(contractsModule, 'createProvider')
-      .mockResolvedValue({ send: getGasPriceSpy } as any as ethers.JsonRpcProvider);
-
+      .mockResolvedValue({ send: getGasPriceSpy, getBlockNumber: getBlockNumberSpy } as any as ethers.JsonRpcProvider);
     jest
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
     airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
-    const blockNumber = 123n;
     const chainId = BigInt(31_337);
     airseekerRegistry.tryMulticall.staticCall.mockResolvedValueOnce({
-      successes: [true, true, true, true],
-      returndata: [3n, blockNumber, chainId, firstDataFeed],
-    });
-    airseekerRegistry.tryMulticall.staticCall.mockResolvedValueOnce({
-      successes: [true, true, false],
-      returndata: [blockNumber, chainId, '0x'],
-    });
-    airseekerRegistry.tryMulticall.staticCall.mockResolvedValueOnce({
       successes: [true, true, true],
-      returndata: [blockNumber, chainId, thirdDataFeed],
+      returndata: [3n, chainId, firstDataFeed],
+    });
+    airseekerRegistry.tryMulticall.staticCall.mockResolvedValueOnce({
+      successes: [true, false],
+      returndata: [chainId, '0x'],
+    });
+    airseekerRegistry.tryMulticall.staticCall.mockResolvedValueOnce({
+      successes: [true, true],
+      returndata: [chainId, thirdDataFeed],
     });
     const sleepCalls = [] as number[];
     const originalSleep = utilsModule.sleep;
@@ -318,16 +321,18 @@ describe(updateFeedsLoopsModule.runUpdateFeeds.name, () => {
   it('catches unhandled error', async () => {
     const dataFeed = generateActiveDataFeedResponse();
     const airseekerRegistry = generateMockAirseekerRegistry();
-    jest.spyOn(contractsModule, 'createProvider').mockResolvedValue(123 as any as ethers.JsonRpcProvider);
+    const getBlockNumberSpy = jest.fn().mockResolvedValue(123n);
+    jest
+      .spyOn(contractsModule, 'createProvider')
+      .mockResolvedValue({ getBlockNumber: getBlockNumberSpy } as any as ethers.JsonRpcProvider);
     jest
       .spyOn(contractsModule, 'getAirseekerRegistry')
       .mockReturnValue(airseekerRegistry as unknown as AirseekerRegistry);
     airseekerRegistry.interface.decodeFunctionResult.mockImplementation((_fn, value) => value);
-    const blockNumber = 123n;
     const chainId = BigInt(31_337);
     airseekerRegistry.tryMulticall.staticCall.mockResolvedValueOnce({
-      successes: [true, true, true, true],
-      returndata: [1n, blockNumber, chainId, dataFeed],
+      successes: [true, true, true],
+      returndata: [1n, chainId, dataFeed],
     });
     const testConfig = generateTestConfig();
     jest.spyOn(stateModule, 'getState').mockReturnValue(

@@ -50,8 +50,6 @@ export const verifyMulticallResponse = (
 
 export const decodeActiveDataFeedCountResponse = Number;
 
-export const decodeGetBlockNumberResponse = Number;
-
 export const decodeGetChainIdResponse = Number;
 
 export interface Beacon {
