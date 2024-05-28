@@ -13,7 +13,6 @@ import {
   createProvider,
   decodeActiveDataFeedCountResponse,
   decodeActiveDataFeedResponse,
-  decodeGetBlockNumberResponse,
   decodeGetChainIdResponse,
   getAirseekerRegistry,
   getApi3ServerV1,
@@ -90,20 +89,22 @@ export const readActiveDataFeedBatch = async (
   const calldatas: string[] = [];
   if (fromIndex === 0) calldatas.push(airseekerRegistry.interface.encodeFunctionData('activeDataFeedCount'));
   calldatas.push(
-    airseekerRegistry.interface.encodeFunctionData('getBlockNumber'),
     airseekerRegistry.interface.encodeFunctionData('getChainId'),
     ...range(fromIndex, toIndex).map((dataFeedIndex) =>
       airseekerRegistry.interface.encodeFunctionData('activeDataFeed', [dataFeedIndex])
     )
   );
-
-  let returndatas = verifyMulticallResponse(await airseekerRegistry.tryMulticall.staticCall(calldatas));
+  const [blockNumber, multicallResponse] = await Promise.all([
+    provider.getBlockNumber(),
+    airseekerRegistry.tryMulticall.staticCall(calldatas),
+  ]);
+  let returndatas = verifyMulticallResponse(multicallResponse);
   let activeDataFeedCountReturndata: string | undefined;
   if (fromIndex === 0) {
     activeDataFeedCountReturndata = returndatas[0]!;
     returndatas = returndatas.slice(1);
   }
-  const [getBlockNumberReturndata, getChainIdReturndata, ...activeDataFeedReturndatas] = returndatas;
+  const [getChainIdReturndata, ...activeDataFeedReturndatas] = returndatas;
 
   // Check that the chain ID is correct and log a warning if it's not because it's possible that providers switch chain
   // ID at runtime by mistake. In case the chain ID is wrong, we want to skip all data feeds in the batch (or all of
@@ -130,12 +131,6 @@ export const readActiveDataFeedBatch = async (
       if (!isRegistered) logger.warn(`Data feed not registered.`, { dataFeedIndex });
       return isRegistered;
     });
-
-  // NOTE: https://api3workspace.slack.com/archives/C05TQPT7PNJ/p1713441156074839?thread_ts=1713438669.278119&cid=C05TQPT7PNJ
-  const blockNumber =
-    chainId === '42161' || chainId === '421614'
-      ? await provider.getBlockNumber()
-      : decodeGetBlockNumberResponse(getBlockNumberReturndata!);
 
   return {
     batch,
