@@ -1,5 +1,5 @@
 import type { Hex } from '@api3/commons';
-import { ethers } from 'ethers';
+import { ethers, toBeHex } from 'ethers';
 import { range } from 'lodash';
 
 import { generateTestConfig, initializeState } from '../../test/fixtures/mock-config';
@@ -15,6 +15,7 @@ import {
   calculateScalingMultiplier,
   getPercentile,
   fetchAndStoreGasPrice,
+  getGasPrice,
 } from './gas-price';
 
 const chainId = '31337';
@@ -373,10 +374,26 @@ describe(getRecommendedGasPrice.name, () => {
   });
 });
 
+describe(getGasPrice.name, () => {
+  it('returns gas price as bigint when internal rpc call returns a valid hex string', async () => {
+    jest.spyOn(provider, 'send').mockResolvedValueOnce('0x1a13b8600');
+    const gasPrice = await getGasPrice(provider);
+
+    expect(provider.send).toHaveBeenCalledWith('eth_gasPrice', []);
+    expect(gasPrice).toBe(BigInt('0x1a13b8600'));
+  });
+
+  it('throws when internal rpc call fails', async () => {
+    jest.spyOn(provider, 'send').mockRejectedValueOnce(new Error('Provider error'));
+
+    await expect(getGasPrice(provider)).rejects.toThrow('Provider error');
+  });
+});
+
 describe(fetchAndStoreGasPrice.name, () => {
   it('fetches and stores the gas price from RPC provider', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(dateNowMock);
-    jest.spyOn(provider, 'getFeeData').mockResolvedValueOnce({ gasPrice: ethers.parseUnits('10', 'gwei') } as any);
+    jest.spyOn(provider, 'send').mockResolvedValueOnce(toBeHex(ethers.parseUnits('10', 'gwei')));
 
     const gasPrice = await fetchAndStoreGasPrice(chainId, providerName, provider);
 
@@ -387,7 +404,7 @@ describe(fetchAndStoreGasPrice.name, () => {
   });
 
   it('logs an error when fetching gas price from RPC provider fails', async () => {
-    jest.spyOn(provider, 'getFeeData').mockRejectedValueOnce(new Error('Provider error'));
+    jest.spyOn(provider, 'send').mockRejectedValueOnce(new Error('Provider error'));
     jest.spyOn(logger, 'error');
 
     const gasPrice = await fetchAndStoreGasPrice(chainId, providerName, provider);
@@ -399,16 +416,5 @@ describe(fetchAndStoreGasPrice.name, () => {
       'Failed to fetch gas price from RPC provider.',
       new Error('Provider error')
     );
-  });
-
-  it('logs an error when RPC provider does not return the gas price', async () => {
-    jest.spyOn(provider, 'getFeeData').mockResolvedValueOnce({} as any);
-    jest.spyOn(logger, 'error');
-
-    const gasPrice = await fetchAndStoreGasPrice(chainId, providerName, provider);
-
-    expect(gasPrice).toBeNull();
-    expect(logger.error).toHaveBeenCalledTimes(1);
-    expect(logger.error).toHaveBeenNthCalledWith(1, 'No gas price returned from RPC provider.');
   });
 });

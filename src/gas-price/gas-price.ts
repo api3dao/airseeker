@@ -1,6 +1,6 @@
 import type { Address, Hex } from '@api3/commons';
 import { go } from '@api3/promise-utils';
-import type { ethers } from 'ethers';
+import { getBigInt, type ethers } from 'ethers';
 import { maxBy, minBy, remove } from 'lodash';
 
 import { logger } from '../logger';
@@ -49,6 +49,11 @@ export const calculateScalingMultiplier = (
     maxScalingMultiplier
   );
 
+export const getGasPrice = async (provider: ethers.JsonRpcProvider) => {
+  const gasPriceInHex = await provider.send('eth_gasPrice', []);
+  return getBigInt(gasPriceInHex);
+};
+
 export const fetchAndStoreGasPrice = async (
   chainId: string,
   providerName: string,
@@ -56,21 +61,13 @@ export const fetchAndStoreGasPrice = async (
 ) => {
   // Get the provider recommended gas price and save it to the state
   logger.debug('Fetching gas price and saving it to the state.');
-  const goGasPrice = await go(async () => {
-    const feeData = await provider.getFeeData();
-    // We assume the legacy gas price will always exist. See:
-    // https://api3workspace.slack.com/archives/C05TQPT7PNJ/p1699098552350519
-    return feeData.gasPrice;
-  });
-  const gasPrice = goGasPrice.data;
+  const goGasPrice = await go(async () => getGasPrice(provider));
+
   if (!goGasPrice.success) {
     logger.error('Failed to fetch gas price from RPC provider.', sanitizeEthersError(goGasPrice.error));
     return null;
   }
-  if (!gasPrice) {
-    logger.error('No gas price returned from RPC provider.');
-    return null;
-  }
+  const gasPrice = goGasPrice.data;
 
   const state = getState();
   const {
