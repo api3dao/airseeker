@@ -41,7 +41,7 @@ export const updatePendingTransactionsInfo = (
 
   const currentTimestamp = Math.floor(Date.now() / 1000);
   for (const feed of batch) {
-    const { dapiName, dataFeedId, decodedDapiName, updateParameters } = feed;
+    const { dapiName, dataFeedId, decodedDapiName, updateParameters, dataFeedTimestamp } = feed;
 
     const isFeedUpdatable = feedsToUpdate.some(
       (updatableFeed) =>
@@ -55,11 +55,18 @@ export const updatePendingTransactionsInfo = (
     }).address as Address;
 
     const pendingTransactionInfo = pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]?.[dataFeedId];
-
     if (isFeedUpdatable) {
-      const consecutivelyUpdatableCount = (pendingTransactionInfo?.consecutivelyUpdatableCount ?? 0) + 1;
-      const firstUpdatableTimestamp = pendingTransactionInfo?.firstUpdatableTimestamp ?? currentTimestamp;
-      const newPendingTransactionInfo = { consecutivelyUpdatableCount, firstUpdatableTimestamp };
+      const isOriginalUpdate = !pendingTransactionInfo || dataFeedTimestamp !== pendingTransactionInfo.onChainTimestamp;
+      const newPendingTransactionInfo: PendingTransactionInfo = isOriginalUpdate
+        ? {
+            consecutivelyUpdatableCount: 1,
+            firstUpdatableTimestamp: currentTimestamp,
+            onChainTimestamp: dataFeedTimestamp,
+          }
+        : {
+            ...pendingTransactionInfo,
+            consecutivelyUpdatableCount: pendingTransactionInfo.consecutivelyUpdatableCount + 1,
+          };
       logger.info('Updating pending transaction info.', {
         ...newPendingTransactionInfo,
         dapiName: decodedDapiName,

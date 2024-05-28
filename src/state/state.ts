@@ -16,6 +16,11 @@ export interface PendingTransactionInfo {
   // The count of how many consecutive updates are required for this data feed. This is used to determine if the
   // transaction is a retry or not.
   consecutivelyUpdatableCount: number;
+  // The on-chain timestamp of the last pending transaction. As a note, in a volatile market it is possible that we
+  // submit an update transaction and in the next run we detect that feed needs an update again, even though the feed
+  // was updated during this time (either by the previous transaction or by other Airseeker). The on-chain timestamp
+  // aims to detect this case, so that we avoid scaling the gas price for this subsequent update.
+  onChainTimestamp: bigint;
 }
 
 export interface State {
