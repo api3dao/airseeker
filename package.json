@@ -38,7 +38,7 @@
     "@api3/airnode-protocol-v1": "^3.4.0",
     "@api3/chains": "^7.0.0",
     "@api3/commons": "^0.9.0",
-    "@api3/contracts": "3.5.0",
+    "@api3/contracts": "4.0.0",
     "@api3/promise-utils": "^0.4.0",
     "dotenv": "^16.4.5",
     "ethers": "^6.12.1",
