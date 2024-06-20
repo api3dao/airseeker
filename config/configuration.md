@@ -201,6 +201,17 @@ The global coefficient applied to all deviation checks. Used to differentiate al
 
 Defaults to `1`.
 
+#### `heartbeatIntervalModifier` _(optional)_
+
+The global modifier applied to all heartbeat checks. Used to differentiate alternate deployments. In seconds. For
+example:
+
+```jsonc
+"heartbeatIntervalModifier": -120,
+```
+
+Defaults to `0`.
+
 #### `dataFeedUpdateInterval`
 
 The interval specifying how often to run the data feed update loop. In seconds.

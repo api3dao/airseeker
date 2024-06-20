@@ -28,6 +28,7 @@ export const generateTestConfig = (): Config => ({
   },
   signedDataFetchInterval: 10,
   deviationThresholdCoefficient: 1,
+  heartbeatIntervalModifier: 0,
   signedApiUrls: [],
   walletDerivationScheme: { type: 'managed' },
   stage: 'test',
