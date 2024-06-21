@@ -203,7 +203,9 @@ Defaults to `1`.
 
 #### `heartbeatIntervalModifier` _(optional)_
 
-The global modifier applied to all heartbeat checks. The value is specified in seconds and can be positive or negative. The resulting interval is calculated by adding this modifier as an offset and clamped to a minimum of 0, ensuring it never goes negative. Used to differentiate alternate deployments. For example:
+The global modifier applied to all heartbeat checks. The value is specified in seconds and can be positive or negative.
+The resulting interval is calculated by adding this modifier as an offset and clamped to a minimum of 0, ensuring it
+never goes negative. Used to differentiate alternate deployments. For example:
 
 ```jsonc
 "heartbeatIntervalModifier": -120,
