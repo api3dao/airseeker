@@ -1,5 +1,3 @@
-import { isNil } from 'lodash';
-
 import { HUNDRED_PERCENT, UINT256_MAX } from '../constants';
 import { logger } from '../logger';
 import { abs } from '../utils';
@@ -61,14 +59,11 @@ export const checkUpdateCondition = (
   deviationReference: bigint
 ): boolean => {
   if (onChainTimestamp === 0n && offChainTimestamp > 0) return true;
-  if (
-    !isNil(deviationThreshold) &&
-    isDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue, deviationReference)
-  ) {
+  if (isDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue, deviationReference)) {
     logger.info(`Deviation exceeded.`);
     return true;
   }
-  if (!isNil(heartbeatInterval) && isHeartbeatUpdatable(onChainTimestamp, heartbeatInterval)) {
+  if (isHeartbeatUpdatable(onChainTimestamp, heartbeatInterval)) {
     logger.info(`On-chain timestamp is older than the heartbeat interval.`);
     return true;
   }
