@@ -23,7 +23,8 @@ export interface UpdatableDataFeed {
 
 export const getUpdatableFeeds = (
   batch: DecodedActiveDataFeedResponse[],
-  deviationThresholdCoefficient: number
+  deviationThresholdCoefficient: number,
+  heartbeatIntervalModifier: number
 ): UpdatableDataFeed[] => {
   return (
     batch
@@ -83,6 +84,17 @@ export const getUpdatableFeeds = (
           deviationThresholdCoefficient
         );
 
+        const modifiedHeartbeatInterval = heartbeatInterval + BigInt(heartbeatIntervalModifier);
+        if (modifiedHeartbeatInterval < 0n) {
+          logger.warn('Resulting heartbeat interval is negative. Setting it to 0.', {
+            dapiName: decodedDapiName,
+            dataFeedId,
+            heartbeatInterval,
+            heartbeatIntervalModifier,
+          });
+        }
+        const adjustedHeartbeatInterval = modifiedHeartbeatInterval < 0n ? 0n : modifiedHeartbeatInterval;
+
         // We need to make sure that the update transaction actually changes the on-chain value. There are two cases:
         // 1. Data feed is a beacon - We need to make sure the off-chain data updates the feed. This requires timestamp
         //    to change. See:
@@ -108,7 +120,7 @@ export const getUpdatableFeeds = (
               dataFeedTimestamp,
               newDataFeedValue,
               newDataFeedTimestamp,
-              heartbeatInterval,
+              adjustedHeartbeatInterval,
               adjustedDeviationThresholdCoefficient,
               deviationReference
             )

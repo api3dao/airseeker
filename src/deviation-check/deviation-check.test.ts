@@ -82,7 +82,7 @@ describe(checkUpdateCondition.name, () => {
       10n,
       BigInt(Date.now() + 60 * 60 * 23),
       BigInt(60 * 60 * 24),
-      getDeviationThresholdAsBigInt(0),
+      getDeviationThresholdAsBigInt(2),
       0n
     );
 

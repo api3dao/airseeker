@@ -59,14 +59,11 @@ export const checkUpdateCondition = (
   deviationReference: bigint
 ): boolean => {
   if (onChainTimestamp === 0n && offChainTimestamp > 0) return true;
-  if (
-    deviationThreshold &&
-    isDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue, deviationReference)
-  ) {
+  if (isDeviationThresholdExceeded(onChainValue, deviationThreshold, offChainValue, deviationReference)) {
     logger.info(`Deviation exceeded.`);
     return true;
   }
-  if (heartbeatInterval && isHeartbeatUpdatable(onChainTimestamp, heartbeatInterval)) {
+  if (isHeartbeatUpdatable(onChainTimestamp, heartbeatInterval)) {
     logger.info(`On-chain timestamp is older than the heartbeat interval.`);
     return true;
   }

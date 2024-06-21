@@ -154,6 +154,10 @@ export const deviationThresholdCoefficientSchema = z
 
 export type DeviationThresholdCoefficient = z.infer<typeof deviationThresholdCoefficientSchema>;
 
+export const heartbeatIntervalModifierSchema = z.number().default(0);
+
+export type HeartbeatIntervalModifier = z.infer<typeof heartbeatIntervalModifierSchema>;
+
 export const walletDerivationSchemeSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('self-funded') }).strict(),
   z.object({ type: z.literal('managed') }).strict(),
@@ -170,6 +174,7 @@ export const configSchema = z
     chains: chainsSchema,
     signedDataFetchInterval: z.number().positive(),
     deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
+    heartbeatIntervalModifier: heartbeatIntervalModifierSchema,
     signedApiUrls: z.array(z.string().url()),
     walletDerivationScheme: walletDerivationSchemeSchema,
     stage: z

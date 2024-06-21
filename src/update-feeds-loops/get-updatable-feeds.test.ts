@@ -4,7 +4,7 @@ import { range } from 'lodash';
 import { allowPartial } from '../../test/utils';
 import { HUNDRED_PERCENT } from '../constants';
 import * as signedDataStateModule from '../data-fetcher-loop/signed-data-state';
-import { calculateMedian } from '../deviation-check';
+import * as deviationCheckModule from '../deviation-check/deviation-check';
 import { logger } from '../logger';
 import type { SignedData } from '../types';
 import { encodeDapiName } from '../utils';
@@ -60,8 +60,8 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: 100n,
           deviationReference: 0n,
         },
-        dataFeedValue: calculateMedian(values),
-        dataFeedTimestamp: calculateMedian(timestamps),
+        dataFeedValue: deviationCheckModule.calculateMedian(values),
+        dataFeedTimestamp: deviationCheckModule.calculateMedian(timestamps),
         beaconsWithData: range(values.length).map((i) => ({
           beaconId: feedIds[i]!,
           timestamp: timestamps[i]!,
@@ -72,7 +72,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0);
 
     expect(logger.info).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenCalledWith(`Deviation exceeded.`);
@@ -93,6 +93,112 @@ describe(getUpdatableFeeds.name, () => {
         },
       },
     ]);
+  });
+
+  it('adjusts heartbeat interval', () => {
+    jest.useFakeTimers().setSystemTime(200 * 1000);
+
+    const heartbeatIntervalModifier = -10;
+
+    const mockSignedDataState = allowPartial<Record<string, SignedData>>({
+      [feedIds[0]]: {
+        timestamp: '400',
+        encodedValue: encodeBeaconValue('400'),
+      },
+      [feedIds[1]]: {
+        timestamp: '500',
+        encodedValue: encodeBeaconValue('400'),
+      },
+      [feedIds[2]]: {
+        timestamp: '600',
+        encodedValue: encodeBeaconValue('400'),
+      },
+    });
+    jest
+      .spyOn(signedDataStateModule, 'getSignedData')
+      .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
+    jest.spyOn(logger, 'info');
+    jest.spyOn(deviationCheckModule, 'checkUpdateCondition');
+    const timestamps = [150n, 199n, 250n];
+    const values = [400n, 400n, 400n];
+    const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
+      {
+        decodedUpdateParameters: {
+          deviationThresholdInPercentage: ONE_PERCENT,
+          heartbeatInterval: 15n,
+          deviationReference: 0n,
+        },
+        dataFeedValue: deviationCheckModule.calculateMedian(values),
+        dataFeedTimestamp: deviationCheckModule.calculateMedian(timestamps),
+        beaconsWithData: range(values.length).map((i) => ({
+          beaconId: feedIds[i]!,
+          timestamp: timestamps[i]!,
+          value: values[i]!,
+        })),
+        dataFeedId: '0x000',
+        decodedDapiName: 'test',
+      },
+    ]);
+
+    getUpdatableFeeds(batch, 1, heartbeatIntervalModifier);
+    expect(deviationCheckModule.checkUpdateCondition).toHaveBeenCalledWith(400n, 199n, 400n, 500n, 5n, ONE_PERCENT, 0n);
+  });
+
+  it('adjusts heartbeat interval to 0 if resulting one is negative', () => {
+    jest.useFakeTimers().setSystemTime(200 * 1000);
+
+    const heartbeatIntervalModifier = -10;
+
+    const mockSignedDataState = allowPartial<Record<string, SignedData>>({
+      [feedIds[0]]: {
+        timestamp: '400',
+        encodedValue: encodeBeaconValue('400'),
+      },
+      [feedIds[1]]: {
+        timestamp: '500',
+        encodedValue: encodeBeaconValue('400'),
+      },
+      [feedIds[2]]: {
+        timestamp: '600',
+        encodedValue: encodeBeaconValue('400'),
+      },
+    });
+    jest
+      .spyOn(signedDataStateModule, 'getSignedData')
+      .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
+    jest.spyOn(logger, 'info');
+    jest.spyOn(logger, 'warn');
+    jest.spyOn(deviationCheckModule, 'checkUpdateCondition');
+    const timestamps = [150n, 199n, 250n];
+    const values = [400n, 400n, 400n];
+    const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
+      {
+        decodedUpdateParameters: {
+          deviationThresholdInPercentage: ONE_PERCENT,
+          heartbeatInterval: 5n,
+          deviationReference: 0n,
+        },
+        dataFeedValue: deviationCheckModule.calculateMedian(values),
+        dataFeedTimestamp: deviationCheckModule.calculateMedian(timestamps),
+        beaconsWithData: range(values.length).map((i) => ({
+          beaconId: feedIds[i]!,
+          timestamp: timestamps[i]!,
+          value: values[i]!,
+        })),
+        dataFeedId: '0x000',
+        decodedDapiName: 'test',
+      },
+    ]);
+
+    getUpdatableFeeds(batch, 1, heartbeatIntervalModifier);
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith(`Resulting heartbeat interval is negative. Setting it to 0.`, {
+      dapiName: 'test',
+      dataFeedId: '0x000',
+      heartbeatInterval: BigInt(5),
+      heartbeatIntervalModifier: -10,
+    });
+    expect(deviationCheckModule.checkUpdateCondition).toHaveBeenCalledWith(400n, 199n, 400n, 500n, 0n, ONE_PERCENT, 0n);
   });
 
   it('returns updatable feeds when on-chain timestamp is older than heartbeat and value is within the deviation', () => {
@@ -126,8 +232,8 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: 1n,
           deviationReference: 0n,
         },
-        dataFeedValue: calculateMedian(values),
-        dataFeedTimestamp: calculateMedian(timestamps),
+        dataFeedValue: deviationCheckModule.calculateMedian(values),
+        dataFeedTimestamp: deviationCheckModule.calculateMedian(timestamps),
         beaconsWithData: range(values.length).map((i) => ({
           beaconId: feedIds[i]!,
           timestamp: timestamps[i]!,
@@ -138,7 +244,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0);
 
     expect(logger.info).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
@@ -200,8 +306,8 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: 100n,
           deviationReference: 0n,
         },
-        dataFeedValue: calculateMedian(values),
-        dataFeedTimestamp: calculateMedian(timestamps),
+        dataFeedValue: deviationCheckModule.calculateMedian(values),
+        dataFeedTimestamp: deviationCheckModule.calculateMedian(timestamps),
         beaconsWithData: range(values.length).map((i) => ({
           beaconId: feedIds[i]!,
           timestamp: timestamps[i]!,
@@ -213,7 +319,7 @@ describe(getUpdatableFeeds.name, () => {
     ]);
     jest.spyOn(logger, 'warn');
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0);
 
     expect(logger.warn).toHaveBeenCalledTimes(0);
     expect(checkFeedsResult).toStrictEqual([]);
@@ -250,8 +356,8 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: 100n,
           deviationReference: 0n,
         },
-        dataFeedValue: calculateMedian(values),
-        dataFeedTimestamp: calculateMedian(timestamps),
+        dataFeedValue: deviationCheckModule.calculateMedian(values),
+        dataFeedTimestamp: deviationCheckModule.calculateMedian(timestamps),
         beaconsWithData: range(values.length).map((i) => ({
           beaconId: feedIds[i]!,
           timestamp: timestamps[i]!,
@@ -262,7 +368,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0);
 
     expect(logger.info).toHaveBeenCalledTimes(0);
     expect(checkFeedsResult).toStrictEqual([]);
@@ -291,7 +397,7 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: 100n,
           deviationReference: 0n,
         },
-        dataFeedTimestamp: calculateMedian(timestamps),
+        dataFeedTimestamp: deviationCheckModule.calculateMedian(timestamps),
         beaconsWithData: range(values.length).map((i) => ({
           beaconId: feedIds[i]!,
           timestamp: timestamps[i]!,
@@ -302,7 +408,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0);
 
     expect(logger.info).toHaveBeenCalledTimes(0);
     expect(checkFeedsResult).toStrictEqual([]);
@@ -339,8 +445,8 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: 100n,
           deviationReference: 0n,
         },
-        dataFeedValue: calculateMedian(values),
-        dataFeedTimestamp: calculateMedian(timestamps),
+        dataFeedValue: deviationCheckModule.calculateMedian(values),
+        dataFeedTimestamp: deviationCheckModule.calculateMedian(timestamps),
         beaconsWithData: range(values.length).map((i) => ({
           beaconId: feedIds[i]!,
           timestamp: timestamps[i]!,
@@ -351,7 +457,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0);
 
     expect(logger.info).toHaveBeenCalledTimes(0);
     expect(checkFeedsResult).toStrictEqual([]);
@@ -388,8 +494,8 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: 100n,
           deviationReference: 0n,
         },
-        dataFeedValue: calculateMedian(values),
-        dataFeedTimestamp: calculateMedian(timestamps),
+        dataFeedValue: deviationCheckModule.calculateMedian(values),
+        dataFeedTimestamp: deviationCheckModule.calculateMedian(timestamps),
         beaconsWithData: range(values.length).map((i) => ({
           beaconId: feedIds[i]!,
           timestamp: timestamps[i]!,
@@ -400,7 +506,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0);
 
     expect(logger.info).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenCalledWith(`Deviation exceeded.`);
@@ -454,8 +560,8 @@ describe(getUpdatableFeeds.name, () => {
           heartbeatInterval: 100n,
           deviationReference: 0n,
         },
-        dataFeedValue: calculateMedian(values),
-        dataFeedTimestamp: calculateMedian(timestamps),
+        dataFeedValue: deviationCheckModule.calculateMedian(values),
+        dataFeedTimestamp: deviationCheckModule.calculateMedian(timestamps),
         beaconsWithData: range(values.length).map((i) => ({
           beaconId: feedIds[i]!,
           timestamp: timestamps[i]!,
@@ -466,7 +572,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const updatableFeeds = getUpdatableFeeds(batch, 1);
+    const updatableFeeds = getUpdatableFeeds(batch, 1, 0);
 
     expect(updatableFeeds).toStrictEqual([]);
     expect(logger.warn).toHaveBeenCalledTimes(2);
