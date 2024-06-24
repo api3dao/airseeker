@@ -4,7 +4,10 @@ import { addressSchema } from '@api3/commons';
 import { ethers } from 'ethers';
 import { z } from 'zod';
 
-import packageJson from '../../package.json';
+import { version as packageVersion } from '../../package.json';
+
+// eslint-disable-next-line unicorn/prefer-export-from
+export { packageVersion as version };
 
 export const providerSchema = z
   .object({
@@ -180,7 +183,7 @@ export const configSchema = z
     stage: z
       .string()
       .regex(/^[\da-z-]{1,256}$/, 'Only lowercase letters, numbers and hyphens are allowed (max 256 characters)'),
-    version: z.string().refine((version) => version === packageJson.version, 'Invalid Airseeker version'),
+    version: z.string().refine((version) => version === packageVersion, 'Invalid Airseeker version'),
   })
   .strict();
 
