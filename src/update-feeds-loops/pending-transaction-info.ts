@@ -68,14 +68,14 @@ export const updatePendingTransactionsInfo = (
       const isOriginalUpdate = !pendingTransactionInfo || dataFeedTimestamp !== pendingTransactionInfo.onChainTimestamp;
       const newPendingTransactionInfo: PendingTransactionInfo = isOriginalUpdate
         ? {
-          consecutivelyUpdatableCount: 1,
-          firstUpdatableTimestamp: currentTimestamp,
-          onChainTimestamp: dataFeedTimestamp,
-        }
+            consecutivelyUpdatableCount: 1,
+            firstUpdatableTimestamp: currentTimestamp,
+            onChainTimestamp: dataFeedTimestamp,
+          }
         : {
-          ...pendingTransactionInfo,
-          consecutivelyUpdatableCount: pendingTransactionInfo.consecutivelyUpdatableCount + 1,
-        };
+            ...pendingTransactionInfo,
+            consecutivelyUpdatableCount: pendingTransactionInfo.consecutivelyUpdatableCount + 1,
+          };
       logger.info('Updating pending transaction info.', {
         ...newPendingTransactionInfo,
         dapiName: decodedDapiName,
