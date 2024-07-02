@@ -131,7 +131,7 @@ describe(updatePendingTransactionsInfo.name, () => {
               [dataFeedId]: {
                 consecutivelyUpdatableCount: 2,
                 firstUpdatableTimestamp: timestampMock,
-                onChainTimestamp: 1696930906n,
+                onChainTimestamp: 1_696_930_906n,
               },
             },
           },

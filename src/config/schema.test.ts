@@ -29,15 +29,15 @@ test('validates example config', () => {
   expect(() => configSchema.parse(exampleConfig)).toThrow(
     new ZodError([
       {
-        code: 'custom',
-        message: 'Invalid mnemonic',
-        path: ['sponsorWalletMnemonic'],
-      },
-      {
         validation: 'url',
         code: 'invalid_string',
         message: 'Invalid url',
         path: ['chains', '31337', 'providers', 'hardhat', 'url'],
+      },
+      {
+        code: 'custom',
+        message: 'Invalid mnemonic',
+        path: ['sponsorWalletMnemonic'],
       },
     ])
   );

@@ -40,15 +40,13 @@ export const updatePendingTransactionsInfo = (
   } = getState();
 
   const currentTimestamp = Math.floor(Date.now() / 1000);
-  for (const feed of batch) {
-    const { dapiName, dataFeedId, decodedDapiName, updateParameters, dataFeedTimestamp } = feed;
-
+  for (const { beaconsWithData, dapiName, dataFeedId, decodedDapiName, updateParameters, dataFeedTimestamp } of batch) {
     const updatableFeed = feedsToUpdate.find(
       (updatableFeed) =>
         updatableFeed.dataFeedInfo.dapiName === dapiName && updatableFeed.dataFeedInfo.dataFeedId === dataFeedId
     );
 
-    if (updatableFeed && !updatableFeed.shouldUpdateBeaconSet && feed.beaconsWithData.length > 1) {
+    if (updatableFeed && !updatableFeed.shouldUpdateBeaconSet && beaconsWithData.length > 1) {
       // Feed is a beacon set and it will only update its beacons. Therefore no need to set nor clear pending transaction info.
       logger.warn(
         'Data feed is a beacon set that does not require an update but some of its beacons do. Skipping pending transaction info update.',

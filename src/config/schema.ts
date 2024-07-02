@@ -177,20 +177,20 @@ export type WalletDerivationScheme = z.infer<typeof walletDerivationSchemeSchema
 
 export const configSchema = z
   .object({
+    asyncBeaconUpdatedeviationThresholdFactor: asyncBeaconUpdatedeviationThresholdFactorSchema,
+    chains: chainsSchema,
+    deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
+    heartbeatIntervalModifier: heartbeatIntervalModifierSchema,
+    signedApiUrls: z.array(z.string().url()),
+    signedDataFetchInterval: z.number().positive(),
     sponsorWalletMnemonic: z
       .string()
       .refine((mnemonic) => ethers.Mnemonic.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
-    chains: chainsSchema,
-    signedDataFetchInterval: z.number().positive(),
-    deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
-    asyncBeaconUpdatedeviationThresholdFactor: asyncBeaconUpdatedeviationThresholdFactorSchema,
-    heartbeatIntervalModifier: heartbeatIntervalModifierSchema,
-    signedApiUrls: z.array(z.string().url()),
-    walletDerivationScheme: walletDerivationSchemeSchema,
     stage: z
       .string()
       .regex(/^[\da-z-]{1,256}$/, 'Only lowercase letters, numbers and hyphens are allowed (max 256 characters)'),
     version: z.string().refine((version) => version === packageVersion, 'Invalid Airseeker version'),
+    walletDerivationScheme: walletDerivationSchemeSchema,
   })
   .strict();
 
