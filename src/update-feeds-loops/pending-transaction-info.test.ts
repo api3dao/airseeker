@@ -121,7 +121,7 @@ describe(updatePendingTransactionsInfo.name, () => {
   });
 
   it('skips resetting the pending transaction info if the data feed is a beacon set that only updates its beacons', () => {
-    jest.spyOn(logger, 'info');
+    jest.spyOn(logger, 'warn');
     const initialState = allowPartial<stateModule.State>({
       config: {},
       pendingTransactionsInfo: {
@@ -171,8 +171,8 @@ describe(updatePendingTransactionsInfo.name, () => {
 
     // We expect the pending transaction info to remain the same.
     expect(stateModule.getState().pendingTransactionsInfo).toStrictEqual(initialState.pendingTransactionsInfo);
-    expect(logger.info).toHaveBeenCalledTimes(1);
-    expect(logger.info).toHaveBeenCalledWith(
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith(
       'Data feed is a beacon set that does not require an update but some of its beacons do. Skipping pending transaction info update.',
       {
         dapiName: 'decodedDapiName',

@@ -50,7 +50,7 @@ export const updatePendingTransactionsInfo = (
 
     if (updatableFeed && !updatableFeed.shouldUpdateBeaconSet && feed.beaconsWithData.length > 1) {
       // Feed is a beacon set and it will only update its beacons. Therefore no need to set nor clear pending transaction info.
-      logger.info(
+      logger.warn(
         'Data feed is a beacon set that does not require an update but some of its beacons do. Skipping pending transaction info update.',
         { dapiName: decodedDapiName, dataFeedId }
       );
@@ -68,14 +68,14 @@ export const updatePendingTransactionsInfo = (
       const isOriginalUpdate = !pendingTransactionInfo || dataFeedTimestamp !== pendingTransactionInfo.onChainTimestamp;
       const newPendingTransactionInfo: PendingTransactionInfo = isOriginalUpdate
         ? {
-            consecutivelyUpdatableCount: 1,
-            firstUpdatableTimestamp: currentTimestamp,
-            onChainTimestamp: dataFeedTimestamp,
-          }
+          consecutivelyUpdatableCount: 1,
+          firstUpdatableTimestamp: currentTimestamp,
+          onChainTimestamp: dataFeedTimestamp,
+        }
         : {
-            ...pendingTransactionInfo,
-            consecutivelyUpdatableCount: pendingTransactionInfo.consecutivelyUpdatableCount + 1,
-          };
+          ...pendingTransactionInfo,
+          consecutivelyUpdatableCount: pendingTransactionInfo.consecutivelyUpdatableCount + 1,
+        };
       logger.info('Updating pending transaction info.', {
         ...newPendingTransactionInfo,
         dapiName: decodedDapiName,
