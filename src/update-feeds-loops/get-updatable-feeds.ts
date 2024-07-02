@@ -96,21 +96,17 @@ export const getUpdatableFeeds = (
     // 1. Data feed is a beacon - We need to make sure the off-chain data updates the feed. This requires timestamp
     //    to change. See:
     //    https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/DataFeedServer.sol#L120
-    if (!isBeaconSet && newDataFeedTimestamp === dataFeedTimestamp) {
-      return acc;
-    }
+    const isValidBeaconUpdate = !isBeaconSet && newDataFeedTimestamp !== dataFeedTimestamp;
 
-    let shouldUpdateBeaconSet = isBeaconSet;
     // 2. Data feed is a beacon set - We need make sure that the beacon set will change. The contract requires the
     //    beacon set value or timestamp to change. See:
     //    https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/DataFeedServer.sol#L54
     // Note, that the beacon set value/timestamp is computed as median, so single beacon update may not result in a beacon set update.
-    if (isBeaconSet && newDataFeedValue === dataFeedValue && newDataFeedTimestamp === dataFeedTimestamp) {
-      shouldUpdateBeaconSet = false;
-    }
+    const isValidBeaconSetUpdate =
+      isBeaconSet && (newDataFeedValue !== dataFeedValue || newDataFeedTimestamp !== dataFeedTimestamp);
 
     const dataFeedNeedsUpdate =
-      (!isBeaconSet || shouldUpdateBeaconSet) &&
+      (isValidBeaconUpdate || isValidBeaconSetUpdate) &&
       logger.runWithContext(
         {
           dapiName: decodedDapiName,
@@ -137,9 +133,9 @@ export const getUpdatableFeeds = (
             beaconId,
             signedData: signedData!,
           })),
-        shouldUpdateBeaconSet,
+        shouldUpdateBeaconSet: isBeaconSet,
       });
-    } else if (asyncBeaconUpdatedeviationThresholdFactor) {
+    } else if (isBeaconSet && asyncBeaconUpdatedeviationThresholdFactor) {
       // 2.5. There is a special case when data feed is a beacon set that do not need to be updated but some of its beacon constituents do.
       //      In this particular case, airseeker can update only these beacons and skip the beacon set update. This is enabled by setting a
       //      value in asyncBeaconUpdatedeviationThresholdFactor on the config.
@@ -165,7 +161,7 @@ export const getUpdatableFeeds = (
       acc.push({
         dataFeedInfo,
         updatableBeacons,
-        shouldUpdateBeaconSet,
+        shouldUpdateBeaconSet: false,
       });
     }
 
