@@ -53,7 +53,7 @@ pnpm run docker:build
 
 ### Run
 
-The docker image can be run locally with:
+Create a `.env` file using `cp .env.example .env` and run the docker image locally with:
 
 ```sh
 pnpm run docker:run
