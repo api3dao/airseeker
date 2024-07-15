@@ -45,9 +45,9 @@ export const getUpdatableFeeds = (
       }
       const offChainValue: BeaconValue | undefined = signedData
         ? {
-            timestamp: BigInt(signedData.timestamp),
-            value: decodeBeaconValue(signedData.encodedValue)!,
-          }
+          timestamp: BigInt(signedData.timestamp),
+          value: decodeBeaconValue(signedData.encodedValue)!,
+        }
         : undefined;
 
       const isUpdatable = offChainValue && offChainValue.timestamp > onChainValue.timestamp;
@@ -140,9 +140,11 @@ export const getUpdatableFeeds = (
     }
 
     if (isBeaconSet && individualBeaconUpdateDeviationThresholdCoefficient) {
-      // 2.5. There is a special case when data feed is a beacon set that do not need to be updated but some of its beacon constituents do.
-      //      In this particular case, airseeker can update only these beacons and skip the beacon set update. This is enabled by setting a
-      //      value in individualBeaconUpdateDeviationThresholdCoefficient on the config.
+      // There is a special case when data feed is a beacon set that do not need
+      // to be updated but some of its beacon constituents do. In this
+      // particular case, Airseeker can update only these beacons and skip the
+      // beacon set update. This is enabled by setting a value in
+      // individualBeaconUpdateDeviationThresholdCoefficient on the config.
       const updatableBeacons = aggregatedBeaconsWithData
         .filter(
           ({ isUpdatable, offChainValue, onChainValue }) =>
