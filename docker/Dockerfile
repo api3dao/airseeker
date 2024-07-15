@@ -4,7 +4,7 @@ LABEL application="airseeker" description="Airseeker container"
 WORKDIR /app
 
 # Install pnpm globally (needs root privileges).
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 # Copy just the "pnpm-lock.yaml" file and use "pnpm fetch" to download all dependencies just from the lockfile. This
 # command is specifically designed to improve building a docker image because it only installs the dependencies if the
