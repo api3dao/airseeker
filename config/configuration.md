@@ -212,7 +212,7 @@ individualBeaconUpdateDeviationThresholdCoefficient)%. For example:
 "individualBeaconUpdateDeviationThresholdCoefficient": 5,
 ```
 
-Defaults to `1`.
+Defaults to `5`.
 
 #### `heartbeatIntervalModifier` _(optional)_
 
