@@ -25,7 +25,7 @@
     }
   },
   "deviationThresholdCoefficient": 1,
-  "asyncBeaconUpdatedeviationThresholdFactor": 5,
+  "individualBeaconUpdateDeviationThresholdCoefficient": 5,
   "heartbeatIntervalModifier": 0,
   "signedDataFetchInterval": 10,
   "signedApiUrls": [],

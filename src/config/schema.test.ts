@@ -9,7 +9,7 @@ import {
   chainsSchema,
   configSchema,
   deviationThresholdCoefficientSchema,
-  asyncBeaconUpdatedeviationThresholdFactorSchema,
+  individualBeaconUpdateDeviationThresholdCoefficientSchema,
   walletDerivationSchemeSchema,
 } from './schema';
 
@@ -208,8 +208,8 @@ describe('chains schema', () => {
     );
   });
 
-  it('throws on asyncBeaconUpdatedeviationThresholdFactor that is not an integer', () => {
-    expect(() => asyncBeaconUpdatedeviationThresholdFactorSchema.parse(1.234)).toThrow(
+  it('throws on individualBeaconUpdateDeviationThresholdCoefficient that is not an integer', () => {
+    expect(() => individualBeaconUpdateDeviationThresholdCoefficientSchema.parse(1.234)).toThrow(
       new ZodError([
         {
           code: 'invalid_type',
@@ -222,8 +222,8 @@ describe('chains schema', () => {
     );
   });
 
-  it('throws on asyncBeaconUpdatedeviationThresholdFactor that is not a positive integer', () => {
-    expect(() => asyncBeaconUpdatedeviationThresholdFactorSchema.parse(0)).toThrow(
+  it('throws on individualBeaconUpdateDeviationThresholdCoefficient that is not a positive integer', () => {
+    expect(() => individualBeaconUpdateDeviationThresholdCoefficientSchema.parse(0)).toThrow(
       new ZodError([
         {
           code: 'too_small',

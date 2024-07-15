@@ -26,7 +26,7 @@ export const getUpdatableFeeds = (
   batch: DecodedActiveDataFeedResponse[],
   deviationThresholdCoefficient: number,
   heartbeatIntervalModifier: number,
-  asyncBeaconUpdatedeviationThresholdFactor: number | undefined
+  individualBeaconUpdateDeviationThresholdCoefficient: number | undefined
 ): UpdatableDataFeed[] => {
   return batch.reduce<UpdatableDataFeed[]>((acc, dataFeedInfo) => {
     // Fetch signed data and determine the value based on on-chain and off-chain data for each beacon.
@@ -44,9 +44,9 @@ export const getUpdatableFeeds = (
       }
       const offChainValue: BeaconValue | undefined = signedData
         ? {
-            timestamp: BigInt(signedData.timestamp),
-            value: decodeBeaconValue(signedData.encodedValue)!,
-          }
+          timestamp: BigInt(signedData.timestamp),
+          value: decodeBeaconValue(signedData.encodedValue)!,
+        }
         : undefined;
 
       const isUpdatable = offChainValue && offChainValue.timestamp > onChainValue.timestamp;
@@ -135,10 +135,10 @@ export const getUpdatableFeeds = (
           })),
         shouldUpdateBeaconSet: isBeaconSet,
       });
-    } else if (isBeaconSet && asyncBeaconUpdatedeviationThresholdFactor) {
+    } else if (isBeaconSet && individualBeaconUpdateDeviationThresholdCoefficient) {
       // 2.5. There is a special case when data feed is a beacon set that do not need to be updated but some of its beacon constituents do.
       //      In this particular case, airseeker can update only these beacons and skip the beacon set update. This is enabled by setting a
-      //      value in asyncBeaconUpdatedeviationThresholdFactor on the config.
+      //      value in individualBeaconUpdateDeviationThresholdCoefficient on the config.
       const updatableBeacons = aggregatedBeaconsWithData
         .filter(
           ({ isUpdatable, offChainValue, onChainValue }) =>
@@ -150,7 +150,7 @@ export const getUpdatableFeeds = (
               offChainValue.value,
               offChainValue.timestamp,
               adjustedHeartbeatInterval,
-              adjustedDeviationThresholdCoefficient * BigInt(asyncBeaconUpdatedeviationThresholdFactor),
+              adjustedDeviationThresholdCoefficient * BigInt(individualBeaconUpdateDeviationThresholdCoefficient),
               deviationReference
             )
         )

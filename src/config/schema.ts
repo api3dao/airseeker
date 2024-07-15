@@ -157,10 +157,10 @@ export const deviationThresholdCoefficientSchema = z
 
 export type DeviationThresholdCoefficient = z.infer<typeof deviationThresholdCoefficientSchema>;
 
-export const asyncBeaconUpdatedeviationThresholdFactorSchema = z.number().int().positive().optional();
+export const individualBeaconUpdateDeviationThresholdCoefficientSchema = z.number().int().positive().optional();
 
-export type AsyncBeaconUpdatedeviationThresholdFactorSchema = z.infer<
-  typeof asyncBeaconUpdatedeviationThresholdFactorSchema
+export type individualBeaconUpdateDeviationThresholdCoefficientSchema = z.infer<
+  typeof individualBeaconUpdateDeviationThresholdCoefficientSchema
 >;
 
 export const heartbeatIntervalModifierSchema = z.number().default(0);
@@ -177,7 +177,7 @@ export type WalletDerivationScheme = z.infer<typeof walletDerivationSchemeSchema
 
 export const configSchema = z
   .object({
-    asyncBeaconUpdatedeviationThresholdFactor: asyncBeaconUpdatedeviationThresholdFactorSchema,
+    individualBeaconUpdateDeviationThresholdCoefficient: individualBeaconUpdateDeviationThresholdCoefficientSchema,
     chains: chainsSchema,
     deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
     heartbeatIntervalModifier: heartbeatIntervalModifierSchema,
