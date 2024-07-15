@@ -586,7 +586,7 @@ describe(getUpdatableFeeds.name, () => {
     });
   });
 
-  it('returns updatable feeds with beacons that need to be udpated based on individualBeaconUpdateDeviationThresholdCoefficient config property', () => {
+  it('returns updatable feeds with beacons that need to be updated based on individualBeaconUpdateDeviationThresholdCoefficient config property', () => {
     jest.useFakeTimers().setSystemTime(90 * 1000);
 
     // Only the second and third feed will satisfy the timestamp check
