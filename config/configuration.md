@@ -203,8 +203,8 @@ Defaults to `1`.
 
 #### `individualBeaconUpdateDeviationThresholdCoefficient` _(optional)_
 
-The global deviation factor applied to individual beacon updates deviation checks. When configured, this value will be used
-on beacons sets that don't require an update but some of its beacon constituents do. So if a beacon set has a 1%
+The global deviation factor applied to individual beacon updates deviation checks. When configured, this value will be
+used on beacons sets that don't require an update but some of its beacon constituents do. So if a beacon set has a 1%
 deviation threshold, Airseeker will only update its beacons when deviation of each beacon exeeds (1 \*
 individualBeaconUpdateDeviationThresholdCoefficient)%. For example:
 

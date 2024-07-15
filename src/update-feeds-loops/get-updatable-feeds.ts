@@ -28,7 +28,8 @@ export const getUpdatableFeeds = (
   heartbeatIntervalModifier: number,
   individualBeaconUpdateDeviationThresholdCoefficient: number | undefined
 ): UpdatableDataFeed[] => {
-  return batch.reduce<UpdatableDataFeed[]>((acc, dataFeedInfo) => {
+  const updatableDataFeeds: UpdatableDataFeed[] = [];
+  for (const dataFeedInfo of batch) {
     // Fetch signed data and determine the value based on on-chain and off-chain data for each beacon.
     const aggregatedBeaconsWithData = dataFeedInfo.beaconsWithData.map(({ beaconId, timestamp, value }) => {
       const onChainValue: BeaconValue = { timestamp, value };
@@ -44,9 +45,9 @@ export const getUpdatableFeeds = (
       }
       const offChainValue: BeaconValue | undefined = signedData
         ? {
-          timestamp: BigInt(signedData.timestamp),
-          value: decodeBeaconValue(signedData.encodedValue)!,
-        }
+            timestamp: BigInt(signedData.timestamp),
+            value: decodeBeaconValue(signedData.encodedValue)!,
+          }
         : undefined;
 
       const isUpdatable = offChainValue && offChainValue.timestamp > onChainValue.timestamp;
@@ -125,7 +126,7 @@ export const getUpdatableFeeds = (
       );
 
     if (dataFeedNeedsUpdate) {
-      acc.push({
+      updatableDataFeeds.push({
         dataFeedInfo,
         updatableBeacons: aggregatedBeaconsWithData
           .filter(({ isUpdatable }) => isUpdatable)
@@ -135,7 +136,10 @@ export const getUpdatableFeeds = (
           })),
         shouldUpdateBeaconSet: isBeaconSet,
       });
-    } else if (isBeaconSet && individualBeaconUpdateDeviationThresholdCoefficient) {
+      continue;
+    }
+
+    if (isBeaconSet && individualBeaconUpdateDeviationThresholdCoefficient) {
       // 2.5. There is a special case when data feed is a beacon set that do not need to be updated but some of its beacon constituents do.
       //      In this particular case, airseeker can update only these beacons and skip the beacon set update. This is enabled by setting a
       //      value in individualBeaconUpdateDeviationThresholdCoefficient on the config.
@@ -158,13 +162,13 @@ export const getUpdatableFeeds = (
           beaconId,
           signedData: signedData!,
         }));
-      acc.push({
+      updatableDataFeeds.push({
         dataFeedInfo,
         updatableBeacons,
         shouldUpdateBeaconSet: false,
       });
     }
+  }
 
-    return acc;
-  }, []);
+  return updatableDataFeeds;
 };
