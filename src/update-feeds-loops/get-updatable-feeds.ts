@@ -89,7 +89,6 @@ export const getUpdatableFeeds = (
     }
     const adjustedHeartbeatInterval = modifiedHeartbeatInterval < 0n ? 0n : modifiedHeartbeatInterval;
 
-    // Filter out data feeds that cannot be updated.
     const isBeaconSet = beaconValues.length > 1;
 
     // We need to make sure that the update transaction actually changes the on-chain value. There are two cases:
