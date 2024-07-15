@@ -91,9 +91,10 @@ export const getUpdatableFeeds = (
 
     const isBeaconSet = beaconValues.length > 1;
 
-    // We need to make sure that the update transaction actually changes the on-chain value. There are two cases:
-    // 1. Data feed is a beacon - We need to make sure the off-chain data updates the feed. This requires timestamp
-    //    to change. See:
+    // We need to make sure that the update transaction actually changes the
+    // on-chain value. There are two cases:
+    // 1. Data feed is a beacon - We need to make sure the off-chain data
+    //    updates the feed. This requires timestamp to change. See:
     //    https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/DataFeedServer.sol#L120
     const isValidBeaconUpdate = !isBeaconSet && newDataFeedTimestamp !== dataFeedTimestamp;
 
