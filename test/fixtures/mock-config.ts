@@ -26,13 +26,14 @@ export const generateTestConfig = (): Config => ({
       dataFeedUpdateInterval: 60,
     },
   },
-  signedDataFetchInterval: 10,
   deviationThresholdCoefficient: 1,
   heartbeatIntervalModifier: 0,
+  individualBeaconUpdateDeviationThresholdCoefficient: null,
+  signedDataFetchInterval: 10,
   signedApiUrls: [],
-  walletDerivationScheme: { type: 'managed' },
   stage: 'test',
   version: packageJson.version,
+  walletDerivationScheme: { type: 'managed' },
 });
 
 export const initializeState = (config: Config = generateTestConfig()) => setInitialState(config);

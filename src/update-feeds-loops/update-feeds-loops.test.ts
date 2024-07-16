@@ -463,7 +463,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
                   (dataFeed.dataFeedValue *
                     // Multiply the new value by the on-chain deviationThresholdInPercentage
                     (decodedUpdateParameters.deviationThresholdInPercentage + 10n ** 8n)) /
-                    10n ** 8n
+                  10n ** 8n
                 ),
               ]
             ),
@@ -479,7 +479,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'info');
 
-    const feeds = getUpdatableFeedsModule.getUpdatableFeeds([activeDataFeed], 2, 0, undefined);
+    const feeds = getUpdatableFeedsModule.getUpdatableFeeds([activeDataFeed], 2, 0, null);
 
     expect(logger.warn).toHaveBeenCalledTimes(0);
     expect(feeds).toStrictEqual([]);

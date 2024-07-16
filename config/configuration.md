@@ -201,7 +201,7 @@ The global coefficient applied to all deviation checks. Used to differentiate al
 
 Defaults to `1`.
 
-#### `individualBeaconUpdateDeviationThresholdCoefficient` _(optional)_
+#### `individualBeaconUpdateDeviationThresholdCoefficient`
 
 The global deviation factor applied to individual beacon updates deviation checks. When configured, this value will be
 used on beacons sets that don't require an update but some of its beacon constituents do. So if a beacon set has a 1%
@@ -212,7 +212,7 @@ individualBeaconUpdateDeviationThresholdCoefficient)%. For example:
 "individualBeaconUpdateDeviationThresholdCoefficient": 5,
 ```
 
-Defaults to `5`.
+Defaults to `null`.
 
 #### `heartbeatIntervalModifier` _(optional)_
 

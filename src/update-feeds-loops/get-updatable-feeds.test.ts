@@ -72,7 +72,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, undefined);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, null);
 
     expect(logger.info).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenCalledWith(`Deviation exceeded.`);
@@ -140,7 +140,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    getUpdatableFeeds(batch, 1, heartbeatIntervalModifier, undefined);
+    getUpdatableFeeds(batch, 1, heartbeatIntervalModifier, null);
     expect(deviationCheckModule.checkUpdateCondition).toHaveBeenCalledWith(400n, 199n, 400n, 500n, 5n, ONE_PERCENT, 0n);
   });
 
@@ -190,7 +190,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    getUpdatableFeeds(batch, 1, heartbeatIntervalModifier, undefined);
+    getUpdatableFeeds(batch, 1, heartbeatIntervalModifier, null);
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith(`Resulting heartbeat interval is negative. Setting it to 0.`, {
       dapiName: 'test',
@@ -244,7 +244,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, undefined);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, null);
 
     expect(logger.info).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
@@ -319,7 +319,7 @@ describe(getUpdatableFeeds.name, () => {
     ]);
     jest.spyOn(logger, 'warn');
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, undefined);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, null);
 
     expect(logger.warn).toHaveBeenCalledTimes(0);
     expect(checkFeedsResult).toStrictEqual([]);
@@ -368,7 +368,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, undefined);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, null);
 
     expect(logger.info).toHaveBeenCalledTimes(0);
     expect(checkFeedsResult).toStrictEqual([]);
@@ -408,7 +408,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, undefined);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, null);
 
     expect(logger.info).toHaveBeenCalledTimes(0);
     expect(checkFeedsResult).toStrictEqual([]);
@@ -457,7 +457,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, undefined);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, null);
 
     expect(logger.info).toHaveBeenCalledTimes(0);
     expect(checkFeedsResult).toStrictEqual([]);
@@ -506,7 +506,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, undefined);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, null);
 
     expect(logger.info).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenCalledWith(`Deviation exceeded.`);
@@ -572,7 +572,7 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const updatableFeeds = getUpdatableFeeds(batch, 1, 0, undefined);
+    const updatableFeeds = getUpdatableFeeds(batch, 1, 0, null);
 
     expect(updatableFeeds).toStrictEqual([]);
     expect(logger.warn).toHaveBeenCalledTimes(2);

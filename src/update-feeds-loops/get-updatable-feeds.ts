@@ -26,7 +26,7 @@ export const getUpdatableFeeds = (
   batch: DecodedActiveDataFeedResponse[],
   deviationThresholdCoefficient: number,
   heartbeatIntervalModifier: number,
-  individualBeaconUpdateDeviationThresholdCoefficient: number | undefined
+  individualBeaconUpdateDeviationThresholdCoefficient: number | null
 ): UpdatableDataFeed[] => {
   const updatableDataFeeds: UpdatableDataFeed[] = [];
   for (const dataFeedInfo of batch) {
@@ -45,9 +45,9 @@ export const getUpdatableFeeds = (
       }
       const offChainValue: BeaconValue | undefined = signedData
         ? {
-            timestamp: BigInt(signedData.timestamp),
-            value: decodeBeaconValue(signedData.encodedValue)!,
-          }
+          timestamp: BigInt(signedData.timestamp),
+          value: decodeBeaconValue(signedData.encodedValue)!,
+        }
         : undefined;
 
       const isUpdatable = offChainValue && offChainValue.timestamp > onChainValue.timestamp;
