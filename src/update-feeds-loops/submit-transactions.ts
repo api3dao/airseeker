@@ -31,8 +31,7 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
     ])
   );
 
-  // If there are multiple beacons in the data feed it's a beacons set which we may need to update as well.
-  return allBeacons.length > 1 && shouldUpdateBeaconSet
+  return shouldUpdateBeaconSet
     ? [
         ...beaconUpdateCalls,
         api3ServerV1.interface.encodeFunctionData('updateBeaconSetWithBeacons', [
