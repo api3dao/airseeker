@@ -644,5 +644,6 @@ describe(getUpdatableFeeds.name, () => {
         },
       },
     ]);
+    expect(checkFeedsResult[0]!.shouldUpdateBeaconSet).toBe(false);
   });
 });
