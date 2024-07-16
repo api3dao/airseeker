@@ -74,14 +74,14 @@ export const runDataFetcher = async () => {
     const activeBeaconIds = new Set(
       Object.values(activeDataFeedBeaconIds)
         .map((beaconIdsPerProvider) => Object.values(beaconIdsPerProvider))
-        .flat(2)
+        .flat(2) // eslint-disable-line unicorn/no-magic-array-flat-depth
     );
 
     // Compute the set of URLs coming from the config. These are trusted and don't need to be verified.
     const trustedUrls = new Set(
       Object.values(signedApiUrlsFromConfig)
         .map((urlsPerProvider) => Object.values(urlsPerProvider))
-        .flat(2)
+        .flat(2) // eslint-disable-line unicorn/no-magic-array-flat-depth
     );
 
     // Better to log the non-decomposed object to see which URL comes from which chain-provider group.
@@ -89,7 +89,7 @@ export const runDataFetcher = async () => {
     const urls = uniq(
       [...Object.values(signedApiUrlsFromConfig), ...Object.values(signedApiUrlsFromContract)]
         .map((urlsPerProvider) => Object.values(urlsPerProvider))
-        .flat(2)
+        .flat(2) // eslint-disable-line unicorn/no-magic-array-flat-depth
     );
 
     const urlCount = urls.length;

@@ -1,5 +1,5 @@
 import * as nodeFsModule from 'node:fs';
-import path from 'node:path';
+import { join } from 'node:path';
 
 import { isObject } from 'lodash';
 import { z } from 'zod';
@@ -18,9 +18,9 @@ jest.mock('node:fs');
 
 describe('checks README', () => {
   it('checks that the README contains all configuration keys in airseeker.example.json', () => {
-    const exampleConfigData = actualFs.readFileSync(path.join(__dirname, '../config/airseeker.example.json'));
-    const exampleSecretsData = actualFs.readFileSync(path.join(__dirname, '../config/secrets.example.env'));
-    const readmeData = actualFs.readFileSync(path.join(__dirname, '../config/configuration.md')).toString();
+    const exampleConfigData = actualFs.readFileSync(join(__dirname, '../config/airseeker.example.json'));
+    const exampleSecretsData = actualFs.readFileSync(join(__dirname, '../config/secrets.example.env'));
+    const readmeData = actualFs.readFileSync(join(__dirname, '../config/configuration.md')).toString();
 
     expect(exampleConfigData).toBeDefined();
     expect(exampleSecretsData).toBeDefined();

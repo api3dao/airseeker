@@ -9,9 +9,7 @@ const execSyncWithErrorHandling = (command: string) => {
   } catch (error: any) {
     // eslint-disable-next-line no-console
     console.error(error.message);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     console.info('STDOUT', error.stdout.toString());
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     console.info('STDERR', error.stderr.toString());
 
     process.exit(1);
@@ -19,11 +17,9 @@ const execSyncWithErrorHandling = (command: string) => {
 };
 
 const main = () => {
-  // eslint-disable-next-line @typescript-eslint/prefer-destructuring
   const versionBump = process.argv[2];
   if (versionBump !== 'major' && versionBump !== 'minor' && versionBump !== 'patch') throw new Error('Invalid version');
 
-  // eslint-disable-next-line @typescript-eslint/prefer-destructuring
   const noGitChecks = process.argv[3];
   if (noGitChecks && noGitChecks !== '--no-git-checks') throw new Error('Expected --no-git-checks flag');
 
