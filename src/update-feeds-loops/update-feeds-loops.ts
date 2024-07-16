@@ -226,7 +226,6 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
 
         // Wait for all the batches to be processed and print stats from this run.
         const processedBatches = await Promise.all([
-          // eslint-disable-next-line @typescript-eslint/promise-function-async
           new Promise<Awaited<ReturnType<typeof processBatch>>>((resolve, reject) => {
             return processFirstBatchPromise.then((result) => {
               // eslint-disable-next-line promise/always-return
