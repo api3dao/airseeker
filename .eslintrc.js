@@ -15,7 +15,7 @@ module.exports = {
     Atomics: 'readonly',
     SharedArrayBuffer: 'readonly',
   },
-  extends: ['./node_modules/@api3/commons/dist/eslint/universal', './node_modules/@api3/commons/dist/eslint/jest'],
+  extends: ['plugin:@api3/eslint-plugin-commons/universal', 'plugin:@api3/eslint-plugin-commons/jest'],
   plugins: ['@typescript-eslint', 'import', 'jest'],
   rules: {
     'unicorn/no-process-exit': 'off',
@@ -34,6 +34,5 @@ module.exports = {
 
     // Jest
     'jest/no-hooks': 'off',
-    'jest/prefer-importing-jest-globals': 'off',
   },
 };

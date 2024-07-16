@@ -56,7 +56,6 @@ export const generateSignedData = async (
 
 export const createMockSignedDataVerifier = () => {
   return {
-    // eslint-disable-next-line @typescript-eslint/require-await
     verifySignedData: async (signedDataBatch: SignedDataRecordEntry[]) => verifySignedData(signedDataBatch),
   } as unknown as Awaited<ReturnType<typeof getVerifier>>;
 };

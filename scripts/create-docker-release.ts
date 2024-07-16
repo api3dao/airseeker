@@ -11,9 +11,7 @@ const execSyncWithErrorHandling = (command: string) => {
   } catch (error: any) {
     // eslint-disable-next-line no-console
     console.error(error.message);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     console.info('STDOUT', error.stdout.toString());
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     console.info('STDERR', error.stderr.toString());
 
     process.exit(1);
