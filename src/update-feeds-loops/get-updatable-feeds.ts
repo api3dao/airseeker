@@ -171,11 +171,13 @@ export const getUpdatableFeeds = (
           beaconId,
           signedData: signedData!,
         }));
-      updatableDataFeeds.push({
-        dataFeedInfo,
-        updatableBeacons,
-        shouldUpdateBeaconSet: false,
-      });
+      if (updatableBeacons && updatableBeacons.length > 0) {
+        updatableDataFeeds.push({
+          dataFeedInfo,
+          updatableBeacons,
+          shouldUpdateBeaconSet: false,
+        });
+      }
     }
   }
 
