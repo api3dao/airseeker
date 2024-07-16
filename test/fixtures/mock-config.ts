@@ -5,7 +5,6 @@ import { setInitialState } from '../../src/state';
 // This is not a secret
 // https://pool.nodary.io/0xC04575A2773Da9Cd23853A69694e02111b2c4182
 export const generateTestConfig = (): Config => ({
-  sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
   chains: {
     '31337': {
       alias: 'hardhat',
@@ -29,8 +28,9 @@ export const generateTestConfig = (): Config => ({
   deviationThresholdCoefficient: 1,
   heartbeatIntervalModifier: 0,
   individualBeaconUpdateDeviationThresholdCoefficient: null,
-  signedDataFetchInterval: 10,
   signedApiUrls: [],
+  signedDataFetchInterval: 10,
+  sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
   stage: 'test',
   version: packageJson.version,
   walletDerivationScheme: { type: 'managed' },

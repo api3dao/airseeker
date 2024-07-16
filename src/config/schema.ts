@@ -165,7 +165,12 @@ export const walletDerivationSchemeSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('fixed'), sponsorAddress: addressSchema }).strict(),
 ]);
 
-export const individualBeaconUpdateDeviationThresholdCoefficientSchema = z.number().int().positive().nullable().default(null);
+export const individualBeaconUpdateDeviationThresholdCoefficientSchema = z
+  .number()
+  .int()
+  .positive()
+  .nullable()
+  .default(null);
 
 export type IndividualBeaconUpdateDeviationThresholdCoefficientSchema = z.infer<
   typeof individualBeaconUpdateDeviationThresholdCoefficientSchema

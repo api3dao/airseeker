@@ -45,9 +45,9 @@ export const getUpdatableFeeds = (
       }
       const offChainValue: BeaconValue | undefined = signedData
         ? {
-          timestamp: BigInt(signedData.timestamp),
-          value: decodeBeaconValue(signedData.encodedValue)!,
-        }
+            timestamp: BigInt(signedData.timestamp),
+            value: decodeBeaconValue(signedData.encodedValue)!,
+          }
         : undefined;
 
       const isUpdatable = offChainValue && offChainValue.timestamp > onChainValue.timestamp;
