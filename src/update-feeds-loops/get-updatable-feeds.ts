@@ -150,14 +150,21 @@ export const getUpdatableFeeds = (
           ({ isUpdatable, offChainValue, onChainValue }) =>
             isUpdatable &&
             offChainValue &&
-            checkUpdateCondition(
-              onChainValue.value,
-              onChainValue.timestamp,
-              offChainValue.value,
-              offChainValue.timestamp,
-              adjustedHeartbeatInterval,
-              adjustedDeviationThresholdCoefficient * BigInt(individualBeaconUpdateDeviationThresholdCoefficient),
-              deviationReference
+            logger.runWithContext(
+              {
+                dapiName: decodedDapiName,
+                dataFeedId,
+              },
+              () =>
+                checkUpdateCondition(
+                  onChainValue.value,
+                  onChainValue.timestamp,
+                  offChainValue.value,
+                  offChainValue.timestamp,
+                  adjustedHeartbeatInterval,
+                  adjustedDeviationThresholdCoefficient * BigInt(individualBeaconUpdateDeviationThresholdCoefficient),
+                  deviationReference
+                )
             )
         )
         .map(({ beaconId, signedData }) => ({
