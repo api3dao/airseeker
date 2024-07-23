@@ -19,6 +19,7 @@ import dotenv from 'dotenv';
 import { type JsonRpcProvider, NonceManager, ethers } from 'ethers';
 import { zip } from 'lodash';
 
+import { HUNDRED_PERCENT } from '../../src/constants';
 import { getGasPrice } from '../../src/gas-price';
 import { deriveSponsorWallet, encodeDapiName } from '../../src/utils';
 
@@ -54,8 +55,7 @@ export const deriveRole = (adminRole: string, roleDescription: string) => {
 };
 
 function encodeUpdateParameters() {
-  const HUNDRED_PERCENT = 1e8;
-  const deviationThresholdInPercentage = HUNDRED_PERCENT / 100; // 1%
+  const deviationThresholdInPercentage = HUNDRED_PERCENT / 100n; // 1%
   const deviationReference = 0;
   const heartbeatInterval = 86_400; // 24 hrs
   const updateParameters = ethers.AbiCoder.defaultAbiCoder().encode(

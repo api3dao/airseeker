@@ -9,6 +9,7 @@ import {
 import type { HDNodeWallet, JsonRpcProvider, Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
+import { HUNDRED_PERCENT } from '../../src/constants';
 import {
   deriveSponsorAddressForManagedFeed,
   deriveSponsorWalletFromSponsorAddress,
@@ -244,8 +245,7 @@ export const deployAndUpdate = async () => {
       [airnodes, templateIds]
     );
     await airseekerRegistry.connect(randomPerson).registerDataFeed(encodedBeaconSetData);
-    const HUNDRED_PERCENT = 1e8;
-    const deviationThresholdInPercentage = BigInt(HUNDRED_PERCENT / 50); // 2%
+    const deviationThresholdInPercentage = HUNDRED_PERCENT / 50n; // 2%
     const deviationReference = 0n; // Not used in Airseeker V2
     const heartbeatInterval = BigInt(86_400); // 24 hrs
     await airseekerRegistry
