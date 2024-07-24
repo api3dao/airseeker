@@ -157,8 +157,6 @@ export const deviationThresholdCoefficientSchema = z
 
 export type DeviationThresholdCoefficient = z.infer<typeof deviationThresholdCoefficientSchema>;
 
-export const heartbeatIntervalModifierSchema = z.number().default(0);
-
 export type HeartbeatIntervalModifier = z.infer<typeof heartbeatIntervalModifierSchema>;
 
 export const walletDerivationSchemeSchema = z.discriminatedUnion('type', [
@@ -167,23 +165,37 @@ export const walletDerivationSchemeSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('fixed'), sponsorAddress: addressSchema }).strict(),
 ]);
 
+export const individualBeaconUpdateDeviationThresholdCoefficientSchema = z
+  .number()
+  .int()
+  .positive()
+  .nullable()
+  .default(null);
+
+export type IndividualBeaconUpdateDeviationThresholdCoefficientSchema = z.infer<
+  typeof individualBeaconUpdateDeviationThresholdCoefficientSchema
+>;
+
+export const heartbeatIntervalModifierSchema = z.number().default(0);
+
 export type WalletDerivationScheme = z.infer<typeof walletDerivationSchemeSchema>;
 
 export const configSchema = z
   .object({
+    chains: chainsSchema,
+    deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
+    heartbeatIntervalModifier: heartbeatIntervalModifierSchema,
+    individualBeaconUpdateDeviationThresholdCoefficient: individualBeaconUpdateDeviationThresholdCoefficientSchema,
+    signedApiUrls: z.array(z.string().url()),
+    signedDataFetchInterval: z.number().positive(),
     sponsorWalletMnemonic: z
       .string()
       .refine((mnemonic) => ethers.Mnemonic.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
-    chains: chainsSchema,
-    signedDataFetchInterval: z.number().positive(),
-    deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
-    heartbeatIntervalModifier: heartbeatIntervalModifierSchema,
-    signedApiUrls: z.array(z.string().url()),
-    walletDerivationScheme: walletDerivationSchemeSchema,
     stage: z
       .string()
       .regex(/^[\da-z-]{1,256}$/, 'Only lowercase letters, numbers and hyphens are allowed (max 256 characters)'),
     version: z.string().refine((version) => version === packageVersion, 'Invalid Airseeker version'),
+    walletDerivationScheme: walletDerivationSchemeSchema,
   })
   .strict();
 
