@@ -143,8 +143,7 @@ export const getUpdatableFeeds = (
       // There is a special case when data feed is a beacon set that doesn't need
       // to be updated but some of its beacon constituents do. In this
       // particular case, Airseeker can update only these beacons and skip the
-      // beacon set update. This is enabled by setting a value in
-      // individualBeaconUpdateDeviationThresholdCoefficient on the config.
+      // beacon set update.
       const updatableBeacons = aggregatedBeaconsWithData
         .filter(
           ({ isUpdatable, offChainValue, onChainValue }) =>
