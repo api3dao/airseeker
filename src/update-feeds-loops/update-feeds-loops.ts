@@ -286,13 +286,19 @@ export const processBatch = async (
     config: {
       chains,
       deviationThresholdCoefficient,
+      individualBeaconUpdateDeviationThresholdCoefficient,
       heartbeatIntervalModifier,
       signedApiUrls: configSignedApiBaseUrls,
     },
   } = getState();
   const { contracts } = chains[chainId]!;
 
-  const feedsToUpdate = getUpdatableFeeds(batch, deviationThresholdCoefficient, heartbeatIntervalModifier);
+  const feedsToUpdate = getUpdatableFeeds(
+    batch,
+    deviationThresholdCoefficient,
+    heartbeatIntervalModifier,
+    individualBeaconUpdateDeviationThresholdCoefficient
+  );
 
   updatePendingTransactionsInfo(chainId, providerName, batch, feedsToUpdate);
 
