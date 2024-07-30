@@ -201,6 +201,24 @@ The global coefficient applied to all deviation checks. Used to differentiate al
 
 Defaults to `1`.
 
+#### `individualBeaconUpdateDeviationThresholdCoefficient`
+
+The global deviation coefficient applied to individual beacon updates deviation checks. When configured, this value will
+be used on beacon sets that don't require an update but some of their beacon constituents do. For instance, if a beacon
+set has a 1% deviation threshold, Airseeker will update its beacons only when the deviation of each beacon exceeds (1 \*
+individualBeaconUpdateDeviationThresholdCoefficient)%. For example:
+
+```jsonc
+"individualBeaconUpdateDeviationThresholdCoefficient": 5,
+```
+
+Defaults to `null`.
+
+This configuration allows asynchronous updates of beacons, providing resiliency against unavailability at the cost of
+some redundant updates. However, be aware that a single beacon can malfunction, potentially draining the sponsor wallet.
+Therefore, this should only be enabled on the main or fallback (fixed walletDerivationScheme type) Airseeker
+configurations.
+
 #### `heartbeatIntervalModifier` _(optional)_
 
 The global modifier applied to all heartbeat checks. The value is specified in seconds and can be positive or negative.

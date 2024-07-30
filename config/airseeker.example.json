@@ -25,10 +25,11 @@
     }
   },
   "deviationThresholdCoefficient": 1,
+  "individualBeaconUpdateDeviationThresholdCoefficient": null,
   "heartbeatIntervalModifier": 0,
   "signedDataFetchInterval": 10,
   "signedApiUrls": [],
   "walletDerivationScheme": { "type": "managed" },
   "stage": "dev",
-  "version": "3.3.0"
+  "version": "3.4.0"
 }
