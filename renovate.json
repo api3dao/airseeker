@@ -21,8 +21,9 @@
   ],
   "rangeStrategy": "bump",
   "lockFileMaintenance": {
-    "enabled": false
+    "enabled": true,
+    "automerge": true
   },
-  "reviewers": ["Siegrift"],
+  "reviewers": ["Siegrift", "aquarat", "bdrhn9"],
   "dependencyDashboard": false
 }
