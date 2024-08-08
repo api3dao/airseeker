@@ -24,6 +24,6 @@
     "enabled": true,
     "automerge": true
   },
-  "reviewers": ["Siegrift", "aquarat", "bdrhn9"],
+  "reviewers": ["bdrhn9"],
   "dependencyDashboard": false
 }
