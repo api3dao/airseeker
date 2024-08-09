@@ -23,7 +23,7 @@
   ],
   "rangeStrategy": "bump",
   "lockFileMaintenance": {
-    "enabled": true
+    "enabled": false
   },
   "reviewers": ["bdrhn9"],
   "dependencyDashboard": false
