@@ -12,14 +12,14 @@ importers:
         specifier: ^3.4.0
         version: 3.4.0
       '@api3/chains':
-        specifier: ^9.1.0
-        version: 9.1.0(typescript@5.5.4)
+        specifier: ^9.2.0
+        version: 9.2.0(typescript@5.5.4)
       '@api3/commons':
-        specifier: ^0.11.0
-        version: 0.11.0
+        specifier: ^0.12.0
+        version: 0.12.0
       '@api3/contracts':
-        specifier: 6.1.0
-        version: 6.1.0
+        specifier: 6.2.0
+        version: 6.2.0
       '@api3/eslint-plugin-commons':
         specifier: ^2.0.1
         version: 2.0.1(@babel/core@7.24.4)(eslint@8.57.0)(jest@29.7.0(@types/node@20.14.14)(ts-node@10.9.2(@types/node@20.14.14)(typescript@5.5.4)))(prettier@3.3.3)(typescript@5.5.4)
@@ -140,15 +140,15 @@ packages:
   '@api3/airnode-protocol-v1@3.4.0':
     resolution: {integrity: sha512-jjnzJC82RUEJkDfrz/PAS2/JP8TyEsBKQhYBO4xzOIGrTCC+XscwpxTWVneuNpNsXmQFYjfjvXzEC4lgDqwvTQ==}
 
-  '@api3/chains@9.1.0':
-    resolution: {integrity: sha512-BKQAb2GxtCftFpzMZGooow2+nnRAuB5UdqaV5bNovn45dJ8ze1Q+rxcBsdwLLwTKEq/aqyXznvaK1WpIiZEksg==}
+  '@api3/chains@9.2.0':
+    resolution: {integrity: sha512-lWgnR6pZ9aRrCfAT6I62adtIHfuQPgpUEwfqEE6W2xvPDUQB9w6XNoFd/ppE1BQHBfwBKFMvY/bD+1IAHIidZA==}
 
-  '@api3/commons@0.11.0':
-    resolution: {integrity: sha512-cV9xVcnML9QuIh7AiSZmZ2oH0/D+DmpPSH+skAVplkaHHKGIrtVi5Rj5PHj5jX6R8h6gsjJin4VDyBV72dszDg==}
+  '@api3/commons@0.12.0':
+    resolution: {integrity: sha512-QL/uZO21/YW76gGOrjEo5FELHBDI1Z28s50q1sbkHFz5X+Ys7piw5e7wy4rReN/o04z3rlApT9zjqy5zMa/95w==}
     engines: {node: '>=18.14.0'}
 
-  '@api3/contracts@6.1.0':
-    resolution: {integrity: sha512-Vo0sTq9ns2jq0OYXQce4nJN2OmZlVumGd0/gooAKHTk/40C2pdTw7SZ66ofg3VhfIT65VC2YdEli7mtKIaad2w==}
+  '@api3/contracts@6.2.0':
+    resolution: {integrity: sha512-Sq+6D3MASGhXeHkwtstDRY79WqqTRuEYP3rsPQ142QGZW7vJTBiDS0lRAhFvTgWP1q5NMKcr/iUZGMqq/CEiLg==}
     engines: {node: '>=18.14.0'}
 
   '@api3/eslint-plugin-commons@2.0.1':
@@ -1396,6 +1396,9 @@ packages:
 
   axios@1.7.2:
     resolution: {integrity: sha512-2A8QhOMrbomlDuiLeK9XibIBzuHeRcqqNOHp0Cyp5EoJ1IFDh+XZH3A6BkXtv0K4gFGCI0Y4BM7B1wOEi0Rmgw==}
+
+  axios@1.7.3:
+    resolution: {integrity: sha512-Ar7ND9pU99eJ9GpoGQKhKf58GpUOgnzuaB7ueNQ5BMi0p+LZ5oaEnfF999fAArcTIBwXTCHAmGcHOZJaWPq9Nw==}
 
   axobject-query@3.2.1:
     resolution: {integrity: sha512-jsyHu61e6N4Vbz/v18DHwWYKK0bSWLqn47eeDSKPB7m8tqMHF9YJ+mhIk2lVteyZrY8tnSj/jHOv4YiTCuCJgg==}
@@ -4511,7 +4514,7 @@ snapshots:
     dependencies:
       '@openzeppelin/contracts': 4.8.2
 
-  '@api3/chains@9.1.0(typescript@5.5.4)':
+  '@api3/chains@9.2.0(typescript@5.5.4)':
     dependencies:
       viem: 2.19.1(typescript@5.5.4)(zod@3.23.8)
       zod: 3.23.8
@@ -4520,11 +4523,11 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@api3/commons@0.11.0':
+  '@api3/commons@0.12.0':
     dependencies:
       '@api3/ois': 2.3.2
       '@api3/promise-utils': 0.4.0
-      axios: 1.7.2
+      axios: 1.7.3
       dotenv: 16.4.5
       ethers: 5.7.2
       lodash: 4.17.21
@@ -4536,7 +4539,7 @@ snapshots:
       - debug
       - utf-8-validate
 
-  '@api3/contracts@6.1.0':
+  '@api3/contracts@6.2.0':
     dependencies:
       ethers: 6.13.2
     transitivePeerDependencies:
@@ -6247,6 +6250,14 @@ snapshots:
       - debug
 
   axios@1.7.2:
+    dependencies:
+      follow-redirects: 1.15.6(debug@4.3.4)
+      form-data: 4.0.0
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+
+  axios@1.7.3:
     dependencies:
       follow-redirects: 1.15.6(debug@4.3.4)
       form-data: 4.0.0
