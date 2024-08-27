@@ -12,8 +12,8 @@ importers:
         specifier: ^3.4.0
         version: 3.4.0
       '@api3/chains':
-        specifier: ^9.2.1
-        version: 9.2.1(typescript@5.5.4)
+        specifier: ^10.0.0
+        version: 10.0.0(typescript@5.5.4)
       '@api3/commons':
         specifier: ^0.12.0
         version: 0.12.0
@@ -140,8 +140,8 @@ packages:
   '@api3/airnode-protocol-v1@3.4.0':
     resolution: {integrity: sha512-jjnzJC82RUEJkDfrz/PAS2/JP8TyEsBKQhYBO4xzOIGrTCC+XscwpxTWVneuNpNsXmQFYjfjvXzEC4lgDqwvTQ==}
 
-  '@api3/chains@9.2.1':
-    resolution: {integrity: sha512-6PO1Cr7IWq/qRoZkIZ4rmsIgZKkQMKXGePlK+km3Z28LSTpo7WnYlpDD/vl21t1epEXL8z3u5fbtVKbjYZ9BVg==}
+  '@api3/chains@10.0.0':
+    resolution: {integrity: sha512-ZGPadx2cqCnNagO9qQraWIT6vwtbCR7Dtxj+WnpJXsdrN/ITSeItkptSligfi49D73TbJ/SzSpV4Hb20990jMg==}
 
   '@api3/commons@0.12.0':
     resolution: {integrity: sha512-QL/uZO21/YW76gGOrjEo5FELHBDI1Z28s50q1sbkHFz5X+Ys7piw5e7wy4rReN/o04z3rlApT9zjqy5zMa/95w==}
@@ -4511,7 +4511,7 @@ snapshots:
     dependencies:
       '@openzeppelin/contracts': 4.8.2
 
-  '@api3/chains@9.2.1(typescript@5.5.4)':
+  '@api3/chains@10.0.0(typescript@5.5.4)':
     dependencies:
       viem: 2.19.1(typescript@5.5.4)(zod@3.23.8)
       zod: 3.23.8
