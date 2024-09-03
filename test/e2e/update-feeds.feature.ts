@@ -23,6 +23,7 @@ it('reads blockchain data', async () => {
   const [chainId, chain] = Object.entries(config.chains)[0]!;
   const providerName = Object.keys(chain.providers)[0]!;
   jest.spyOn(logger, 'info').mockImplementation();
+  jest.spyOn(logger, 'debug');
 
   initializeState(config);
   initializeGasState(chainId, providerName);
@@ -30,7 +31,7 @@ it('reads blockchain data', async () => {
 
   await runUpdateFeeds(providerName, chain, chainId);
 
-  expect(logger.info).toHaveBeenCalledWith('Processing batch of active data feeds.', expect.anything());
+  expect(logger.debug).toHaveBeenCalledWith('Processing batch of active data feeds.', expect.anything());
 });
 
 it('updates blockchain data', async () => {
