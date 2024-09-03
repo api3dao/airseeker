@@ -81,19 +81,39 @@ describe(dataFetcherLoopModule.runDataFetcher.name, () => {
       'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
       10_000
     );
-    expect(logger.info).toHaveBeenCalledTimes(3);
+    expect(logger.info).toHaveBeenCalledTimes(2);
     expect(logger.info).toHaveBeenNthCalledWith(
       1,
-      'Fetching signed data.',
+      'Started data fetcher loop.',
       expect.objectContaining({ urlCount: 1, staggerTimeMs: 10_000 })
     );
-    expect(logger.info).toHaveBeenNthCalledWith(2, 'Fetched signed data from Signed API.', expect.any(Object));
     expect(logger.info).toHaveBeenNthCalledWith(
-      3,
-      'Saved signed data from Signed API using a worker.',
+      2,
+      'Finished data fetcher loop.',
       expect.objectContaining({
-        url: 'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
-        signedDataCount: 2,
+        loopDuration: expect.any(Number),
+        averageFetchDuration: expect.any(Number),
+        averageSaveDuration: expect.any(Number),
+        fastestFetch: expect.objectContaining({
+          url: 'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+          count: 3,
+          duration: expect.any(Number),
+        }),
+        slowestFetch: expect.objectContaining({
+          url: 'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+          count: 3,
+          duration: expect.any(Number),
+        }),
+        fastestSave: expect.objectContaining({
+          url: 'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+          count: 2,
+          duration: expect.any(Number),
+        }),
+        slowestSave: expect.objectContaining({
+          url: 'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+          count: 2,
+          duration: expect.any(Number),
+        }),
       })
     );
   });
