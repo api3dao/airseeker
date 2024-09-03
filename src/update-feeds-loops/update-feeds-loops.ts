@@ -183,7 +183,7 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
           provider,
           chainId,
           firstBatchBlockNumber
-        ).catch((error) => error);
+        ).catch((error: any) => error);
 
         // Calculate the stagger time.
         const batchesCount = Math.ceil(activeDataFeedCount! / dataFeedBatchSize);
@@ -226,13 +226,11 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
 
         // Wait for all the batches to be processed and print stats from this run.
         const processedBatches = await Promise.all([
-          new Promise<Awaited<ReturnType<typeof processBatch>>>((resolve, reject) => {
-            return processFirstBatchPromise.then((result) => {
-              // eslint-disable-next-line promise/always-return
-              if (isError(result)) reject(result);
-              else resolve(result);
-            });
-          }),
+          (async (): Promise<Awaited<ReturnType<typeof processBatch>>> => {
+            const batchOrError = await processFirstBatchPromise;
+            if (isError(batchOrError)) throw batchOrError;
+            return batchOrError;
+          })(),
           ...processOtherBatchesPromises,
         ]);
 
