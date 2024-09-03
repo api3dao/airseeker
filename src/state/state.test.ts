@@ -74,6 +74,7 @@ describe('state', () => {
     });
 
     const stateAfter = getState();
+
     expect(stateBefore).toStrictEqual(stateMock);
     expect(stateBefore).not.toStrictEqual(stateAfter);
     expect(stateAfter).toStrictEqual({

@@ -152,6 +152,7 @@ describe(getRecommendedGasPrice.name, () => {
     const gasPrice = getRecommendedGasPrice(chainId, providerName, sponsorWalletAddress, [dataFeedId]);
 
     expect(gasPrice).toStrictEqual(ethers.parseUnits('17.2', 'gwei'));
+
     const percentile = getPercentile(
       testConfig.chains[chainId]!.gasSettings.sanitizationPercentile,
       gasPrices.map((x) => x.price)
@@ -159,6 +160,7 @@ describe(getRecommendedGasPrice.name, () => {
     const expectedGasPrice = BigInt(
       Number(percentile) * testConfig.chains[chainId]!.gasSettings.sanitizationMultiplier
     );
+
     expect(gasPrice).toStrictEqual(expectedGasPrice);
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenNthCalledWith(1, 'Sanitizing gas price.', {

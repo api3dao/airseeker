@@ -42,6 +42,7 @@ describe('checks README', () => {
     const readmeTitles = [...readmeHashtagTitles, ...readmeBacktickTitles];
 
     const config = loadConfig();
+
     expect(config).toBeDefined();
 
     const missingKeys = extractKeys(config)
