@@ -141,6 +141,7 @@ describe(getUpdatableFeeds.name, () => {
     ]);
 
     getUpdatableFeeds(batch, 1, heartbeatIntervalModifier, null);
+
     expect(deviationCheckModule.checkUpdateCondition).toHaveBeenCalledWith(400n, 199n, 400n, 500n, 5n, ONE_PERCENT, 0n);
   });
 
@@ -191,6 +192,7 @@ describe(getUpdatableFeeds.name, () => {
     ]);
 
     getUpdatableFeeds(batch, 1, heartbeatIntervalModifier, null);
+
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith(`Resulting heartbeat interval is negative. Setting it to 0.`, {
       dapiName: 'test',

@@ -107,46 +107,55 @@ describe(isHeartbeatUpdatable.name, () => {
 describe(calculateDeviationPercentage.name, () => {
   it('calculates zero change', () => {
     const updateInPercentage = calculateDeviationPercentage(10n, 10n, 0n);
+
     expect(updateInPercentage).toStrictEqual(BigInt(0));
   });
 
   it('calculates 100 percent change', () => {
     const updateInPercentage = calculateDeviationPercentage(10n, 20n, 0n);
+
     expect(updateInPercentage).toStrictEqual(HUNDRED_PERCENT);
   });
 
   it('calculates positive to negative change', () => {
     const updateInPercentage = calculateDeviationPercentage(10n, BigInt(-5), 0n);
+
     expect(updateInPercentage).toStrictEqual(150n * ONE_PERCENT);
   });
 
   it('calculates negative to positive change', () => {
     const updateInPercentage = calculateDeviationPercentage(BigInt(-5), 5n, 0n);
+
     expect(updateInPercentage).toStrictEqual(2n * HUNDRED_PERCENT);
   });
 
   it('calculates initial zero to positive change', () => {
     const updateInPercentage = calculateDeviationPercentage(0n, 5n, 0n);
+
     expect(updateInPercentage).toStrictEqual(UINT256_MAX);
   });
 
   it('calculates initial zero to negative change', () => {
     const updateInPercentage = calculateDeviationPercentage(0n, BigInt(-5), 0n);
+
     expect(updateInPercentage).toStrictEqual(UINT256_MAX);
   });
 
   it('calculates initial positive to zero change', () => {
     const updateInPercentage = calculateDeviationPercentage(5n, 0n, 0n);
+
     expect(updateInPercentage).toStrictEqual(HUNDRED_PERCENT);
   });
 
   it('calculates initial negative to zero change', () => {
     const updateInPercentage = calculateDeviationPercentage(BigInt(-5), 0n, 0n);
+
     expect(updateInPercentage).toStrictEqual(HUNDRED_PERCENT);
   });
 
   it('calculates initial negative to negative change', () => {
     const updateInPercentage = calculateDeviationPercentage(BigInt(-5), BigInt(-1), 0n);
+
     expect(updateInPercentage).toStrictEqual(80n * ONE_PERCENT);
   });
 
@@ -155,20 +164,25 @@ describe(calculateDeviationPercentage.name, () => {
     let updateInPercentage: bigint;
 
     updateInPercentage = calculateDeviationPercentage(BigInt(100), BigInt(91), -100n);
+
     expect(updateInPercentage).toStrictEqual(BigInt(4.5 * Number(ONE_PERCENT)));
 
     updateInPercentage = calculateDeviationPercentage(BigInt(100), BigInt(109), -100n);
+
     expect(updateInPercentage).toStrictEqual(BigInt(4.5 * Number(ONE_PERCENT)));
 
     updateInPercentage = calculateDeviationPercentage(BigInt(100), BigInt(80), -100n);
+
     expect(updateInPercentage).toStrictEqual(10n * ONE_PERCENT);
 
     updateInPercentage = calculateDeviationPercentage(BigInt(100), BigInt(120), -100n);
+
     expect(updateInPercentage).toStrictEqual(10n * ONE_PERCENT);
   });
 
   it('returns 0 if there is no value change', () => {
     const updateInPercentage = calculateDeviationPercentage(10n, 10n, 10n);
+
     expect(updateInPercentage).toBe(0n);
   });
 });
@@ -177,11 +191,13 @@ describe(calculateMedian.name, () => {
   describe('for array with odd number of elements', () => {
     it('calculates median for sorted array', () => {
       const arr = [10n, 11n, 24n, 30n, 47n];
+
       expect(calculateMedian(arr)).toBe(24n);
     });
 
     it('calculates median for unsorted array', () => {
       const arr = [24n, 11n, 10n, 47n, 30n];
+
       expect(calculateMedian(arr)).toBe(24n);
     });
   });
@@ -189,11 +205,13 @@ describe(calculateMedian.name, () => {
   describe('for array with even number of elements', () => {
     it('calculates median for sorted array', () => {
       const arr = [10n, 11n, 24n, 30n];
+
       expect(calculateMedian(arr)).toBe(17n);
     });
 
     it('calculates median for unsorted array', () => {
       const arr = [24n, 11n, 10n, 30n];
+
       expect(calculateMedian(arr)).toBe(17n);
     });
   });

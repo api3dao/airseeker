@@ -43,6 +43,7 @@ test('validates example config', () => {
   );
 
   const exampleSecrets = dotenv.parse(readFileSync(join(__dirname, '../../config/secrets.example.env'), 'utf8'));
+
   expect(configSchema.parse(interpolateSecretsIntoConfig(exampleConfig, exampleSecrets))).toStrictEqual(
     expect.any(Object)
   );

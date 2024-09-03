@@ -38,6 +38,7 @@ describe(signedDataStateModule.saveSignedData.name, () => {
     await signedDataStateModule.saveSignedData([[beaconId, validSignedData]], false);
 
     const signedData = signedDataStateModule.getSignedData(beaconId);
+
     expect(signedData).toStrictEqual(validSignedData);
   });
 
@@ -157,6 +158,7 @@ describe(signedDataStateModule.saveSignedData.name, () => {
 
     // First save data for trusted API and expect it to be saved without verification.
     await signedDataStateModule.saveSignedData([[beaconId, validSignedData]], true);
+
     expect(signedDataVerifierPoolModule.getVerifier).not.toHaveBeenCalled();
 
     // Then save data for untrusted API and expect it to be verified.
@@ -170,6 +172,7 @@ describe(signedDataStateModule.saveSignedData.name, () => {
       timestamp,
     };
     await signedDataStateModule.saveSignedData([[beaconId, otherSignedData]], false);
+
     expect(signedDataVerifierPoolModule.getVerifier).toHaveBeenCalledTimes(1);
   });
 });
