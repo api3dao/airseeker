@@ -1,5 +1,5 @@
 import { type Hex, executeRequest } from '@api3/commons';
-import { uniq } from 'lodash';
+import { minBy, meanBy, maxBy, uniq } from 'lodash';
 
 import { logger } from '../logger';
 import { getState } from '../state';
@@ -7,6 +7,12 @@ import { type SignedDataRecord, signedApiResponseSchema, type SignedDataRecordEn
 import { generateRandomId, sleep } from '../utils';
 
 import { purgeOldSignedData, saveSignedData } from './signed-data-state';
+
+interface SignedApiUrlStats {
+  url: string;
+  count: number;
+  duration: number;
+}
 
 export const startDataFetcherLoop = () => {
   const state = getState();
@@ -94,20 +100,28 @@ export const runDataFetcher = async () => {
 
     const urlCount = urls.length;
     const staggerTimeMs = signedDataFetchIntervalMs / urlCount;
-    logger.info('Fetching signed data.', { urlCount, staggerTimeMs, currentTime: new Date().toISOString() });
+
+    // Store durations and relevant URLs for statistics
+    const fetchDurations: SignedApiUrlStats[] = [];
+    const saveDurations: SignedApiUrlStats[] = [];
+
+    const loopStartedAt = new Date().toISOString();
+    logger.info('Started data fetcher loop.', { loopStartedAt, urlCount, staggerTimeMs });
     const fetchResults = await Promise.all(
       urls.map(async (url, index) => {
         await sleep(staggerTimeMs * index);
 
-        const now = Date.now();
         // NOTE: We allow each Signed API call to take full signedDataFetchIntervalMs. Because these calls are
         // staggered, it means that there can be pending requests from different data fetcher loops happening at the
         // same time. This does not matter much, because we only save the freshest signed data.
+        const fetchStart = Date.now();
         const signedDataBatch = await callSignedApi(url, signedDataFetchIntervalMs);
         if (!signedDataBatch) return;
-        logger.info('Fetched signed data from Signed API.', { url, duration: Date.now() - now });
+        const fetchDuration = Date.now() - fetchStart;
+        fetchDurations.push({ url, count: Object.keys(signedDataBatch).length, duration: fetchDuration });
 
         // Save only the signed data that is relevant to the active data feeds.
+        const saveStart = Date.now();
         const signedDataForActiveBeacons = Object.entries(signedDataBatch).filter(([beaconId]) =>
           activeBeaconIds.has(beaconId as Hex)
         );
@@ -115,13 +129,21 @@ export const runDataFetcher = async () => {
           signedDataForActiveBeacons as SignedDataRecordEntry[],
           trustedUrls.has(url)
         );
-        logger.info('Saved signed data from Signed API using a worker.', {
-          url,
-          duration: Date.now() - now,
-          signedDataCount,
-        });
+        const saveDuration = Date.now() - saveStart;
+        saveDurations.push({ url, count: signedDataCount ?? 0, duration: saveDuration });
       })
     );
+
+    // Log the statistics for the data fetcher loop.
+    logger.info('Finished data fetcher loop.', {
+      loopDuration: Date.now() - new Date(loopStartedAt).getTime(),
+      averageFetchDuration: fetchDurations.length === 0 ? undefined : meanBy(fetchDurations, 'duration'),
+      averageSaveDuration: saveDurations.length === 0 ? undefined : meanBy(saveDurations, 'duration'),
+      fastestFetch: minBy(fetchDurations, 'duration'),
+      slowestFetch: maxBy(fetchDurations, 'duration'),
+      fastestSave: minBy(saveDurations, 'duration'),
+      slowestSave: maxBy(saveDurations, 'duration'),
+    });
 
     // Remove old signed data to keep the state clean.
     purgeOldSignedData();

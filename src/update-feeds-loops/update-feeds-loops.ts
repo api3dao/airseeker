@@ -143,7 +143,8 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
   await logger.runWithContext(
     { chainName: chain.alias, providerName, updateFeedsCoordinatorId: generateRandomId() },
     async () => {
-      logger.info(`Running update feeds loop.`, { currentTime: new Date().toISOString() });
+      const loopStartedAt = new Date().toISOString();
+      logger.info(`Started update feeds loop.`, { loopStartedAt });
 
       // We do not expect this function to throw, but its possible that some execution path is incorrectly handled and we
       // want to process the error ourselves, for example log the error using the configured format.
@@ -238,7 +239,8 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
         const skippedBatchesCount = processedBatches.filter((batch) => !batch).length;
         const dataFeedUpdates = processedBatches.reduce((acc, batch) => acc + (batch ? batch.successCount : 0), 0);
         const dataFeedUpdateFailures = processedBatches.reduce((acc, batch) => acc + (batch ? batch.errorCount : 0), 0);
-        logger.info(`Finished processing batches of active data feeds.`, {
+        logger.info(`Finished update feeds loop.`, {
+          loopDuration: Date.now() - new Date(loopStartedAt).getTime(),
           skippedBatchesCount,
           dataFeedUpdates,
           dataFeedUpdateFailures,
@@ -275,7 +277,7 @@ export const processBatch = async (
   chainId: string,
   blockNumber: number
 ) => {
-  logger.info('Processing batch of active data feeds.', {
+  logger.debug('Processing batch of active data feeds.', {
     dapiNames: batch.map((dataFeed) => dataFeed.decodedDapiName),
     dataFeedIds: batch.map((dataFeed) => dataFeed.dataFeedId),
     blockNumber,
