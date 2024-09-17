@@ -30,7 +30,7 @@
     "eslint:fix": "pnpm run eslint:check --fix",
     "prettier:check": "prettier --check \"./**/*.{js,ts,md,json,html}\"",
     "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json,html}\"",
-    "release:tag": "pnpm run tag-and-release.ts",
+    "release:tag": "ts-node scripts/tag-and-release.ts",
     "test:e2e": "jest --config=jest-e2e.config.js",
     "test": "jest --config=jest-unit.config.js",
     "tsc": "tsc --project ."
