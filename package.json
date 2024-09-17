@@ -15,12 +15,11 @@
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "https://github.com/api3dao/airseeker-v2"
+    "url": "https://github.com/api3dao/airseeker"
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "clean": "rm -rf coverage dist artifacts cache",
-    "create-release:docker": "ts-node scripts/create-docker-release.ts",
     "create-release:npm": "ts-node scripts/create-npm-release.ts",
     "dev:eth-node": "hardhat node",
     "dev": "nodemon --ext ts,js,json,env  --exec \"pnpm ts-node --transpileOnly src/index.ts\"",
@@ -31,6 +30,7 @@
     "eslint:fix": "pnpm run eslint:check --fix",
     "prettier:check": "prettier --check \"./**/*.{js,ts,md,json,html}\"",
     "prettier:fix": "prettier --write \"./**/*.{js,ts,md,json,html}\"",
+    "release:tag": "pnpm run tag-and-release.ts",
     "test:e2e": "jest --config=jest-e2e.config.js",
     "test": "jest --config=jest-unit.config.js",
     "tsc": "tsc --project ."

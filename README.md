@@ -28,18 +28,15 @@ See [configuration](./config/configuration.md) for details.
 ## Versioning and release
 
 Airseeker uses [semantic versioning](https://semver.org/). The version is specified in the `package.json` file. The
-package is not published to NPM, but instead dockerized and published to Docker Hub.
+package is published to GitHub, NPM, Docker Hub.
 
 To release a new version:
 
-1. `pnpm create-release:npm [major|minor|patch]` - Choose the right version bump. This will bump the version, create a
-   git tag and commit it.
-2. `pnpm publish --access public` - Publish the package to NPM.
-3. `git push --follow-tags` - Push the tagged commit upstream.
-4. Create a GitHub release for the specific tag.
-5. `pnpm run create-release:docker` - To build the Docker image and tag it correctly. The script uses the current
-   package.json version so it expects the NPM release is done first.
-6. The command outputs the publish instructions to push the images.
+1. `pnpm create-release:npm [major|minor|patch]` - This will bump the version throughout the repo and commit the
+   changes.
+2. Push to `main`. This will trigger the `tag-and-release` GitHub Actions job and result in 1) the commit being tagged
+   with the new version, 2) the release being created on GitHub and npm, and 3) the Docker image being built and pushed
+   to Docker Hub.
 
 ## Docker
 
