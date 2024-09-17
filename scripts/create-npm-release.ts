@@ -80,15 +80,10 @@ const main = () => {
   execSyncWithErrorHandling('git add .');
   execSyncWithErrorHandling(`git commit -m "v${newVersion}"`);
 
-  console.info('Creating new annotated git tag...');
-  execSyncWithErrorHandling(`git tag -a v${newVersion} -m "v${newVersion}"`);
-
   console.info('');
   console.info('The airseeker package has been bumped to the new version.');
   console.info('Ensure the changes are correct by inspecting the last commit.');
-  console.info(
-    'If everything looks good, push the commit and the tag to the remote and release the packages and docker image.'
-  );
+  console.info('If everything looks good, push the commit to the remote.');
 };
 
 main();
