@@ -37,8 +37,8 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
-      - name: Enable Corepack
-        run: 'corepack enable'
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -62,8 +62,8 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
-      - name: Enable Corepack
-        run: 'corepack enable'
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -101,7 +101,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_ACCESS_TOKEN }}
       - name: Install pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
