@@ -18,8 +18,8 @@ importers:
         specifier: ^0.13.3
         version: 0.13.3
       '@api3/contracts':
-        specifier: 8.0.0
-        version: 8.0.0
+        specifier: 9.0.0
+        version: 9.0.0
       '@api3/eslint-plugin-commons':
         specifier: ^2.0.1
         version: 2.0.1(@babel/core@7.24.4)(eslint@8.57.1)(jest@29.7.0(@types/node@20.16.11)(ts-node@10.9.2(@types/node@20.16.11)(typescript@5.6.3)))(prettier@3.3.3)(typescript@5.6.3)
@@ -147,8 +147,8 @@ packages:
     resolution: {integrity: sha512-oHTOV6rygP5nA2gKh7oV5wFTwLJC+njUxRIEe48FZwjTXdjfXaLH6aX/j09XOmW+TjC3sQ/ecJsFCanBQ3ugoQ==}
     engines: {node: '>=18.14.0'}
 
-  '@api3/contracts@8.0.0':
-    resolution: {integrity: sha512-xVae2Hak+QwptkQuX9RIACEWXW1Jp3qTbdZdHUe1H2hw9ZpUEcGEIkiNbU70a6vye945d1HIN8f8olR+OOiRog==}
+  '@api3/contracts@9.0.0':
+    resolution: {integrity: sha512-9HoxAHBW+OpVkFEr5pKh8pkRtEjB1eQp9igFzieD24pLcqiTjo6cn1qOF3HjdC7FU+bteCHREEiDqKWVVuhoSg==}
     engines: {node: '>=18.14.0'}
 
   '@api3/eslint-plugin-commons@2.0.1':
@@ -4641,7 +4641,7 @@ snapshots:
       - debug
       - utf-8-validate
 
-  '@api3/contracts@8.0.0':
+  '@api3/contracts@9.0.0':
     dependencies:
       ethers: 6.13.4
     transitivePeerDependencies:

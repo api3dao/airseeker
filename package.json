@@ -39,7 +39,7 @@
     "@api3/airnode-protocol-v1": "^3.4.0",
     "@api3/chains": "^10.2.4",
     "@api3/commons": "^0.13.3",
-    "@api3/contracts": "8.0.0",
+    "@api3/contracts": "9.0.0",
     "@api3/eslint-plugin-commons": "^2.0.1",
     "@api3/promise-utils": "^0.4.0",
     "dotenv": "^16.4.5",
