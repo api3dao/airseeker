@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@api3/airnode-protocol-v1": "^3.4.0",
-    "@api3/chains": "^10.7.0",
+    "@api3/chains": "^10.8.0",
     "@api3/commons": "^0.13.3",
     "@api3/contracts": "9.1.0",
     "@api3/eslint-plugin-commons": "^3.0.0",
