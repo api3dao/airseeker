@@ -1,6 +1,6 @@
-import { references } from '@api3/airnode-protocol-v1';
 import { CHAINS } from '@api3/chains';
 import { addressSchema } from '@api3/commons';
+import { deploymentAddresses } from '@api3/contracts';
 import { ethers } from 'ethers';
 import { z } from 'zod';
 
@@ -113,8 +113,11 @@ export const chainsSchema = z
         const { contracts, alias } = chain;
         const parsedContracts = contractsSchema.safeParse({
           Api3ServerV1:
-            contracts.Api3ServerV1 ?? references.Api3ServerV1[chainId as keyof typeof references.Api3ServerV1],
-          AirseekerRegistry: contracts.AirseekerRegistry,
+            contracts.Api3ServerV1 ??
+            deploymentAddresses.Api3ServerV1[chainId as keyof typeof deploymentAddresses.Api3ServerV1],
+          AirseekerRegistry:
+            contracts.AirseekerRegistry ??
+            deploymentAddresses.AirseekerRegistry[chainId as keyof typeof deploymentAddresses.AirseekerRegistry],
         });
         if (!parsedContracts.success) {
           ctx.addIssue({

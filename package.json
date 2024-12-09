@@ -36,7 +36,6 @@
     "tsc": "tsc --project ."
   },
   "dependencies": {
-    "@api3/airnode-protocol-v1": "^3.4.0",
     "@api3/chains": "^10.8.1",
     "@api3/commons": "^0.13.4",
     "@api3/contracts": "11.0.0",

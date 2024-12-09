@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@api3/airnode-protocol-v1':
-        specifier: ^3.4.0
-        version: 3.4.0
       '@api3/chains':
         specifier: ^10.8.1
         version: 10.8.1(typescript@5.7.2)
@@ -136,9 +133,6 @@ packages:
 
   '@api3/airnode-abi@0.14.2':
     resolution: {integrity: sha512-C3AVklVyTG3A4v7Q3tGrE0UmVinPnPouZmtcW7fdOprnHB/WgHbRDbb9KmI6cMmhKCur7CpwmTY5MVH/E7TpcQ==}
-
-  '@api3/airnode-protocol-v1@3.4.0':
-    resolution: {integrity: sha512-jjnzJC82RUEJkDfrz/PAS2/JP8TyEsBKQhYBO4xzOIGrTCC+XscwpxTWVneuNpNsXmQFYjfjvXzEC4lgDqwvTQ==}
 
   '@api3/chains@10.8.1':
     resolution: {integrity: sha512-pWwp0C9ymDdXzqktexBaeeakaOKDErsRigLBuzYSM5DMWhdl/8UzkEWBh6eNXGLLc+fhAhPM+j98Z5LWnKMR8g==}
@@ -885,9 +879,6 @@ packages:
 
   '@octokit/types@13.6.1':
     resolution: {integrity: sha512-PHZE9Z+kWXb23Ndik8MKPirBPziOc0D2/3KH1P+6jK5nGWe96kadZuE4jev2/Jq7FvIfTlT2Ltg8Fv2x1v0a5g==}
-
-  '@openzeppelin/contracts@4.8.2':
-    resolution: {integrity: sha512-kEUOgPQszC0fSYWpbh2kT94ltOJwj1qfT2DWo+zVttmGmf97JZ99LspePNaeeaLhCImaHVeBbjaQFZQn7+Zc5g==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -4567,10 +4558,6 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@api3/airnode-protocol-v1@3.4.0':
-    dependencies:
-      '@openzeppelin/contracts': 4.8.2
-
   '@api3/chains@10.8.1(typescript@5.7.2)':
     dependencies:
       viem: 2.21.31(typescript@5.7.2)(zod@3.23.8)
@@ -5686,8 +5673,6 @@ snapshots:
   '@octokit/types@13.6.1':
     dependencies:
       '@octokit/openapi-types': 22.2.0
-
-  '@openzeppelin/contracts@4.8.2': {}
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
