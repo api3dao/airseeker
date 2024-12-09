@@ -12,8 +12,8 @@ importers:
         specifier: ^3.4.0
         version: 3.4.0
       '@api3/chains':
-        specifier: ^10.8.0
-        version: 10.8.0(typescript@5.7.2)
+        specifier: ^10.8.1
+        version: 10.8.1(typescript@5.7.2)
       '@api3/commons':
         specifier: ^0.13.4
         version: 0.13.4
@@ -27,8 +27,8 @@ importers:
         specifier: ^0.4.0
         version: 0.4.0
       dotenv:
-        specifier: ^16.4.5
-        version: 16.4.5
+        specifier: ^16.4.7
+        version: 16.4.7
       ethers:
         specifier: ^6.13.4
         version: 6.13.4
@@ -140,8 +140,8 @@ packages:
   '@api3/airnode-protocol-v1@3.4.0':
     resolution: {integrity: sha512-jjnzJC82RUEJkDfrz/PAS2/JP8TyEsBKQhYBO4xzOIGrTCC+XscwpxTWVneuNpNsXmQFYjfjvXzEC4lgDqwvTQ==}
 
-  '@api3/chains@10.8.0':
-    resolution: {integrity: sha512-wKzRvH9cnrLAnTkFBHt9Z9LLRpjvAxC5z2rpWfdYpbe8FuddJateLq4MimrovJjCGDLHd/5ENh2XKE42PfRDsQ==}
+  '@api3/chains@10.8.1':
+    resolution: {integrity: sha512-pWwp0C9ymDdXzqktexBaeeakaOKDErsRigLBuzYSM5DMWhdl/8UzkEWBh6eNXGLLc+fhAhPM+j98Z5LWnKMR8g==}
 
   '@api3/commons@0.13.4':
     resolution: {integrity: sha512-DEAopivj60gdVO4pm1y0gcbnUh5H4A69Wh1pWFVmYf8hJIaC03ovXC01E2Lp+G1Ot9jHndrPM6kwr4XCzwQjVw==}
@@ -1888,8 +1888,8 @@ packages:
   dot-case@3.0.4:
     resolution: {integrity: sha512-Kv5nKlh6yRrdrGvxeJ2e5y2eRUpkUosIW4A2AS38zwSz27zu7ufDwQPi5Jhs3XAlGNetl3bmnGhQsMtkKJnj3w==}
 
-  dotenv@16.4.5:
-    resolution: {integrity: sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==}
+  dotenv@16.4.7:
+    resolution: {integrity: sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==}
     engines: {node: '>=12'}
 
   eastasianwidth@0.2.0:
@@ -4571,7 +4571,7 @@ snapshots:
     dependencies:
       '@openzeppelin/contracts': 4.8.2
 
-  '@api3/chains@10.8.0(typescript@5.7.2)':
+  '@api3/chains@10.8.1(typescript@5.7.2)':
     dependencies:
       viem: 2.21.31(typescript@5.7.2)(zod@3.23.8)
       zod: 3.23.8
@@ -4587,7 +4587,7 @@ snapshots:
       '@octokit/rest': 20.1.1
       '@octokit/types': 13.6.1
       axios: 1.7.7
-      dotenv: 16.4.5
+      dotenv: 16.4.7
       ethers: 5.7.2
       lodash: 4.17.21
       winston: 3.17.0
@@ -6876,7 +6876,7 @@ snapshots:
       no-case: 3.0.4
       tslib: 2.7.0
 
-  dotenv@16.4.5: {}
+  dotenv@16.4.7: {}
 
   eastasianwidth@0.2.0: {}
 
