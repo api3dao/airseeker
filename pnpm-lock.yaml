@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@api3/chains':
-        specifier: ^11.4.2
-        version: 11.4.2(typescript@5.7.3)
+        specifier: ^11.5.0
+        version: 11.5.0(typescript@5.7.3)
       '@api3/commons':
         specifier: ^0.13.4
         version: 0.13.4
@@ -130,8 +130,8 @@ packages:
   '@api3/airnode-abi@0.14.2':
     resolution: {integrity: sha512-C3AVklVyTG3A4v7Q3tGrE0UmVinPnPouZmtcW7fdOprnHB/WgHbRDbb9KmI6cMmhKCur7CpwmTY5MVH/E7TpcQ==}
 
-  '@api3/chains@11.4.2':
-    resolution: {integrity: sha512-piOPfRSs0iQMCLb6ZEqEuj7cd9L2IEtEUiAnRNRyh170YrEhuMfQ7q3xFgOu70zTjgQjyDxRI8VpGAiVLIgpeg==}
+  '@api3/chains@11.5.0':
+    resolution: {integrity: sha512-Qc8EICOkwxj4BDBOtbRGnj7huAg9Td/EmqXr1/crPOUI9e/als8LKGFpVS3YPZzOePfXWsp7SVazc1J4ZBxFlg==}
 
   '@api3/commons@0.13.4':
     resolution: {integrity: sha512-DEAopivj60gdVO4pm1y0gcbnUh5H4A69Wh1pWFVmYf8hJIaC03ovXC01E2Lp+G1Ot9jHndrPM6kwr4XCzwQjVw==}
@@ -4539,7 +4539,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@api3/chains@11.4.2(typescript@5.7.3)':
+  '@api3/chains@11.5.0(typescript@5.7.3)':
     dependencies:
       viem: 2.21.54(typescript@5.7.3)(zod@3.24.1)
       zod: 3.24.1
