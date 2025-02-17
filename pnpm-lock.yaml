@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@api3/chains':
-        specifier: ^11.6.0
-        version: 11.6.0(typescript@5.7.3)
+        specifier: ^11.8.0
+        version: 11.8.0(typescript@5.7.3)
       '@api3/commons':
         specifier: ^0.13.4
         version: 0.13.4
@@ -39,8 +39,8 @@ importers:
         specifier: ^9.2.0
         version: 9.2.0
       zod:
-        specifier: ^3.24.1
-        version: 3.24.1
+        specifier: ^3.24.2
+        version: 3.24.2
     devDependencies:
       '@api3/airnode-abi':
         specifier: ^0.15.0
@@ -130,8 +130,8 @@ packages:
   '@api3/airnode-abi@0.15.0':
     resolution: {integrity: sha512-MMq5pBkXFA6QkqTLCWWygGXz7TdmYe8dFbgQs9IEmp0Av05U7min6rottBcRhjpOEo8LXT8InkIbdmql+UaS3A==}
 
-  '@api3/chains@11.6.0':
-    resolution: {integrity: sha512-DZt3W1gaw66EGGCatcJgHecEwSZ1CdYa9riiUfByesvrMLXAbUII41HgWq3P4NvgpyUfgpUvgN0WAq/HFzG7eA==}
+  '@api3/chains@11.8.0':
+    resolution: {integrity: sha512-XgOjGl+PLRP/45SblKihYzzAj6zxLFGAHzKd2SDl6jre5EmjO7VO9Mx54qDkh00JIB72rwPLcyWO88qzjpcHPw==}
 
   '@api3/commons@0.13.4':
     resolution: {integrity: sha512-DEAopivj60gdVO4pm1y0gcbnUh5H4A69Wh1pWFVmYf8hJIaC03ovXC01E2Lp+G1Ot9jHndrPM6kwr4XCzwQjVw==}
@@ -4518,8 +4518,8 @@ packages:
     peerDependencies:
       ethers: ~5.7.0
 
-  zod@3.24.1:
-    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
+  zod@3.24.2:
+    resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
 
 snapshots:
 
@@ -4540,10 +4540,10 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@api3/chains@11.6.0(typescript@5.7.3)':
+  '@api3/chains@11.8.0(typescript@5.7.3)':
     dependencies:
-      viem: 2.21.54(typescript@5.7.3)(zod@3.24.1)
-      zod: 3.24.1
+      viem: 2.21.54(typescript@5.7.3)(zod@3.24.2)
+      zod: 3.24.2
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -4561,7 +4561,7 @@ snapshots:
       lodash: 4.17.21
       winston: 3.17.0
       winston-console-format: 1.0.8
-      zod: 3.24.1
+      zod: 3.24.2
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -4610,7 +4610,7 @@ snapshots:
   '@api3/ois@2.3.2':
     dependencies:
       lodash: 4.17.21
-      zod: 3.24.1
+      zod: 3.24.2
 
   '@api3/promise-utils@0.4.0': {}
 
@@ -6087,10 +6087,10 @@ snapshots:
 
   abbrev@1.0.9: {}
 
-  abitype@1.0.7(typescript@5.7.3)(zod@3.24.1):
+  abitype@1.0.7(typescript@5.7.3)(zod@3.24.2):
     optionalDependencies:
       typescript: 5.7.3
-      zod: 3.24.1
+      zod: 3.24.2
 
   acorn-jsx@5.3.2(acorn@8.14.0):
     dependencies:
@@ -9035,14 +9035,14 @@ snapshots:
 
   os-tmpdir@1.0.2: {}
 
-  ox@0.1.2(typescript@5.7.3)(zod@3.24.1):
+  ox@0.1.2(typescript@5.7.3)(zod@3.24.2):
     dependencies:
       '@adraffy/ens-normalize': 1.11.0
       '@noble/curves': 1.7.0
       '@noble/hashes': 1.6.1
       '@scure/bip32': 1.6.0
       '@scure/bip39': 1.5.0
-      abitype: 1.0.7(typescript@5.7.3)(zod@3.24.1)
+      abitype: 1.0.7(typescript@5.7.3)(zod@3.24.2)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.7.3
@@ -10002,15 +10002,15 @@ snapshots:
       spdx-correct: 3.2.0
       spdx-expression-parse: 3.0.1
 
-  viem@2.21.54(typescript@5.7.3)(zod@3.24.1):
+  viem@2.21.54(typescript@5.7.3)(zod@3.24.2):
     dependencies:
       '@noble/curves': 1.7.0
       '@noble/hashes': 1.6.1
       '@scure/bip32': 1.6.0
       '@scure/bip39': 1.5.0
-      abitype: 1.0.7(typescript@5.7.3)(zod@3.24.1)
+      abitype: 1.0.7(typescript@5.7.3)(zod@3.24.2)
       isows: 1.0.6(ws@8.18.0)
-      ox: 0.1.2(typescript@5.7.3)(zod@3.24.1)
+      ox: 0.1.2(typescript@5.7.3)(zod@3.24.2)
       webauthn-p256: 0.0.10
       ws: 8.18.0
     optionalDependencies:
@@ -10200,4 +10200,4 @@ snapshots:
     dependencies:
       ethers: 5.7.2
 
-  zod@3.24.1: {}
+  zod@3.24.2: {}
