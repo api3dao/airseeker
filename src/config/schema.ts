@@ -1,6 +1,5 @@
-import { CHAINS } from '@api3/chains';
 import { addressSchema } from '@api3/commons';
-import { deploymentAddresses } from '@api3/contracts';
+import { CHAINS, deploymentAddresses } from '@api3/contracts';
 import { ethers } from 'ethers';
 import { z } from 'zod';
 
@@ -64,7 +63,7 @@ export type GasSettings = z.infer<typeof gasSettingsSchema>;
 // validation. We need a chain ID from parent schema to load the contracts.
 export const optionalChainSchema = z
   .object({
-    alias: z.string().optional(), // By default, the chain alias is loaded from "@api3/chains" package
+    alias: z.string().optional(), // By default, the chain alias is loaded from "@api3/contracts" package
     providers: z.record(providerSchema), // The record key is the provider "nickname"
     contracts: optionalContractsSchema,
     gasSettings: gasSettingsSchema,
@@ -78,7 +77,7 @@ export const optionalChainSchema = z
 // we create a new schema just to infer the type correctly.
 const chainSchema = optionalChainSchema
   .extend({
-    alias: z.string(), // Will fallback to `unknown` in case there is no user provided value and no record in "@api3/chains"
+    alias: z.string(), // Will fallback to `unknown` in case there is no user provided value and no record in "@api3/contracts"
     contracts: contractsSchema,
   })
   .strict();

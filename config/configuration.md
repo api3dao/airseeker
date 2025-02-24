@@ -111,8 +111,8 @@ A record of chain configurations. The record key is the chain ID. For example:
 
 #### `alias` _(optional)_
 
-The optional alias to identify the chain in logs. If not provided, the chain alias from `@api3/chains` is used. If there
-is no record in `@api3/chains` for the given chain ID, falls back to using `unknown`.
+The optional alias to identify the chain in logs. If not provided, the chain alias from `@api3/contracts` is used. If
+there is no record in `@api3/contracts` for the given chain ID, falls back to using `unknown`.
 
 #### `contracts`
 
