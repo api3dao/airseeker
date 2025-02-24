@@ -36,7 +36,6 @@
     "tsc": "tsc --project ."
   },
   "dependencies": {
-    "@api3/chains": "^11.8.0",
     "@api3/commons": "^0.13.4",
     "@api3/contracts": "17.1.0",
     "@api3/eslint-plugin-commons": "^3.0.0",
