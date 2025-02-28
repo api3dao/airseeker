@@ -139,17 +139,23 @@ export const getUpdatableFeeds = (
         // beacon set update.
         const updatableBeacons = aggregatedBeaconsWithData
           .filter(
-            ({ isUpdatable, offChainValue, onChainValue }) =>
+            ({ isUpdatable, offChainValue, onChainValue, beaconId }) =>
               isUpdatable &&
               offChainValue &&
-              checkUpdateCondition(
-                onChainValue.value,
-                onChainValue.timestamp,
-                offChainValue.value,
-                offChainValue.timestamp,
-                adjustedHeartbeatInterval,
-                adjustedDeviationThresholdCoefficient * BigInt(individualBeaconUpdateDeviationThresholdCoefficient),
-                deviationReference
+              logger.runWithContext(
+                {
+                  beaconId,
+                },
+                () =>
+                  checkUpdateCondition(
+                    onChainValue.value,
+                    onChainValue.timestamp,
+                    offChainValue.value,
+                    offChainValue.timestamp,
+                    adjustedHeartbeatInterval,
+                    adjustedDeviationThresholdCoefficient * BigInt(individualBeaconUpdateDeviationThresholdCoefficient),
+                    deviationReference
+                  )
               )
           )
           .map(({ beaconId, signedData }) => ({
