@@ -9,7 +9,7 @@ import {
   chainsSchema,
   configSchema,
   deviationThresholdCoefficientSchema,
-  individualBeaconUpdateDeviationThresholdCoefficientSchema,
+  individualBeaconUpdateSettingsSchema,
   walletDerivationSchemeSchema,
 } from './schema';
 
@@ -209,34 +209,36 @@ describe('chains schema', () => {
     );
   });
 
-  it('throws on individualBeaconUpdateDeviationThresholdCoefficient that is not an integer', () => {
-    expect(() => individualBeaconUpdateDeviationThresholdCoefficientSchema.parse(1.234)).toThrow(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'integer',
-          received: 'float',
-          message: 'Expected integer, received float',
-          path: [],
-        },
-      ])
-    );
+  it('parses valid individualBeaconUpdateSettings', () => {
+    const settings = {
+      deviationThresholdCoefficient: 5.5,
+      heartbeatIntervalModifier: 0,
+    };
+    expect(individualBeaconUpdateSettingsSchema.parse(settings)).toStrictEqual(settings);
   });
 
-  it('throws on individualBeaconUpdateDeviationThresholdCoefficient that is not a positive integer', () => {
-    expect(() => individualBeaconUpdateDeviationThresholdCoefficientSchema.parse(0)).toThrow(
-      new ZodError([
-        {
-          code: 'too_small',
-          minimum: 0,
-          type: 'number',
-          inclusive: false,
-          exact: false,
-          message: 'Number must be greater than 0',
-          path: [],
-        },
-      ])
-    );
+  it('defaults individualBeaconUpdateSettings.deviationThresholdCoefficient to 1', () => {
+    const settings = {
+      heartbeatIntervalModifier: 0,
+    };
+    expect(individualBeaconUpdateSettingsSchema.parse(settings)).toStrictEqual({
+      deviationThresholdCoefficient: 1,
+      heartbeatIntervalModifier: 0,
+    });
+  });
+
+  it('defaults individualBeaconUpdateSettings.heartbeatIntervalModifier to 0', () => {
+    const settings = {
+      deviationThresholdCoefficient: 1,
+    };
+    expect(individualBeaconUpdateSettingsSchema.parse(settings)).toStrictEqual({
+      deviationThresholdCoefficient: 1,
+      heartbeatIntervalModifier: 0,
+    });
+  });
+
+  it('allows null value as default', () => {
+    expect(individualBeaconUpdateSettingsSchema.parse(null)).toBeNull();
   });
 });
 
