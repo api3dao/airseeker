@@ -201,6 +201,18 @@ The global coefficient applied to all deviation checks. Used to differentiate al
 
 Defaults to `1`.
 
+#### `heartbeatIntervalModifier` _(optional)_
+
+The global modifier applied to all heartbeat checks. The value is specified in seconds and can be positive or negative.
+The resulting interval is calculated by adding this modifier as an offset and clamped to a minimum of 0, ensuring it
+never goes negative. Used to differentiate alternate deployments. For example:
+
+```jsonc
+"heartbeatIntervalModifier": -120,
+```
+
+Defaults to `0`.
+
 #### `individualBeaconUpdateSettings`
 
 The global settings applied to individual beacon updates. When configured, these settings will be used on beacon sets
@@ -227,18 +239,6 @@ This configuration allows asynchronous updates of beacons, providing resiliency 
 some redundant updates. However, be aware that a single beacon can malfunction, potentially draining the sponsor wallet.
 Therefore, this should only be enabled on the main or fallback (fixed walletDerivationScheme type) Airseeker
 configurations.
-
-#### `heartbeatIntervalModifier` _(optional)_
-
-The global modifier applied to all heartbeat checks. The value is specified in seconds and can be positive or negative.
-The resulting interval is calculated by adding this modifier as an offset and clamped to a minimum of 0, ensuring it
-never goes negative. Used to differentiate alternate deployments. For example:
-
-```jsonc
-"heartbeatIntervalModifier": -120,
-```
-
-Defaults to `0`.
 
 #### `dataFeedUpdateInterval`
 

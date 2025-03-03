@@ -25,11 +25,11 @@
     }
   },
   "deviationThresholdCoefficient": 1,
+  "heartbeatIntervalModifier": 0,
   "individualBeaconUpdateSettings": {
     "deviationThresholdCoefficient": 5,
     "heartbeatIntervalModifier": 0
   },
-  "heartbeatIntervalModifier": 0,
   "signedDataFetchInterval": 10,
   "signedApiUrls": [],
   "walletDerivationScheme": { "type": "managed" },
