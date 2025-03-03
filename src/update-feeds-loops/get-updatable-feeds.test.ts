@@ -586,7 +586,7 @@ describe(getUpdatableFeeds.name, () => {
     });
   });
 
-  it('returns updatable feeds with beacons that need to be updated based on individualBeaconUpdateSettings config property', () => {
+  it('returns updatable feeds with beacons that need to be updated based on individualBeaconUpdateSettings.deviationThresholdCoefficient property', () => {
     jest.useFakeTimers().setSystemTime(90 * 1000);
 
     // Only the second and third feed will satisfy the timestamp check
@@ -644,6 +644,70 @@ describe(getUpdatableFeeds.name, () => {
         signedData: {
           encodedValue: '0x00000000000000000000000000000000000000000000000000000000000000c8',
           timestamp: '155',
+        },
+      },
+    ]);
+    expect(checkFeedsResult[0]!.shouldUpdateBeaconSet).toBe(false);
+  });
+
+  it('returns updatable feeds with beacons that need to be updated based on individualBeaconUpdateSettings.heartbeatIntervalModifier property', () => {
+    jest.useFakeTimers().setSystemTime(180 * 1000);
+
+    // Only the second and third feed will satisfy the timestamp check
+    const mockSignedDataState = allowPartial<Record<string, SignedData>>({
+      [feedIds[0]]: {
+        timestamp: '150',
+        encodedValue: encodeBeaconValue('400'),
+      },
+      [feedIds[1]]: {
+        timestamp: '160',
+        encodedValue: encodeBeaconValue('500'),
+      },
+      [feedIds[2]]: {
+        timestamp: '170',
+        encodedValue: encodeBeaconValue('600'),
+      },
+    });
+    jest
+      .spyOn(signedDataStateModule, 'getSignedData')
+      .mockImplementation((dataFeedId: string) => mockSignedDataState[dataFeedId]!);
+    jest.spyOn(logger, 'info');
+
+    const timestamps = [100n, 160n, 170n];
+    const values = [400n, 500n, 600n];
+    const batch = allowPartial<contractsModule.DecodedActiveDataFeedResponse[]>([
+      {
+        decodedUpdateParameters: {
+          deviationThresholdInPercentage: ONE_PERCENT,
+          heartbeatInterval: 100n,
+          deviationReference: 0n,
+        },
+        dataFeedValue: deviationCheckModule.calculateMedian(values),
+        dataFeedTimestamp: deviationCheckModule.calculateMedian(timestamps),
+        beaconsWithData: range(values.length).map((i) => ({
+          beaconId: feedIds[i]!,
+          timestamp: timestamps[i]!,
+          value: values[i]!,
+        })),
+        dataFeedId: '0x000',
+        dapiName: encodeDapiName('test'),
+      },
+    ]);
+
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, {
+      deviationThresholdCoefficient: 1,
+      heartbeatIntervalModifier: -60,
+    });
+
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith(`On-chain timestamp is older than the heartbeat interval.`);
+    expect(checkFeedsResult).toHaveLength(1);
+    expect(checkFeedsResult[0]!.updatableBeacons).toStrictEqual([
+      {
+        beaconId: '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
+        signedData: {
+          encodedValue: '0x0000000000000000000000000000000000000000000000000000000000000190',
+          timestamp: '150',
         },
       },
     ]);
