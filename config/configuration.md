@@ -201,15 +201,24 @@ The global coefficient applied to all deviation checks. Used to differentiate al
 
 Defaults to `1`.
 
-#### `individualBeaconUpdateDeviationThresholdCoefficient`
+#### `individualBeaconUpdateSettings`
 
-The global deviation coefficient applied to individual beacon updates deviation checks. When configured, this value will
-be used on beacon sets that don't require an update but some of their beacon constituents do. For instance, if a beacon
-set has a 1% deviation threshold, Airseeker will update its beacons only when the deviation of each beacon exceeds (1 \*
-individualBeaconUpdateDeviationThresholdCoefficient)%. For example:
+The global settings applied to individual beacon updates. When configured, these settings will be used on beacon sets
+that don't require an update but some of their beacon constituents do. The object has the following properties:
+
+- `deviationThresholdCoefficient`: The deviation coefficient applied to individual beacon updates deviation checks. For
+  instance, if a beacon set has a 1% deviation threshold, Airseeker will update its beacons only when the deviation of
+  each beacon exceeds (1 \* individualBeaconUpdateSettings.deviationThresholdCoefficient)%.
+- `heartbeatIntervalModifier`: The modifier applied to the heartbeat interval for individual beacon updates. This can be
+  used to adjust the heartbeat interval for individual beacons.
+
+Example:
 
 ```jsonc
-"individualBeaconUpdateDeviationThresholdCoefficient": 5,
+"individualBeaconUpdateSettings": {
+  "deviationThresholdCoefficient": 5,
+  "heartbeatIntervalModifier": 0
+}
 ```
 
 Defaults to `null`.
