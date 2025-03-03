@@ -159,26 +159,25 @@ export const deviationThresholdCoefficientSchema = z
 
 export type DeviationThresholdCoefficient = z.infer<typeof deviationThresholdCoefficientSchema>;
 
+export const heartbeatIntervalModifierSchema = z.number().default(0);
+
 export type HeartbeatIntervalModifier = z.infer<typeof heartbeatIntervalModifierSchema>;
+
+export const individualBeaconUpdateSettingsSchema = z
+  .object({
+    deviationThresholdCoefficient: z.number().int().positive(),
+    heartbeatIntervalModifier: z.number().int(),
+  })
+  .nullable()
+  .default(null);
+
+export type IndividualBeaconUpdateSettings = z.infer<typeof individualBeaconUpdateSettingsSchema>;
 
 export const walletDerivationSchemeSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('self-funded') }).strict(),
   z.object({ type: z.literal('managed') }).strict(),
   z.object({ type: z.literal('fixed'), sponsorAddress: addressSchema }).strict(),
 ]);
-
-export const individualBeaconUpdateDeviationThresholdCoefficientSchema = z
-  .number()
-  .int()
-  .positive()
-  .nullable()
-  .default(null);
-
-export type IndividualBeaconUpdateDeviationThresholdCoefficientSchema = z.infer<
-  typeof individualBeaconUpdateDeviationThresholdCoefficientSchema
->;
-
-export const heartbeatIntervalModifierSchema = z.number().default(0);
 
 export type WalletDerivationScheme = z.infer<typeof walletDerivationSchemeSchema>;
 
@@ -187,7 +186,7 @@ export const configSchema = z
     chains: chainsSchema,
     deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
     heartbeatIntervalModifier: heartbeatIntervalModifierSchema,
-    individualBeaconUpdateDeviationThresholdCoefficient: individualBeaconUpdateDeviationThresholdCoefficientSchema,
+    individualBeaconUpdateSettings: individualBeaconUpdateSettingsSchema,
     signedApiUrls: z.array(z.string().url()),
     signedDataFetchInterval: z.number().positive(),
     sponsorWalletMnemonic: z

@@ -1,3 +1,4 @@
+import type { IndividualBeaconUpdateSettings } from '../config/schema';
 import { getSignedData, isSignedDataFresh } from '../data-fetcher-loop/signed-data-state';
 import { calculateMedian, checkUpdateCondition } from '../deviation-check';
 import { logger } from '../logger';
@@ -22,11 +23,25 @@ export interface UpdatableDataFeed {
   shouldUpdateBeaconSet: boolean;
 }
 
+const adjustDeviationThreshold = (deviationThresholdInPercentage: bigint, deviationThresholdCoefficient: number) =>
+  multiplyBigNumber(deviationThresholdInPercentage, deviationThresholdCoefficient);
+
+const adjustHeartbeatInterval = (heartbeatInterval: bigint, heartbeatIntervalModifier: number): bigint => {
+  const calculatedHeartbeatInterval = heartbeatInterval + BigInt(heartbeatIntervalModifier);
+  if (calculatedHeartbeatInterval < 0n) {
+    logger.warn('Resulting heartbeat interval is negative. Setting it to 0.', {
+      heartbeatInterval,
+      heartbeatIntervalModifier,
+    });
+  }
+  return calculatedHeartbeatInterval < 0n ? 0n : calculatedHeartbeatInterval;
+};
+
 export const getUpdatableFeeds = (
   batch: DecodedActiveDataFeedResponse[],
   deviationThresholdCoefficient: number,
   heartbeatIntervalModifier: number,
-  individualBeaconUpdateDeviationThresholdCoefficient: number | null
+  individualBeaconUpdateSettings: IndividualBeaconUpdateSettings | null
 ): UpdatableDataFeed[] => {
   const updatableDataFeeds: UpdatableDataFeed[] = [];
   for (const dataFeedInfo of batch) {
@@ -76,19 +91,12 @@ export const getUpdatableFeeds = (
       const newDataFeedValue = calculateMedian(beaconValues.map(({ value }) => value));
       const newDataFeedTimestamp = calculateMedian(beaconValues.map(({ timestamp }) => timestamp));
 
-      const adjustedDeviationThreshold = multiplyBigNumber(
+      const adjustedDeviationThreshold = adjustDeviationThreshold(
         deviationThresholdInPercentage,
         deviationThresholdCoefficient
       );
 
-      const modifiedHeartbeatInterval = heartbeatInterval + BigInt(heartbeatIntervalModifier);
-      if (modifiedHeartbeatInterval < 0n) {
-        logger.warn('Resulting heartbeat interval is negative. Setting it to 0.', {
-          heartbeatInterval,
-          heartbeatIntervalModifier,
-        });
-      }
-      const adjustedHeartbeatInterval = modifiedHeartbeatInterval < 0n ? 0n : modifiedHeartbeatInterval;
+      const adjustedHeartbeatInterval = adjustHeartbeatInterval(heartbeatInterval, heartbeatIntervalModifier);
 
       const isBeaconSet = beaconValues.length > 1;
 
@@ -132,7 +140,7 @@ export const getUpdatableFeeds = (
         return;
       }
 
-      if (isBeaconSet && individualBeaconUpdateDeviationThresholdCoefficient) {
+      if (isBeaconSet && individualBeaconUpdateSettings) {
         // There is a special case when data feed is a beacon set that doesn't need
         // to be updated but some of its beacon constituents do. In this
         // particular case, Airseeker can update only these beacons and skip the
@@ -146,16 +154,25 @@ export const getUpdatableFeeds = (
                 {
                   beaconId,
                 },
-                () =>
-                  checkUpdateCondition(
+                () => {
+                  const {
+                    deviationThresholdCoefficient: individualBeaconUpdateDeviationThresholdCoefficient,
+                    heartbeatIntervalModifier: individualBeaconUpdateHeartbeatIntervalModifier,
+                  } = individualBeaconUpdateSettings;
+
+                  return checkUpdateCondition(
                     onChainValue.value,
                     onChainValue.timestamp,
                     offChainValue.value,
                     offChainValue.timestamp,
-                    adjustedHeartbeatInterval,
-                    adjustedDeviationThreshold * BigInt(individualBeaconUpdateDeviationThresholdCoefficient),
+                    adjustHeartbeatInterval(adjustedHeartbeatInterval, individualBeaconUpdateHeartbeatIntervalModifier),
+                    adjustDeviationThreshold(
+                      adjustedDeviationThreshold,
+                      individualBeaconUpdateDeviationThresholdCoefficient
+                    ),
                     deviationReference
-                  )
+                  );
+                }
               )
           )
           .map(({ beaconId, signedData }) => ({
