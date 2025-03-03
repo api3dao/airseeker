@@ -195,8 +195,6 @@ describe(getUpdatableFeeds.name, () => {
 
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith(`Resulting heartbeat interval is negative. Setting it to 0.`, {
-      dapiName: 'test',
-      dataFeedId: '0x000',
       heartbeatInterval: BigInt(5),
       heartbeatIntervalModifier: -10,
     });
@@ -588,7 +586,7 @@ describe(getUpdatableFeeds.name, () => {
     });
   });
 
-  it('returns updatable feeds with beacons that need to be updated based on individualBeaconUpdateDeviationThresholdCoefficient config property', () => {
+  it('returns updatable feeds with beacons that need to be updated based on individualBeaconUpdateSettings config property', () => {
     jest.useFakeTimers().setSystemTime(90 * 1000);
 
     // Only the second and third feed will satisfy the timestamp check
@@ -632,7 +630,10 @@ describe(getUpdatableFeeds.name, () => {
       },
     ]);
 
-    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, 5);
+    const checkFeedsResult = getUpdatableFeeds(batch, 1, 0, {
+      deviationThresholdCoefficient: 5,
+      heartbeatIntervalModifier: 0,
+    });
 
     expect(logger.info).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenCalledWith(`Deviation exceeded.`);

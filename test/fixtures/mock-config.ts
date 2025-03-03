@@ -27,7 +27,7 @@ export const generateTestConfig = (): Config => ({
   },
   deviationThresholdCoefficient: 1,
   heartbeatIntervalModifier: 0,
-  individualBeaconUpdateDeviationThresholdCoefficient: null,
+  individualBeaconUpdateSettings: null,
   signedApiUrls: [],
   signedDataFetchInterval: 10,
   sponsorWalletMnemonic: 'test test test test test test test test test test test junk',

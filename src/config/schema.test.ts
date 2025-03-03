@@ -9,7 +9,7 @@ import {
   chainsSchema,
   configSchema,
   deviationThresholdCoefficientSchema,
-  individualBeaconUpdateDeviationThresholdCoefficientSchema,
+  individualBeaconUpdateSettingsSchema,
   walletDerivationSchemeSchema,
 } from './schema';
 
@@ -209,22 +209,38 @@ describe('chains schema', () => {
     );
   });
 
-  it('throws on individualBeaconUpdateDeviationThresholdCoefficient that is not an integer', () => {
-    expect(() => individualBeaconUpdateDeviationThresholdCoefficientSchema.parse(1.234)).toThrow(
+  it('parses valid individualBeaconUpdateSettings', () => {
+    const settings = {
+      deviationThresholdCoefficient: 5,
+      heartbeatIntervalModifier: 0,
+    };
+    expect(individualBeaconUpdateSettingsSchema.parse(settings)).toStrictEqual(settings);
+  });
+
+  it('throws on individualBeaconUpdateSettings.deviationThresholdCoefficient that is not an integer', () => {
+    const settings = {
+      deviationThresholdCoefficient: 1.234,
+      heartbeatIntervalModifier: 0,
+    };
+    expect(() => individualBeaconUpdateSettingsSchema.parse(settings)).toThrow(
       new ZodError([
         {
           code: 'invalid_type',
           expected: 'integer',
           received: 'float',
           message: 'Expected integer, received float',
-          path: [],
+          path: ['deviationThresholdCoefficient'],
         },
       ])
     );
   });
 
-  it('throws on individualBeaconUpdateDeviationThresholdCoefficient that is not a positive integer', () => {
-    expect(() => individualBeaconUpdateDeviationThresholdCoefficientSchema.parse(0)).toThrow(
+  it('throws on individualBeaconUpdateSettings.deviationThresholdCoefficient that is not a positive integer', () => {
+    const settings = {
+      deviationThresholdCoefficient: 0,
+      heartbeatIntervalModifier: 0,
+    };
+    expect(() => individualBeaconUpdateSettingsSchema.parse(settings)).toThrow(
       new ZodError([
         {
           code: 'too_small',
@@ -233,10 +249,14 @@ describe('chains schema', () => {
           inclusive: false,
           exact: false,
           message: 'Number must be greater than 0',
-          path: [],
+          path: ['deviationThresholdCoefficient'],
         },
       ])
     );
+  });
+
+  it('allows null value as default', () => {
+    expect(individualBeaconUpdateSettingsSchema.parse(null)).toBeNull();
   });
 });
 
