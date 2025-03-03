@@ -208,9 +208,9 @@ that don't require an update but some of their beacon constituents do. The objec
 
 - `deviationThresholdCoefficient`: The deviation coefficient applied to individual beacon updates deviation checks. For
   instance, if a beacon set has a 1% deviation threshold, Airseeker will update its beacons only when the deviation of
-  each beacon exceeds (1 \* individualBeaconUpdateSettings.deviationThresholdCoefficient)%.
+  each beacon exceeds (1 \* individualBeaconUpdateSettings.deviationThresholdCoefficient)%. Defaults to `1`.
 - `heartbeatIntervalModifier`: The modifier applied to the heartbeat interval for individual beacon updates. This can be
-  used to adjust the heartbeat interval for individual beacons.
+  used to adjust the heartbeat interval for individual beacons. Defaults to `0`.
 
 Example:
 

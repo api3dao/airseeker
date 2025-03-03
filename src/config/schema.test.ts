@@ -211,48 +211,30 @@ describe('chains schema', () => {
 
   it('parses valid individualBeaconUpdateSettings', () => {
     const settings = {
-      deviationThresholdCoefficient: 5,
+      deviationThresholdCoefficient: 5.5,
       heartbeatIntervalModifier: 0,
     };
     expect(individualBeaconUpdateSettingsSchema.parse(settings)).toStrictEqual(settings);
   });
 
-  it('throws on individualBeaconUpdateSettings.deviationThresholdCoefficient that is not an integer', () => {
+  it('defaults individualBeaconUpdateSettings.deviationThresholdCoefficient to 1', () => {
     const settings = {
-      deviationThresholdCoefficient: 1.234,
       heartbeatIntervalModifier: 0,
     };
-    expect(() => individualBeaconUpdateSettingsSchema.parse(settings)).toThrow(
-      new ZodError([
-        {
-          code: 'invalid_type',
-          expected: 'integer',
-          received: 'float',
-          message: 'Expected integer, received float',
-          path: ['deviationThresholdCoefficient'],
-        },
-      ])
-    );
+    expect(individualBeaconUpdateSettingsSchema.parse(settings)).toStrictEqual({
+      deviationThresholdCoefficient: 1,
+      heartbeatIntervalModifier: 0,
+    });
   });
 
-  it('throws on individualBeaconUpdateSettings.deviationThresholdCoefficient that is not a positive integer', () => {
+  it('defaults individualBeaconUpdateSettings.heartbeatIntervalModifier to 0', () => {
     const settings = {
-      deviationThresholdCoefficient: 0,
-      heartbeatIntervalModifier: 0,
+      deviationThresholdCoefficient: 1,
     };
-    expect(() => individualBeaconUpdateSettingsSchema.parse(settings)).toThrow(
-      new ZodError([
-        {
-          code: 'too_small',
-          minimum: 0,
-          type: 'number',
-          inclusive: false,
-          exact: false,
-          message: 'Number must be greater than 0',
-          path: ['deviationThresholdCoefficient'],
-        },
-      ])
-    );
+    expect(individualBeaconUpdateSettingsSchema.parse(settings)).toStrictEqual({
+      deviationThresholdCoefficient: 1,
+      heartbeatIntervalModifier: 0,
+    });
   });
 
   it('allows null value as default', () => {

@@ -165,8 +165,8 @@ export type HeartbeatIntervalModifier = z.infer<typeof heartbeatIntervalModifier
 
 export const individualBeaconUpdateSettingsSchema = z
   .object({
-    deviationThresholdCoefficient: z.number().int().positive(),
-    heartbeatIntervalModifier: z.number().int(),
+    deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
+    heartbeatIntervalModifier: heartbeatIntervalModifierSchema,
   })
   .nullable()
   .default(null);
