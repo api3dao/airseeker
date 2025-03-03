@@ -286,7 +286,7 @@ export const processBatch = async (
     config: {
       chains,
       deviationThresholdCoefficient,
-      individualBeaconUpdateDeviationThresholdCoefficient,
+      individualBeaconUpdateSettings,
       heartbeatIntervalModifier,
       signedApiUrls: configSignedApiBaseUrls,
     },
@@ -297,7 +297,7 @@ export const processBatch = async (
     batch,
     deviationThresholdCoefficient,
     heartbeatIntervalModifier,
-    individualBeaconUpdateDeviationThresholdCoefficient
+    individualBeaconUpdateSettings
   );
 
   updatePendingTransactionsInfo(chainId, providerName, batch, feedsToUpdate);
