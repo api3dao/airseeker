@@ -252,6 +252,18 @@ The fetch interval in seconds between retrievals of signed API data.
 
 A list of signed API URLs to call along with URLs fetched from the chain.
 
+### `useSignedApiUrlsFromContract` _(optional)_
+
+A boolean flag that determines whether to use signed API URLs from the AirseekerRegistry contract. When set to `true`,
+Airseeker will use both the URLs from the configuration and from the contract. When set to `false`, only the URLs from
+the configuration will be used.
+
+```jsonc
+"useSignedApiUrlsFromContract": true,
+```
+
+Defaults to `true`.
+
 ### `walletDerivationScheme`
 
 The derivation scheme configuration used to derive sponsor wallets.

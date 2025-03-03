@@ -9,6 +9,8 @@ import * as dataFetcherLoopModule from './data-fetcher-loop';
 import * as signedDataStateModule from './signed-data-state';
 import * as signedDataVerifierPoolModule from './signed-data-verifier-pool';
 
+jest.setTimeout(10_000); // Default Jest timeout is 5s which is not enough for staggering two signed API calls with signedDataFetchInterval 10s
+
 describe(dataFetcherLoopModule.runDataFetcher.name, () => {
   beforeEach(() => {
     initializeState();
@@ -31,8 +33,6 @@ describe(dataFetcherLoopModule.runDataFetcher.name, () => {
   });
 
   it('saves signed data for active data feeds', async () => {
-    const saveSignedDataSpy = jest.spyOn(signedDataStateModule, 'saveSignedData');
-
     jest.spyOn(commonsModule, 'executeRequest').mockResolvedValue({
       success: true,
       errorData: undefined,
@@ -71,11 +71,12 @@ describe(dataFetcherLoopModule.runDataFetcher.name, () => {
     jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
     jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
     jest.spyOn(logger, 'info');
+    jest.spyOn(signedDataStateModule, 'saveSignedData');
 
     await expect(dataFetcherLoopModule.runDataFetcher()).resolves.toBeDefined();
 
     expect(commonsModule.executeRequest).toHaveBeenCalledTimes(1);
-    expect(saveSignedDataSpy).toHaveBeenCalledTimes(1);
+    expect(signedDataStateModule.saveSignedData).toHaveBeenCalledTimes(1);
     expect(dataFetcherLoopModule.callSignedApi).toHaveBeenNthCalledWith(
       1,
       'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
@@ -116,6 +117,76 @@ describe(dataFetcherLoopModule.runDataFetcher.name, () => {
         }),
       })
     );
+  });
+
+  it('respects useSignedApiUrlsFromContract flag when set to false', async () => {
+    updateState((draft) => {
+      draft.config.useSignedApiUrlsFromContract = false;
+      draft.signedApiUrlsFromContract = {
+        '31337': { hardhat: ['http://127.0.0.1:8091/0xContractProvidedAirnode'] },
+      };
+    });
+
+    const callSignedApiSpy = jest.spyOn(dataFetcherLoopModule, 'callSignedApi').mockResolvedValue(null);
+    jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
+    jest.spyOn(signedDataStateModule, 'saveSignedData').mockResolvedValue(0);
+    jest.spyOn(signedDataStateModule, 'purgeOldSignedData').mockImplementation();
+    jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
+    jest.spyOn(logger, 'info');
+    jest.spyOn(logger, 'debug');
+
+    await expect(dataFetcherLoopModule.runDataFetcher()).resolves.toBeDefined();
+
+    expect(callSignedApiSpy).toHaveBeenCalledTimes(1);
+    expect(callSignedApiSpy).toHaveBeenCalledWith(
+      'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+      10_000
+    );
+    expect(callSignedApiSpy).not.toHaveBeenCalledWith('http://127.0.0.1:8091/0xContractProvidedAirnode', 10_000);
+
+    expect(logger.debug).toHaveBeenCalledWith(
+      'Signed API URLs.',
+      expect.objectContaining({
+        useSignedApiUrlsFromContract: false,
+      })
+    );
+
+    expect(logger.info).toHaveBeenCalledWith('Started data fetcher loop.', expect.objectContaining({ urlCount: 1 }));
+  });
+
+  it('respects useSignedApiUrlsFromContract flag when set to true', async () => {
+    updateState((draft) => {
+      draft.config.useSignedApiUrlsFromContract = true;
+      draft.signedApiUrlsFromContract = {
+        '31337': { hardhat: ['http://127.0.0.1:8091/0xContractProvidedAirnode'] },
+      };
+    });
+
+    const callSignedApiSpy = jest.spyOn(dataFetcherLoopModule, 'callSignedApi').mockResolvedValue(null);
+    jest.spyOn(signedDataStateModule, 'isSignedDataFresh').mockReturnValue(true);
+    jest.spyOn(signedDataStateModule, 'saveSignedData').mockResolvedValue(0);
+    jest.spyOn(signedDataStateModule, 'purgeOldSignedData').mockImplementation();
+    jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
+    jest.spyOn(logger, 'info');
+    jest.spyOn(logger, 'debug');
+
+    await expect(dataFetcherLoopModule.runDataFetcher()).resolves.toBeDefined();
+
+    expect(callSignedApiSpy).toHaveBeenCalledTimes(2);
+    expect(callSignedApiSpy).toHaveBeenCalledWith(
+      'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+      10_000
+    );
+    expect(callSignedApiSpy).toHaveBeenCalledWith('http://127.0.0.1:8091/0xContractProvidedAirnode', 10_000);
+
+    expect(logger.debug).toHaveBeenCalledWith(
+      'Signed API URLs.',
+      expect.objectContaining({
+        useSignedApiUrlsFromContract: true,
+      })
+    );
+
+    expect(logger.info).toHaveBeenCalledWith('Started data fetcher loop.', expect.objectContaining({ urlCount: 2 }));
   });
 });
 

@@ -32,6 +32,7 @@ export const generateTestConfig = (): Config => ({
   signedDataFetchInterval: 10,
   sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
   stage: 'test',
+  useSignedApiUrlsFromContract: true,
   version: packageJson.version,
   walletDerivationScheme: { type: 'managed' },
 });

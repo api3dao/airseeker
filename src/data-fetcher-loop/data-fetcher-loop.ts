@@ -68,7 +68,7 @@ export const runDataFetcher = async () => {
   return logger.runWithContext({ dataFetcherCoordinatorId: generateRandomId() }, async () => {
     const state = getState();
     const {
-      config: { signedDataFetchInterval },
+      config: { signedDataFetchInterval, useSignedApiUrlsFromContract },
       signedApiUrlsFromConfig,
       signedApiUrlsFromContract,
       activeDataFeedBeaconIds,
@@ -91,9 +91,16 @@ export const runDataFetcher = async () => {
     );
 
     // Better to log the non-decomposed object to see which URL comes from which chain-provider group.
-    logger.debug('Signed API URLs.', { signedApiUrlsFromConfig, signedApiUrlsFromContract });
+    logger.debug('Signed API URLs.', {
+      signedApiUrlsFromConfig,
+      signedApiUrlsFromContract,
+      useSignedApiUrlsFromContract,
+    });
     const urls = uniq(
-      [...Object.values(signedApiUrlsFromConfig), ...Object.values(signedApiUrlsFromContract)]
+      (useSignedApiUrlsFromContract
+        ? [...Object.values(signedApiUrlsFromConfig), ...Object.values(signedApiUrlsFromContract)]
+        : Object.values(signedApiUrlsFromConfig)
+      )
         .map((urlsPerProvider) => Object.values(urlsPerProvider))
         .flat(2) // eslint-disable-line unicorn/no-magic-array-flat-depth
     );
