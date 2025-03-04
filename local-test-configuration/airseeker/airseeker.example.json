@@ -32,6 +32,7 @@
   },
   "signedDataFetchInterval": 10,
   "signedApiUrls": [],
+  "useSignedApiUrlsFromContract": true,
   "walletDerivationScheme": { "type": "managed" },
   "stage": "dev",
   "version": "3.1.0"

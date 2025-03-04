@@ -44,7 +44,7 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
   });
 
   if (!executionResult.success) {
-    logger.warn('Failed to fetch data from signed API.', {
+    logger.warn('Failed to fetch data from Signed API.', {
       url,
       ...executionResult.errorData,
       statusCode: executionResult.statusCode,
@@ -54,7 +54,7 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
 
   const parseResult = signedApiResponseSchema.safeParse(executionResult.data);
   if (!parseResult.success) {
-    logger.warn('Failed to parse signed API response.', {
+    logger.warn('Failed to parse Signed API response.', {
       url,
       errors: JSON.stringify(parseResult.error.errors).slice(0, 1000),
     });
@@ -68,7 +68,7 @@ export const runDataFetcher = async () => {
   return logger.runWithContext({ dataFetcherCoordinatorId: generateRandomId() }, async () => {
     const state = getState();
     const {
-      config: { signedDataFetchInterval },
+      config: { signedDataFetchInterval, useSignedApiUrlsFromContract },
       signedApiUrlsFromConfig,
       signedApiUrlsFromContract,
       activeDataFeedBeaconIds,
@@ -91,9 +91,16 @@ export const runDataFetcher = async () => {
     );
 
     // Better to log the non-decomposed object to see which URL comes from which chain-provider group.
-    logger.debug('Signed API URLs.', { signedApiUrlsFromConfig, signedApiUrlsFromContract });
+    logger.debug('Signed API URLs.', {
+      signedApiUrlsFromConfig,
+      signedApiUrlsFromContract,
+      useSignedApiUrlsFromContract,
+    });
     const urls = uniq(
-      [...Object.values(signedApiUrlsFromConfig), ...Object.values(signedApiUrlsFromContract)]
+      (useSignedApiUrlsFromContract
+        ? [...Object.values(signedApiUrlsFromConfig), ...Object.values(signedApiUrlsFromContract)]
+        : Object.values(signedApiUrlsFromConfig)
+      )
         .map((urlsPerProvider) => Object.values(urlsPerProvider))
         .flat(2) // eslint-disable-line unicorn/no-magic-array-flat-depth
     );

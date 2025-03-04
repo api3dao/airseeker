@@ -5,7 +5,7 @@ is the setup:
 
 - Use 2 Airnode feeds with Nodary API and reasonable fetch limits. Each Airnode feed has a different Airnode mnemonic to
   mimic a different API. One of the APIs is delayed so that the beacons have different values.
-- Use 2 signed APIs and each Airnode feed pushes to a separate Signed API.
+- Use 2 Signed APIs and each Airnode feed pushes to a separate Signed API.
 - We run Airseeker only on Hardhat network for setup simplicity. Initially, I wanted to have a Polygon testnet as well,
   but gave up on that idea for now. The setup can be easily extended to run on any chain, just by not starting Hardhat
   network and using a different RPCs.
@@ -72,7 +72,7 @@ also required for the monitoring page.
 The `AIRSEEKER_MNEMONIC` needs to be URI encoded via `encodeURIComponent` in JS. For example,
 `test%20test%20test%20test%20test%20test%20test%20test%20test%20test%20test%20junk`.
 
-The page constantly polls the chain and respective signed APIs and compares the on-chain and off-chain values. If the
+The page constantly polls the chain and respective Signed APIs and compares the on-chain and off-chain values. If the
 deviation exceeds the treshold, the value is marked bold and should be updated by Airseeker shortly.
 
 - Run the Airseeker:

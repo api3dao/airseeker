@@ -195,6 +195,7 @@ export const configSchema = z
     stage: z
       .string()
       .regex(/^[\da-z-]{1,256}$/, 'Only lowercase letters, numbers and hyphens are allowed (max 256 characters)'),
+    useSignedApiUrlsFromContract: z.boolean().default(true),
     version: z.string().refine((version) => version === packageVersion, 'Invalid Airseeker version'),
     walletDerivationScheme: walletDerivationSchemeSchema,
   })

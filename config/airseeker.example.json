@@ -29,6 +29,7 @@
   "individualBeaconUpdateSettings": null,
   "signedDataFetchInterval": 10,
   "signedApiUrls": [],
+  "useSignedApiUrlsFromContract": true,
   "walletDerivationScheme": { "type": "managed" },
   "stage": "dev",
   "version": "3.11.0"
