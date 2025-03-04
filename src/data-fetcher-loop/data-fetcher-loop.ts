@@ -44,7 +44,7 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
   });
 
   if (!executionResult.success) {
-    logger.warn('Failed to fetch data from signed API.', {
+    logger.warn('Failed to fetch data from Signed API.', {
       url,
       ...executionResult.errorData,
       statusCode: executionResult.statusCode,
@@ -54,7 +54,7 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
 
   const parseResult = signedApiResponseSchema.safeParse(executionResult.data);
   if (!parseResult.success) {
-    logger.warn('Failed to parse signed API response.', {
+    logger.warn('Failed to parse Signed API response.', {
       url,
       errors: JSON.stringify(parseResult.error.errors).slice(0, 1000),
     });

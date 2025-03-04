@@ -212,8 +212,8 @@ export const deploy = async (funderWallet: ethers.NonceManager, provider: ethers
 
   // Set active dAPIs
   const apiTreeValues = [
-    [airnodeFeed1Wallet.address, joinUrl(airnodeFeed1.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the signed API, but we need to query it additional path.
-    [airnodeFeed2Wallet.address, joinUrl(airnodeFeed2.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the signed API, but we need to query it additional path.
+    [airnodeFeed1Wallet.address, joinUrl(airnodeFeed1.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the Signed API, but we need to query it additional path.
+    [airnodeFeed2Wallet.address, joinUrl(airnodeFeed2.signedApis[0].url, 'default')], // NOTE: Airnode feed pushes to the "/" of the Signed API, but we need to query it additional path.
   ] as const;
   for (const [airnode, url] of apiTreeValues) {
     const setSignedApiUrlTx = await airseekerRegistry.connect(deployerAndManager).setSignedApiUrl(airnode, url);

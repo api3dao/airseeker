@@ -247,7 +247,7 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
           activeDataFeedCount,
         });
 
-        // Merge the signed API URLs and active beacons from all the batches.
+        // Merge the Signed API URLs and active beacons from all the batches.
         const signedApiUrlsFromConfig = uniq(
           processedBatches.filter(Boolean).flatMap((batch) => batch.signedApiUrlsFromConfig)
         );
@@ -255,7 +255,7 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
           processedBatches.filter(Boolean).flatMap((batch) => batch.signedApiUrlsFromContract)
         );
         const beaconIds = uniq(processedBatches.filter(Boolean).flatMap((batch) => batch.beaconIds));
-        // Overwrite the state with the new signed API URLs instead of merging them to avoid keeping stale URLs.
+        // Overwrite the state with the new Signed API URLs instead of merging them to avoid keeping stale URLs.
         updateState((draft) => {
           set(draft, ['signedApiUrlsFromConfig', chainId, providerName], signedApiUrlsFromConfig);
           set(draft, ['signedApiUrlsFromContract', chainId, providerName], signedApiUrlsFromContract);
@@ -315,7 +315,7 @@ export const processBatch = async (
     blockNumber
   );
 
-  // Generate signed API URLs for the batch.
+  // Generate Signed API URLs for the batch.
   const signedApiUrlsFromConfig = batch.flatMap((dataFeed) =>
     dataFeed.beaconsWithData.flatMap((beacon) =>
       configSignedApiBaseUrls.map((baseUrl) => `${baseUrl}/${beacon.airnodeAddress}`)

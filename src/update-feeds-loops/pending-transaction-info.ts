@@ -85,7 +85,7 @@ export const updatePendingTransactionsInfo = (
     if (!updatableFeed && pendingTransactionInfo) {
       // NOTE: A data feed may stop needing an update for two reasons:
       //  1. It has been updated by some other transaction. This could have been done by this Airseeker or some backup.
-      //  2. As a natural price shift in signed API data.
+      //  2. As a natural price shift in Signed API data.
       //
       // We can't differentiate between these cases unless we check recent update transactions, which we don't want to
       // do.

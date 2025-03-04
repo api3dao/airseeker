@@ -9,7 +9,7 @@ import * as dataFetcherLoopModule from './data-fetcher-loop';
 import * as signedDataStateModule from './signed-data-state';
 import * as signedDataVerifierPoolModule from './signed-data-verifier-pool';
 
-jest.setTimeout(10_000); // Default Jest timeout is 5s which is not enough for staggering two signed API calls with signedDataFetchInterval 10s
+jest.setTimeout(10_000); // Default Jest timeout is 5s which is not enough for staggering two Signed API calls with signedDataFetchInterval 10s
 
 describe(dataFetcherLoopModule.runDataFetcher.name, () => {
   beforeEach(() => {
@@ -212,7 +212,7 @@ describe(dataFetcherLoopModule.callSignedApi.name, () => {
     await expect(dataFetcherLoopModule.callSignedApi('some-url', 10_000)).resolves.toBeNull();
 
     expect(logger.warn).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenCalledWith('Failed to parse signed API response.', {
+    expect(logger.warn).toHaveBeenCalledWith('Failed to parse Signed API response.', {
       url: 'some-url',
       errors: JSON.stringify([
         {
