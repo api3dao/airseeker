@@ -2,8 +2,8 @@
 
 > A service powering data feeds using the [Signed API](https://github.com/api3dao/signed-api).
 
-The Airseeker is a rework of the [original Airseeker](https://github.com/api3dao/airseeker). The Airseeker v2 is
-simplified and only works with Signed APIs.
+Airseeker v2 is a streamlined redesign of the [original Airseeker](https://github.com/api3dao/airseeker-v1), focused
+exclusively on working with Signed APIs for improved efficiency and simplicity.
 
 ## Getting started
 
