@@ -42,7 +42,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '20.18.3'
           cache: 'pnpm'
       - name: Install Dependencies
         run: pnpm install
@@ -67,7 +67,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '20.18.3'
           cache: 'pnpm'
       - name: Install Dependencies
         run: pnpm install
