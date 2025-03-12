@@ -82,8 +82,8 @@ importers:
         specifier: ^2.22.19
         version: 2.22.19(ts-node@10.9.2(@types/node@20.17.24)(typescript@5.8.2))(typescript@5.8.2)
       hardhat-deploy:
-        specifier: ^0.14.0
-        version: 0.14.0
+        specifier: ^1.0.1
+        version: 1.0.1
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -2527,8 +2527,8 @@ packages:
     engines: {node: '>=0.4.7'}
     hasBin: true
 
-  hardhat-deploy@0.14.0:
-    resolution: {integrity: sha512-jZm0bJGHeH7dEyCzz69hsS8HlNNLJLjXDQVlStczulf54vYJUfRvZ+t3x20QsdXQoXUe6Qujlp8cKbx6JjFpZw==}
+  hardhat-deploy@1.0.1:
+    resolution: {integrity: sha512-cpjq9/7H9I5/iJ41b3tPLlG+D5siJ7NlG5GjocH5claUz7xrpCU5gUvx8stMf1fIyUhdM2g/TGOtCCmF64Nq3w==}
 
   hardhat-gas-reporter@1.0.10:
     resolution: {integrity: sha512-02N4+So/fZrzJ88ci54GqwVA3Zrf0C9duuTyGt0CFRIh/CdNwbnTgkXkRfojOMLBQ+6t+lBIkgbsOtqMvNwikA==}
@@ -7857,7 +7857,7 @@ snapshots:
     optionalDependencies:
       uglify-js: 3.19.3
 
-  hardhat-deploy@0.14.0:
+  hardhat-deploy@1.0.1:
     dependencies:
       '@ethersproject/abi': 5.7.0
       '@ethersproject/abstract-signer': 5.7.0
