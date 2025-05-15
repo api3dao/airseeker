@@ -136,16 +136,16 @@ export const deployAndUpdate = async () => {
   const [deployerAndManager, randomPerson, walletFunder] = await ethers.getSigners();
 
   // Deploy contracts
-  const accessControlRegistryFactory = new AccessControlRegistryFactory(deployerAndManager as Signer);
+  const accessControlRegistryFactory = new AccessControlRegistryFactory(deployerAndManager as unknown as Signer);
   const accessControlRegistry = await accessControlRegistryFactory.deploy();
-  const api3ServerV1Factory = new Api3ServerV1Factory(deployerAndManager as Signer);
+  const api3ServerV1Factory = new Api3ServerV1Factory(deployerAndManager as unknown as Signer);
   const api3ServerV1AdminRoleDescription = 'Api3ServerV1 admin';
   const api3ServerV1 = await api3ServerV1Factory.deploy(
     accessControlRegistry.getAddress(),
     api3ServerV1AdminRoleDescription,
     deployerAndManager!.address
   );
-  const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager as Signer);
+  const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager as unknown as Signer);
   const airseekerRegistry = await airseekerRegistryFactory.deploy(
     deployerAndManager!.address,
     api3ServerV1.getAddress()
