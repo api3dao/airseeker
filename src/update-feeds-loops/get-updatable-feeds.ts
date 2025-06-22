@@ -104,12 +104,12 @@ export const getUpdatableFeeds = (
       // on-chain value. There are two cases:
       // 1. Data feed is a beacon - We need to make sure the off-chain data
       //    updates the feed. This requires timestamp to change. See:
-      //    https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/DataFeedServer.sol#L120
+      //    https://github.com/api3dao/contracts/blob/4592f5c4802f7cf2585884fc641a1e89937bfd9c/contracts/api3-server-v1/DataFeedServer.sol#L120
       const isValidBeaconUpdate = !isBeaconSet && newDataFeedTimestamp !== dataFeedTimestamp;
 
       // 2. Data feed is a beacon set - We need to make sure that the beacon set will change. The contract requires the
       //    beacon set value or timestamp to change. See:
-      //    https://github.com/api3dao/airnode-protocol-v1/blob/65a77cdc23dc5434e143357a506327b9f0ccb7ef/contracts/api3-server-v1/DataFeedServer.sol#L54
+      //    https://github.com/api3dao/contracts/blob/4592f5c4802f7cf2585884fc641a1e89937bfd9c/contracts/api3-server-v1/DataFeedServer.sol#L54
       // Note, that the beacon set value/timestamp is computed as median, so single beacon update may not result in a beacon set update.
       const isValidBeaconSetUpdate =
         isBeaconSet && (newDataFeedValue !== dataFeedValue || newDataFeedTimestamp !== dataFeedTimestamp);
