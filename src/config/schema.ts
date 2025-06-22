@@ -18,7 +18,7 @@ export type Provider = z.infer<typeof providerSchema>;
 
 export const optionalContractsSchema = z
   .object({
-    // If unspecified, Api3ServerV1 will be loaded from "airnode-protocol-v1" or error out during validation.
+    // If unspecified, Api3ServerV1 will be loaded from the package @api3/contracts or error out during validation.
     Api3ServerV1: addressSchema.optional(),
     AirseekerRegistry: addressSchema,
   })
@@ -59,7 +59,7 @@ export const gasSettingsSchema = z
 
 export type GasSettings = z.infer<typeof gasSettingsSchema>;
 
-// Contracts are optional. If unspecified, they will be loaded from "airnode-protocol-v1" or error out during
+// Contracts are optional. If unspecified, they will be loaded from the package @api3/contracts or error out during
 // validation. We need a chain ID from parent schema to load the contracts.
 export const optionalChainSchema = z
   .object({
@@ -84,7 +84,7 @@ const chainSchema = optionalChainSchema
 
 export type Chain = z.infer<typeof chainSchema>;
 
-// Ensure that the contracts are loaded from "airnode-protocol-v1" if not specified.
+// Ensure that the contracts are loaded from the package @api3/contracts if not specified.
 export const chainsSchema = z
   .record(optionalChainSchema)
   .superRefine((chains, ctx) => {

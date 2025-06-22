@@ -76,7 +76,7 @@ describe('chains schema', () => {
     });
   });
 
-  it('uses the contract address from airnode-protocol-v1', () => {
+  it('uses the contract address from the package @api3/contracts', () => {
     const chains = {
       '1': {
         providers: {
