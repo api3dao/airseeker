@@ -60,7 +60,7 @@
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-jest": "^28.14.0",
+    "eslint-plugin-jest": "^29.0.1",
     "hardhat": "^2.24.3",
     "hardhat-deploy": "^0.14.1",
     "husky": "^9.1.7",
