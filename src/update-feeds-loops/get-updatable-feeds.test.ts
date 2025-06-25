@@ -14,7 +14,7 @@ import { getUpdatableFeeds } from './get-updatable-feeds';
 
 const ONE_PERCENT = BigInt(Number(HUNDRED_PERCENT) / 100);
 
-// https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
+// https://github.com/api3dao/contracts/blob/4592f5c4802f7cf2585884fc641a1e89937bfd9c/contracts/api3-server-v1/DataFeedServer.sol#L132
 const encodeBeaconValue = (numericValue: string) => {
   const numericValueAsBigNumber = BigInt(numericValue);
 

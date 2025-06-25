@@ -95,7 +95,7 @@ export interface DecodedUpdateParameters {
 }
 
 export const decodeUpdateParameters = (updateParameters: string): DecodedUpdateParameters => {
-  // https://github.com/api3dao/airnode-protocol-v1/blob/5f861715749e182e334c273d6a52c4f2560c7994/contracts/api3-server-v1/extensions/BeaconSetUpdatesWithPsp.sol#L122
+  // // https://github.com/api3dao/contracts/blob/4592f5c4802f7cf2585884fc641a1e89937bfd9c/contracts/api3-server-v1/Api3MarketV2.sol#L974
   const [deviationThresholdInPercentage, deviationReference, heartbeatInterval] =
     ethers.AbiCoder.defaultAbiCoder().decode(['uint256', 'int224', 'uint256'], updateParameters);
   // 2 characters for the '0x' preamble + 3 parameters, 32 * 2 hexadecimals for 32 bytes each

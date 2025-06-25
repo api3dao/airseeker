@@ -78,7 +78,7 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, sponsorParams
 export const multiplyBigNumber = (bigNumber: bigint, multiplier: number) =>
   (bigNumber * BigInt(Math.round(multiplier * 100))) / 100n;
 
-// https://github.com/api3dao/airnode-protocol-v1/blob/fa95f043ce4b50e843e407b96f7ae3edcf899c32/contracts/api3-server-v1/DataFeedServer.sol#L132
+// https://github.com/api3dao/contracts/blob/4592f5c4802f7cf2585884fc641a1e89937bfd9c/contracts/api3-server-v1/DataFeedServer.sol#L132
 export const decodeBeaconValue = (encodedBeaconValue: string) => {
   const decodedBeaconValue = BigInt(ethers.AbiCoder.defaultAbiCoder().decode(['int256'], encodedBeaconValue)[0]);
   if (decodedBeaconValue > INT224_MAX || decodedBeaconValue < INT224_MIN) {
