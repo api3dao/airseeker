@@ -41,11 +41,11 @@
     "@api3/eslint-plugin-commons": "^3.0.0",
     "@api3/promise-utils": "^0.4.0",
     "dotenv": "^16.6.1",
-    "ethers": "^6.14.4",
+    "ethers": "^6.15.0",
     "immer": "^10.1.1",
     "lodash": "^4.17.21",
     "workerpool": "^9.3.3",
-    "zod": "^3.25.67"
+    "zod": "^3.25.75"
   },
   "devDependencies": {
     "@api3/airnode-abi": "^0.15.0",
