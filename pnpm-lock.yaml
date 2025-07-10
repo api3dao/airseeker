@@ -36,8 +36,8 @@ importers:
         specifier: ^9.3.3
         version: 9.3.3
       zod:
-        specifier: ^3.25.75
-        version: 3.25.75
+        specifier: ^4.0.2
+        version: 4.0.2
     devDependencies:
       '@api3/airnode-abi':
         specifier: ^0.15.0
@@ -4738,6 +4738,9 @@ packages:
 
   zod@3.25.75:
     resolution: {integrity: sha512-OhpzAmVzabPOL6C3A3gpAifqr9MqihV/Msx3gor2b2kviCgcb+HM9SEOpMWwwNp9MRunWnhtAKUoo0AHhjyPPg==}
+
+  zod@4.0.2:
+    resolution: {integrity: sha512-X2niJNY54MGam4L6Kj0AxeedeDIi/E5QFW0On2faSX5J4/pfLk1tW+cRMIMoojnCavn/u5W/kX17e1CSGnKMxA==}
 
 snapshots:
 
@@ -10810,3 +10813,5 @@ snapshots:
       ethers: 5.7.2
 
   zod@3.25.75: {}
+
+  zod@4.0.2: {}
