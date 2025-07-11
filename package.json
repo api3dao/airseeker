@@ -51,7 +51,7 @@
     "@api3/airnode-abi": "^0.15.0",
     "@api3/ois": "^2.3.2",
     "@nomicfoundation/hardhat-ethers": "^3.0.9",
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^6.0.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/jest": "^29.5.14",
     "@types/lodash": "^4.17.20",

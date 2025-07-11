@@ -49,8 +49,8 @@ importers:
         specifier: ^3.0.9
         version: 3.0.9(ethers@6.15.0)(hardhat@2.25.0(ts-node@10.9.2(@types/node@20.19.4)(typescript@5.8.3))(typescript@5.8.3))
       '@nomicfoundation/hardhat-toolbox':
-        specifier: ^5.0.0
-        version: 5.0.0(pfb3spsesqviz6vdyflrelnt2e)
+        specifier: ^6.0.0
+        version: 6.0.0(pfb3spsesqviz6vdyflrelnt2e)
       '@total-typescript/ts-reset':
         specifier: ^0.6.1
         version: 0.6.1
@@ -695,8 +695,8 @@ packages:
     peerDependencies:
       hardhat: ^2.9.5
 
-  '@nomicfoundation/hardhat-toolbox@5.0.0':
-    resolution: {integrity: sha512-FnUtUC5PsakCbwiVNsqlXVIWG5JIb5CEZoSXbJUsEBun22Bivx2jhF1/q9iQbzuaGpJKFQyOhemPB2+XlEE6pQ==}
+  '@nomicfoundation/hardhat-toolbox@6.0.0':
+    resolution: {integrity: sha512-3qm3VuDp5xD8UyfhYPPfZHnCc0M/V5yfRSTSDdOuI8DTrmYJkMNW7QrTNGalMCigWn3suBghSw9YcMOyGDJ7Lg==}
     peerDependencies:
       '@nomicfoundation/hardhat-chai-matchers': ^2.0.0
       '@nomicfoundation/hardhat-ethers': ^3.0.0
@@ -709,9 +709,9 @@ packages:
       '@types/mocha': '>=9.1.0'
       '@types/node': '>=18.0.0'
       chai: ^4.2.0
-      ethers: ^6.4.0
+      ethers: ^6.14.0
       hardhat: ^2.11.0
-      hardhat-gas-reporter: ^1.0.8
+      hardhat-gas-reporter: ^2.3.0
       solidity-coverage: ^0.8.1
       ts-node: '>=8.0.0'
       typechain: ^8.3.0
@@ -5675,7 +5675,7 @@ snapshots:
       ethereumjs-util: 7.1.5
       hardhat: 2.25.0(ts-node@10.9.2(@types/node@20.19.4)(typescript@5.8.3))(typescript@5.8.3)
 
-  '@nomicfoundation/hardhat-toolbox@5.0.0(pfb3spsesqviz6vdyflrelnt2e)':
+  '@nomicfoundation/hardhat-toolbox@6.0.0(pfb3spsesqviz6vdyflrelnt2e)':
     dependencies:
       '@nomicfoundation/hardhat-chai-matchers': 2.0.8(@nomicfoundation/hardhat-ethers@3.0.9(ethers@6.15.0)(hardhat@2.25.0(ts-node@10.9.2(@types/node@20.19.4)(typescript@5.8.3))(typescript@5.8.3)))(chai@4.5.0)(ethers@6.15.0)(hardhat@2.25.0(ts-node@10.9.2(@types/node@20.19.4)(typescript@5.8.3))(typescript@5.8.3))
       '@nomicfoundation/hardhat-ethers': 3.0.9(ethers@6.15.0)(hardhat@2.25.0(ts-node@10.9.2(@types/node@20.19.4)(typescript@5.8.3))(typescript@5.8.3))
