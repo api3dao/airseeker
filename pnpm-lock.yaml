@@ -36,8 +36,8 @@ importers:
         specifier: ^9.3.3
         version: 9.3.3
       zod:
-        specifier: ^3.25.75
-        version: 3.25.75
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
       '@api3/airnode-abi':
         specifier: ^0.15.0
@@ -4736,8 +4736,8 @@ packages:
     peerDependencies:
       ethers: ~5.7.0
 
-  zod@3.25.75:
-    resolution: {integrity: sha512-OhpzAmVzabPOL6C3A3gpAifqr9MqihV/Msx3gor2b2kviCgcb+HM9SEOpMWwwNp9MRunWnhtAKUoo0AHhjyPPg==}
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
 snapshots:
 
@@ -4770,7 +4770,7 @@ snapshots:
       lodash: 4.17.21
       winston: 3.17.0
       winston-console-format: 1.0.8
-      zod: 3.25.75
+      zod: 3.25.76
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -4779,9 +4779,9 @@ snapshots:
   '@api3/contracts@26.2.0(typescript@5.8.3)':
     dependencies:
       ethers: 6.15.0
-      viem: 2.23.5(typescript@5.8.3)(zod@3.25.75)
+      viem: 2.23.5(typescript@5.8.3)(zod@3.25.76)
       yargs: 17.7.2
-      zod: 3.25.75
+      zod: 3.25.76
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -4823,7 +4823,7 @@ snapshots:
   '@api3/ois@2.3.2':
     dependencies:
       lodash: 4.17.21
-      zod: 3.25.75
+      zod: 3.25.76
 
   '@api3/promise-utils@0.4.0': {}
 
@@ -6273,10 +6273,10 @@ snapshots:
 
   abbrev@1.0.9: {}
 
-  abitype@1.0.8(typescript@5.8.3)(zod@3.25.75):
+  abitype@1.0.8(typescript@5.8.3)(zod@3.25.76):
     optionalDependencies:
       typescript: 5.8.3
-      zod: 3.25.75
+      zod: 3.25.76
 
   acorn-jsx@5.3.2(acorn@8.14.0):
     dependencies:
@@ -9493,14 +9493,14 @@ snapshots:
       object-keys: 1.1.1
       safe-push-apply: 1.0.0
 
-  ox@0.6.7(typescript@5.8.3)(zod@3.25.75):
+  ox@0.6.7(typescript@5.8.3)(zod@3.25.76):
     dependencies:
       '@adraffy/ens-normalize': 1.11.0
       '@noble/curves': 1.8.1
       '@noble/hashes': 1.7.1
       '@scure/bip32': 1.6.2
       '@scure/bip39': 1.5.4
-      abitype: 1.0.8(typescript@5.8.3)(zod@3.25.75)
+      abitype: 1.0.8(typescript@5.8.3)(zod@3.25.76)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.8.3
@@ -10583,15 +10583,15 @@ snapshots:
       spdx-correct: 3.2.0
       spdx-expression-parse: 3.0.1
 
-  viem@2.23.5(typescript@5.8.3)(zod@3.25.75):
+  viem@2.23.5(typescript@5.8.3)(zod@3.25.76):
     dependencies:
       '@noble/curves': 1.8.1
       '@noble/hashes': 1.7.1
       '@scure/bip32': 1.6.2
       '@scure/bip39': 1.5.4
-      abitype: 1.0.8(typescript@5.8.3)(zod@3.25.75)
+      abitype: 1.0.8(typescript@5.8.3)(zod@3.25.76)
       isows: 1.0.6(ws@8.18.0)
-      ox: 0.6.7(typescript@5.8.3)(zod@3.25.75)
+      ox: 0.6.7(typescript@5.8.3)(zod@3.25.76)
       ws: 8.18.0
     optionalDependencies:
       typescript: 5.8.3
@@ -10809,4 +10809,4 @@ snapshots:
     dependencies:
       ethers: 5.7.2
 
-  zod@3.25.75: {}
+  zod@3.25.76: {}
