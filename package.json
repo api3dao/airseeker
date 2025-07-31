@@ -36,7 +36,7 @@
     "tsc": "tsc --project ."
   },
   "dependencies": {
-    "@api3/commons": "^0.13.4",
+    "@api3/commons": "^1.0.1",
     "@api3/contracts": "26.2.1",
     "@api3/eslint-plugin-commons": "^3.0.0",
     "@api3/promise-utils": "^0.4.0",
