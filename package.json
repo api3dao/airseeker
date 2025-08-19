@@ -36,8 +36,8 @@
     "tsc": "tsc --project ."
   },
   "dependencies": {
-    "@api3/commons": "^0.13.4",
-    "@api3/contracts": "26.2.1",
+    "@api3/commons": "^1.0.1",
+    "@api3/contracts": "27.0.0",
     "@api3/eslint-plugin-commons": "^3.0.0",
     "@api3/promise-utils": "^0.4.0",
     "dotenv": "^16.6.1",
@@ -49,7 +49,7 @@
   },
   "devDependencies": {
     "@api3/airnode-abi": "^0.15.0",
-    "@api3/ois": "^2.3.2",
+    "@api3/ois": "^3.0.0",
     "@nomicfoundation/hardhat-ethers": "^3.1.0",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@total-typescript/ts-reset": "^0.6.1",
