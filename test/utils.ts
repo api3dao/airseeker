@@ -7,11 +7,12 @@ import { verifySignedData } from '../src/data-fetcher-loop/signed-data-verifier'
 import type { getVerifier } from '../src/data-fetcher-loop/signed-data-verifier-pool';
 import type { SignedData, SignedDataRecordEntry } from '../src/types';
 import type { Beacon } from '../src/update-feeds-loops/contracts';
+import { encodeBeaconValue } from '../src/utils';
 
 export const signData = async (signer: ethers.Signer, templateId: string, timestamp: string, data: string) =>
   signer.signMessage(
     ethers.getBytes(ethers.solidityPackedKeccak256(['bytes32', 'uint256', 'bytes'], [templateId, timestamp, data]))
-  );
+  ) as Promise<Hex>;
 
 export const generateRandomBytes = (length: number): Hex => `0x${randomBytes(length).toString('hex')}`;
 
@@ -42,7 +43,7 @@ export const generateSignedData = async (
   dataFeedTimestamp: string,
   apiValue = BigInt(generateRandomBytes(Math.floor(Math.random() * 27) + 1)) // Fits into uint224.
 ): Promise<SignedData> => {
-  const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['uint224'], [BigInt(apiValue)]);
+  const encodedValue = encodeBeaconValue(apiValue);
   const signature = await signData(airnodeWallet, templateId, dataFeedTimestamp, encodedValue);
 
   return {

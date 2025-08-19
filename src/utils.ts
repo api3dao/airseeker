@@ -78,6 +78,9 @@ export const deriveSponsorWallet = (sponsorWalletMnemonic: string, sponsorParams
 export const multiplyBigNumber = (bigNumber: bigint, multiplier: number) =>
   (bigNumber * BigInt(Math.round(multiplier * 100))) / 100n;
 
+export const encodeBeaconValue = (value: bigint) =>
+  ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [value]) as Hex;
+
 // https://github.com/api3dao/contracts/blob/4592f5c4802f7cf2585884fc641a1e89937bfd9c/contracts/api3-server-v1/DataFeedServer.sol#L132
 export const decodeBeaconValue = (encodedBeaconValue: string) => {
   const decodedBeaconValue = BigInt(ethers.AbiCoder.defaultAbiCoder().decode(['int256'], encodedBeaconValue)[0]);

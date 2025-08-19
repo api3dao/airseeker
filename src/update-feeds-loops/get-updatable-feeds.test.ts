@@ -1,4 +1,3 @@
-import { ethers } from 'ethers';
 import { range } from 'lodash';
 
 import { allowPartial } from '../../test/utils';
@@ -7,19 +6,12 @@ import * as signedDataStateModule from '../data-fetcher-loop/signed-data-state';
 import * as deviationCheckModule from '../deviation-check/deviation-check';
 import { logger } from '../logger';
 import type { SignedData } from '../types';
-import { encodeDapiName } from '../utils';
+import { encodeBeaconValue, encodeDapiName } from '../utils';
 
 import type * as contractsModule from './contracts';
 import { getUpdatableFeeds } from './get-updatable-feeds';
 
 const ONE_PERCENT = BigInt(Number(HUNDRED_PERCENT) / 100);
-
-// https://github.com/api3dao/contracts/blob/4592f5c4802f7cf2585884fc641a1e89937bfd9c/contracts/api3-server-v1/DataFeedServer.sol#L132
-const encodeBeaconValue = (numericValue: string) => {
-  const numericValueAsBigNumber = BigInt(numericValue);
-
-  return ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [numericValueAsBigNumber]);
-};
 
 const feedIds = [
   '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6',
@@ -35,15 +27,15 @@ describe(getUpdatableFeeds.name, () => {
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '101',
-        encodedValue: encodeBeaconValue('200'),
+        encodedValue: encodeBeaconValue(200n),
       },
       [feedIds[1]]: {
         timestamp: '165',
-        encodedValue: encodeBeaconValue('250'),
+        encodedValue: encodeBeaconValue(250n),
       },
       [feedIds[2]]: {
         timestamp: '175',
-        encodedValue: encodeBeaconValue('300'),
+        encodedValue: encodeBeaconValue(300n),
       },
     });
     jest
@@ -103,15 +95,15 @@ describe(getUpdatableFeeds.name, () => {
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '400',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
       [feedIds[1]]: {
         timestamp: '500',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
       [feedIds[2]]: {
         timestamp: '600',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
     });
     jest
@@ -153,15 +145,15 @@ describe(getUpdatableFeeds.name, () => {
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '400',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
       [feedIds[1]]: {
         timestamp: '500',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
       [feedIds[2]]: {
         timestamp: '600',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
     });
     jest
@@ -207,15 +199,15 @@ describe(getUpdatableFeeds.name, () => {
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '400',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
       [feedIds[1]]: {
         timestamp: '500',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
       [feedIds[2]]: {
         timestamp: '600',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
     });
     jest
@@ -281,15 +273,15 @@ describe(getUpdatableFeeds.name, () => {
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '101',
-        encodedValue: encodeBeaconValue('200'),
+        encodedValue: encodeBeaconValue(200n),
       },
       [feedIds[1]]: {
         timestamp: '150',
-        encodedValue: encodeBeaconValue('200'),
+        encodedValue: encodeBeaconValue(200n),
       },
       [feedIds[2]]: {
         timestamp: '200',
-        encodedValue: encodeBeaconValue('200'),
+        encodedValue: encodeBeaconValue(200n),
       },
     });
     jest
@@ -331,15 +323,15 @@ describe(getUpdatableFeeds.name, () => {
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '101',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
       [feedIds[1]]: {
         timestamp: '150',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
       [feedIds[2]]: {
         timestamp: '200',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
     });
     jest
@@ -380,7 +372,7 @@ describe(getUpdatableFeeds.name, () => {
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '150',
-        encodedValue: encodeBeaconValue('200'),
+        encodedValue: encodeBeaconValue(200n),
       },
     });
     jest
@@ -420,15 +412,15 @@ describe(getUpdatableFeeds.name, () => {
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '110', // Changed by 10 compared to the on-chain value
-        encodedValue: encodeBeaconValue('210'), // Changed by 10 compared to the on-chain value
+        encodedValue: encodeBeaconValue(210n), // Changed by 10 compared to the on-chain value
       },
       [feedIds[1]]: {
         timestamp: '150',
-        encodedValue: encodeBeaconValue('300'),
+        encodedValue: encodeBeaconValue(300n),
       },
       [feedIds[2]]: {
         timestamp: '200',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
     });
     jest
@@ -469,15 +461,15 @@ describe(getUpdatableFeeds.name, () => {
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '150', // Changed by 50 compared to the on-chain value
-        encodedValue: encodeBeaconValue('350'), // Changed by 150 compared to the on-chain value
+        encodedValue: encodeBeaconValue(350n), // Changed by 150 compared to the on-chain value
       },
       [feedIds[1]]: {
         timestamp: '150',
-        encodedValue: encodeBeaconValue('300'),
+        encodedValue: encodeBeaconValue(300n),
       },
       [feedIds[2]]: {
         timestamp: '200',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
     });
     jest
@@ -531,19 +523,19 @@ describe(getUpdatableFeeds.name, () => {
         airnode: '0x8676eA8B6Ebe5b8FBbc25FF55192bADf39D7D61b',
         templateId: '0x9b8c129f62484aef617622caba20a58f51fdad30c39a32b1ee416b3be4a3f028',
         timestamp: String(Math.floor(now / 1000) - 23 * 60 * 60),
-        encodedValue: encodeBeaconValue('200'),
+        encodedValue: encodeBeaconValue(200n),
       },
       [feedIds[1]]: {
         airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
         templateId: '0xe6df5fb43a0b3a65ac1b05e7e50fba03b475fe5b721693d469554278086fd2e4',
         timestamp: String(Math.floor(now / 1000) - 24 * 60 * 60), // Too old.
-        encodedValue: encodeBeaconValue('250'),
+        encodedValue: encodeBeaconValue(250n),
       },
       [feedIds[2]]: {
         airnode: '0xbF3137b0a7574563a23a8fC8badC6537F98197CC',
         templateId: '0x6f0c2b5c6420d1896e67e56539ccbec5e6aafee5c27f6eb8783b9731faa7205d',
         timestamp: String(Math.floor(now / 1000) - 25 * 60 * 60), // Too old.
-        encodedValue: encodeBeaconValue('300'),
+        encodedValue: encodeBeaconValue(300n),
       },
     });
     jest
@@ -593,15 +585,15 @@ describe(getUpdatableFeeds.name, () => {
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '155',
-        encodedValue: encodeBeaconValue('200'),
+        encodedValue: encodeBeaconValue(200n),
       },
       [feedIds[1]]: {
         timestamp: '165',
-        encodedValue: encodeBeaconValue('500'),
+        encodedValue: encodeBeaconValue(500n),
       },
       [feedIds[2]]: {
         timestamp: '175',
-        encodedValue: encodeBeaconValue('600'),
+        encodedValue: encodeBeaconValue(600n),
       },
     });
     jest
@@ -657,15 +649,15 @@ describe(getUpdatableFeeds.name, () => {
     const mockSignedDataState = allowPartial<Record<string, SignedData>>({
       [feedIds[0]]: {
         timestamp: '150',
-        encodedValue: encodeBeaconValue('400'),
+        encodedValue: encodeBeaconValue(400n),
       },
       [feedIds[1]]: {
         timestamp: '160',
-        encodedValue: encodeBeaconValue('500'),
+        encodedValue: encodeBeaconValue(500n),
       },
       [feedIds[2]]: {
         timestamp: '170',
-        encodedValue: encodeBeaconValue('600'),
+        encodedValue: encodeBeaconValue(600n),
       },
     });
     jest
