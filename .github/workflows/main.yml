@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Check hyperlinks
         uses: gaurav-nelson/github-action-markdown-link-check@v1
 
@@ -36,7 +36,7 @@ jobs:
     name: Build, lint and test
     steps:
       - name: Clone repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install pnpm
         uses: pnpm/action-setup@v4
       - name: Setup Node
@@ -61,7 +61,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Clone repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install pnpm
         uses: pnpm/action-setup@v4
       - name: Setup Node
@@ -96,7 +96,7 @@ jobs:
       id-token: write
     steps:
       - name: Clone repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_ACCESS_TOKEN }}
