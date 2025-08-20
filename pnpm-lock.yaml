@@ -43,8 +43,8 @@ importers:
         specifier: ^0.15.0
         version: 0.15.0
       '@api3/ois':
-        specifier: ^2.3.2
-        version: 2.3.2
+        specifier: ^3.0.0
+        version: 3.0.0
       '@nomicfoundation/hardhat-ethers':
         specifier: ^3.1.0
         version: 3.1.0(ethers@6.15.0)(hardhat@2.26.3(ts-node@10.9.2(@types/node@20.19.11)(typescript@5.9.2))(typescript@5.9.2))
@@ -144,6 +144,9 @@ packages:
 
   '@api3/ois@2.3.2':
     resolution: {integrity: sha512-hYQCbCAtWMGKV+pECRY5tbfCSOcheeo9s6wtrhn1dOWw151VeG0sKG3VbBEsyA6cvSaldewBWY3t/JGaupdThg==}
+
+  '@api3/ois@3.0.0':
+    resolution: {integrity: sha512-scqcvBOBsptgW3rsTLxQSlTA51W1Fr0YpvyKg2JDS2zTDeGNg1gWx9A3tW6fTM4cj57VnowPgj/ZyxQ7w1Ch0Q==}
 
   '@api3/promise-utils@0.4.0':
     resolution: {integrity: sha512-+8fcNjjQeQAuuSXFwu8PMZcYzjwjDiGYcMUfAQ0lpREb1zHonwWZ2N0B9h/g1cvWzg9YhElbeb/SyhCrNm+b/A==}
@@ -4734,6 +4737,9 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
+  zod@4.0.17:
+    resolution: {integrity: sha512-1PHjlYRevNxxdy2JZ8JcNAw7rX8V9P1AKkP+x/xZfxB0K5FYfuV+Ug6P/6NVSR2jHQ+FzDDoDHS04nYUsOIyLQ==}
+
 snapshots:
 
   '@adraffy/ens-normalize@1.10.1': {}
@@ -4819,6 +4825,11 @@ snapshots:
     dependencies:
       lodash: 4.17.21
       zod: 3.25.76
+
+  '@api3/ois@3.0.0':
+    dependencies:
+      lodash: 4.17.21
+      zod: 4.0.17
 
   '@api3/promise-utils@0.4.0': {}
 
@@ -10794,3 +10805,5 @@ snapshots:
       ethers: 5.7.2
 
   zod@3.25.76: {}
+
+  zod@4.0.17: {}
