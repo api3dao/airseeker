@@ -14,7 +14,6 @@ export const envConfigSchema = z.object({
         ctx.addIssue({
           code: 'custom',
           message: 'Invalid LOG_FORMAT',
-          path: ['LOG_FORMAT'],
         });
         return z.NEVER;
       }
@@ -29,7 +28,6 @@ export const envConfigSchema = z.object({
         ctx.addIssue({
           code: 'custom',
           message: 'Invalid LOG_LEVEL',
-          path: ['LOG_LEVEL'],
         });
         return z.NEVER;
       }

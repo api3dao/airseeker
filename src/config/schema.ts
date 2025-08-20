@@ -40,7 +40,7 @@ export const gasSettingsSchema = z
       ctx.addIssue({
         code: 'custom',
         message: 'recommendedGasPriceMultiplier must be less than or equal to maxScalingMultiplier.',
-        path: ['recommendedGasPriceMultiplier'],
+        path: [], // No specific path since it's related to multiple fields
       });
     }
 
@@ -86,7 +86,6 @@ export const chainsSchema = z
       ctx.addIssue({
         code: 'custom',
         message: 'Missing chains. At least one chain is required.',
-        path: ['chains'],
       });
     }
 
@@ -95,7 +94,7 @@ export const chainsSchema = z
         ctx.addIssue({
           code: 'custom',
           message: 'Missing provider. At least one provider is required.',
-          path: ['chains', chainId, 'providers'],
+          path: [chainId, 'providers'],
         });
       }
     }
@@ -117,7 +116,7 @@ export const chainsSchema = z
             code: 'custom',
             message: 'Invalid contract addresses',
             // Show at least the first error.
-            path: [chainId, 'contracts', ...parsedContracts.error.issues[0]!.path],
+            path: [chainId, 'contracts'],
           });
 
           return z.NEVER;
@@ -146,7 +145,6 @@ export const deviationThresholdCoefficientSchema = z
       ctx.addIssue({
         code: 'custom',
         message: 'Invalid deviationThresholdCoefficient. A maximum of 2 decimals are supported.',
-        path: ['deviationThresholdCoefficient'],
       });
     }
   });
