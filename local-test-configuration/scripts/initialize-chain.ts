@@ -269,7 +269,7 @@ export const deploy = async (funderWallet: ethers.NonceManager, provider: ethers
 };
 
 async function main() {
-  dotenv.config({ path: `${__dirname}/.env` });
+  dotenv.config({ path: `${__dirname}/.env`, quiet: true });
   if (!process.env.FUNDER_MNEMONIC) throw new Error('FUNDER_MNEMONIC not found');
   if (!process.env.PROVIDER_URL) throw new Error('PROVIDER_URL not found');
 

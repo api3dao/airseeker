@@ -8,21 +8,17 @@ import { version as packageVersion } from '../../package.json';
 // eslint-disable-next-line unicorn/prefer-export-from
 export { packageVersion as version };
 
-export const providerSchema = z
-  .object({
-    url: z.string().url(),
-  })
-  .strict();
+export const providerSchema = z.strictObject({
+  url: z.url(),
+});
 
 export type Provider = z.infer<typeof providerSchema>;
 
-export const optionalContractsSchema = z
-  .object({
-    // If unspecified, Api3ServerV1 will be loaded from the package @api3/contracts or error out during validation.
-    Api3ServerV1: addressSchema.optional(),
-    AirseekerRegistry: addressSchema,
-  })
-  .strict();
+export const optionalContractsSchema = z.strictObject({
+  // If unspecified, Api3ServerV1 will be loaded from the package @api3/contracts or error out during validation.
+  Api3ServerV1: addressSchema.optional(),
+  AirseekerRegistry: addressSchema,
+});
 
 // The contracts are guaraneteed to exist after the configuration is passed, but the inferred type would be optional so
 // we create a new schema just to infer the type correctly.
@@ -40,19 +36,25 @@ export const gasSettingsSchema = z
     sanitizationMultiplier: z.number().positive(),
   })
   .superRefine((gasSettings, ctx) => {
-    if (gasSettings.recommendedGasPriceMultiplier > gasSettings.maxScalingMultiplier) {
-      ctx.addIssue({
+    const { recommendedGasPriceMultiplier, maxScalingMultiplier, sanitizationPercentile } = gasSettings;
+    if (recommendedGasPriceMultiplier > maxScalingMultiplier) {
+      ctx.issues.push({
         code: 'custom',
         message: 'recommendedGasPriceMultiplier must be less than or equal to maxScalingMultiplier.',
-        path: ['recommendedGasPriceMultiplier'],
+        path: [], // No specific path since it's related to multiple fields
+        input: {
+          recommendedGasPriceMultiplier,
+          maxScalingMultiplier,
+        },
       });
     }
 
-    if (gasSettings.sanitizationPercentile >= 100) {
-      ctx.addIssue({
+    if (sanitizationPercentile >= 100) {
+      ctx.issues.push({
         code: 'custom',
         message: 'sanitizationPercentile must be less than 100.',
         path: ['sanitizationPercentile'],
+        input: sanitizationPercentile,
       });
     }
   });
@@ -61,17 +63,15 @@ export type GasSettings = z.infer<typeof gasSettingsSchema>;
 
 // Contracts are optional. If unspecified, they will be loaded from the package @api3/contracts or error out during
 // validation. We need a chain ID from parent schema to load the contracts.
-export const optionalChainSchema = z
-  .object({
-    alias: z.string().optional(), // By default, the chain alias is loaded from "@api3/contracts" package
-    providers: z.record(providerSchema), // The record key is the provider "nickname"
-    contracts: optionalContractsSchema,
-    gasSettings: gasSettingsSchema,
-    dataFeedUpdateInterval: z.number().positive(),
-    dataFeedBatchSize: z.number().positive(),
-    fallbackGasLimit: z.number().positive().optional(),
-  })
-  .strict();
+export const optionalChainSchema = z.strictObject({
+  alias: z.string().optional(), // By default, the chain alias is loaded from "@api3/contracts" package
+  providers: z.record(z.string(), providerSchema), // The record key is the provider "nickname"
+  contracts: optionalContractsSchema,
+  gasSettings: gasSettingsSchema,
+  dataFeedUpdateInterval: z.number().positive(),
+  dataFeedBatchSize: z.number().positive(),
+  fallbackGasLimit: z.number().positive().optional(),
+});
 
 // The contracts are guaraneteed to exist after the configuration is passed, but the inferred type would be optional so
 // we create a new schema just to infer the type correctly.
@@ -86,22 +86,23 @@ export type Chain = z.infer<typeof chainSchema>;
 
 // Ensure that the contracts are loaded from the package @api3/contracts if not specified.
 export const chainsSchema = z
-  .record(optionalChainSchema)
+  .record(z.string(), optionalChainSchema)
   .superRefine((chains, ctx) => {
     if (Object.keys(chains).length === 0) {
-      ctx.addIssue({
+      ctx.issues.push({
         code: 'custom',
         message: 'Missing chains. At least one chain is required.',
-        path: ['chains'],
+        input: chains,
       });
     }
 
     for (const [chainId, chain] of Object.entries(chains)) {
       if (Object.keys(chain.providers).length === 0) {
-        ctx.addIssue({
+        ctx.issues.push({
           code: 'custom',
           message: 'Missing provider. At least one provider is required.',
-          path: ['chains', chainId, 'providers'],
+          path: [chainId, 'providers'],
+          input: chain.providers,
         });
       }
     }
@@ -119,11 +120,11 @@ export const chainsSchema = z
             deploymentAddresses.AirseekerRegistry[chainId as keyof typeof deploymentAddresses.AirseekerRegistry],
         });
         if (!parsedContracts.success) {
-          ctx.addIssue({
+          ctx.issues.push({
             code: 'custom',
             message: 'Invalid contract addresses',
-            // Show at least the first error.
-            path: [chainId, 'contracts', ...parsedContracts.error.errors[0]!.path],
+            path: [chainId, 'contracts'],
+            input: contracts,
           });
 
           return z.NEVER;
@@ -149,10 +150,10 @@ export const deviationThresholdCoefficientSchema = z
     // Check if the number has a maximum of two decimals
     const decimalCount = coefficient.toString().split('.')[1]?.length;
     if (decimalCount && decimalCount > 2) {
-      ctx.addIssue({
+      ctx.issues.push({
         code: 'custom',
         message: 'Invalid deviationThresholdCoefficient. A maximum of 2 decimals are supported.',
-        path: ['deviationThresholdCoefficient'],
+        input: coefficient,
       });
     }
   });
@@ -174,31 +175,27 @@ export const individualBeaconUpdateSettingsSchema = z
 export type IndividualBeaconUpdateSettings = z.infer<typeof individualBeaconUpdateSettingsSchema>;
 
 export const walletDerivationSchemeSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('self-funded') }).strict(),
-  z.object({ type: z.literal('managed') }).strict(),
-  z.object({ type: z.literal('fixed'), sponsorAddress: addressSchema }).strict(),
+  z.strictObject({ type: z.literal('self-funded') }),
+  z.strictObject({ type: z.literal('managed') }),
+  z.strictObject({ type: z.literal('fixed'), sponsorAddress: addressSchema }),
 ]);
 
 export type WalletDerivationScheme = z.infer<typeof walletDerivationSchemeSchema>;
 
-export const configSchema = z
-  .object({
-    chains: chainsSchema,
-    deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
-    heartbeatIntervalModifier: heartbeatIntervalModifierSchema,
-    individualBeaconUpdateSettings: individualBeaconUpdateSettingsSchema,
-    signedApiUrls: z.array(z.string().url()),
-    signedDataFetchInterval: z.number().positive(),
-    sponsorWalletMnemonic: z
-      .string()
-      .refine((mnemonic) => ethers.Mnemonic.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
-    stage: z
-      .string()
-      .regex(/^[\da-z-]{1,256}$/, 'Only lowercase letters, numbers and hyphens are allowed (max 256 characters)'),
-    useSignedApiUrlsFromContract: z.boolean().default(true),
-    version: z.string().refine((version) => version === packageVersion, 'Invalid Airseeker version'),
-    walletDerivationScheme: walletDerivationSchemeSchema,
-  })
-  .strict();
+export const configSchema = z.strictObject({
+  chains: chainsSchema,
+  deviationThresholdCoefficient: deviationThresholdCoefficientSchema,
+  heartbeatIntervalModifier: heartbeatIntervalModifierSchema,
+  individualBeaconUpdateSettings: individualBeaconUpdateSettingsSchema,
+  signedApiUrls: z.array(z.url()),
+  signedDataFetchInterval: z.number().positive(),
+  sponsorWalletMnemonic: z.string().refine((mnemonic) => ethers.Mnemonic.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
+  stage: z
+    .string()
+    .regex(/^[\da-z-]{1,256}$/, 'Only lowercase letters, numbers and hyphens are allowed (max 256 characters)'),
+  useSignedApiUrlsFromContract: z.boolean().default(true),
+  version: z.string().refine((version) => version === packageVersion, 'Invalid Airseeker version'),
+  walletDerivationScheme: walletDerivationSchemeSchema,
+});
 
 export type Config = z.infer<typeof configSchema>;

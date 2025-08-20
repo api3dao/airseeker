@@ -36,20 +36,20 @@
     "tsc": "tsc --project ."
   },
   "dependencies": {
-    "@api3/commons": "^0.13.4",
-    "@api3/contracts": "26.2.1",
+    "@api3/commons": "^1.0.1",
+    "@api3/contracts": "27.0.0",
     "@api3/eslint-plugin-commons": "^3.0.0",
     "@api3/promise-utils": "^0.4.0",
-    "dotenv": "^16.6.1",
+    "dotenv": "^17.2.1",
     "ethers": "^6.15.0",
     "immer": "^10.1.1",
     "lodash": "^4.17.21",
     "workerpool": "^9.3.3",
-    "zod": "^3.25.76"
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@api3/airnode-abi": "^0.15.0",
-    "@api3/ois": "^2.3.2",
+    "@api3/ois": "^3.0.0",
     "@nomicfoundation/hardhat-ethers": "^3.1.0",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@total-typescript/ts-reset": "^0.6.1",

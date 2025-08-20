@@ -457,16 +457,11 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
           '0xf5c140bcb4814dfec311d38f6293e86c02d32ba1b7da027fe5b5202cae35dbc6': {
             airnode: '0xc52EeA00154B4fF1EbbF8Ba39FDe37F1AC3B9Fd4',
             templateId: '0x457a3b3da67e394a895ea49e534a4d91b2d009477bef15eab8cbed313925b010',
-            encodedValue: ethers.AbiCoder.defaultAbiCoder().encode(
-              ['int256'],
-              [
-                BigInt(
-                  (dataFeed.dataFeedValue *
-                    // Multiply the new value by the on-chain deviationThresholdInPercentage
-                    (decodedUpdateParameters.deviationThresholdInPercentage + 10n ** 8n)) /
-                    10n ** 8n
-                ),
-              ]
+            encodedValue: utilsModule.encodeBeaconValue(
+              (dataFeed.dataFeedValue *
+                // Multiply the new value by the on-chain deviationThresholdInPercentage
+                (decodedUpdateParameters.deviationThresholdInPercentage + 10n ** 8n)) /
+                10n ** 8n
             ),
             signature:
               '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',

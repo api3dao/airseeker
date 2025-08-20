@@ -6,6 +6,7 @@ import { allowPartial, createMockSignedDataVerifier, generateRandomBytes, signDa
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { SignedData } from '../types';
+import { encodeBeaconValue } from '../utils';
 
 import * as signedDataStateModule from './signed-data-state';
 import * as signedDataVerifierPoolModule from './signed-data-verifier-pool';
@@ -19,7 +20,7 @@ describe(signedDataStateModule.saveSignedData.name, () => {
     const templateId = generateRandomBytes(32);
     const timestamp = Math.floor((Date.now() - 25 * 60 * 60 * 1000) / 1000).toString();
     const airnode = signer.address as Hex;
-    const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [1n]);
+    const encodedValue = encodeBeaconValue(1n);
 
     validSignedData = {
       airnode,
@@ -68,7 +69,7 @@ describe(signedDataStateModule.saveSignedData.name, () => {
     const templateId = generateRandomBytes(32);
     const timestamp = Math.floor((Date.now() + 61 * 60 * 1000) / 1000).toString();
     const airnode = signer.address as Hex;
-    const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [1n]);
+    const encodedValue = encodeBeaconValue(1n);
     const futureSignedData = {
       airnode,
       encodedValue,
@@ -96,7 +97,7 @@ describe(signedDataStateModule.saveSignedData.name, () => {
     const templateId = generateRandomBytes(32);
     const timestamp = Math.floor((Date.now() + 30 * 60 * 1000) / 1000).toString();
     const airnode = signer.address as Hex;
-    const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [1n]);
+    const encodedValue = encodeBeaconValue(1n);
     const futureSignedData = {
       airnode,
       encodedValue,
@@ -126,7 +127,7 @@ describe(signedDataStateModule.saveSignedData.name, () => {
     const templateId = generateRandomBytes(32);
     const timestamp = Math.floor((Date.now() - 0.5 * 1000) / 1000).toString();
     const airnode = ethers.Wallet.createRandom().address as Hex;
-    const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [1n]);
+    const encodedValue = encodeBeaconValue(1n);
     jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
     jest.spyOn(logger, 'warn');
     jest.spyOn(logger, 'error');
@@ -163,7 +164,7 @@ describe(signedDataStateModule.saveSignedData.name, () => {
 
     // Then save data for untrusted API and expect it to be verified.
     const timestamp = Math.floor((Date.now() - 30 * 60 * 1000) / 1000).toString();
-    const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [123n]);
+    const encodedValue = encodeBeaconValue(123n);
     const otherSignedData = {
       airnode,
       encodedValue,

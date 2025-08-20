@@ -29,15 +29,15 @@ test('validates example config', () => {
   expect(() => configSchema.parse(exampleConfig)).toThrow(
     new ZodError([
       {
-        validation: 'url',
-        code: 'invalid_string',
-        message: 'Invalid url',
+        code: 'invalid_format',
+        format: 'url',
         path: ['chains', '31337', 'providers', 'hardhat', 'url'],
+        message: 'Invalid URL',
       },
       {
         code: 'custom',
-        message: 'Invalid mnemonic',
         path: ['sponsorWalletMnemonic'],
+        message: 'Invalid mnemonic',
       },
     ])
   );
@@ -123,7 +123,7 @@ describe('chains schema', () => {
         {
           code: 'custom',
           message: 'Invalid contract addresses',
-          path: ['31337', 'contracts', 'Api3ServerV1'],
+          path: ['31337', 'contracts'],
         },
       ])
     );
@@ -166,7 +166,7 @@ describe('chains schema', () => {
         {
           code: 'custom',
           message: 'Missing chains. At least one chain is required.',
-          path: ['chains'],
+          path: [],
         },
       ])
     );
@@ -191,7 +191,7 @@ describe('chains schema', () => {
         {
           code: 'custom',
           message: 'Missing provider. At least one provider is required.',
-          path: ['chains', '31337', 'providers'],
+          path: ['31337', 'providers'],
         },
       ])
     );
@@ -203,7 +203,7 @@ describe('chains schema', () => {
         {
           code: 'custom',
           message: 'Invalid deviationThresholdCoefficient. A maximum of 2 decimals are supported.',
-          path: ['deviationThresholdCoefficient'],
+          path: [],
         },
       ])
     );
@@ -256,11 +256,10 @@ describe('walletDerivationScheme schema', () => {
     expect(() => walletDerivationSchemeSchema.parse(walletDerivationScheme)).toThrow(
       new ZodError([
         {
-          code: 'invalid_type',
           expected: 'string',
-          received: 'undefined',
+          code: 'invalid_type',
           path: ['sponsorAddress'],
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
         },
       ])
     );
