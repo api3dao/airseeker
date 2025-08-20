@@ -10,7 +10,7 @@ let env: EnvConfig | undefined;
 export const loadEnv = () => {
   if (env) return env;
 
-  dotenv.config({ path: join(__dirname, '../../.env') });
+  dotenv.config({ path: join(__dirname, '../../.env'), quiet: true });
 
   const parseResult = envConfigSchema.safeParse(process.env);
   if (!parseResult.success) {
