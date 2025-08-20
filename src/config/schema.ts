@@ -123,7 +123,6 @@ export const chainsSchema = z
           ctx.issues.push({
             code: 'custom',
             message: 'Invalid contract addresses',
-            // Show at least the first error.
             path: [chainId, 'contracts'],
             input: contracts,
           });
