@@ -29,15 +29,15 @@ test('validates example config', () => {
   expect(() => configSchema.parse(exampleConfig)).toThrow(
     new ZodError([
       {
-        validation: 'url',
-        code: 'invalid_string',
-        message: 'Invalid url',
+        code: 'invalid_format',
+        format: 'url',
         path: ['chains', '31337', 'providers', 'hardhat', 'url'],
+        message: 'Invalid URL',
       },
       {
         code: 'custom',
-        message: 'Invalid mnemonic',
         path: ['sponsorWalletMnemonic'],
+        message: 'Invalid mnemonic',
       },
     ])
   );
@@ -256,11 +256,10 @@ describe('walletDerivationScheme schema', () => {
     expect(() => walletDerivationSchemeSchema.parse(walletDerivationScheme)).toThrow(
       new ZodError([
         {
-          code: 'invalid_type',
           expected: 'string',
-          received: 'undefined',
+          code: 'invalid_type',
           path: ['sponsorAddress'],
-          message: 'Required',
+          message: 'Invalid input: expected string, received undefined',
         },
       ])
     );

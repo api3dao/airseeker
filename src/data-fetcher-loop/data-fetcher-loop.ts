@@ -56,7 +56,7 @@ export const callSignedApi = async (url: string, timeout: number): Promise<Signe
   if (!parseResult.success) {
     logger.warn('Failed to parse Signed API response.', {
       url,
-      errors: JSON.stringify(parseResult.error.errors).slice(0, 1000),
+      errors: JSON.stringify(parseResult.error.issues).slice(0, 1000),
     });
     return null;
   }
