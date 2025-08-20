@@ -39,6 +39,6 @@ export const envConfigSchema = z.object({
     .default('info'),
   LOGGER_ENABLED: envBooleanSchema.default(true),
   LOG_HEARTBEAT: envBooleanSchema.default(true),
-}); // We parse from ENV variables of the process which has many variables that we don't care about
+});
 
 export type EnvConfig = z.infer<typeof envConfigSchema>;
