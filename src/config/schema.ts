@@ -36,19 +36,25 @@ export const gasSettingsSchema = z
     sanitizationMultiplier: z.number().positive(),
   })
   .superRefine((gasSettings, ctx) => {
-    if (gasSettings.recommendedGasPriceMultiplier > gasSettings.maxScalingMultiplier) {
-      ctx.addIssue({
+    const { recommendedGasPriceMultiplier, maxScalingMultiplier, sanitizationPercentile } = gasSettings;
+    if (recommendedGasPriceMultiplier > maxScalingMultiplier) {
+      ctx.issues.push({
         code: 'custom',
         message: 'recommendedGasPriceMultiplier must be less than or equal to maxScalingMultiplier.',
         path: [], // No specific path since it's related to multiple fields
+        input: {
+          recommendedGasPriceMultiplier,
+          maxScalingMultiplier,
+        },
       });
     }
 
-    if (gasSettings.sanitizationPercentile >= 100) {
-      ctx.addIssue({
+    if (sanitizationPercentile >= 100) {
+      ctx.issues.push({
         code: 'custom',
         message: 'sanitizationPercentile must be less than 100.',
         path: ['sanitizationPercentile'],
+        input: sanitizationPercentile,
       });
     }
   });
@@ -83,18 +89,20 @@ export const chainsSchema = z
   .record(z.string(), optionalChainSchema)
   .superRefine((chains, ctx) => {
     if (Object.keys(chains).length === 0) {
-      ctx.addIssue({
+      ctx.issues.push({
         code: 'custom',
         message: 'Missing chains. At least one chain is required.',
+        input: chains,
       });
     }
 
     for (const [chainId, chain] of Object.entries(chains)) {
       if (Object.keys(chain.providers).length === 0) {
-        ctx.addIssue({
+        ctx.issues.push({
           code: 'custom',
           message: 'Missing provider. At least one provider is required.',
           path: [chainId, 'providers'],
+          input: chain.providers,
         });
       }
     }
@@ -112,11 +120,12 @@ export const chainsSchema = z
             deploymentAddresses.AirseekerRegistry[chainId as keyof typeof deploymentAddresses.AirseekerRegistry],
         });
         if (!parsedContracts.success) {
-          ctx.addIssue({
+          ctx.issues.push({
             code: 'custom',
             message: 'Invalid contract addresses',
             // Show at least the first error.
             path: [chainId, 'contracts'],
+            input: contracts,
           });
 
           return z.NEVER;
@@ -142,9 +151,10 @@ export const deviationThresholdCoefficientSchema = z
     // Check if the number has a maximum of two decimals
     const decimalCount = coefficient.toString().split('.')[1]?.length;
     if (decimalCount && decimalCount > 2) {
-      ctx.addIssue({
+      ctx.issues.push({
         code: 'custom',
         message: 'Invalid deviationThresholdCoefficient. A maximum of 2 decimals are supported.',
+        input: coefficient,
       });
     }
   });

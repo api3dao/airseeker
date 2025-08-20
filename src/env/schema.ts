@@ -11,9 +11,10 @@ export const envConfigSchema = z.object({
     .string()
     .transform((value, ctx) => {
       if (!logFormatOptions.includes(value as any)) {
-        ctx.addIssue({
+        ctx.issues.push({
           code: 'custom',
           message: 'Invalid LOG_FORMAT',
+          input: value,
         });
         return z.NEVER;
       }
@@ -25,9 +26,10 @@ export const envConfigSchema = z.object({
     .string()
     .transform((value, ctx) => {
       if (!logLevelOptions.includes(value as any)) {
-        ctx.addIssue({
+        ctx.issues.push({
           code: 'custom',
           message: 'Invalid LOG_LEVEL',
+          input: value,
         });
         return z.NEVER;
       }
