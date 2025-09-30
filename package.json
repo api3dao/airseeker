@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@api3/commons": "^1.0.1",
-    "@api3/contracts": "28.0.0",
+    "@api3/contracts": "29.0.0",
     "@api3/eslint-plugin-commons": "^3.0.0",
     "@api3/promise-utils": "^0.4.0",
     "dotenv": "^17.2.2",
