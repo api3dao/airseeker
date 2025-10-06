@@ -40,7 +40,7 @@
     "@api3/contracts": "28.0.0",
     "@api3/eslint-plugin-commons": "^3.0.0",
     "@api3/promise-utils": "^0.4.0",
-    "dotenv": "^17.2.2",
+    "dotenv": "^17.2.3",
     "ethers": "^6.15.0",
     "immer": "^10.1.3",
     "lodash": "^4.17.21",
