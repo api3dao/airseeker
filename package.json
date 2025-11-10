@@ -61,7 +61,7 @@
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jest": "^28.14.0",
-    "hardhat": "^2.26.5",
+    "hardhat": "^2.27.0",
     "hardhat-deploy": "^0.14.1",
     "husky": "^9.1.7",
     "is-wsl": "^2.2.0",
