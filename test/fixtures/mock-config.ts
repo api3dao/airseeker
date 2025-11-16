@@ -30,11 +30,13 @@ export const generateTestConfig = (): Config => ({
   individualBeaconUpdateSettings: null,
   signedApiUrls: [],
   signedDataFetchInterval: 10,
-  sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
   stage: 'test',
   useSignedApiUrlsFromContract: true,
   version: packageJson.version,
-  walletDerivationScheme: { type: 'managed' },
+  walletDerivationScheme: {
+    type: 'managed',
+    sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
+  },
 });
 
 export const initializeState = (config: Config = generateTestConfig()) => setInitialState(config);

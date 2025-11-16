@@ -82,16 +82,6 @@ Airseeker needs two configuration files, `airseeker.json` and `secrets.env`. All
 are referring to values from secrets and are interpolated inside the `airseeker.json` at runtime. You are advised to put
 sensitive information inside secrets.
 
-### `sponsorWalletMnemonic`
-
-The mnemonic of the wallet used to derive sponsor wallets. Sponsor wallets are derived for each data feed separately. It
-is recommended to interpolate this value from secrets. For example:
-
-```jsonc
-// The mnemonic is interpolated from the "SPONSOR_WALLET_MNEMONIC" secret.
-"sponsorWalletMnemonic": "${SPONSOR_WALLET_MNEMONIC}",
-```
-
 ### `chains`
 
 A record of chain configurations. The record key is the chain ID. For example:
@@ -286,6 +276,16 @@ The following options are available:
   agnostic to update parameters, and the same wallet is used when the dAPI is upgraded/downgraded.
 - `fixed` - Derives the wallet from the specified `sponsorAddress`. All data feed updates will be done via this single
   wallet.
+
+#### `sponsorWalletMnemonic`
+
+The mnemonic of the wallet used to derive sponsor wallets. Sponsor wallets are derived for each data feed separately. It
+is recommended to interpolate this value from secrets. For example:
+
+```jsonc
+// The mnemonic is interpolated from the "SPONSOR_WALLET_MNEMONIC" secret.
+"walletDerivationScheme": { "type": "managed", "sponsorWalletMnemonic": "${SPONSOR_WALLET_MNEMONIC}" },
+```
 
 ### `stage`
 

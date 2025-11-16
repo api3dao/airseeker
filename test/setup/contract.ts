@@ -271,7 +271,7 @@ export const deployAndUpdate = async () => {
 
   // Set up config
   const config = generateTestConfig();
-  config.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
+  config.walletDerivationScheme.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
   config.chains[31_337]!.contracts.Api3ServerV1 = (await api3ServerV1.getAddress()) as Address;
   config.chains[31_337]!.contracts.AirseekerRegistry = (await airseekerRegistry.getAddress()) as Address;
 

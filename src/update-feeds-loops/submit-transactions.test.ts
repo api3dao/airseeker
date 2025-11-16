@@ -253,10 +253,11 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
       );
       jest.spyOn(utilsModule, 'deriveSponsorWalletFromSponsorAddress');
 
-      const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet('some-mnemonic', {
+      const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet({
         type: 'managed',
         dapiNameOrDataFeedId: dapiName,
         updateParameters: 'does-not-matter',
+        sponsorWalletMnemonic: 'some-mnemonic',
       });
 
       expect(utilsModule.deriveSponsorWalletFromSponsorAddress).toHaveBeenCalledTimes(0);
@@ -273,14 +274,12 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
       jest.spyOn(stateModule, 'updateState').mockImplementation();
       jest.spyOn(utilsModule, 'deriveSponsorWalletFromSponsorAddress');
 
-      const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
-        'diamond result history offer forest diagram crop armed stumble orchard stage glance',
-        {
-          type: 'managed',
-          dapiNameOrDataFeedId: dapiName,
-          updateParameters: 'does-not-matter',
-        }
-      );
+      const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet({
+        type: 'managed',
+        dapiNameOrDataFeedId: dapiName,
+        updateParameters: 'does-not-matter',
+        sponsorWalletMnemonic: 'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+      });
 
       expect(utilsModule.deriveSponsorWalletFromSponsorAddress).toHaveBeenCalledTimes(1);
       expect(sponsorWallet.privateKey).toBe('0xd4cc2592775d876d6af59163bb7894272d84f538439e3c53af3bebdc0668b49d');
@@ -295,14 +294,12 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
       jest.spyOn(stateModule, 'updateState').mockImplementation();
       jest.spyOn(utilsModule, 'deriveSponsorWalletFromSponsorAddress');
 
-      const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
-        'diamond result history offer forest diagram crop armed stumble orchard stage glance',
-        {
-          type: 'managed',
-          dapiNameOrDataFeedId: '0x173ec7594911a9d584d577bc8e8b9bb546018667d820a67685df49201a11ae9b',
-          updateParameters: 'does-not-matter',
-        }
-      );
+      const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet({
+        type: 'managed',
+        dapiNameOrDataFeedId: '0x173ec7594911a9d584d577bc8e8b9bb546018667d820a67685df49201a11ae9b',
+        updateParameters: 'does-not-matter',
+        sponsorWalletMnemonic: 'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+      });
 
       expect(utilsModule.deriveSponsorWalletFromSponsorAddress).toHaveBeenCalledTimes(1);
       expect(sponsorWallet.privateKey).toBe('0x1a193892271d2a8c1e39b9d78281a9e7f8c080965dc3ed744eac7746c47b700e');
@@ -322,14 +319,12 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
       jest.spyOn(stateModule, 'updateState').mockImplementation();
       jest.spyOn(utilsModule, 'deriveSponsorWalletFromSponsorAddress');
 
-      const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet(
-        'diamond result history offer forest diagram crop armed stumble orchard stage glance',
-        {
-          type: 'self-funded',
-          dapiNameOrDataFeedId: dapiName,
-          updateParameters,
-        }
-      );
+      const sponsorWallet = submitTransactionsModule.getDerivedSponsorWallet({
+        type: 'self-funded',
+        dapiNameOrDataFeedId: dapiName,
+        updateParameters,
+        sponsorWalletMnemonic: 'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+      });
 
       expect(utilsModule.deriveSponsorWalletFromSponsorAddress).toHaveBeenCalledTimes(1);
       expect(sponsorWallet.privateKey).toBe('0x858cd2fbfc60014023911f94190ee4f4bb2d5acf8910a4c0c47596db5717ce5a');
@@ -416,8 +411,12 @@ describe(submitTransactionsModule.submitBatchTransaction.name, () => {
               fallbackGasLimit: undefined,
             },
           },
-          walletDerivationScheme: { type: 'fixed', sponsorAddress: '0x0000000000000000000000000000000000000001' },
-          sponsorWalletMnemonic: 'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+          walletDerivationScheme: {
+            type: 'fixed',
+            sponsorAddress: '0x0000000000000000000000000000000000000001',
+            sponsorWalletMnemonic:
+              'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+          },
         },
       })
     );
@@ -508,8 +507,11 @@ describe(submitTransactionsModule.submitBatchTransaction.name, () => {
               fallbackGasLimit: undefined,
             },
           },
-          walletDerivationScheme: { type: 'managed' },
-          sponsorWalletMnemonic: 'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+          walletDerivationScheme: {
+            type: 'managed',
+            sponsorWalletMnemonic:
+              'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+          },
         },
       })
     );
@@ -559,8 +561,11 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
               fallbackGasLimit: undefined,
             },
           },
-          walletDerivationScheme: { type: 'managed' },
-          sponsorWalletMnemonic: 'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+          walletDerivationScheme: {
+            type: 'managed',
+            sponsorWalletMnemonic:
+              'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+          },
         },
       })
     );
@@ -649,8 +654,11 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
               fallbackGasLimit: undefined,
             },
           },
-          walletDerivationScheme: { type: 'managed' },
-          sponsorWalletMnemonic: 'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+          walletDerivationScheme: {
+            type: 'managed',
+            sponsorWalletMnemonic:
+              'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+          },
         },
       })
     );
