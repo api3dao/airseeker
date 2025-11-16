@@ -43,6 +43,7 @@
     "dotenv": "^17.2.3",
     "ethers": "^6.15.0",
     "immer": "^10.2.0",
+    "keycard-manager": "^0.7.7",
     "lodash": "^4.17.21",
     "workerpool": "^9.3.4",
     "zod": "^4.1.12"

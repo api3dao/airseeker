@@ -48,6 +48,9 @@ it('updates blockchain data', async () => {
   } = await deployAndUpdate();
   initializeState(config);
   stateModule.updateState((draft) => {
+    if (draft.config.walletDerivationScheme.type === 'keycard') {
+      throw new Error('Expected keycard wallet derivation scheme.');
+    }
     draft.config.walletDerivationScheme.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
   });
   initializeGasState(chainId, providerName);

@@ -29,6 +29,9 @@ importers:
       immer:
         specifier: ^10.2.0
         version: 10.2.0
+      keycard-manager:
+        specifier: ^0.7.7
+        version: 0.7.7
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -3202,6 +3205,9 @@ packages:
   keccak@3.0.4:
     resolution: {integrity: sha512-3vKuW0jV8J3XNTzvfyicFR5qvxrSAGl7KIhvgOu5cmWwM7tZRj3fMbj/pfIf4be7aznbc+prBWGjywox/g2Y6Q==}
     engines: {node: '>=10.0.0'}
+
+  keycard-manager@0.7.7:
+    resolution: {integrity: sha512-MZ9BjqVg3SQFnirAWkR9A8WFkwnDu9sL8GF5TqYphMtpQ51dCmar+4xqS7ZqHU/E7Ud8ye2ybtVcsxLaeLkKNQ==}
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -8920,6 +8926,14 @@ snapshots:
       node-addon-api: 2.0.2
       node-gyp-build: 4.8.4
       readable-stream: 3.6.2
+
+  keycard-manager@0.7.7:
+    dependencies:
+      elliptic: 6.6.1
+      ethers: 6.15.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   keyv@4.5.4:
     dependencies:

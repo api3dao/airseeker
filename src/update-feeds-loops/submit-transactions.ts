@@ -4,6 +4,7 @@ import { go } from '@api3/promise-utils';
 import { type EthersError, ethers } from 'ethers';
 
 import { getRecommendedGasPrice } from '../gas-price';
+import { getKeycardWallet } from '../keycard';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import {
@@ -272,6 +273,9 @@ export const submitTransactions = async (
 };
 
 export const getDerivedSponsorWallet = (params: SponsorAddressDerivationParams) => {
+  if (params.type === 'keycard') {
+    return getKeycardWallet();
+  }
   const { derivedSponsorWallets } = getState();
   const sponsorAddress = deriveSponsorAddress(params);
   const privateKey = derivedSponsorWallets?.[sponsorAddress];

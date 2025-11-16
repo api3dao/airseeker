@@ -271,6 +271,9 @@ export const deployAndUpdate = async () => {
 
   // Set up config
   const config = generateTestConfig();
+  if (config.walletDerivationScheme.type === 'keycard') {
+    throw new Error('Expected non-keycard wallet derivation scheme.');
+  }
   config.walletDerivationScheme.sponsorWalletMnemonic = airseekerWallet.mnemonic!.phrase;
   config.chains[31_337]!.contracts.Api3ServerV1 = (await api3ServerV1.getAddress()) as Address;
   config.chains[31_337]!.contracts.AirseekerRegistry = (await airseekerRegistry.getAddress()) as Address;

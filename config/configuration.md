@@ -276,11 +276,13 @@ The following options are available:
   agnostic to update parameters, and the same wallet is used when the dAPI is upgraded/downgraded.
 - `fixed` - Derives the wallet from the specified `sponsorAddress`. All data feed updates will be done via this single
   wallet.
+- `keycard` - Uses a Keycard hardware wallet to sign transactions.
 
 #### `sponsorWalletMnemonic`
 
 The mnemonic of the wallet used to derive sponsor wallets. Sponsor wallets are derived for each data feed separately. It
-is recommended to interpolate this value from secrets. For example:
+is recommended to interpolate this value from secrets. It's available except when `type` is set to `keycard`. For
+example:
 
 ```jsonc
 // The mnemonic is interpolated from the "SPONSOR_WALLET_MNEMONIC" secret.

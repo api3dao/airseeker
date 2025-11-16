@@ -33,6 +33,11 @@ export const logHeartbeat = async () => {
     deploymentTimestamp,
   } = getState();
 
+  if (walletDerivationScheme.type === 'keycard') {
+    logger.debug('Heartbeat logging is not supported for Keycard wallet derivation scheme. Skipping heartbeat log.');
+    return;
+  }
+
   logger.debug('Creating heartbeat log.');
 
   const rawConfig = loadRawConfig(); // We want to log the raw config, not the one with interpolated secrets.
