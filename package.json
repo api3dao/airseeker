@@ -45,7 +45,7 @@
     "immer": "^10.2.0",
     "lodash": "^4.17.21",
     "workerpool": "^9.3.4",
-    "zod": "^4.1.12"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@api3/airnode-abi": "^0.15.0",
