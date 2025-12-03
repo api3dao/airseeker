@@ -76,6 +76,7 @@ describe(deriveSponsorWallet.name, () => {
       type: 'managed',
       dapiNameOrDataFeedId: dapiName,
       updateParameters: 'does-not-matter',
+      sponsorWalletMnemonic,
     });
 
     expect(sponsorWallet.address).toBe('0xDF5Eb6273BdB4608e70Bb0ABCA0571B45Cb60a22'); // Note, that the address is different if the sponsor address hash is derived using the "self-funded" scheme.
@@ -91,6 +92,7 @@ describe(deriveSponsorWallet.name, () => {
       type: 'self-funded',
       dapiNameOrDataFeedId: dapiName,
       updateParameters,
+      sponsorWalletMnemonic,
     });
 
     expect(sponsorWallet.address).toBe('0x1e0cb43e47bf4335d21812C2d652fC83F2CB64Bb'); // Note, that the address is different if the sponsor address hash is derived using the "managed" scheme.
@@ -104,6 +106,7 @@ describe(deriveSponsorWallet.name, () => {
       sponsorAddress: '0x0000000000000000000000000000000000000001',
       dapiNameOrDataFeedId: 'does-not-matter',
       updateParameters: 'does-not-matter',
+      sponsorWalletMnemonic,
     });
 
     expect(sponsorWallet.address).toBe('0xFaFF9C2E67716d2209552f46Fa9829D46830aCcB');

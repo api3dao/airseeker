@@ -35,7 +35,7 @@ export const updatePendingTransactionsInfo = (
   feedsToUpdate: UpdatableDataFeed[]
 ) => {
   const {
-    config: { sponsorWalletMnemonic, walletDerivationScheme },
+    config: { walletDerivationScheme },
     pendingTransactionsInfo: pendingTransactionsInfo,
   } = getState();
 
@@ -55,7 +55,7 @@ export const updatePendingTransactionsInfo = (
       continue;
     }
 
-    const sponsorWalletAddress = getDerivedSponsorWallet(sponsorWalletMnemonic, {
+    const sponsorWalletAddress = getDerivedSponsorWallet({
       ...walletDerivationScheme,
       dapiNameOrDataFeedId: dapiName ?? dataFeedId,
       updateParameters,
