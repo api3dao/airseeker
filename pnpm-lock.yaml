@@ -12,8 +12,8 @@ importers:
         specifier: ^1.0.1
         version: 1.0.1
       '@api3/contracts':
-        specifier: 32.0.1
-        version: 32.0.1(typescript@5.9.3)
+        specifier: 32.1.0
+        version: 32.1.0(typescript@5.9.3)
       '@api3/eslint-plugin-commons':
         specifier: ^3.0.0
         version: 3.0.0(@babel/core@7.28.3)(eslint@8.57.1)(jest@29.7.0(@types/node@20.19.27)(ts-node@10.9.2(@types/node@20.19.27)(typescript@5.9.3)))(prettier@3.7.4)(typescript@5.9.3)
@@ -36,8 +36,8 @@ importers:
         specifier: ^9.3.4
         version: 9.3.4
       zod:
-        specifier: ^4.1.13
-        version: 4.1.13
+        specifier: ^4.2.0
+        version: 4.2.0
     devDependencies:
       '@api3/airnode-abi':
         specifier: ^0.15.0
@@ -131,8 +131,8 @@ packages:
     resolution: {integrity: sha512-TQuRRkWM5/CLJZ+lhe0cOg5MCMJf9ut64dh5oUFTi2tPSpLHV+CEHzaN0pxiY0FlXFTERpSwBeVlCcNKmmt/uQ==}
     engines: {node: '>=18.14.0'}
 
-  '@api3/contracts@32.0.1':
-    resolution: {integrity: sha512-364yivC7L4tBDvK9rMVv3SI7ou8DGRfcMdtGUeAUDrkwW/iMUQ19fhr+MbWV3vRXqLUKXteDPnQtiSYlgSJ/1w==}
+  '@api3/contracts@32.1.0':
+    resolution: {integrity: sha512-zseThbOVHfu6NpGFNL+5dDSNHfT+uyx212m4wD1UTyO45Kl46S+r93fAXIxhpKmfblHCJ/ceOpseGst3s56p9A==}
     engines: {node: '>=22.18.0'}
     hasBin: true
 
@@ -4656,8 +4656,8 @@ packages:
     peerDependencies:
       ethers: ~5.7.0
 
-  zod@4.1.13:
-    resolution: {integrity: sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig==}
+  zod@4.2.0:
+    resolution: {integrity: sha512-Bd5fw9wlIhtqCCxotZgdTOMwGm1a0u75wARVEY9HMs1X17trvA/lMi4+MGK5EUfYkXVTbX8UDiDKW4OgzHVUZw==}
 
 snapshots:
 
@@ -4689,18 +4689,18 @@ snapshots:
       lodash: 4.17.21
       winston: 3.17.0
       winston-console-format: 1.0.8
-      zod: 4.1.13
+      zod: 4.2.0
     transitivePeerDependencies:
       - bufferutil
       - debug
       - utf-8-validate
 
-  '@api3/contracts@32.0.1(typescript@5.9.3)':
+  '@api3/contracts@32.1.0(typescript@5.9.3)':
     dependencies:
       ethers: 6.16.0
-      viem: 2.34.0(typescript@5.9.3)(zod@4.1.13)
+      viem: 2.34.0(typescript@5.9.3)(zod@4.2.0)
       yargs: 17.7.2
-      zod: 4.1.13
+      zod: 4.2.0
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -4742,7 +4742,7 @@ snapshots:
   '@api3/ois@3.0.0':
     dependencies:
       lodash: 4.17.21
-      zod: 4.1.13
+      zod: 4.2.0
 
   '@api3/promise-utils@0.4.0': {}
 
@@ -6303,10 +6303,10 @@ snapshots:
 
   abbrev@1.0.9: {}
 
-  abitype@1.0.8(typescript@5.9.3)(zod@4.1.13):
+  abitype@1.0.8(typescript@5.9.3)(zod@4.2.0):
     optionalDependencies:
       typescript: 5.9.3
-      zod: 4.1.13
+      zod: 4.2.0
 
   acorn-jsx@5.3.2(acorn@8.15.0):
     dependencies:
@@ -9266,7 +9266,7 @@ snapshots:
       object-keys: 1.1.1
       safe-push-apply: 1.0.0
 
-  ox@0.8.7(typescript@5.9.3)(zod@4.1.13):
+  ox@0.8.7(typescript@5.9.3)(zod@4.2.0):
     dependencies:
       '@adraffy/ens-normalize': 1.11.0
       '@noble/ciphers': 1.3.0
@@ -9274,7 +9274,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.0.8(typescript@5.9.3)(zod@4.1.13)
+      abitype: 1.0.8(typescript@5.9.3)(zod@4.2.0)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.9.3
@@ -10318,15 +10318,15 @@ snapshots:
       spdx-correct: 3.2.0
       spdx-expression-parse: 3.0.1
 
-  viem@2.34.0(typescript@5.9.3)(zod@4.1.13):
+  viem@2.34.0(typescript@5.9.3)(zod@4.2.0):
     dependencies:
       '@noble/curves': 1.9.6
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.0.8(typescript@5.9.3)(zod@4.1.13)
+      abitype: 1.0.8(typescript@5.9.3)(zod@4.2.0)
       isows: 1.0.7(ws@8.18.3)
-      ox: 0.8.7(typescript@5.9.3)(zod@4.1.13)
+      ox: 0.8.7(typescript@5.9.3)(zod@4.2.0)
       ws: 8.18.3
     optionalDependencies:
       typescript: 5.9.3
@@ -10512,4 +10512,4 @@ snapshots:
     dependencies:
       ethers: 5.8.0
 
-  zod@4.1.13: {}
+  zod@4.2.0: {}
