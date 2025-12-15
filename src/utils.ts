@@ -65,6 +65,9 @@ export const deriveSponsorAddress = (params: SponsorAddressDerivationParams) => 
       sponsorAddress = params.sponsorAddress!;
       break;
     }
+    case 'keycard': {
+      throw new Error('Keycard wallet derivation does not require sponsor address.');
+    }
   }
 
   return sponsorAddress;

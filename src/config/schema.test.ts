@@ -36,7 +36,7 @@ test('validates example config', () => {
       },
       {
         code: 'custom',
-        path: ['sponsorWalletMnemonic'],
+        path: ['walletDerivationScheme', 'sponsorWalletMnemonic'],
         message: 'Invalid mnemonic',
       },
     ])
@@ -244,14 +244,21 @@ describe('chains schema', () => {
 
 describe('walletDerivationScheme schema', () => {
   it('parses the walletDerivationScheme as "fixed"', () => {
-    const walletDerivationScheme = { type: 'fixed', sponsorAddress: '0x0000000000000000000000000000000000000001' };
+    const walletDerivationScheme = {
+      type: 'fixed',
+      sponsorAddress: '0x0000000000000000000000000000000000000001',
+      sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
+    };
     const parsed = walletDerivationSchemeSchema.parse(walletDerivationScheme);
 
     expect(parsed).toStrictEqual(walletDerivationScheme);
   });
 
   it('sponsorAddress is present when walletDerivationScheme is "fixed"', () => {
-    const walletDerivationScheme = { type: 'fixed' };
+    const walletDerivationScheme = {
+      type: 'fixed',
+      sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
+    };
 
     expect(() => walletDerivationSchemeSchema.parse(walletDerivationScheme)).toThrow(
       new ZodError([
@@ -266,7 +273,10 @@ describe('walletDerivationScheme schema', () => {
   });
 
   it('sponsorAddress must be a valid EVM address when walletDerivationScheme is "fixed"', () => {
-    const walletDerivationScheme = { type: 'fixed' };
+    const walletDerivationScheme = {
+      type: 'fixed',
+      sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
+    };
 
     expect(() => walletDerivationSchemeSchema.parse({ ...walletDerivationScheme, sponsorAddress: '' })).toThrow(
       new ZodError([
