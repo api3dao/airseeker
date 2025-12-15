@@ -41,7 +41,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: '20.19.6'
+          node-version: '24.12.0'
           cache: 'pnpm'
       - name: Install Dependencies
         run: pnpm install
@@ -66,7 +66,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: '20.19.6'
+          node-version: '24.12.0'
           cache: 'pnpm'
       - name: Install Dependencies
         run: pnpm install
