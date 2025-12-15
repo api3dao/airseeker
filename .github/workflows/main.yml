@@ -93,6 +93,7 @@ jobs:
         node-version: [20]
     permissions:
       id-token: write
+      contents: write
     steps:
       - name: Clone repo
         uses: actions/checkout@v5
