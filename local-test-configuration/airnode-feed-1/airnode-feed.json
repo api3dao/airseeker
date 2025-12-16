@@ -40,7 +40,7 @@
   ],
   "ois": [
     {
-      "oisFormat": "2.3.1",
+      "oisFormat": "3.0.0",
       "title": "Nodary",
       "version": "0.2.0",
       "apiSpecifications": {
@@ -92,7 +92,7 @@
     }
   ],
   "nodeSettings": {
-    "nodeVersion": "1.0.0",
+    "nodeVersion": "4.0.1",
     "airnodeWalletMnemonic": "${AIRNODE_WALLET_MNEMONIC}",
     "stage": "local-example"
   }

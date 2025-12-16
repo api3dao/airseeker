@@ -3,10 +3,13 @@
     {
       "urlPath": "/default",
       "delaySeconds": 0,
-      "authTokens": null
+      "authTokens": null,
+      "isOev": false
     }
   ],
-  "allowedAirnodes": [{ "address": "0xaC0653E412acAE526Da3a33af0135205A34E21AF", "authTokens": null }],
+  "allowedAirnodes": [
+    { "address": "0xaC0653E412acAE526Da3a33af0135205A34E21AF", "authTokens": null, "isCertified": true }
+  ],
   "stage": "signed-api-1",
-  "version": "1.0.0"
+  "version": "4.0.1"
 }

@@ -26,13 +26,13 @@ assets from the Nodary API to see Airseeker updates.
 - Start Signed API 1 on port `4001` (in a separate terminal):
 
 ```sh
-docker run --publish 4001:80 -it --init --volume $(pwd)/local-test-configuration/signed-api-1:/app/config --env-file ./local-test-configuration/signed-api-1/.env --rm --memory=256m api3/signed-api:latest
+docker run --publish 4001:80 -it --init --volume $(pwd)/local-test-configuration/signed-api-1:/app/config --env-file ./local-test-configuration/signed-api-1/.env --rm --memory=256m api3/signed-api:v4.0.1
 ```
 
 - Start Signed API 2 on port `4002` (in a separate terminal):
 
 ```sh
-docker run --publish 4002:80 -it --init --volume $(pwd)/local-test-configuration/signed-api-2:/app/config --env-file ./local-test-configuration/signed-api-2/.env --rm --memory=256m api3/signed-api:latest
+docker run --publish 4002:80 -it --init --volume $(pwd)/local-test-configuration/signed-api-2:/app/config --env-file ./local-test-configuration/signed-api-2/.env --rm --memory=256m api3/signed-api:v4.0.1
 ```
 
 You can go to `http://localhost:4001/` and `http://localhost:4002/` to see the Signed API 1 and 2 respectively.
@@ -40,13 +40,13 @@ You can go to `http://localhost:4001/` and `http://localhost:4002/` to see the S
 - Start Airnode feed 1 (in a separate terminal):
 
 ```sh
-docker run -it --init --volume $(pwd)/local-test-configuration/airnode-feed-1:/app/config --network host --env-file ./local-test-configuration/airnode-feed-1/.env --rm --memory=256m api3/airnode-feed:latest
+docker run -it --init --volume $(pwd)/local-test-configuration/airnode-feed-1:/app/config --network host --env-file ./local-test-configuration/airnode-feed-1/.env --rm --memory=256m api3/airnode-feed:v4.0.1
 ```
 
 - Start Airnode feed 2 (in a separate terminal):
 
 ```sh
-docker run -it --init --volume $(pwd)/local-test-configuration/airnode-feed-2:/app/config --network host --env-file ./local-test-configuration/airnode-feed-2/.env --rm --memory=256m api3/airnode-feed:latest
+docker run -it --init --volume $(pwd)/local-test-configuration/airnode-feed-2:/app/config --network host --env-file ./local-test-configuration/airnode-feed-2/.env --rm --memory=256m api3/airnode-feed:v4.0.1
 ```
 
 - Start Hardhat node (in a separate terminal):
