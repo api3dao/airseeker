@@ -1,16 +1,16 @@
 {
   "templates": {
-    "0xa5419706d8edb3bbafad83fe2b4e7dc851de5e4cd9529f9f27bb393016c81ae5": {
+    "0x2258a0bafb60da1b3bc332c626329c053bf7d895cf3cf8aeb882bddf41ac5387": {
       "endpointId": "0x3528e42b017a5fbf9d2993a2df04efc3ed474357575065a111b054ddf9de2acc",
-      "parameters": [{ "type": "string32", "name": "name", "value": "NEAR/USD" }]
+      "parameters": [{ "type": "string32", "name": "name", "value": "BNB/USD" }]
     },
-    "0x8f255387c5fdb03117d82372b8fa5c7813881fd9a8202b7cc373f1a5868496b2": {
+    "0x55d08a477d28519c8bc889b0be4f4d08625cfec5369f047258a1a4d7e1e405f3": {
       "endpointId": "0x3528e42b017a5fbf9d2993a2df04efc3ed474357575065a111b054ddf9de2acc",
-      "parameters": [{ "type": "string32", "name": "name", "value": "AAVE/USD" }]
+      "parameters": [{ "type": "string32", "name": "name", "value": "BTC/USD" }]
     },
-    "0x89bbdb4e2d7510abf1ca0ed53295e31c00a6939fc12e77d67bf3a4cb3c31f61c": {
+    "0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183": {
       "endpointId": "0x3528e42b017a5fbf9d2993a2df04efc3ed474357575065a111b054ddf9de2acc",
-      "parameters": [{ "type": "string32", "name": "name", "value": "MATIC/USD" }]
+      "parameters": [{ "type": "string32", "name": "name", "value": "ETH/USD" }]
     }
   },
   "endpoints": {
@@ -23,9 +23,9 @@
     "signedApiUpdates": [
       {
         "templateIds": [
-          "0xa5419706d8edb3bbafad83fe2b4e7dc851de5e4cd9529f9f27bb393016c81ae5",
-          "0x8f255387c5fdb03117d82372b8fa5c7813881fd9a8202b7cc373f1a5868496b2",
-          "0x89bbdb4e2d7510abf1ca0ed53295e31c00a6939fc12e77d67bf3a4cb3c31f61c"
+          "0x2258a0bafb60da1b3bc332c626329c053bf7d895cf3cf8aeb882bddf41ac5387",
+          "0x55d08a477d28519c8bc889b0be4f4d08625cfec5369f047258a1a4d7e1e405f3",
+          "0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183"
         ],
         "fetchInterval": 10
       }
