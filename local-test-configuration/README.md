@@ -78,7 +78,7 @@ deviation exceeds the treshold, the value is marked bold and should be updated b
 - Run the Airseeker:
 
 ```sh
-docker run -it --init --volume $(pwd)/local-test-configuration/airseeker:/app/config --network host --env-file .env --rm api3/airseeker:latest
+docker run -it --init --volume $(pwd)/local-test-configuration/airseeker:/app/config --network host --env-file $(pwd)/local-test-configuration/airseeker/.env --rm api3/airseeker:latest
 ```
 
 ## Final notes
