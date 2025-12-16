@@ -21,7 +21,7 @@ import { zip } from 'lodash';
 
 import { HUNDRED_PERCENT } from '../../src/constants';
 import { getGasPrice } from '../../src/gas-price';
-import { deriveSponsorWallet, encodeDapiName } from '../../src/utils';
+import { deriveSponsorWallet, encodeDapiName, sleep } from '../../src/utils';
 
 interface RawBeaconData {
   airnodeAddress: Address;
@@ -103,6 +103,7 @@ export const refundFunder = async (funderWallet: ethers.NonceManager, provider: 
       value: sponsorWalletBalance - gasFee,
     });
     await tx.wait();
+    await sleep(500); // 0.5 secs delay to allow hardhat node for mining tx
 
     console.info(`Refunding funder wallet from sponsor wallet`, {
       dapiName,
@@ -159,6 +160,7 @@ export const fundAirseekerSponsorWallet = async (funderWallet: ethers.NonceManag
       value: ethers.parseEther('0.1'),
     });
     await tx.wait();
+    await sleep(500);
 
     console.info(`Funding sponsor wallets`, {
       dapiName,
@@ -179,11 +181,14 @@ export const deploy = async (funderWallet: ethers.NonceManager, provider: ethers
     value: ethers.parseEther('1'),
   });
   await fundRandomPersonTx.wait();
+  await sleep(500);
 
   // Deploy contracts
   const accessControlRegistryFactory = new AccessControlRegistryFactory(deployerAndManager);
   const accessControlRegistry = await accessControlRegistryFactory.deploy();
   await accessControlRegistry.waitForDeployment();
+  await sleep(500);
+
   const api3ServerV1Factory = new Api3ServerV1Factory(deployerAndManager);
   const api3ServerV1AdminRoleDescription = 'Api3ServerV1 admin';
   const api3ServerV1 = await api3ServerV1Factory.deploy(
@@ -192,9 +197,12 @@ export const deploy = async (funderWallet: ethers.NonceManager, provider: ethers
     deployerAndManager
   );
   await api3ServerV1.waitForDeployment();
+  await sleep(500);
+
   const airseekerRegistryFactory = new AirseekerRegistryFactory(deployerAndManager);
   const airseekerRegistry = await airseekerRegistryFactory.deploy(deployerAndManager, api3ServerV1.getAddress());
   await airseekerRegistry.waitForDeployment();
+  await sleep(500);
 
   // Create templates
   const airnodeFeed1 = loadAirnodeFeedConfig('airnode-feed-1');
@@ -218,6 +226,7 @@ export const deploy = async (funderWallet: ethers.NonceManager, provider: ethers
   for (const [airnode, url] of apiTreeValues) {
     const setSignedApiUrlTx = await airseekerRegistry.connect(deployerAndManager).setSignedApiUrl(airnode, url);
     await setSignedApiUrlTx.wait();
+    await sleep(500);
   }
   const dapiInfos = zip(airnodeFeed1Beacons, airnodeFeed2Beacons).map(([airnodeFeed1Beacon, airnodeFeed2Beacon]) => {
     return {
@@ -241,17 +250,24 @@ export const deploy = async (funderWallet: ethers.NonceManager, provider: ethers
     );
     const registerDataFeedTx = await airseekerRegistry.connect(randomPerson).registerDataFeed(encodedBeaconSetData);
     await registerDataFeedTx.wait();
+    await sleep(500);
+
     const updateParameters = encodeUpdateParameters();
     const setDapiNameTx = await api3ServerV1.connect(deployerAndManager).setDapiName(dapiName, beaconSetId);
     await setDapiNameTx.wait();
+    await sleep(500);
+
     const setDapiNameToBeActivatedTx = await airseekerRegistry
       .connect(deployerAndManager)
       .setDapiNameToBeActivated(dapiName);
     await setDapiNameToBeActivatedTx.wait();
+    await sleep(500);
+
     const setDapiNameUpdateParametersTx = await airseekerRegistry
       .connect(deployerAndManager)
       .setDapiNameUpdateParameters(dapiName, updateParameters);
     await setDapiNameUpdateParametersTx.wait();
+    await sleep(500);
   }
 
   return {
