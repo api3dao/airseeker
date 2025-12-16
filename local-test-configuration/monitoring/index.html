@@ -947,7 +947,8 @@
         const newBeaconSetValue = calculateMedian(signedDatas.map((signedData) => BigInt(signedData.value)));
         const newBeaconSetTimestamp = calculateMedian(signedDatas.map((signedData) => BigInt(signedData.timestamp)));
 
-        const deviationPercentage = Number(calculateUpdateInPercentage(dataFeedValue, newBeaconSetValue, deviationReference)) / 1e6;
+        const deviationPercentage =
+          Number(calculateUpdateInPercentage(dataFeedValue, newBeaconSetValue, deviationReference)) / 1e6;
         const deviationThresholdPercentage = Number(deviationThresholdInPercentage) / 1e6;
         const sponsorWallet = deriveSponsorWallet(
           airseekerMnemonic,
