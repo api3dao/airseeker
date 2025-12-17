@@ -828,7 +828,7 @@
       if (absoluteDelta === 0n) return 0n;
 
       const absoluteInitialValue = abs(deviationReference - initialValue);
-      if (absoluteInitialValue === 0n) return 2n ** 256n - 1n; // UINT256_MAX
+      if (absoluteInitialValue === 0n) return ethers.MaxUint256;
 
       return (absoluteDelta * BigInt(1e8)) / absoluteInitialValue;
     };
