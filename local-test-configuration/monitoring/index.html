@@ -10,7 +10,7 @@
     <h1>Airseeker monitoring</h1>
     <p>
       Uses a fixed (static) configuration to fetch on-chain values of active data feeds and Signed API data and computes
-      the deviation treshold.
+      the deviation threshold.
     </p>
 
     <h2>Active data feeds</h2>
@@ -823,12 +823,12 @@
 
     const abs = (n) => (n < 0n ? -n : n);
 
-    const calculateUpdateInPercentage = (initialValue, updatedValue) => {
-      const delta = updatedValue - initialValue;
-      const absoluteDelta = abs(delta);
+    const calculateUpdateInPercentage = (initialValue, updatedValue, deviationReference) => {
+      const absoluteDelta = abs(updatedValue - initialValue);
+      if (absoluteDelta === 0n) return 0n;
 
-      // Avoid division by 0
-      const absoluteInitialValue = initialValue === 0n ? 1n : abs(initialValue);
+      const absoluteInitialValue = abs(deviationReference - initialValue);
+      if (absoluteInitialValue === 0n) return ethers.MaxUint256;
 
       return (absoluteDelta * BigInt(1e8)) / absoluteInitialValue;
     };
@@ -936,14 +936,19 @@
           const airnode = dataFeed.beacons[i].airnodeAddress;
           const signedApiResponse = await fetch(`${url}/${airnode}`).then((res) => res.json());
           const signedData = signedApiResponse.data[dataFeed.beacons[i].beaconId];
-          signedDatas.push({ ...signedData, value: decodeBeaconValue(signedData.encodedValue).toString() });
+          if (signedData) {
+            signedDatas.push({ ...signedData, value: decodeBeaconValue(signedData.encodedValue).toString() });
+          }
         }
         console.info('Signed datas', signedDatas); // For debugging purposes.
+
+        if (signedDatas.length === 0) continue;
 
         const newBeaconSetValue = calculateMedian(signedDatas.map((signedData) => BigInt(signedData.value)));
         const newBeaconSetTimestamp = calculateMedian(signedDatas.map((signedData) => BigInt(signedData.timestamp)));
 
-        const deviationPercentage = Number(calculateUpdateInPercentage(dataFeedValue, newBeaconSetValue)) / 1e6;
+        const deviationPercentage =
+          Number(calculateUpdateInPercentage(dataFeedValue, newBeaconSetValue, deviationReference)) / 1e6;
         const deviationThresholdPercentage = Number(deviationThresholdInPercentage) / 1e6;
         const sponsorWallet = deriveSponsorWallet(
           airseekerMnemonic,
