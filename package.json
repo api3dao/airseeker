@@ -37,15 +37,15 @@
   },
   "dependencies": {
     "@api3/commons": "^1.0.1",
-    "@api3/contracts": "32.1.0",
+    "@api3/contracts": "32.2.0",
     "@api3/eslint-plugin-commons": "^3.0.0",
     "@api3/promise-utils": "^0.4.0",
     "dotenv": "^17.2.3",
     "ethers": "^6.16.0",
-    "immer": "^11.0.1",
+    "immer": "^11.1.0",
     "lodash": "^4.17.21",
     "workerpool": "^9.3.4",
-    "zod": "^4.2.0"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@api3/airnode-abi": "^0.15.0",
