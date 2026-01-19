@@ -53,6 +53,11 @@ const main = () => {
   console.info('Updating versions in example files and fixtures...');
   const replacements = [
     ['config/airseeker.example.json', `"version": "${currentVersion}"`, `"version": "${newVersion}"`],
+    [
+      'local-test-configuration/airseeker/airseeker.example.json',
+      `"version": "${currentVersion}"`,
+      `"version": "${newVersion}"`,
+    ],
   ] as const;
   for (const replacement of replacements) {
     const [relativeFilePath, valueToReplace, newValue] = replacement;

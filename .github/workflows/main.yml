@@ -10,8 +10,7 @@
 #      Read & write - access to actions and code
 # 2. GH_USER_NAME - The name (not username) associated with the Git user. e.g. John Smith
 # 3. GH_USER_EMAIL - The email associated with the Git user
-# 4. NPM_TOKEN - A token for publishing to npm
-# 5. DOCKERHUB_TOKEN - Docker Hub publishing token
+# 4. DOCKERHUB_TOKEN - Docker Hub publishing token
 ########################################################################################
 name: Continuous Build
 
@@ -26,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Check hyperlinks
         uses: gaurav-nelson/github-action-markdown-link-check@v1
 
@@ -35,13 +34,13 @@ jobs:
     name: Build, lint and test
     steps:
       - name: Clone repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Install pnpm
         uses: pnpm/action-setup@v4
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: '20.19.5'
+          node-version: 24
           cache: 'pnpm'
       - name: Install Dependencies
         run: pnpm install
@@ -60,13 +59,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Clone repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Install pnpm
         uses: pnpm/action-setup@v4
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: '20.19.5'
+          node-version: 24
           cache: 'pnpm'
       - name: Install Dependencies
         run: pnpm install
@@ -88,14 +87,12 @@ jobs:
     needs: required-checks-passed
     # Only tag and release on pushes to main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    strategy:
-      matrix:
-        node-version: [20]
     permissions:
       id-token: write
+      contents: write
     steps:
       - name: Clone repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Install pnpm
@@ -103,7 +100,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
           cache: 'pnpm'
       - name: Configure Git credentials
         run: |
@@ -126,11 +124,7 @@ jobs:
           GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
       - name: Publish to npm
         if: ${{ steps.validate-tag.outputs.new-tag }}
-        run: |
-          npm config set "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}"
-          pnpm publish --access public
-        env:
-          NPM_CONFIG_PROVENANCE: true
+        run: pnpm publish --access public
       - name: Set up Docker Buildx
         if: ${{ steps.validate-tag.outputs.new-tag }}
         uses: docker/setup-buildx-action@v3
