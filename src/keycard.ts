@@ -19,6 +19,15 @@ export const initializeKeycardWallet = async () => {
   keycardWallet = await createKeycardWallet(undefined, walletDerivationScheme.pin);
 };
 
+export const terminateKeycardWallet = () => {
+  if (!keycardWallet) {
+    throw new Error('Keycard wallet is not initialized.');
+  }
+
+  keycardWallet.disconnect();
+  keycardWallet = undefined;
+};
+
 export const getKeycardWallet = () => {
   if (keycardWallet) return keycardWallet;
 
