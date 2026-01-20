@@ -252,7 +252,7 @@ export const submitTransactions = async (
   const {
     config: { walletDerivationScheme },
   } = getState();
-  if (walletDerivationScheme.type === 'fixed') {
+  if (['fixed', 'keycard'].includes(walletDerivationScheme.type)) {
     const result = await submitBatchTransaction(
       chainId,
       providerName,
