@@ -281,12 +281,33 @@ The following options are available:
 #### `sponsorWalletMnemonic`
 
 The mnemonic of the wallet used to derive sponsor wallets. Sponsor wallets are derived for each data feed separately. It
-is recommended to interpolate this value from secrets. It's available except when `type` is set to `keycard`. For
+is recommended to interpolate this value from secrets. Required for `self-funded`, `managed`, and `fixed` types. For
 example:
 
 ```jsonc
 // The mnemonic is interpolated from the "SPONSOR_WALLET_MNEMONIC" secret.
 "walletDerivationScheme": { "type": "managed", "sponsorWalletMnemonic": "${SPONSOR_WALLET_MNEMONIC}" },
+```
+
+#### `sponsorAddress`
+
+The address used to derive the sponsor wallet. Required only when `type` is set to `fixed`. All data feed updates will
+use a wallet derived from this address. For example:
+
+```jsonc
+"walletDerivationScheme": {
+  "type": "fixed",
+  "sponsorAddress": "0x1234567890123456789012345678901234567890",
+  "sponsorWalletMnemonic": "${SPONSOR_WALLET_MNEMONIC}"
+},
+```
+
+#### `pin`
+
+The PIN for the Keycard hardware wallet. Required only when `type` is set to `keycard`. For example:
+
+```jsonc
+"walletDerivationScheme": { "type": "keycard", "pin": "${KEYCARD_PIN}" },
 ```
 
 ### `stage`
