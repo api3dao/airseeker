@@ -254,7 +254,88 @@ describe('walletDerivationScheme schema', () => {
     expect(parsed).toStrictEqual(walletDerivationScheme);
   });
 
-  it('sponsorAddress is present when walletDerivationScheme is "fixed"', () => {
+  it('parses the walletDerivationScheme as "self-funded"', () => {
+    const walletDerivationScheme = {
+      type: 'self-funded',
+      sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
+    };
+    const parsed = walletDerivationSchemeSchema.parse(walletDerivationScheme);
+
+    expect(parsed).toStrictEqual(walletDerivationScheme);
+  });
+
+  it('parses the walletDerivationScheme as "managed"', () => {
+    const walletDerivationScheme = {
+      type: 'managed',
+      sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
+    };
+    const parsed = walletDerivationSchemeSchema.parse(walletDerivationScheme);
+
+    expect(parsed).toStrictEqual(walletDerivationScheme);
+  });
+
+  it('parses the walletDerivationScheme as "keycard"', () => {
+    const walletDerivationScheme = {
+      type: 'keycard',
+      pin: '123456',
+    };
+    const parsed = walletDerivationSchemeSchema.parse(walletDerivationScheme);
+
+    expect(parsed).toStrictEqual(walletDerivationScheme);
+  });
+
+  it('throws when pin is missing for keycard type', () => {
+    const walletDerivationScheme = {
+      type: 'keycard',
+    };
+
+    expect(() => walletDerivationSchemeSchema.parse(walletDerivationScheme)).toThrow(
+      new ZodError([
+        {
+          expected: 'string',
+          code: 'invalid_type',
+          path: ['pin'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+      ])
+    );
+  });
+
+  it('throws when sponsorWalletMnemonic is missing for self-funded type', () => {
+    const walletDerivationScheme = {
+      type: 'self-funded',
+    };
+
+    expect(() => walletDerivationSchemeSchema.parse(walletDerivationScheme)).toThrow(
+      new ZodError([
+        {
+          expected: 'string',
+          code: 'invalid_type',
+          path: ['sponsorWalletMnemonic'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+      ])
+    );
+  });
+
+  it('throws when sponsorWalletMnemonic is missing for managed type', () => {
+    const walletDerivationScheme = {
+      type: 'managed',
+    };
+
+    expect(() => walletDerivationSchemeSchema.parse(walletDerivationScheme)).toThrow(
+      new ZodError([
+        {
+          expected: 'string',
+          code: 'invalid_type',
+          path: ['sponsorWalletMnemonic'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+      ])
+    );
+  });
+
+  it('throws when sponsorAddress is missing for fixed type', () => {
     const walletDerivationScheme = {
       type: 'fixed',
       sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
@@ -272,7 +353,7 @@ describe('walletDerivationScheme schema', () => {
     );
   });
 
-  it('sponsorAddress must be a valid EVM address when walletDerivationScheme is "fixed"', () => {
+  it('throws when sponsorAddress is not a valid EVM address for fixed type', () => {
     const walletDerivationScheme = {
       type: 'fixed',
       sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
