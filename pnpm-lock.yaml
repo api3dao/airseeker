@@ -15,7 +15,7 @@ importers:
         specifier: 34.0.0
         version: 34.0.0(typescript@5.9.3)
       '@api3/eslint-plugin-commons':
-        specifier: ^3.0.0
+        specifier: ^3.1.1
         version: 3.1.1(eslint@8.57.1)(jest@29.7.0(@types/node@20.19.30)(ts-node@10.9.2(@types/node@20.19.30)(typescript@5.9.3)))(prettier@3.8.1)(typescript@5.9.3)
       '@api3/promise-utils':
         specifier: ^0.4.0
@@ -33,13 +33,13 @@ importers:
         specifier: ^0.9.6
         version: 0.9.6(ethers@6.16.0)
       lodash:
-        specifier: ^4.17.21
+        specifier: ^4.17.23
         version: 4.17.23
       workerpool:
         specifier: ^9.3.4
         version: 9.3.4
       zod:
-        specifier: ^4.3.5
+        specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@api3/airnode-abi':
