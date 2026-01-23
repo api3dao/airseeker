@@ -38,7 +38,7 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
     jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest.spyOn(updateFeedsLoopsModule, 'runUpdateFeeds').mockImplementation();
     const intervalCalls = [] as number[];
-    jest.spyOn(global, 'setInterval').mockImplementation((() => {
+    jest.spyOn(globalThis, 'setInterval').mockImplementation((() => {
       intervalCalls.push(Date.now());
     }) as any);
     jest.spyOn(logger, 'debug');
@@ -92,7 +92,7 @@ describe(updateFeedsLoopsModule.startUpdateFeedsLoops.name, () => {
     jest.spyOn(stateModule, 'updateState').mockImplementation();
     jest.spyOn(updateFeedsLoopsModule, 'runUpdateFeeds').mockImplementation();
     const intervalCalls = [] as number[];
-    jest.spyOn(global, 'setInterval').mockImplementation((() => {
+    jest.spyOn(globalThis, 'setInterval').mockImplementation((() => {
       intervalCalls.push(Date.now());
     }) as any);
     jest.spyOn(logger, 'debug');

@@ -36,7 +36,7 @@ test('validates example config', () => {
       },
       {
         code: 'custom',
-        path: ['sponsorWalletMnemonic'],
+        path: ['walletDerivationScheme', 'sponsorWalletMnemonic'],
         message: 'Invalid mnemonic',
       },
     ])
@@ -244,14 +244,94 @@ describe('chains schema', () => {
 
 describe('walletDerivationScheme schema', () => {
   it('parses the walletDerivationScheme as "fixed"', () => {
-    const walletDerivationScheme = { type: 'fixed', sponsorAddress: '0x0000000000000000000000000000000000000001' };
+    const walletDerivationScheme = {
+      type: 'fixed',
+      sponsorAddress: '0x0000000000000000000000000000000000000001',
+      sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
+    };
     const parsed = walletDerivationSchemeSchema.parse(walletDerivationScheme);
 
     expect(parsed).toStrictEqual(walletDerivationScheme);
   });
 
-  it('sponsorAddress is present when walletDerivationScheme is "fixed"', () => {
-    const walletDerivationScheme = { type: 'fixed' };
+  it('parses the walletDerivationScheme as "self-funded"', () => {
+    const walletDerivationScheme = {
+      type: 'self-funded',
+      sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
+    };
+    const parsed = walletDerivationSchemeSchema.parse(walletDerivationScheme);
+
+    expect(parsed).toStrictEqual(walletDerivationScheme);
+  });
+
+  it('parses the walletDerivationScheme as "managed"', () => {
+    const walletDerivationScheme = {
+      type: 'managed',
+      sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
+    };
+    const parsed = walletDerivationSchemeSchema.parse(walletDerivationScheme);
+
+    expect(parsed).toStrictEqual(walletDerivationScheme);
+  });
+
+  it('parses the walletDerivationScheme as "keycard"', () => {
+    const walletDerivationScheme = {
+      type: 'keycard',
+      pin: '123456',
+    };
+    const parsed = walletDerivationSchemeSchema.parse(walletDerivationScheme);
+
+    expect(parsed).toStrictEqual(walletDerivationScheme);
+  });
+
+  it('parses the walletDerivationScheme as "keycard" without pin', () => {
+    const walletDerivationScheme = {
+      type: 'keycard',
+    };
+    const parsed = walletDerivationSchemeSchema.parse(walletDerivationScheme);
+
+    expect(parsed).toStrictEqual(walletDerivationScheme);
+  });
+
+  it('throws when sponsorWalletMnemonic is missing for self-funded type', () => {
+    const walletDerivationScheme = {
+      type: 'self-funded',
+    };
+
+    expect(() => walletDerivationSchemeSchema.parse(walletDerivationScheme)).toThrow(
+      new ZodError([
+        {
+          expected: 'string',
+          code: 'invalid_type',
+          path: ['sponsorWalletMnemonic'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+      ])
+    );
+  });
+
+  it('throws when sponsorWalletMnemonic is missing for managed type', () => {
+    const walletDerivationScheme = {
+      type: 'managed',
+    };
+
+    expect(() => walletDerivationSchemeSchema.parse(walletDerivationScheme)).toThrow(
+      new ZodError([
+        {
+          expected: 'string',
+          code: 'invalid_type',
+          path: ['sponsorWalletMnemonic'],
+          message: 'Invalid input: expected string, received undefined',
+        },
+      ])
+    );
+  });
+
+  it('throws when sponsorAddress is missing for fixed type', () => {
+    const walletDerivationScheme = {
+      type: 'fixed',
+      sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
+    };
 
     expect(() => walletDerivationSchemeSchema.parse(walletDerivationScheme)).toThrow(
       new ZodError([
@@ -265,8 +345,11 @@ describe('walletDerivationScheme schema', () => {
     );
   });
 
-  it('sponsorAddress must be a valid EVM address when walletDerivationScheme is "fixed"', () => {
-    const walletDerivationScheme = { type: 'fixed' };
+  it('throws when sponsorAddress is not a valid EVM address for fixed type', () => {
+    const walletDerivationScheme = {
+      type: 'fixed',
+      sponsorWalletMnemonic: 'test test test test test test test test test test test junk',
+    };
 
     expect(() => walletDerivationSchemeSchema.parse({ ...walletDerivationScheme, sponsorAddress: '' })).toThrow(
       new ZodError([

@@ -4,6 +4,7 @@ import { go } from '@api3/promise-utils';
 import { type EthersError, ethers } from 'ethers';
 
 import { getRecommendedGasPrice } from '../gas-price';
+import { getKeycardWallet } from '../keycard';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import {
@@ -134,7 +135,7 @@ export const submitBatchTransaction = async (
   blockNumber: number
 ) => {
   const {
-    config: { chains, sponsorWalletMnemonic, walletDerivationScheme },
+    config: { chains, walletDerivationScheme },
   } = getState();
 
   const decodedDapiNames = updatableDataFeeds.map(({ dataFeedInfo: { decodedDapiName } }) => decodedDapiName);
@@ -148,7 +149,7 @@ export const submitBatchTransaction = async (
     const goUpdate = await go(
       async () => {
         logger.debug('Getting derived sponsor wallet.');
-        const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, {
+        const sponsorWallet = getDerivedSponsorWallet({
           ...walletDerivationScheme,
           dapiNameOrDataFeedId: '', // Not needed because using fixed sponsor wallet derivation type
           updateParameters: '', // Not needed because using fixed sponsor wallet derivation type
@@ -189,7 +190,7 @@ export const submitTransaction = async (
   blockNumber: number
 ) => {
   const {
-    config: { chains, sponsorWalletMnemonic, walletDerivationScheme },
+    config: { chains, walletDerivationScheme },
   } = getState();
 
   const {
@@ -204,7 +205,7 @@ export const submitTransaction = async (
     const goUpdate = await go(
       async () => {
         logger.debug('Getting derived sponsor wallet.');
-        const sponsorWallet = getDerivedSponsorWallet(sponsorWalletMnemonic, {
+        const sponsorWallet = getDerivedSponsorWallet({
           ...walletDerivationScheme,
           dapiNameOrDataFeedId: dapiName ?? dataFeedId,
           updateParameters,
@@ -251,7 +252,7 @@ export const submitTransactions = async (
   const {
     config: { walletDerivationScheme },
   } = getState();
-  if (walletDerivationScheme.type === 'fixed') {
+  if (['fixed', 'keycard'].includes(walletDerivationScheme.type)) {
     const result = await submitBatchTransaction(
       chainId,
       providerName,
@@ -271,7 +272,10 @@ export const submitTransactions = async (
   return result.filter(Boolean).length;
 };
 
-export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, params: SponsorAddressDerivationParams) => {
+export const getDerivedSponsorWallet = (params: SponsorAddressDerivationParams) => {
+  if (params.type === 'keycard') {
+    return getKeycardWallet();
+  }
   const { derivedSponsorWallets } = getState();
   const sponsorAddress = deriveSponsorAddress(params);
   const privateKey = derivedSponsorWallets?.[sponsorAddress];
@@ -280,7 +284,7 @@ export const getDerivedSponsorWallet = (sponsorWalletMnemonic: string, params: S
     logger.debug('Found derived sponsor wallet.', { sponsorAddress, sponsorWalletAddress: sponsorWallet.address });
     return sponsorWallet;
   }
-  const sponsorWallet = deriveSponsorWalletFromSponsorAddress(sponsorWalletMnemonic, sponsorAddress);
+  const sponsorWallet = deriveSponsorWalletFromSponsorAddress(params.sponsorWalletMnemonic, sponsorAddress);
   logger.debug('Derived new sponsor wallet.', { sponsorAddress, sponsorWalletAddress: sponsorWallet.address });
   updateState((draft) => {
     draft.derivedSponsorWallets[sponsorAddress] = sponsorWallet.privateKey as Hex;

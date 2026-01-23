@@ -174,10 +174,19 @@ export const individualBeaconUpdateSettingsSchema = z
 
 export type IndividualBeaconUpdateSettings = z.infer<typeof individualBeaconUpdateSettingsSchema>;
 
+export const sponsorWalletMnemonicSchema = z
+  .string()
+  .refine((mnemonic) => ethers.Mnemonic.isValidMnemonic(mnemonic), 'Invalid mnemonic');
+
 export const walletDerivationSchemeSchema = z.discriminatedUnion('type', [
-  z.strictObject({ type: z.literal('self-funded') }),
-  z.strictObject({ type: z.literal('managed') }),
-  z.strictObject({ type: z.literal('fixed'), sponsorAddress: addressSchema }),
+  z.strictObject({ type: z.literal('self-funded'), sponsorWalletMnemonic: sponsorWalletMnemonicSchema }),
+  z.strictObject({ type: z.literal('managed'), sponsorWalletMnemonic: sponsorWalletMnemonicSchema }),
+  z.strictObject({
+    type: z.literal('fixed'),
+    sponsorAddress: addressSchema,
+    sponsorWalletMnemonic: sponsorWalletMnemonicSchema,
+  }),
+  z.strictObject({ type: z.literal('keycard'), pin: z.string().optional() }),
 ]);
 
 export type WalletDerivationScheme = z.infer<typeof walletDerivationSchemeSchema>;
@@ -189,7 +198,6 @@ export const configSchema = z.strictObject({
   individualBeaconUpdateSettings: individualBeaconUpdateSettingsSchema,
   signedApiUrls: z.array(z.url()),
   signedDataFetchInterval: z.number().positive(),
-  sponsorWalletMnemonic: z.string().refine((mnemonic) => ethers.Mnemonic.isValidMnemonic(mnemonic), 'Invalid mnemonic'),
   stage: z
     .string()
     .regex(/^[\da-z-]{1,256}$/, 'Only lowercase letters, numbers and hyphens are allowed (max 256 characters)'),

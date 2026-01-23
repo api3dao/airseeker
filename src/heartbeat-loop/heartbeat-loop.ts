@@ -28,14 +28,20 @@ export interface HeartbeatPayload {
 }
 
 export const logHeartbeat = async () => {
+  const {
+    config: { stage, version, walletDerivationScheme },
+    deploymentTimestamp,
+  } = getState();
+
+  if (walletDerivationScheme.type === 'keycard') {
+    logger.debug('Heartbeat logging is not supported for Keycard wallet derivation scheme. Skipping heartbeat log.');
+    return;
+  }
+
   logger.debug('Creating heartbeat log.');
 
   const rawConfig = loadRawConfig(); // We want to log the raw config, not the one with interpolated secrets.
   const configHash = createSha256Hash(serializePlainObject(rawConfig));
-  const {
-    config: { sponsorWalletMnemonic, stage, version },
-    deploymentTimestamp,
-  } = getState();
 
   logger.debug('Creating heartbeat payload.');
   const currentTimestamp = Math.floor(Date.now() / 1000).toString();
@@ -46,7 +52,7 @@ export const logHeartbeat = async () => {
     version,
     deploymentTimestamp,
   };
-  const sponsorWallet = ethers.Wallet.fromPhrase(sponsorWalletMnemonic);
+  const sponsorWallet = ethers.Wallet.fromPhrase(walletDerivationScheme.sponsorWalletMnemonic);
   const signature = await signHeartbeat(sponsorWallet, unsignedHeartbeatPayload);
   const heartbeatPayload: HeartbeatPayload = { ...unsignedHeartbeatPayload, signature };
 

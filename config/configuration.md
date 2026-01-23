@@ -82,16 +82,6 @@ Airseeker needs two configuration files, `airseeker.json` and `secrets.env`. All
 are referring to values from secrets and are interpolated inside the `airseeker.json` at runtime. You are advised to put
 sensitive information inside secrets.
 
-### `sponsorWalletMnemonic`
-
-The mnemonic of the wallet used to derive sponsor wallets. Sponsor wallets are derived for each data feed separately. It
-is recommended to interpolate this value from secrets. For example:
-
-```jsonc
-// The mnemonic is interpolated from the "SPONSOR_WALLET_MNEMONIC" secret.
-"sponsorWalletMnemonic": "${SPONSOR_WALLET_MNEMONIC}",
-```
-
 ### `chains`
 
 A record of chain configurations. The record key is the chain ID. For example:
@@ -286,6 +276,46 @@ The following options are available:
   agnostic to update parameters, and the same wallet is used when the dAPI is upgraded/downgraded.
 - `fixed` - Derives the wallet from the specified `sponsorAddress`. All data feed updates will be done via this single
   wallet.
+- `keycard` - Uses a Keycard hardware wallet to sign transactions.
+
+#### `sponsorWalletMnemonic`
+
+The mnemonic of the wallet used to derive sponsor wallets. Sponsor wallets are derived for each data feed separately. It
+is recommended to interpolate this value from secrets. Required for `self-funded`, `managed`, and `fixed` types. For
+example:
+
+```jsonc
+// The mnemonic is interpolated from the "SPONSOR_WALLET_MNEMONIC" secret.
+"walletDerivationScheme": { "type": "managed", "sponsorWalletMnemonic": "${SPONSOR_WALLET_MNEMONIC}" },
+```
+
+#### `sponsorAddress`
+
+The address used to derive the sponsor wallet. Required only when `type` is set to `fixed`. All data feed updates will
+use a wallet derived from this address. For example:
+
+```jsonc
+"walletDerivationScheme": {
+  "type": "fixed",
+  "sponsorAddress": "0x1234567890123456789012345678901234567890",
+  "sponsorWalletMnemonic": "${SPONSOR_WALLET_MNEMONIC}"
+},
+```
+
+#### `pin` _(optional)_
+
+The PIN for the Keycard hardware wallet. Only applicable when `type` is set to `keycard`. If not provided, the PIN will
+be requested interactively at startup. For example:
+
+```jsonc
+"walletDerivationScheme": { "type": "keycard", "pin": "${KEYCARD_PIN}" },
+```
+
+Or without specifying a PIN (will prompt interactively):
+
+```jsonc
+"walletDerivationScheme": { "type": "keycard" },
+```
 
 ### `stage`
 

@@ -248,13 +248,12 @@ export const runUpdateFeeds = async (providerName: string, chain: Chain, chainId
         });
 
         // Merge the Signed API URLs and active beacons from all the batches.
-        const signedApiUrlsFromConfig = uniq(
-          processedBatches.filter(Boolean).flatMap((batch) => batch.signedApiUrlsFromConfig)
+        const validBatches = processedBatches.filter(
+          (batch): batch is Awaited<ReturnType<typeof processBatch>> => batch !== undefined
         );
-        const signedApiUrlsFromContract = uniq(
-          processedBatches.filter(Boolean).flatMap((batch) => batch.signedApiUrlsFromContract)
-        );
-        const beaconIds = uniq(processedBatches.filter(Boolean).flatMap((batch) => batch.beaconIds));
+        const signedApiUrlsFromConfig = uniq(validBatches.flatMap((batch) => batch.signedApiUrlsFromConfig));
+        const signedApiUrlsFromContract = uniq(validBatches.flatMap((batch) => batch.signedApiUrlsFromContract));
+        const beaconIds = uniq(validBatches.flatMap((batch) => batch.beaconIds));
         // Overwrite the state with the new Signed API URLs instead of merging them to avoid keeping stale URLs.
         updateState((draft) => {
           set(draft, ['signedApiUrlsFromConfig', chainId, providerName], signedApiUrlsFromConfig);

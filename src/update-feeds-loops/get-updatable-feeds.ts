@@ -34,6 +34,7 @@ const adjustHeartbeatInterval = (heartbeatInterval: bigint, heartbeatIntervalMod
       heartbeatIntervalModifier,
     });
   }
+  // eslint-disable-next-line unicorn/prefer-math-min-max
   return calculatedHeartbeatInterval < 0n ? 0n : calculatedHeartbeatInterval;
 };
 

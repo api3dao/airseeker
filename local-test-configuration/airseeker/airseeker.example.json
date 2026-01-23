@@ -1,5 +1,4 @@
 {
-  "sponsorWalletMnemonic": "${SPONSOR_WALLET_MNEMONIC}",
   "chains": {
     "31337": {
       "alias": "hardhat",
@@ -33,7 +32,7 @@
   "signedDataFetchInterval": 10,
   "signedApiUrls": [],
   "useSignedApiUrlsFromContract": true,
-  "walletDerivationScheme": { "type": "managed" },
+  "walletDerivationScheme": { "type": "managed", "sponsorWalletMnemonic": "${SPONSOR_WALLET_MNEMONIC}" },
   "stage": "dev",
   "version": "4.3.0"
 }
