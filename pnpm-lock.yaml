@@ -12,8 +12,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2
       '@api3/contracts':
-        specifier: 32.2.0
-        version: 32.2.0(typescript@5.9.3)
+        specifier: 34.0.0
+        version: 34.0.0(typescript@5.9.3)
       '@api3/eslint-plugin-commons':
         specifier: ^3.0.0
         version: 3.1.1(eslint@8.57.1)(jest@29.7.0(@types/node@20.19.30)(ts-node@10.9.2(@types/node@20.19.30)(typescript@5.9.3)))(prettier@3.8.1)(typescript@5.9.3)
@@ -130,8 +130,8 @@ packages:
     resolution: {integrity: sha512-oyVkgv5zyY7jgJu83maJC6FWPiWkaBXcrqf8a275YyyP4+IdfgLurXHjqK1IbYXf0SxD4MgeQERZLYG2oyIWJA==}
     engines: {node: '>=18.14.0'}
 
-  '@api3/contracts@32.2.0':
-    resolution: {integrity: sha512-ybfCMXd9CsUYi1VHnaxOrftnMEPQdWnoMTRSYRTryNrKVJpEddJtW5u0iS3mhTe3Xd3oeoXHcWccyo0hLqmOVw==}
+  '@api3/contracts@34.0.0':
+    resolution: {integrity: sha512-jA/gBNb33zoEp1oDVDFl7xnLvTFkrVr+B3SICoiEXjdzMRPm0rsBIWKV2+r69MhDR+ZIjsd20cWuT53EZLbbZw==}
     engines: {node: '>=22.18.0'}
     hasBin: true
 
@@ -4626,7 +4626,7 @@ snapshots:
       - debug
       - utf-8-validate
 
-  '@api3/contracts@32.2.0(typescript@5.9.3)':
+  '@api3/contracts@34.0.0(typescript@5.9.3)':
     dependencies:
       ethers: 6.16.0
       viem: 2.44.4(typescript@5.9.3)(zod@4.3.6)
