@@ -284,21 +284,13 @@ describe('walletDerivationScheme schema', () => {
     expect(parsed).toStrictEqual(walletDerivationScheme);
   });
 
-  it('throws when pin is missing for keycard type', () => {
+  it('parses the walletDerivationScheme as "keycard" without pin', () => {
     const walletDerivationScheme = {
       type: 'keycard',
     };
+    const parsed = walletDerivationSchemeSchema.parse(walletDerivationScheme);
 
-    expect(() => walletDerivationSchemeSchema.parse(walletDerivationScheme)).toThrow(
-      new ZodError([
-        {
-          expected: 'string',
-          code: 'invalid_type',
-          path: ['pin'],
-          message: 'Invalid input: expected string, received undefined',
-        },
-      ])
-    );
+    expect(parsed).toStrictEqual(walletDerivationScheme);
   });
 
   it('throws when sponsorWalletMnemonic is missing for self-funded type', () => {

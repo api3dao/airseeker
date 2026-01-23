@@ -302,12 +302,19 @@ use a wallet derived from this address. For example:
 },
 ```
 
-#### `pin`
+#### `pin` _(optional)_
 
-The PIN for the Keycard hardware wallet. Required only when `type` is set to `keycard`. For example:
+The PIN for the Keycard hardware wallet. Only applicable when `type` is set to `keycard`. If not provided, the PIN will
+be requested interactively at startup. For example:
 
 ```jsonc
 "walletDerivationScheme": { "type": "keycard", "pin": "${KEYCARD_PIN}" },
+```
+
+Or without specifying a PIN (will prompt interactively):
+
+```jsonc
+"walletDerivationScheme": { "type": "keycard" },
 ```
 
 ### `stage`

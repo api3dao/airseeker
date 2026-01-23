@@ -186,7 +186,7 @@ export const walletDerivationSchemeSchema = z.discriminatedUnion('type', [
     sponsorAddress: addressSchema,
     sponsorWalletMnemonic: sponsorWalletMnemonicSchema,
   }),
-  z.strictObject({ type: z.literal('keycard'), pin: z.string() }),
+  z.strictObject({ type: z.literal('keycard'), pin: z.string().optional() }),
 ]);
 
 export type WalletDerivationScheme = z.infer<typeof walletDerivationSchemeSchema>;
