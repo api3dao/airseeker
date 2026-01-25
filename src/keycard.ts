@@ -20,9 +20,8 @@ export const initializeKeycardWallet = async () => {
 };
 
 export const terminateKeycardWallet = () => {
-  if (!keycardWallet) {
-    throw new Error('Keycard wallet is not initialized.');
-  }
+  // Idempotent - safe to call even if the keycard wallet was never initialized
+  if (!keycardWallet) return;
 
   keycardWallet.disconnect();
   keycardWallet = undefined;
