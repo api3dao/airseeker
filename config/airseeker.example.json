@@ -31,5 +31,5 @@
   "useSignedApiUrlsFromContract": true,
   "walletDerivationScheme": { "type": "managed", "sponsorWalletMnemonic": "${SPONSOR_WALLET_MNEMONIC}" },
   "stage": "dev",
-  "version": "5.0.0"
+  "version": "5.1.0"
 }
