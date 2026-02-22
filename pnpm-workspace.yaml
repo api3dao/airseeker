@@ -1,0 +1,5 @@
+# See: https://pnpm.io/supply-chain-security
+blockExoticSubdeps: true
+minimumReleaseAge: 20160 # 14 days (keep in sync with Renovate config)
+minimumReleaseAgeExclude:
+  - '@api3/*'
