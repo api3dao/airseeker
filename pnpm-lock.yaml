@@ -97,8 +97,8 @@ importers:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@24.10.12)(ts-node@10.9.2(@types/node@24.10.12)(typescript@5.9.3))
       nodemon:
-        specifier: ^3.1.11
-        version: 3.1.11
+        specifier: ^3.1.14
+        version: 3.1.14
       prettier:
         specifier: ^3.8.1
         version: 3.8.1
@@ -126,6 +126,8 @@ packages:
   '@api3/airnode-abi@0.15.0':
     resolution: {integrity: sha512-MMq5pBkXFA6QkqTLCWWygGXz7TdmYe8dFbgQs9IEmp0Av05U7min6rottBcRhjpOEo8LXT8InkIbdmql+UaS3A==}
 
+  '@api3/commons@1.2.0':
+    resolution: {integrity: sha512-9Bovi9tWpGVXxgkXC7YOeBXpiyWo2l8RmkHgfA9GAB4G3vZny+a8WHSQeWLNnJ4Zig7W9JTf2peExEAhhjsLjA==}
   '@api3/commons@1.2.0':
     resolution: {integrity: sha512-9Bovi9tWpGVXxgkXC7YOeBXpiyWo2l8RmkHgfA9GAB4G3vZny+a8WHSQeWLNnJ4Zig7W9JTf2peExEAhhjsLjA==}
     engines: {node: '>=18.14.0'}
@@ -3330,6 +3332,10 @@ packages:
     resolution: {integrity: sha512-fu656aJ0n2kcXwsnwnv9g24tkU5uSmOlTjd6WyyaKm2Z+h1qmY6bAjrcaIxF/BslFqbZ8UBtbJi7KgQOZD2PTw==}
     engines: {node: 20 || >=22}
 
+  minimatch@10.2.2:
+    resolution: {integrity: sha512-+G4CpNBxa5MprY+04MbgOw1v7So6n5JY166pFi9KfYwT78fxScCeSNQSNzp6dpPSW2rONOps6Ocam1wFhCgoVw==}
+    engines: {node: 18 || 20 || >=22}
+
   minimatch@3.1.2:
     resolution: {integrity: sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw==}
 
@@ -3409,8 +3415,8 @@ packages:
   node-releases@2.0.27:
     resolution: {integrity: sha512-nmh3lCkYZ3grZvqcCH+fjmQ7X+H0OeZgP40OierEaAptX4XofMh5kwNbWh7lBduUzCcV/8kZ+NDLCwm2iorIlA==}
 
-  nodemon@3.1.11:
-    resolution: {integrity: sha512-is96t8F/1//UHAjNPHpbsNY46ELPpftGUoSVNXwUfMk/qdjSylYrWSu1XavVTBOn526kFiOR733ATgNBCQyH0g==}
+  nodemon@3.1.14:
+    resolution: {integrity: sha512-jakjZi93UtB3jHMWsXL68FXSAosbLfY0In5gtKq3niLSkrWznrVBzXFNOEMJUfc9+Ke7SHWoAZsiMkNP3vq6Jw==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -4617,6 +4623,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
+  '@api3/commons@1.2.0':
   '@api3/commons@1.2.0':
     dependencies:
       '@api3/ois': 3.0.0
@@ -9041,12 +9048,12 @@ snapshots:
 
   node-releases@2.0.27: {}
 
-  nodemon@3.1.11:
+  nodemon@3.1.14:
     dependencies:
       chokidar: 3.6.0
       debug: 4.4.3(supports-color@5.5.0)
       ignore-by-default: 1.0.1
-      minimatch: 3.1.2
+      minimatch: 10.2.2
       pstree.remy: 1.1.8
       semver: 7.7.4
       simple-update-notifier: 2.0.0
