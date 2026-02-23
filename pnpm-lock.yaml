@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@api3/commons':
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: ^1.2.0
+        version: 1.2.0
       '@api3/contracts':
         specifier: 34.0.0
         version: 34.0.0(typescript@5.9.3)
@@ -126,8 +126,8 @@ packages:
   '@api3/airnode-abi@0.15.0':
     resolution: {integrity: sha512-MMq5pBkXFA6QkqTLCWWygGXz7TdmYe8dFbgQs9IEmp0Av05U7min6rottBcRhjpOEo8LXT8InkIbdmql+UaS3A==}
 
-  '@api3/commons@1.1.2':
-    resolution: {integrity: sha512-oyVkgv5zyY7jgJu83maJC6FWPiWkaBXcrqf8a275YyyP4+IdfgLurXHjqK1IbYXf0SxD4MgeQERZLYG2oyIWJA==}
+  '@api3/commons@1.2.0':
+    resolution: {integrity: sha512-9Bovi9tWpGVXxgkXC7YOeBXpiyWo2l8RmkHgfA9GAB4G3vZny+a8WHSQeWLNnJ4Zig7W9JTf2peExEAhhjsLjA==}
     engines: {node: '>=18.14.0'}
 
   '@api3/contracts@34.0.0':
@@ -4621,7 +4621,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@api3/commons@1.1.2':
+  '@api3/commons@1.2.0':
     dependencies:
       '@api3/ois': 3.0.0
       '@api3/promise-utils': 0.4.0
@@ -5943,7 +5943,7 @@ snapshots:
 
   '@types/minimatch@6.0.0':
     dependencies:
-      minimatch: 10.2.0
+      minimatch: 10.2.2
 
   '@types/mocha@10.0.10': {}
 
