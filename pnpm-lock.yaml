@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@api3/commons':
-        specifier: ^1.1.2
+        specifier: ^1.2.0
         version: 1.2.0
       '@api3/contracts':
         specifier: 34.0.0
@@ -97,8 +97,8 @@ importers:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@24.10.12)(ts-node@10.9.2(@types/node@24.10.12)(typescript@5.9.3))
       nodemon:
-        specifier: ^3.1.14
-        version: 3.1.14
+        specifier: ^3.1.11
+        version: 3.1.11
       prettier:
         specifier: ^3.8.1
         version: 3.8.1
@@ -126,8 +126,6 @@ packages:
   '@api3/airnode-abi@0.15.0':
     resolution: {integrity: sha512-MMq5pBkXFA6QkqTLCWWygGXz7TdmYe8dFbgQs9IEmp0Av05U7min6rottBcRhjpOEo8LXT8InkIbdmql+UaS3A==}
 
-  '@api3/commons@1.2.0':
-    resolution: {integrity: sha512-9Bovi9tWpGVXxgkXC7YOeBXpiyWo2l8RmkHgfA9GAB4G3vZny+a8WHSQeWLNnJ4Zig7W9JTf2peExEAhhjsLjA==}
   '@api3/commons@1.2.0':
     resolution: {integrity: sha512-9Bovi9tWpGVXxgkXC7YOeBXpiyWo2l8RmkHgfA9GAB4G3vZny+a8WHSQeWLNnJ4Zig7W9JTf2peExEAhhjsLjA==}
     engines: {node: '>=18.14.0'}
@@ -3332,10 +3330,6 @@ packages:
     resolution: {integrity: sha512-fu656aJ0n2kcXwsnwnv9g24tkU5uSmOlTjd6WyyaKm2Z+h1qmY6bAjrcaIxF/BslFqbZ8UBtbJi7KgQOZD2PTw==}
     engines: {node: 20 || >=22}
 
-  minimatch@10.2.2:
-    resolution: {integrity: sha512-+G4CpNBxa5MprY+04MbgOw1v7So6n5JY166pFi9KfYwT78fxScCeSNQSNzp6dpPSW2rONOps6Ocam1wFhCgoVw==}
-    engines: {node: 18 || 20 || >=22}
-
   minimatch@3.1.2:
     resolution: {integrity: sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw==}
 
@@ -3415,8 +3409,8 @@ packages:
   node-releases@2.0.27:
     resolution: {integrity: sha512-nmh3lCkYZ3grZvqcCH+fjmQ7X+H0OeZgP40OierEaAptX4XofMh5kwNbWh7lBduUzCcV/8kZ+NDLCwm2iorIlA==}
 
-  nodemon@3.1.14:
-    resolution: {integrity: sha512-jakjZi93UtB3jHMWsXL68FXSAosbLfY0In5gtKq3niLSkrWznrVBzXFNOEMJUfc9+Ke7SHWoAZsiMkNP3vq6Jw==}
+  nodemon@3.1.11:
+    resolution: {integrity: sha512-is96t8F/1//UHAjNPHpbsNY46ELPpftGUoSVNXwUfMk/qdjSylYrWSu1XavVTBOn526kFiOR733ATgNBCQyH0g==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -4434,8 +4428,8 @@ packages:
   validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
 
-  viem@2.45.1:
-    resolution: {integrity: sha512-LN6Pp7vSfv50LgwhkfSbIXftAM5J89lP9x8TeDa8QM7o41IxlHrDh0F9X+FfnCWtsz11pEVV5sn+yBUoOHNqYA==}
+  viem@2.45.2:
+    resolution: {integrity: sha512-GXPMmj0ukqFNL87sgpsZBy4CjGvsFQk42/EUdsn8dv3ZWtL4ukDXNCM0nME2hU0IcuS29CuUbrwbZN6iWxAipw==}
     peerDependencies:
       typescript: '>=5.0.4'
     peerDependenciesMeta:
@@ -4624,7 +4618,6 @@ snapshots:
       - utf-8-validate
 
   '@api3/commons@1.2.0':
-  '@api3/commons@1.2.0':
     dependencies:
       '@api3/ois': 3.0.0
       '@api3/promise-utils': 0.4.0
@@ -4644,7 +4637,7 @@ snapshots:
   '@api3/contracts@34.0.0(typescript@5.9.3)':
     dependencies:
       ethers: 6.16.0
-      viem: 2.45.1(typescript@5.9.3)(zod@4.3.6)
+      viem: 2.45.2(typescript@5.9.3)(zod@4.3.6)
       yargs: 17.7.2
       zod: 4.3.6
     transitivePeerDependencies:
@@ -9048,12 +9041,12 @@ snapshots:
 
   node-releases@2.0.27: {}
 
-  nodemon@3.1.14:
+  nodemon@3.1.11:
     dependencies:
       chokidar: 3.6.0
       debug: 4.4.3(supports-color@5.5.0)
       ignore-by-default: 1.0.1
-      minimatch: 10.2.2
+      minimatch: 3.1.2
       pstree.remy: 1.1.8
       semver: 7.7.4
       simple-update-notifier: 2.0.0
@@ -10206,7 +10199,7 @@ snapshots:
       spdx-correct: 3.2.0
       spdx-expression-parse: 3.0.1
 
-  viem@2.45.1(typescript@5.9.3)(zod@4.3.6):
+  viem@2.45.2(typescript@5.9.3)(zod@4.3.6):
     dependencies:
       '@noble/curves': 1.9.1
       '@noble/hashes': 1.8.0
