@@ -50,8 +50,7 @@
           }
         },
         "paths": {
-          "/feed/latest": { "get": { "parameters": [{ "in": "query", "name": "name" }] } },
-          "/feed/latestV2": { "get": { "parameters": [{ "in": "query", "name": "names" }] } }
+          "/feed/latest": { "get": { "parameters": [{ "in": "query", "name": "name" }] } }
         },
         "servers": [{ "url": "https://api.nodary.io" }],
         "security": { "NodarySecurityScheme1ApiKey": [] }
@@ -60,8 +59,8 @@
         {
           "fixedOperationParameters": [],
           "name": "feed",
-          "operation": { "method": "get", "path": "/feed/latestV2" },
-          "parameters": [{ "name": "name", "operationParameter": { "in": "query", "name": "names" } }],
+          "operation": { "method": "get", "path": "/feed/latest" },
+          "parameters": [{ "name": "name", "operationParameter": { "in": "query", "name": "name" } }],
           "reservedParameters": [
             { "name": "_type", "fixed": "int256" },
             { "name": "_times", "fixed": "1000000000000000000" }
