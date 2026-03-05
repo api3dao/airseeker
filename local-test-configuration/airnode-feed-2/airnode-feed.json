@@ -91,7 +91,7 @@
     }
   ],
   "nodeSettings": {
-    "nodeVersion": "4.0.1",
+    "nodeVersion": "4.1.0",
     "airnodeWalletMnemonic": "${AIRNODE_WALLET_MNEMONIC}",
     "stage": "local-example"
   }
