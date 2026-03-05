@@ -11,5 +11,5 @@
     { "address": "0x2Bf0dddA8Daa1C3C0Fae9e85866807A1C2D601B7", "authTokens": null, "isCertified": false }
   ],
   "stage": "signed-api-2",
-  "version": "4.0.1"
+  "version": "4.1.0"
 }
