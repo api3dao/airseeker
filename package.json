@@ -40,11 +40,11 @@
     "@api3/contracts": "37.0.0",
     "@api3/eslint-plugin-commons": "^3.1.1",
     "@api3/promise-utils": "^0.4.0",
-    "dotenv": "^17.3.1",
+    "dotenv": "^17.4.2",
     "ethers": "^6.16.0",
     "immer": "^11.1.4",
     "keycard-manager": "^0.9.8",
-    "lodash": "^4.17.23",
+    "lodash": "^4.18.1",
     "workerpool": "^9.3.4",
     "zod": "^4.3.6"
   },
