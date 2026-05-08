@@ -4,14 +4,14 @@
   "keywords": [],
   "license": "MIT",
   "engines": {
-    "node": "20"
+    "node": "20.20.2"
   },
   "files": [
     "dist",
     "src"
   ],
   "main": "./dist/src/npm-exports.js",
-  "packageManager": "pnpm@10.26.2",
+  "packageManager": "pnpm@10.33.2",
   "sideEffects": false,
   "repository": {
     "type": "git",
@@ -56,7 +56,7 @@
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/jest": "^29.5.14",
     "@types/lodash": "^4.17.24",
-    "@types/node": "^24.10.11",
+    "@types/node": "^24.12.2",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.1",

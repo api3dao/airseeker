@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20.20.2-alpine
 ENV name="airseeker"
 LABEL application="airseeker" description="Airseeker container"
 WORKDIR /app
