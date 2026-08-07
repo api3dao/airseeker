@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@api3/commons':
-        specifier: ^1.2.0
-        version: 1.2.0
+        specifier: ^1.3.0
+        version: 1.3.0
       '@api3/contracts':
         specifier: 38.3.0
         version: 38.3.0(typescript@5.9.3)
@@ -123,9 +123,9 @@ packages:
   '@api3/airnode-abi@0.15.0':
     resolution: {integrity: sha512-MMq5pBkXFA6QkqTLCWWygGXz7TdmYe8dFbgQs9IEmp0Av05U7min6rottBcRhjpOEo8LXT8InkIbdmql+UaS3A==}
 
-  '@api3/commons@1.2.0':
-    resolution: {integrity: sha512-9Bovi9tWpGVXxgkXC7YOeBXpiyWo2l8RmkHgfA9GAB4G3vZny+a8WHSQeWLNnJ4Zig7W9JTf2peExEAhhjsLjA==}
-    engines: {node: '>=18.14.0'}
+  '@api3/commons@1.3.0':
+    resolution: {integrity: sha512-2LqiFSa4l+1LwyfJSTpHRrRWBfDCL9xYlcRGO+RlAoRQz9/2Ym55iwuLpsvO2jQt4npNvsEUaOfFIpAohXjJIg==}
+    engines: {node: '>=18.20.8'}
 
   '@api3/contracts@38.3.0':
     resolution: {integrity: sha512-vscJip1KOh39nSBAPUiyZRKzfknINBkelF+giFhfAxpjZrWS/kgXYQaMMQAG6ZDnI3LXtKfQ2aQdu8mFHlNg+Q==}
@@ -4698,10 +4698,9 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@api3/commons@1.2.0':
+  '@api3/commons@1.3.0':
     dependencies:
       '@api3/ois': 3.0.0
-      '@api3/promise-utils': 0.4.0
       '@octokit/rest': 20.1.2
       axios: 1.18.1
       dotenv: 17.4.2
