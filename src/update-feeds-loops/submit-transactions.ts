@@ -1,6 +1,5 @@
-import type { Address, Hex } from '@api3/commons';
+import { go, type Address, type Hex } from '@api3/commons';
 import type { Api3ServerV1 } from '@api3/contracts';
-import { go } from '@api3/promise-utils';
 import { type EthersError, ethers } from 'ethers';
 
 import { getRecommendedGasPrice } from '../gas-price';

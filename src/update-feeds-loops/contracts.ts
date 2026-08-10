@@ -1,10 +1,9 @@
-import { deriveBeaconId, type Address, type Hex } from '@api3/commons';
+import { deriveBeaconId, go, type Address, type Hex } from '@api3/commons';
 import {
   type AirseekerRegistry,
   AirseekerRegistry__factory as AirseekerRegistryFactory,
   Api3ServerV1__factory as Api3ServerV1Factory,
 } from '@api3/contracts';
-import { go } from '@api3/promise-utils';
 import { ethers } from 'ethers';
 import { zip } from 'lodash';
 

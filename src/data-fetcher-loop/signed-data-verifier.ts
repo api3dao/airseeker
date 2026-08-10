@@ -1,5 +1,4 @@
-import { deriveBeaconId } from '@api3/commons';
-import { goSync } from '@api3/promise-utils';
+import { deriveBeaconId, goSync } from '@api3/commons';
 import { ethers } from 'ethers';
 
 import type { SignedData, SignedDataRecordEntry } from '../types';
