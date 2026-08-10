@@ -1,5 +1,5 @@
+import { go } from '@api3/commons';
 import type { Api3ServerV1 } from '@api3/contracts';
-import { go } from '@api3/promise-utils';
 
 import { logger } from '../logger';
 import { sanitizeEthersError } from '../utils';

@@ -1,5 +1,4 @@
-import type { Address, Hex } from '@api3/commons';
-import { go } from '@api3/promise-utils';
+import { go, type Address, type Hex } from '@api3/commons';
 import { getBigInt, type ethers } from 'ethers';
 import { maxBy, minBy, remove } from 'lodash';
 

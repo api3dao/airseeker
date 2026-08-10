@@ -2,11 +2,11 @@ import { join } from 'node:path';
 import { cwd } from 'node:process';
 
 import {
+  goSync,
   interpolateSecretsIntoConfig,
   loadConfig as loadConfigCommons,
   loadSecrets as loadSecretsCommons,
 } from '@api3/commons';
-import { goSync } from '@api3/promise-utils';
 
 import { configSchema } from './schema';
 
