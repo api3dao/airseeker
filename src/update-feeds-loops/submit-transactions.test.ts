@@ -1,13 +1,18 @@
+import type { Address } from '@api3/commons';
 import type { Api3ServerV1 } from '@api3/contracts';
 import { ethers } from 'ethers';
 
-import { generateMockApi3ServerV1 } from '../../test/fixtures/mock-contract';
+import {
+  generateMockApi3ServerV1,
+  generateMockApi3ServerV1BuilderTipExtension,
+} from '../../test/fixtures/mock-contract';
 import { allowPartial } from '../../test/utils';
 import * as gasPriceModule from '../gas-price';
 import { logger } from '../logger';
 import * as stateModule from '../state';
 import * as utilsModule from '../utils';
 
+import * as contractsModule from './contracts';
 import * as gasEstimationModule from './gas-estimation';
 import type { UpdatableDataFeed } from './get-updatable-feeds';
 import * as submitTransactionsModule from './submit-transactions';
@@ -332,6 +337,121 @@ describe(submitTransactionsModule.getDerivedSponsorWallet.name, () => {
   });
 });
 
+describe(submitTransactionsModule.getBuilderTipParams.name, () => {
+  const sponsorWalletAddress = '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c' as Address;
+  const extensionAddress = '0x1F585372F13b8d1A1b8d0F4918f6c979a71353c6' as Address;
+
+  it('returns null when the builder tip extension is not configured', () => {
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: { chains: { '31337': { contracts: {} } } },
+      })
+    );
+
+    const builderTipParams = submitTransactionsModule.getBuilderTipParams('31337', 'evm-local', sponsorWalletAddress, [
+      '0xBeaconSetId',
+    ]);
+
+    expect(builderTipParams).toBeNull();
+  });
+
+  it('returns null when the update is not pending for long enough', () => {
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: {
+          chains: {
+            '31337': {
+              contracts: { Api3ServerV1BuilderTipExtension: extensionAddress },
+              builderTipSettings: { consecutivelyUpdatableCountThreshold: 3, multiplier: 1.5 },
+            },
+          },
+        },
+        pendingTransactionsInfo: {
+          '31337': {
+            'evm-local': {
+              [sponsorWalletAddress]: { '0xBeaconSetId': { consecutivelyUpdatableCount: 3 } },
+            },
+          },
+        },
+      })
+    );
+
+    const builderTipParams = submitTransactionsModule.getBuilderTipParams('31337', 'evm-local', sponsorWalletAddress, [
+      '0xBeaconSetId',
+    ]);
+
+    expect(builderTipParams).toBeNull();
+  });
+
+  it('returns the tip params when the update is pending for too long', () => {
+    jest.spyOn(logger, 'info');
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: {
+          chains: {
+            '31337': {
+              contracts: { Api3ServerV1BuilderTipExtension: extensionAddress },
+              builderTipSettings: { consecutivelyUpdatableCountThreshold: 3, multiplier: 1.5 },
+            },
+          },
+        },
+        pendingTransactionsInfo: {
+          '31337': {
+            'evm-local': {
+              [sponsorWalletAddress]: { '0xBeaconSetId': { consecutivelyUpdatableCount: 4 } },
+            },
+          },
+        },
+      })
+    );
+
+    const builderTipParams = submitTransactionsModule.getBuilderTipParams('31337', 'evm-local', sponsorWalletAddress, [
+      '0xBeaconSetId',
+    ]);
+
+    expect(builderTipParams).toStrictEqual({ extensionAddress, multiplier: 1.5 });
+    expect(logger.info).toHaveBeenCalledWith(
+      'Update transaction is pending for too long. Will tip the block builder.',
+      {
+        consecutivelyUpdatableCount: 4,
+        consecutivelyUpdatableCountThreshold: 3,
+      }
+    );
+  });
+
+  it('makes the decision based on the most stuck data feed of the transaction', () => {
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: {
+          chains: {
+            '31337': {
+              contracts: { Api3ServerV1BuilderTipExtension: extensionAddress },
+              builderTipSettings: { consecutivelyUpdatableCountThreshold: 3, multiplier: 1.5 },
+            },
+          },
+        },
+        pendingTransactionsInfo: {
+          '31337': {
+            'evm-local': {
+              [sponsorWalletAddress]: {
+                '0xBeaconSetId1': { consecutivelyUpdatableCount: 1 },
+                '0xBeaconSetId2': { consecutivelyUpdatableCount: 4 },
+              },
+            },
+          },
+        },
+      })
+    );
+
+    const builderTipParams = submitTransactionsModule.getBuilderTipParams('31337', 'evm-local', sponsorWalletAddress, [
+      '0xBeaconSetId1',
+      '0xBeaconSetId2',
+    ]);
+
+    expect(builderTipParams).toStrictEqual({ extensionAddress, multiplier: 1.5 });
+  });
+});
+
 describe(submitTransactionsModule.submitTransactions.name, () => {
   it('submits a transaction for each feed to update in the batch', async () => {
     jest.spyOn(stateModule, 'getState').mockReturnValue(
@@ -409,6 +529,7 @@ describe(submitTransactionsModule.submitBatchTransaction.name, () => {
             '31337': {
               dataFeedUpdateInterval: 60,
               fallbackGasLimit: undefined,
+              contracts: {},
             },
           },
           walletDerivationScheme: {
@@ -559,6 +680,7 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
             '31337': {
               dataFeedUpdateInterval: 60,
               fallbackGasLimit: undefined,
+              contracts: {},
             },
           },
           walletDerivationScheme: {
@@ -685,6 +807,113 @@ describe(submitTransactionsModule.submitTransaction.name, () => {
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenNthCalledWith(1, 'Failed to get nonce.', new Error('some-error'));
   });
+
+  it('updates a dAPI with a builder tip when the update transaction is pending for too long', async () => {
+    jest.spyOn(submitTransactionsModule, 'createUpdateFeedCalldatas').mockReturnValue(['calldata1', 'calldata2']);
+    jest.spyOn(logger, 'info');
+    jest.spyOn(gasPriceModule, 'getRecommendedGasPrice').mockReturnValue(BigInt(100_000_000));
+    const api3ServerV1 = generateMockApi3ServerV1();
+    jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
+    const api3ServerV1BuilderTipExtension = generateMockApi3ServerV1BuilderTipExtension();
+    api3ServerV1BuilderTipExtension.multicallAndTip.estimateGas.mockResolvedValue(150_000n);
+    api3ServerV1BuilderTipExtension.tryMulticallAndTip.send.mockReturnValue({ hash: '0xTransactionHash' });
+    jest
+      .spyOn(contractsModule, 'getApi3ServerV1BuilderTipExtension')
+      .mockReturnValue(api3ServerV1BuilderTipExtension as unknown as ethers.Contract);
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: {
+          chains: {
+            '31337': {
+              dataFeedUpdateInterval: 60,
+              fallbackGasLimit: undefined,
+              contracts: { Api3ServerV1BuilderTipExtension: '0x1F585372F13b8d1A1b8d0F4918f6c979a71353c6' },
+              builderTipSettings: { consecutivelyUpdatableCountThreshold: 2, multiplier: 1.5 },
+            },
+          },
+          walletDerivationScheme: {
+            type: 'managed',
+            sponsorWalletMnemonic:
+              'diamond result history offer forest diagram crop armed stumble orchard stage glance',
+          },
+        },
+        pendingTransactionsInfo: {
+          '31337': {
+            'evm-local': {
+              '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c': {
+                '0xBeaconSetId': { consecutivelyUpdatableCount: 3 },
+              },
+            },
+          },
+        },
+      })
+    );
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
+    const provider = {
+      getTransactionCount: jest.fn().mockResolvedValue(0),
+    } as unknown as ethers.JsonRpcProvider;
+
+    await submitTransactionsModule.submitTransaction(
+      '31337',
+      'evm-local',
+      provider,
+      api3ServerV1 as unknown as Api3ServerV1,
+      allowPartial<UpdatableDataFeed>({
+        updatableBeacons: [
+          {
+            beaconId: '0xBeaconId1',
+            signedData: {
+              airnode: '0xAirnode1',
+              templateId: '0xTemplateId1',
+              timestamp: '1629811000',
+              encodedValue: '0xEncodedValue',
+              signature: '0xSignature',
+            },
+          },
+        ],
+        dataFeedInfo: {
+          dapiName,
+          dataFeedId: '0xBeaconSetId',
+          beaconsWithData: [
+            {
+              beaconId: '0xBeaconId1',
+              airnodeAddress: '0xAirnode1',
+              templateId: '0xTemplateId1',
+            },
+            {
+              beaconId: '0xBeaconId2',
+              airnodeAddress: '0xAirnode2',
+              templateId: '0xTemplateId2',
+            },
+          ],
+        },
+      }),
+      123_456
+    );
+
+    // Verify that the update transaction was submitted through the builder tip extension.
+    expect(api3ServerV1BuilderTipExtension.tryMulticallAndTip.send).toHaveBeenCalledWith(['calldata1', 'calldata2'], {
+      value: 24_750_000_000_000n, // multiplier (1.5) * gasPrice (100_000_000) * gasLimit (165_000)
+      gasPrice: 100_000_000n,
+      gasLimit: 165_000n,
+      nonce: 0,
+    });
+    expect(logger.info).toHaveBeenCalledWith(
+      'Update transaction is pending for too long. Will tip the block builder.',
+      {
+        consecutivelyUpdatableCount: 3,
+        consecutivelyUpdatableCountThreshold: 2,
+      }
+    );
+    expect(logger.info).toHaveBeenCalledWith('Updating data feed(s) with a builder tip.', {
+      sponsorWalletAddress: '0xA772F7b103BBecA3Bb6C74Be41fCc2c192C8146c',
+      gasPrice: '100000000',
+      gasLimit: '165000',
+      nonce: 0,
+      tipAmount: '24750000000000',
+    });
+    expect(api3ServerV1.tryMulticall.send).toHaveBeenCalledTimes(0);
+  });
 });
 
 describe(submitTransactionsModule.submitUpdate.name, () => {
@@ -726,7 +955,8 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
       undefined,
       sponsorWallet,
       BigInt(100_000_000),
-      11
+      11,
+      null
     );
 
     expect(result).toStrictEqual({ hash: '0xTransactionHash' });
@@ -785,7 +1015,8 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
       undefined,
       sponsorWallet,
       BigInt(100_000_000),
-      11
+      11,
+      null
     );
 
     expect(result).toStrictEqual({ hash: '0xTransactionHash' });
@@ -798,6 +1029,145 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
     });
     expect(logger.info).toHaveBeenNthCalledWith(2, 'Successfully submitted the update transaction.', {
       txHash: '0xTransactionHash',
+    });
+  });
+
+  it('submits a tipped beacon set update through the builder tip extension', async () => {
+    const api3ServerV1 = generateMockApi3ServerV1();
+    jest
+      .spyOn(api3ServerV1.interface, 'encodeFunctionData')
+      .mockReturnValueOnce('0xBeaconCalldata')
+      .mockReturnValueOnce('0xBeaconSetCalldata');
+    const api3ServerV1BuilderTipExtension = generateMockApi3ServerV1BuilderTipExtension();
+    api3ServerV1BuilderTipExtension.multicallAndTip.estimateGas.mockResolvedValue(150_000n);
+    api3ServerV1BuilderTipExtension.tryMulticallAndTip.send.mockReturnValue({ hash: '0xTransactionHash' });
+    jest
+      .spyOn(contractsModule, 'getApi3ServerV1BuilderTipExtension')
+      .mockReturnValue(api3ServerV1BuilderTipExtension as unknown as ethers.Contract);
+    jest.spyOn(logger, 'info');
+    const sponsorWallet = new ethers.Wallet('a0d8c3f6643d494b31914e7ec896215562aa358bf7ff68218afb53dfedd4167f');
+
+    const result = await submitTransactionsModule.submitUpdate(
+      api3ServerV1 as unknown as Api3ServerV1,
+      [
+        allowPartial<UpdatableDataFeed>({
+          dataFeedInfo: {
+            beaconsWithData: [
+              {
+                beaconId: '0xBeaconId1',
+                airnodeAddress: '0xAirnode1',
+                templateId: '0xTemplateId1',
+              },
+              {
+                beaconId: '0xBeaconId2',
+                airnodeAddress: '0xAirnode2',
+                templateId: '0xTemplateId2',
+              },
+            ],
+          },
+          updatableBeacons: [
+            {
+              beaconId: '0xBeaconId1',
+              signedData: {
+                airnode: '0xAirnode1',
+                templateId: '0xTemplateId1',
+                timestamp: '1629811000',
+                encodedValue: '0xEncodedValue',
+                signature: '0xSignature',
+              },
+            },
+          ],
+          shouldUpdateBeaconSet: true,
+        }),
+      ],
+      undefined,
+      sponsorWallet,
+      BigInt(100_000_000),
+      11,
+      { extensionAddress: '0x1F585372F13b8d1A1b8d0F4918f6c979a71353c6' as Address, multiplier: 1.5 }
+    );
+
+    expect(result).toStrictEqual({ hash: '0xTransactionHash' });
+    expect(contractsModule.getApi3ServerV1BuilderTipExtension).toHaveBeenCalledWith(
+      '0x1F585372F13b8d1A1b8d0F4918f6c979a71353c6',
+      sponsorWallet
+    );
+    expect(api3ServerV1BuilderTipExtension.multicallAndTip.estimateGas).toHaveBeenCalledWith(
+      ['0xBeaconCalldata', '0xBeaconSetCalldata'],
+      { value: 1n }
+    );
+    expect(api3ServerV1BuilderTipExtension.tryMulticallAndTip.send).toHaveBeenCalledWith(
+      ['0xBeaconCalldata', '0xBeaconSetCalldata'],
+      {
+        value: 24_750_000_000_000n, // multiplier (1.5) * gasPrice (100_000_000) * gasLimit (165_000)
+        gasPrice: 100_000_000n,
+        gasLimit: 165_000n,
+        nonce: 11,
+      }
+    );
+    expect(logger.info).toHaveBeenNthCalledWith(1, 'Updating data feed(s) with a builder tip.', {
+      sponsorWalletAddress: '0xD8Ba840Cae5c24e5Dc148355Ea3cde3CFB12f8eF',
+      gasPrice: '100000000',
+      gasLimit: '165000',
+      nonce: 11,
+      tipAmount: '24750000000000',
+    });
+  });
+
+  it('submits a tipped update through the builder tip extension for a single beacon feed', async () => {
+    const api3ServerV1 = generateMockApi3ServerV1();
+    jest.spyOn(api3ServerV1.interface, 'encodeFunctionData').mockReturnValueOnce('0xBeaconCalldata');
+    const api3ServerV1BuilderTipExtension = generateMockApi3ServerV1BuilderTipExtension();
+    api3ServerV1BuilderTipExtension.multicallAndTip.estimateGas.mockResolvedValue(100_000n);
+    api3ServerV1BuilderTipExtension.tryMulticallAndTip.send.mockReturnValue({ hash: '0xTransactionHash' });
+    jest
+      .spyOn(contractsModule, 'getApi3ServerV1BuilderTipExtension')
+      .mockReturnValue(api3ServerV1BuilderTipExtension as unknown as ethers.Contract);
+    const sponsorWallet = new ethers.Wallet('a0d8c3f6643d494b31914e7ec896215562aa358bf7ff68218afb53dfedd4167f');
+
+    const result = await submitTransactionsModule.submitUpdate(
+      api3ServerV1 as unknown as Api3ServerV1,
+      [
+        allowPartial<UpdatableDataFeed>({
+          dataFeedInfo: {
+            beaconsWithData: [
+              {
+                beaconId: '0xBeaconId',
+                airnodeAddress: '0xAirnode',
+                templateId: '0xTemplateId',
+              },
+            ],
+          },
+          updatableBeacons: [
+            {
+              beaconId: '0xBeaconId',
+              signedData: {
+                airnode: '0xAirnode',
+                templateId: '0xTemplateId',
+                timestamp: '1629811000',
+                encodedValue: '0xEncodedValue',
+                signature: '0xSignature',
+              },
+            },
+          ],
+        }),
+      ],
+      undefined,
+      sponsorWallet,
+      BigInt(100_000_000),
+      11,
+      { extensionAddress: '0x1F585372F13b8d1A1b8d0F4918f6c979a71353c6' as Address, multiplier: 1 }
+    );
+
+    // Verify that the single beacon update is not submitted directly to Api3ServerV1 (which is the case for untipped
+    // updates), but through the builder tip extension.
+    expect(result).toStrictEqual({ hash: '0xTransactionHash' });
+    expect(api3ServerV1.updateBeaconWithSignedData.send).toHaveBeenCalledTimes(0);
+    expect(api3ServerV1BuilderTipExtension.tryMulticallAndTip.send).toHaveBeenCalledWith(['0xBeaconCalldata'], {
+      value: 11_000_000_000_000n, // multiplier (1) * gasPrice (100_000_000) * gasLimit (110_000)
+      gasPrice: 100_000_000n,
+      gasLimit: 110_000n,
+      nonce: 11,
     });
   });
 });

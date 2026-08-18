@@ -38,6 +38,17 @@ export const getApi3ServerV1 = (address: string, provider: ethers.JsonRpcProvide
 export const getAirseekerRegistry = (address: string, provider: ethers.JsonRpcProvider) =>
   AirseekerRegistryFactory.connect(address, provider);
 
+// NOTE: The contract is not part of the "@api3/contracts" package and is expected to be deployed manually by whoever
+// wants to utilize it, so the ABI is defined here, limited to the functions Airseeker uses. The reference
+// implementation of the contract is provided in the "contracts" directory of this repository.
+const api3ServerV1BuilderTipExtensionInterface = new ethers.Interface([
+  'function multicallAndTip(bytes[] data) payable returns (bytes[] returndata)',
+  'function tryMulticallAndTip(bytes[] data) payable returns (bool[] successes, bytes[] returndata)',
+]);
+
+export const getApi3ServerV1BuilderTipExtension = (address: string, runner: ethers.ContractRunner) =>
+  new ethers.Contract(address, api3ServerV1BuilderTipExtensionInterface, runner);
+
 export const verifyMulticallResponse = (
   response: Awaited<ReturnType<AirseekerRegistry['tryMulticall']['staticCall']>>
 ) => {

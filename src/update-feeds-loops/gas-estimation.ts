@@ -1,8 +1,9 @@
 import { go } from '@api3/commons';
 import type { Api3ServerV1 } from '@api3/contracts';
+import type { ethers } from 'ethers';
 
 import { logger } from '../logger';
-import { sanitizeEthersError } from '../utils';
+import { multiplyBigNumber, sanitizeEthersError } from '../utils';
 
 import type { UpdatableBeacon } from './get-updatable-feeds';
 
@@ -47,15 +48,29 @@ export const estimateSingleBeaconGasLimit = async (
   return handleRpcGasLimitFailure(goEstimateGas.error, fallbackGasLimit);
 };
 
+// The gas is estimated on the strict multicall variant (which reverts in case the update is no longer necessary)
+// while the transaction is submitted using the try variant, which consumes slightly more gas, hence the extra 10%.
+const estimateGasLimitWithBuffer = async (estimateGas: () => Promise<bigint>, fallbackGasLimit: number | undefined) => {
+  const goEstimateGas = await go(estimateGas);
+  if (goEstimateGas.success) return multiplyBigNumber(goEstimateGas.data, 1.1);
+  return handleRpcGasLimitFailure(goEstimateGas.error, fallbackGasLimit);
+};
+
 export const estimateMulticallGasLimit = async (
   api3ServerV1: Api3ServerV1,
   calldatas: string[],
   fallbackGasLimit: number | undefined
-) => {
-  const goEstimateGas = await go(async () => api3ServerV1.multicall.estimateGas(calldatas));
-  if (goEstimateGas.success) {
-    // Adding a extra 10% because multicall consumes less gas than tryMulticall
-    return (goEstimateGas.data * BigInt(Math.round(1.1 * 100))) / 100n;
-  }
-  return handleRpcGasLimitFailure(goEstimateGas.error, fallbackGasLimit);
-};
+) => estimateGasLimitWithBuffer(async () => api3ServerV1.multicall.estimateGas(calldatas), fallbackGasLimit);
+
+export const estimateBuilderTipMulticallGasLimit = async (
+  api3ServerV1BuilderTipExtension: ethers.Contract,
+  calldatas: string[],
+  fallbackGasLimit: number | undefined
+) =>
+  // A placeholder tip of 1 wei is used because "multicallAndTip" requires a non-zero value to be sent. The tip amount
+  // does not affect the gas usage, but the node may check that the sender balance covers the value, which is why the
+  // estimation needs to be done with the sponsor wallet as the sender.
+  estimateGasLimitWithBuffer(
+    async () => api3ServerV1BuilderTipExtension.getFunction('multicallAndTip').estimateGas(calldatas, { value: 1n }),
+    fallbackGasLimit
+  );

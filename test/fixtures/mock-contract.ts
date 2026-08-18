@@ -48,3 +48,15 @@ export const generateMockApi3ServerV1 = () => {
     tryMulticall: { staticCall: jest.fn(), send: jest.fn() },
   } satisfies DeepPartial<Api3ServerV1>;
 };
+
+// NOTE: The contract is accessed via "getFunction" because it is created as a plain ethers Contract (the contract is
+// not part of the "@api3/contracts" package, so there is no typechain support).
+export const generateMockApi3ServerV1BuilderTipExtension = () => {
+  const multicallAndTip = { estimateGas: jest.fn() };
+  const tryMulticallAndTip = { send: jest.fn() };
+  return {
+    multicallAndTip,
+    tryMulticallAndTip,
+    getFunction: jest.fn((name: string) => (name === 'multicallAndTip' ? multicallAndTip : tryMulticallAndTip)),
+  };
+};

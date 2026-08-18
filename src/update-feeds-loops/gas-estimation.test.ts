@@ -1,9 +1,18 @@
 import type { Api3ServerV1 } from '@api3/contracts';
+import type { ethers } from 'ethers';
 
-import { generateMockApi3ServerV1 } from '../../test/fixtures/mock-contract';
+import {
+  generateMockApi3ServerV1,
+  generateMockApi3ServerV1BuilderTipExtension,
+} from '../../test/fixtures/mock-contract';
 import { logger } from '../logger';
 
-import { estimateMulticallGasLimit, estimateSingleBeaconGasLimit, handleRpcGasLimitFailure } from './gas-estimation';
+import {
+  estimateBuilderTipMulticallGasLimit,
+  estimateMulticallGasLimit,
+  estimateSingleBeaconGasLimit,
+  handleRpcGasLimitFailure,
+} from './gas-estimation';
 
 describe(estimateMulticallGasLimit.name, () => {
   it('estimates the gas limit for a multicall', async () => {
@@ -72,6 +81,65 @@ describe(estimateMulticallGasLimit.name, () => {
 
     expect(gasLimit).toBe(2_000_000n);
     expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith('Gas estimation failed because of a contract revert.', {
+      errorMessage: 'Does not update timestamp',
+    });
+    expect(logger.warn).toHaveBeenCalledTimes(0);
+  });
+});
+
+describe(estimateBuilderTipMulticallGasLimit.name, () => {
+  it('estimates the gas limit for a builder tip multicall', async () => {
+    const mockApi3ServerV1BuilderTipExtension = generateMockApi3ServerV1BuilderTipExtension();
+    mockApi3ServerV1BuilderTipExtension.multicallAndTip.estimateGas.mockResolvedValueOnce(BigInt(500_000));
+
+    const gasLimit = await estimateBuilderTipMulticallGasLimit(
+      mockApi3ServerV1BuilderTipExtension as unknown as ethers.Contract,
+      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
+      undefined
+    );
+
+    expect(gasLimit).toStrictEqual(BigInt(550_000)); // Note that the gas limit is increased by 10%.
+    // Verify that the estimation is done with a placeholder tip of 1 wei.
+    expect(mockApi3ServerV1BuilderTipExtension.multicallAndTip.estimateGas).toHaveBeenCalledWith(
+      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
+      { value: 1n }
+    );
+  });
+
+  it('uses fallback gas limit when estimation fails', async () => {
+    const mockApi3ServerV1BuilderTipExtension = generateMockApi3ServerV1BuilderTipExtension();
+    mockApi3ServerV1BuilderTipExtension.multicallAndTip.estimateGas.mockRejectedValue(new Error('some-error'));
+    jest.spyOn(logger, 'warn');
+
+    const gasLimit = await estimateBuilderTipMulticallGasLimit(
+      mockApi3ServerV1BuilderTipExtension as unknown as ethers.Contract,
+      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
+      2_000_000
+    );
+
+    expect(gasLimit).toStrictEqual(BigInt(2_000_000));
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith('Unable to estimate gas using provider.', {
+      errorMessage: 'some-error',
+    });
+  });
+
+  it('detects a contract revert due to timestamp check', async () => {
+    const mockApi3ServerV1BuilderTipExtension = generateMockApi3ServerV1BuilderTipExtension();
+    mockApi3ServerV1BuilderTipExtension.multicallAndTip.estimateGas.mockRejectedValue(
+      new Error('Does not update timestamp')
+    );
+    jest.spyOn(logger, 'info');
+    jest.spyOn(logger, 'warn');
+
+    const gasLimit = await estimateBuilderTipMulticallGasLimit(
+      mockApi3ServerV1BuilderTipExtension as unknown as ethers.Contract,
+      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
+      undefined
+    );
+
+    expect(gasLimit).toBeNull();
     expect(logger.info).toHaveBeenCalledWith('Gas estimation failed because of a contract revert.', {
       errorMessage: 'Does not update timestamp',
     });
