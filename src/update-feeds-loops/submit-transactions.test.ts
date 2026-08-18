@@ -370,7 +370,9 @@ describe(submitTransactionsModule.getBuilderTipParams.name, () => {
         pendingTransactionsInfo: {
           '31337': {
             'evm-local': {
-              [sponsorWalletAddress]: { '0xBeaconSetId': { consecutivelyUpdatableCount: 3 } },
+              [sponsorWalletAddress]: {
+                '0xBeaconSetId': { consecutivelyUpdatableCount: 3, hasSubmittedTransaction: true },
+              },
             },
           },
         },
@@ -464,6 +466,38 @@ describe(submitTransactionsModule.getBuilderTipParams.name, () => {
       multiplier: 1.5,
       maxTip: undefined,
     });
+  });
+
+  it('ignores the data feeds that have no submitted transaction', () => {
+    jest.spyOn(stateModule, 'getState').mockReturnValue(
+      allowPartial<stateModule.State>({
+        config: {
+          chains: {
+            '31337': {
+              contracts: { Api3ServerV1BuilderTipExtension: extensionAddress },
+              builderTipSettings: { consecutivelyUpdatableCountThreshold: 3, multiplier: 1.5 },
+            },
+          },
+        },
+        pendingTransactionsInfo: {
+          '31337': {
+            'evm-local': {
+              [sponsorWalletAddress]: {
+                '0xBeaconSetId1': { consecutivelyUpdatableCount: 4, hasSubmittedTransaction: false },
+                '0xBeaconSetId2': { consecutivelyUpdatableCount: 1, hasSubmittedTransaction: true },
+              },
+            },
+          },
+        },
+      })
+    );
+
+    const builderTipParams = submitTransactionsModule.getBuilderTipParams('31337', 'evm-local', sponsorWalletAddress, [
+      '0xBeaconSetId1',
+      '0xBeaconSetId2',
+    ]);
+
+    expect(builderTipParams).toBeNull();
   });
 
   it('returns null when no transaction has been submitted during the pending period', () => {

@@ -57,9 +57,9 @@ export interface BuilderTipParams {
 }
 
 // Determines whether the update transaction should tip the block builder by being submitted through the
-// Api3ServerV1BuilderTipExtension contract. This is the case when the extension is configured for the chain and a
-// submitted update transaction has remained pending for more than the configured number of consecutive attempts.
-// Mirroring the gas price scaling, the most stuck data feed of the transaction is used to make the decision.
+// Api3ServerV1BuilderTipExtension contract. Mirroring the gas price scaling, the most stuck data feed of the
+// transaction is used to make the decision. Feeds without a submitted transaction are ignored, because a feed can
+// remain updatable without anything being stuck in the mempool (e.g. when there is no gas price to use).
 export const getBuilderTipParams = (
   chainId: string,
   providerName: string,
@@ -68,19 +68,15 @@ export const getBuilderTipParams = (
 ): BuilderTipParams | null => {
   const { contracts, builderTipSettings } = getState().config.chains[chainId]!;
   const extensionAddress = contracts.Api3ServerV1BuilderTipExtension;
-  if (!extensionAddress || !builderTipSettings || dataFeedIds.length === 0) return null;
+  if (!extensionAddress || !builderTipSettings) return null;
 
   const pendingTransactionsInfo = getPendingTransactionsInfo(chainId, providerName, sponsorWalletAddress, dataFeedIds);
   const consecutivelyUpdatableCount = Math.max(
-    ...pendingTransactionsInfo.map((info) => info?.consecutivelyUpdatableCount ?? 0)
+    0,
+    ...pendingTransactionsInfo.map((info) => (info?.hasSubmittedTransaction ? info.consecutivelyUpdatableCount : 0))
   );
   const { consecutivelyUpdatableCountThreshold, multiplier, maxTip } = builderTipSettings;
   if (consecutivelyUpdatableCount <= consecutivelyUpdatableCountThreshold) return null;
-
-  // The feed may remain updatable without any transaction being submitted (e.g. when there is no gas price to use or
-  // the RPC calls fail). Tipping only makes sense for a transaction that is stuck in the mempool, so the first
-  // submission after such a period must not be tipped.
-  if (!pendingTransactionsInfo.some((info) => info?.hasSubmittedTransaction)) return null;
 
   logger.info('Update transaction is pending for too long. Will tip the block builder.', {
     consecutivelyUpdatableCount,
