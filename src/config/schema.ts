@@ -19,8 +19,7 @@ export const optionalContractsSchema = z.strictObject({
   Api3ServerV1: addressSchema.optional(),
   AirseekerRegistry: addressSchema,
   // The contract is not part of the package @api3/contracts and is expected to be deployed manually. Specifying the
-  // address is an explicit opt-in for tipping the block builder and requires "builderTipSettings" to be specified as
-  // well.
+  // address opts the chain in for tipping the block builder and requires "builderTipSettings".
   Api3ServerV1BuilderTipExtension: addressSchema.optional(),
 });
 
@@ -69,9 +68,8 @@ export const builderTipSettingsSchema = z.strictObject({
   // The update transaction is submitted through the Api3ServerV1BuilderTipExtension contract once the
   // consecutivelyUpdatableCount of the pending transaction exceeds this threshold.
   consecutivelyUpdatableCountThreshold: z.number().int().positive(),
-  // The tip amount is computed as "multiplier * gasPrice * gasLimit" of the update transaction. The tip computation
-  // quantizes the multiplier to two decimals, so more decimals would be silently misapplied (and values below 0.005
-  // would quantize to a zero tip, which the extension contract rejects).
+  // The tip amount is computed as "multiplier * gasPrice * gasLimit" of the update transaction. The computation
+  // quantizes the multiplier to two decimals, so more decimals would be silently misapplied.
   multiplier: z
     .number()
     .positive()

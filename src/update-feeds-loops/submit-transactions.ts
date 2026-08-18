@@ -85,12 +85,9 @@ export const getBuilderTipParams = (
   return { chainId, providerName, extensionAddress, multiplier, maxTip };
 };
 
-// The extension forwards the batched calls with a low-level call, which succeeds vacuously when the target has no
-// code. Verifying that the extension wraps the configured Api3ServerV1 guards against a misconfigured or misdeployed
-// extension silently draining the sponsor wallet through tips for transactions that update nothing. The wrapped
-// address is immutable, so a successful verification is cached in the state. It is cached per chain and provider
-// (rather than per extension address) because the answer is only as trustworthy as the provider that gave it, and
-// because the same address may be deployed on multiple chains.
+// A misconfigured extension would tip for transactions that update nothing, so verify that it wraps the configured
+// Api3ServerV1. The wrapped address is immutable, so the verification is cached per chain and provider. It is not
+// shared across providers because it is only as trustworthy as the provider that answered it.
 const verifyBuilderTipExtension = async (
   builderTipParams: BuilderTipParams,
   api3ServerV1BuilderTipExtension: Api3ServerV1BuilderTipExtension,
@@ -121,8 +118,7 @@ export const submitUpdate = async (
   const goSubmitUpdate = await go(async () => {
     const sponsorWalletAddress = sponsorWallet.address as Address;
 
-    // Tipped updates are always submitted as a multicall through the extension contract, so the single beacon update
-    // fast path only applies to untipped updates.
+    // Tipped updates always go through the extension contract, so the single beacon fast path is untipped only.
     const isSingleBeaconUpdate =
       !builderTipParams &&
       updatableDataFeeds.length === 1 &&
@@ -159,11 +155,9 @@ export const submitUpdate = async (
     );
 
     if (builderTipParams) {
-      // The calldatas are identical to the ones for the Api3ServerV1 multicall functions, but the batch is submitted
-      // through the Api3ServerV1BuilderTipExtension contract, which transfers the value sent along with the
-      // transaction to the block builder as a tip. Tipping is best-effort: when any part of the tipped flow fails
-      // (e.g. the sponsor wallet cannot cover the tip on top of the transaction fee), the update falls through to the
-      // regular untipped submission below instead of being dropped.
+      // The extension takes the same calldatas as the Api3ServerV1 multicall functions and transfers the value sent
+      // along with the transaction to the block builder as a tip. Tipping is best-effort, so when any part of the
+      // tipped flow fails, the update falls through to the untipped submission below instead of being dropped.
       const goSubmitTippedUpdate = await go(async () => {
         const api3ServerV1BuilderTipExtension = getApi3ServerV1BuilderTipExtension(
           builderTipParams.extensionAddress,

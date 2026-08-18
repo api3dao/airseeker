@@ -9,8 +9,7 @@ const config: HardhatUserConfig = {
     },
   },
   defaultNetwork: 'localhost',
-  // Matches the compiler settings of the api3dao/contracts repository so that the reference
-  // Api3ServerV1BuilderTipExtension contract compiles to the same bytecode.
+  // Mirrors the compiler settings of the api3dao/contracts repository.
   solidity: {
     version: '0.8.27',
     settings: {
