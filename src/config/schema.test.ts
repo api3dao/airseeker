@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { ZodError } from 'zod';
 
 import {
+  builderTipSettingsSchema,
   chainsSchema,
   configSchema,
   deviationThresholdCoefficientSchema,
@@ -172,7 +173,7 @@ describe('chains schema', () => {
           },
         },
         gasSettings,
-        builderTipSettings: { consecutivelyUpdatableCountThreshold: 3, multiplier: 1.5 },
+        builderTipSettings: { consecutivelyUpdatableCountThreshold: 3, multiplier: 1.5, maxTip: '50000000000000000' },
         dataFeedBatchSize: 10,
         dataFeedUpdateInterval: 60,
       },
@@ -188,7 +189,14 @@ describe('chains schema', () => {
     expect(parsed['31337']!.builderTipSettings).toStrictEqual({
       consecutivelyUpdatableCountThreshold: 3,
       multiplier: 1.5,
+      maxTip: 50_000_000_000_000_000n,
     });
+  });
+
+  it('throws on an invalid builder tip maxTip', () => {
+    expect(() =>
+      builderTipSettingsSchema.parse({ consecutivelyUpdatableCountThreshold: 3, multiplier: 1.5, maxTip: '0.5' })
+    ).toThrow('Must be a positive integer amount in wei');
   });
 
   it('throws if the builder tip extension is specified without the settings', () => {

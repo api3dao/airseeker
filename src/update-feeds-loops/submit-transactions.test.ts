@@ -409,7 +409,7 @@ describe(submitTransactionsModule.getBuilderTipParams.name, () => {
       '0xBeaconSetId',
     ]);
 
-    expect(builderTipParams).toStrictEqual({ extensionAddress, multiplier: 1.5 });
+    expect(builderTipParams).toStrictEqual({ extensionAddress, multiplier: 1.5, maxTip: undefined });
     expect(logger.info).toHaveBeenCalledWith(
       'Update transaction is pending for too long. Will tip the block builder.',
       {
@@ -448,7 +448,7 @@ describe(submitTransactionsModule.getBuilderTipParams.name, () => {
       '0xBeaconSetId2',
     ]);
 
-    expect(builderTipParams).toStrictEqual({ extensionAddress, multiplier: 1.5 });
+    expect(builderTipParams).toStrictEqual({ extensionAddress, multiplier: 1.5, maxTip: undefined });
   });
 });
 
@@ -1084,7 +1084,7 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
       sponsorWallet,
       BigInt(100_000_000),
       11,
-      { extensionAddress: '0x1F585372F13b8d1A1b8d0F4918f6c979a71353c6' as Address, multiplier: 1.5 }
+      { extensionAddress: '0x1F585372F13b8d1A1b8d0F4918f6c979a71353c6' as Address, multiplier: 1.5, maxTip: undefined }
     );
 
     expect(result).toStrictEqual({ hash: '0xTransactionHash' });
@@ -1111,6 +1111,69 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
       gasLimit: '165000',
       nonce: 11,
       tipAmount: '24750000000000',
+    });
+  });
+
+  it('caps the tip amount at the configured maximum', async () => {
+    const api3ServerV1 = generateMockApi3ServerV1();
+    jest.spyOn(api3ServerV1.interface, 'encodeFunctionData').mockReturnValueOnce('0xBeaconCalldata');
+    const api3ServerV1BuilderTipExtension = generateMockApi3ServerV1BuilderTipExtension();
+    api3ServerV1BuilderTipExtension.multicallAndTip.estimateGas.mockResolvedValue(150_000n);
+    api3ServerV1BuilderTipExtension.tryMulticallAndTip.send.mockReturnValue({ hash: '0xTransactionHash' });
+    jest
+      .spyOn(contractsModule, 'getApi3ServerV1BuilderTipExtension')
+      .mockReturnValue(api3ServerV1BuilderTipExtension as unknown as ethers.Contract);
+    jest.spyOn(logger, 'warn');
+    const sponsorWallet = new ethers.Wallet('a0d8c3f6643d494b31914e7ec896215562aa358bf7ff68218afb53dfedd4167f');
+
+    const result = await submitTransactionsModule.submitUpdate(
+      api3ServerV1 as unknown as Api3ServerV1,
+      [
+        allowPartial<UpdatableDataFeed>({
+          dataFeedInfo: {
+            beaconsWithData: [
+              {
+                beaconId: '0xBeaconId',
+                airnodeAddress: '0xAirnode',
+                templateId: '0xTemplateId',
+              },
+            ],
+          },
+          updatableBeacons: [
+            {
+              beaconId: '0xBeaconId',
+              signedData: {
+                airnode: '0xAirnode',
+                templateId: '0xTemplateId',
+                timestamp: '1629811000',
+                encodedValue: '0xEncodedValue',
+                signature: '0xSignature',
+              },
+            },
+          ],
+        }),
+      ],
+      undefined,
+      sponsorWallet,
+      BigInt(100_000_000),
+      11,
+      {
+        extensionAddress: '0x1F585372F13b8d1A1b8d0F4918f6c979a71353c6' as Address,
+        multiplier: 1.5,
+        maxTip: 1_000_000_000_000n,
+      }
+    );
+
+    expect(result).toStrictEqual({ hash: '0xTransactionHash' });
+    expect(logger.warn).toHaveBeenCalledWith('Sanitizing tip amount.', {
+      tipAmount: '24750000000000', // multiplier (1.5) * gasPrice (100_000_000) * gasLimit (165_000)
+      maxTip: '1000000000000',
+    });
+    expect(api3ServerV1BuilderTipExtension.tryMulticallAndTip.send).toHaveBeenCalledWith(['0xBeaconCalldata'], {
+      value: 1_000_000_000_000n,
+      gasPrice: 100_000_000n,
+      gasLimit: 165_000n,
+      nonce: 11,
     });
   });
 
@@ -1156,7 +1219,7 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
       sponsorWallet,
       BigInt(100_000_000),
       11,
-      { extensionAddress: '0x1F585372F13b8d1A1b8d0F4918f6c979a71353c6' as Address, multiplier: 1 }
+      { extensionAddress: '0x1F585372F13b8d1A1b8d0F4918f6c979a71353c6' as Address, multiplier: 1, maxTip: undefined }
     );
 
     // Verify that the single beacon update is not submitted directly to Api3ServerV1 (which is the case for untipped

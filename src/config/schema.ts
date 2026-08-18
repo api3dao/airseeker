@@ -71,6 +71,13 @@ export const builderTipSettingsSchema = z.strictObject({
   consecutivelyUpdatableCountThreshold: z.number().int().positive(),
   // The tip amount is computed as "multiplier * gasPrice * gasLimit" of the update transaction.
   multiplier: z.number().positive(),
+  // The maximum tip amount in wei. While the gas price component of the tip is capped by sanitization, the gas limit
+  // is based on the estimate of the RPC provider, so the cap guards against a misbehaving provider inflating the tip.
+  maxTip: z
+    .string()
+    .regex(/^[1-9]\d*$/, 'Must be a positive integer amount in wei')
+    .transform(BigInt)
+    .optional(),
 });
 
 export type BuilderTipSettings = z.infer<typeof builderTipSettingsSchema>;

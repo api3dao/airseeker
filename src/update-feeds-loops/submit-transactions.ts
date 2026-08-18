@@ -50,6 +50,7 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
 export interface BuilderTipParams {
   extensionAddress: Address;
   multiplier: number;
+  maxTip: bigint | undefined;
 }
 
 // Determines whether the update transaction should tip the block builder by being submitted through the
@@ -74,14 +75,14 @@ export const getBuilderTipParams = (
           ?.consecutivelyUpdatableCount ?? 0
     )
   );
-  const { consecutivelyUpdatableCountThreshold, multiplier } = builderTipSettings;
+  const { consecutivelyUpdatableCountThreshold, multiplier, maxTip } = builderTipSettings;
   if (consecutivelyUpdatableCount <= consecutivelyUpdatableCountThreshold) return null;
 
   logger.info('Update transaction is pending for too long. Will tip the block builder.', {
     consecutivelyUpdatableCount,
     consecutivelyUpdatableCountThreshold,
   });
-  return { extensionAddress, multiplier };
+  return { extensionAddress, multiplier, maxTip };
 };
 
 export const submitUpdate = async (
@@ -151,7 +152,14 @@ export const submitUpdate = async (
       if (!gasLimit) return null;
 
       // The tip is paid on top of the transaction fee, so the sponsor wallet needs to have enough balance for both.
-      const tipAmount = multiplyBigNumber(gasPrice * gasLimit, builderTipParams.multiplier);
+      let tipAmount = multiplyBigNumber(gasPrice * gasLimit, builderTipParams.multiplier);
+      if (builderTipParams.maxTip !== undefined && tipAmount > builderTipParams.maxTip) {
+        logger.warn('Sanitizing tip amount.', {
+          tipAmount: tipAmount.toString(),
+          maxTip: builderTipParams.maxTip.toString(),
+        });
+        tipAmount = builderTipParams.maxTip;
+      }
       logger.info('Updating data feed(s) with a builder tip.', {
         sponsorWalletAddress,
         gasPrice: gasPrice.toString(),

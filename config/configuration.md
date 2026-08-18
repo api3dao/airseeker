@@ -226,6 +226,12 @@ transactions start tipping the block builder.
 The multiplier used to compute the tip amount from the transaction fee (i.e., the gas price multiplied by the gas limit)
 of the update transaction.
 
+##### `maxTip` _(optional)_
+
+The maximum tip amount in wei, as a string. While the gas price component of the tip is capped by sanitization, the gas
+limit is based on the estimate of the RPC provider, so the cap guards against a misbehaving provider inflating the tip.
+If not specified, the tip amount is not capped.
+
 #### `deviationThresholdCoefficient` _(optional)_
 
 The global coefficient applied to all deviation checks. Used to differentiate alternate deployments. For example:
