@@ -25,6 +25,13 @@ contract Api3ServerV1BuilderTipExtension is IApi3ServerV1BuilderTipExtension {
     /// @param api3ServerV1_ Api3ServerV1 address
     constructor(address api3ServerV1_) {
         require(api3ServerV1_ != address(0), "Api3ServerV1 address zero");
+        // A call to an address with no code succeeds vacuously, which would
+        // cause the batched calls to appear successful and the tip to be
+        // paid without updating any data feed
+        require(
+            api3ServerV1_.code.length > 0,
+            "Api3ServerV1 address no code"
+        );
         api3ServerV1 = api3ServerV1_;
     }
 
@@ -95,8 +102,11 @@ contract Api3ServerV1BuilderTipExtension is IApi3ServerV1BuilderTipExtension {
     /// @dev Transfers the value sent along with the transaction to
     /// `block.coinbase`, which is assumed to be the address that the block
     /// builder receives payments at. A low-level call is used because the
-    /// builder may be receiving payments at a contract
+    /// builder may be receiving payments at a contract. The zero address
+    /// check prevents the tip from being silently burned on chains whose
+    /// coinbase is not set
     function _tipBuilder() private {
+        require(block.coinbase != address(0), "Coinbase address zero");
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = block.coinbase.call{value: msg.value}("");
         require(success, "Tip transfer reverted");
