@@ -23,6 +23,7 @@
   },
   "exclude": ["dist/**/*", "node_modules/**/*"],
   "include": [
+    "./deploy/**/*",
     "./src/**/*",
     "./test/**/*",
     "./scripts/**/*",

@@ -82,8 +82,8 @@ importers:
         specifier: ^2.29.0
         version: 2.29.0(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3))(typescript@5.9.3)
       hardhat-deploy:
-        specifier: ^0.14.1
-        version: 0.14.1
+        specifier: ^1.0.4
+        version: 1.0.4
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -2629,8 +2629,8 @@ packages:
     engines: {node: '>=0.4.7'}
     hasBin: true
 
-  hardhat-deploy@0.14.1:
-    resolution: {integrity: sha512-hfho8XtlWqCi/xV2y+z3gBzkCcEP8o5smx6IS1X1ar8gL1ocRulD0kVl5rfZtNLdPjvXa77EtvhBgGAeDQsoOA==}
+  hardhat-deploy@1.0.4:
+    resolution: {integrity: sha512-vl6vYQHDtZmILerAIRERI2AjghLH5gJIcQjNrSldn2SjQdY5Y47umXVll4/ywPzBRlsqdpJfL92PhnQ+1xB+Sg==}
 
   hardhat-gas-reporter@1.0.10:
     resolution: {integrity: sha512-02N4+So/fZrzJ88ci54GqwVA3Zrf0C9duuTyGt0CFRIh/CdNwbnTgkXkRfojOMLBQ+6t+lBIkgbsOtqMvNwikA==}
@@ -3447,6 +3447,9 @@ packages:
 
   neo-async@2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
+
+  neoqs@6.13.0:
+    resolution: {integrity: sha512-IysBpjrEG9qiUb/IT6XrXSz2ASzBxLebp4s8/GBm7STYC315vMNqH0aWdRR+f7KvXK4aRlLcf5r2Z6dOTxQSrQ==}
 
   no-case@3.0.4:
     resolution: {integrity: sha512-fgAN3jGAh+RoxUGZHTSOLJIqUc2wmoBwGR4tbpNAKmmovFoWq0OdRkb0VkldReO2a2iBT/OEulG9XSUc10r3zg==}
@@ -8112,7 +8115,7 @@ snapshots:
     optionalDependencies:
       uglify-js: 3.19.3
 
-  hardhat-deploy@0.14.1:
+  hardhat-deploy@1.0.4:
     dependencies:
       '@ethersproject/abi': 5.8.0
       '@ethersproject/abstract-signer': 5.8.0
@@ -8125,7 +8128,6 @@ snapshots:
       '@ethersproject/solidity': 5.8.0
       '@ethersproject/transactions': 5.8.0
       '@ethersproject/wallet': 5.8.0
-      '@types/qs': 6.15.1
       axios: 0.21.4(debug@4.4.3)
       chalk: 4.1.2
       chokidar: 3.6.0
@@ -8136,7 +8138,7 @@ snapshots:
       fs-extra: 10.1.0
       match-all: 1.2.7
       murmur-128: 0.2.1
-      qs: 6.15.3
+      neoqs: 6.13.0
       zksync-ethers: 5.11.2(ethers@5.8.0)
     transitivePeerDependencies:
       - bufferutil
@@ -9195,6 +9197,8 @@ snapshots:
       through2: 4.0.2
 
   neo-async@2.6.2: {}
+
+  neoqs@6.13.0: {}
 
   no-case@3.0.4:
     dependencies:

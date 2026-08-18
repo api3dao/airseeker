@@ -118,10 +118,9 @@ The address of the AirseekerRegistry contract.
 
 ##### `Api3ServerV1BuilderTipExtension` _(optional)_
 
-The address of the Api3ServerV1BuilderTipExtension contract. The contract is not part of `@api3/contracts` and is
-expected to be deployed manually by whoever wants to utilize it. The reference implementation is provided in this
-repository under `contracts/` and can be compiled with `pnpm hardhat compile`. Specifying the address opts the chain in
-for tipping the block builder and must be done together with specifying `builderTipSettings`.
+The address of the Api3ServerV1BuilderTipExtension contract. The reference implementation and how to deploy it are
+documented under [`contracts/`](../contracts/README.md). Specifying the address opts the chain in for tipping the block
+builder and must be done together with specifying `builderTipSettings`.
 
 #### `providers`
 

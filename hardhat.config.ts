@@ -1,9 +1,21 @@
+import { hardhatConfig } from '@api3/contracts';
 import type { HardhatUserConfig } from 'hardhat/types';
 
 import '@nomicfoundation/hardhat-toolbox';
+import 'hardhat-deploy';
+import 'dotenv/config';
 
 const config: HardhatUserConfig = {
+  // Mirrors the verification setup of the api3dao/contracts repository.
+  blockscout: hardhatConfig.blockscout(),
+  etherscan: hardhatConfig.etherscan(),
+  sourcify: {
+    enabled: true,
+    apiUrl: 'https://sourcify.dev/server',
+    browserUrl: 'https://repo.sourcify.dev',
+  },
   networks: {
+    ...hardhatConfig.networks(),
     localhost: {
       url: 'http://127.0.0.1:8545/',
     },
