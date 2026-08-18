@@ -28,6 +28,33 @@ export const setPendingTransactionInfo = (
   });
 };
 
+export const getPendingTransactionsInfo = (
+  chainId: string,
+  providerName: string,
+  sponsorWalletAddress: Address,
+  dataFeedIds: Hex[]
+) => {
+  const state = getState();
+  return dataFeedIds.map(
+    (dataFeedId) => state.pendingTransactionsInfo[chainId]?.[providerName]?.[sponsorWalletAddress]?.[dataFeedId]
+  );
+};
+
+export const markPendingTransactionsAsSubmitted = (
+  chainId: string,
+  providerName: string,
+  sponsorWalletAddress: Address,
+  dataFeedIds: Hex[]
+) => {
+  updateState((draft) => {
+    for (const dataFeedId of dataFeedIds) {
+      const pendingTransactionInfo =
+        draft.pendingTransactionsInfo[chainId]?.[providerName]?.[sponsorWalletAddress]?.[dataFeedId];
+      if (pendingTransactionInfo) pendingTransactionInfo.hasSubmittedTransaction = true;
+    }
+  });
+};
+
 export const updatePendingTransactionsInfo = (
   chainId: ChainId,
   providerName: string,
@@ -69,6 +96,7 @@ export const updatePendingTransactionsInfo = (
             consecutivelyUpdatableCount: 1,
             firstUpdatableTimestamp: currentTimestamp,
             onChainTimestamp: dataFeedTimestamp,
+            hasSubmittedTransaction: false,
           }
         : {
             ...pendingTransactionInfo,

@@ -1,10 +1,10 @@
 import { go } from '@api3/commons';
 import type { Api3ServerV1 } from '@api3/contracts';
-import type { ethers } from 'ethers';
 
 import { logger } from '../logger';
 import { multiplyBigNumber, sanitizeEthersError } from '../utils';
 
+import type { Api3ServerV1BuilderTipExtension } from './contracts';
 import type { UpdatableBeacon } from './get-updatable-feeds';
 
 export const handleRpcGasLimitFailure = (error: Error, fallbackGasLimit: number | undefined) => {
@@ -62,15 +62,25 @@ export const estimateMulticallGasLimit = async (
   fallbackGasLimit: number | undefined
 ) => estimateGasLimitWithBuffer(async () => api3ServerV1.multicall.estimateGas(calldatas), fallbackGasLimit);
 
+// Extra headroom for the transfer of the tip to the block builder. Its gas cost at inclusion time can exceed the one
+// at estimation time, because the coinbase of the block that includes the transaction may be an empty account or a
+// contract with a costly receive function, unlike the coinbase that the RPC provider simulates against.
+const BUILDER_TIP_TRANSFER_GAS_HEADROOM = 30_000n;
+
 export const estimateBuilderTipMulticallGasLimit = async (
-  api3ServerV1BuilderTipExtension: ethers.Contract,
-  calldatas: string[],
-  fallbackGasLimit: number | undefined
-) =>
+  api3ServerV1BuilderTipExtension: Api3ServerV1BuilderTipExtension,
+  calldatas: string[]
+) => {
   // A placeholder tip of 1 wei is used because "multicallAndTip" requires a non-zero value to be sent. The tip amount
   // does not affect the gas usage, but the node may check that the sender balance covers the value, which is why the
   // estimation needs to be done with the sponsor wallet as the sender.
-  estimateGasLimitWithBuffer(
-    async () => api3ServerV1BuilderTipExtension.getFunction('multicallAndTip').estimateGas(calldatas, { value: 1n }),
-    fallbackGasLimit
+  //
+  // No fallback gas limit is used on purpose. The fallback is calibrated for the direct Api3ServerV1 multicall, so
+  // the costlier extension route could run out of gas with it and the tip amount would be sized by the fallback
+  // instead of the actual usage. When the estimation fails, the caller falls back to an untipped update.
+  const gasLimit = await estimateGasLimitWithBuffer(
+    async () => api3ServerV1BuilderTipExtension.multicallAndTip.estimateGas(calldatas, { value: 1n }),
+    undefined
   );
+  return gasLimit === null ? null : gasLimit + BUILDER_TIP_TRANSFER_GAS_HEADROOM;
+};

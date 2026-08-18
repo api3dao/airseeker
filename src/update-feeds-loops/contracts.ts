@@ -44,10 +44,19 @@ export const getAirseekerRegistry = (address: string, provider: ethers.JsonRpcPr
 const api3ServerV1BuilderTipExtensionInterface = new ethers.Interface([
   'function multicallAndTip(bytes[] data) payable returns (bytes[] returndata)',
   'function tryMulticallAndTip(bytes[] data) payable returns (bool[] successes, bytes[] returndata)',
+  'function api3ServerV1() view returns (address)',
 ]);
 
+// The explicit method types take precedence over the string index signature of the ethers Contract type, whose
+// "| undefined" values would otherwise not be usable under "noUncheckedIndexedAccess".
+export type Api3ServerV1BuilderTipExtension = ethers.Contract & {
+  multicallAndTip: ethers.BaseContractMethod<[string[]], string[]>;
+  tryMulticallAndTip: ethers.BaseContractMethod<[string[]], [boolean[], string[]]>;
+  api3ServerV1: ethers.BaseContractMethod<[], string, string>;
+};
+
 export const getApi3ServerV1BuilderTipExtension = (address: string, runner: ethers.ContractRunner) =>
-  new ethers.Contract(address, api3ServerV1BuilderTipExtensionInterface, runner);
+  new ethers.Contract(address, api3ServerV1BuilderTipExtensionInterface, runner) as Api3ServerV1BuilderTipExtension;
 
 export const verifyMulticallResponse = (
   response: Awaited<ReturnType<AirseekerRegistry['tryMulticall']['staticCall']>>

@@ -10,7 +10,10 @@ const beaconId = deriveBeaconId(
   '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183'
 ) as Hex;
 const stateMock: State = {
+  activeDataFeedBeaconIds: { '31337': { hardhat: [] } },
   config: generateTestConfig(),
+  deploymentTimestamp: '1687850583',
+  derivedSponsorWallets: {},
   gasPrices: {
     '31337': {
       hardhat: [{ price: 10n, timestamp: timestampMock }],
@@ -22,6 +25,7 @@ const stateMock: State = {
         '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266': {
           [beaconId]: {
             consecutivelyUpdatableCount: 1,
+            hasSubmittedTransaction: false,
             firstUpdatableTimestamp: timestampMock,
             onChainTimestamp: 1_696_930_907n,
           },
@@ -29,6 +33,10 @@ const stateMock: State = {
       },
     },
   },
+  signedApiUrlsFromConfig: {
+    '31337': { hardhat: ['http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182'] },
+  },
+  signedApiUrlsFromContract: { '31337': { hardhat: [] } },
   signedDatas: {
     [beaconId]: {
       airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
@@ -39,13 +47,7 @@ const stateMock: State = {
       timestamp: 'something-silly',
     },
   },
-  signedApiUrlsFromConfig: {
-    '31337': { hardhat: ['http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182'] },
-  },
-  signedApiUrlsFromContract: { '31337': { hardhat: [] } },
-  derivedSponsorWallets: {},
-  deploymentTimestamp: '1687850583',
-  activeDataFeedBeaconIds: { '31337': { hardhat: [] } },
+  verifiedBuilderTipExtensions: {},
 };
 
 beforeAll(() => {

@@ -14,13 +14,14 @@ import {
   type SponsorAddressDerivationParams,
 } from '../utils';
 
-import { getApi3ServerV1BuilderTipExtension } from './contracts';
+import { getApi3ServerV1BuilderTipExtension, type Api3ServerV1BuilderTipExtension } from './contracts';
 import {
   estimateBuilderTipMulticallGasLimit,
   estimateMulticallGasLimit,
   estimateSingleBeaconGasLimit,
 } from './gas-estimation';
 import type { UpdatableDataFeed } from './get-updatable-feeds';
+import { getPendingTransactionsInfo, markPendingTransactionsAsSubmitted } from './pending-transaction-info';
 
 export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableDataFeed: UpdatableDataFeed) => {
   const { dataFeedInfo, updatableBeacons, shouldUpdateBeaconSet } = updatableDataFeed;
@@ -48,41 +49,68 @@ export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableD
 };
 
 export interface BuilderTipParams {
+  chainId: string;
+  providerName: string;
   extensionAddress: Address;
   multiplier: number;
   maxTip: bigint | undefined;
 }
 
 // Determines whether the update transaction should tip the block builder by being submitted through the
-// Api3ServerV1BuilderTipExtension contract. This is the case when the extension is configured for the chain and the
-// update has been pending for more than the configured number of consecutive attempts. Mirroring the gas price
-// scaling, the most stuck data feed of the transaction is used to make the decision.
+// Api3ServerV1BuilderTipExtension contract. This is the case when the extension is configured for the chain and a
+// submitted update transaction has remained pending for more than the configured number of consecutive attempts.
+// Mirroring the gas price scaling, the most stuck data feed of the transaction is used to make the decision.
 export const getBuilderTipParams = (
   chainId: string,
   providerName: string,
   sponsorWalletAddress: Address,
   dataFeedIds: Hex[]
-) => {
-  const state = getState();
-  const { contracts, builderTipSettings } = state.config.chains[chainId]!;
+): BuilderTipParams | null => {
+  const { contracts, builderTipSettings } = getState().config.chains[chainId]!;
   const extensionAddress = contracts.Api3ServerV1BuilderTipExtension;
-  if (!extensionAddress || !builderTipSettings) return null;
+  if (!extensionAddress || !builderTipSettings || dataFeedIds.length === 0) return null;
 
+  const pendingTransactionsInfo = getPendingTransactionsInfo(chainId, providerName, sponsorWalletAddress, dataFeedIds);
   const consecutivelyUpdatableCount = Math.max(
-    ...dataFeedIds.map(
-      (dataFeedId) =>
-        state.pendingTransactionsInfo[chainId]?.[providerName]?.[sponsorWalletAddress]?.[dataFeedId]
-          ?.consecutivelyUpdatableCount ?? 0
-    )
+    ...pendingTransactionsInfo.map((info) => info?.consecutivelyUpdatableCount ?? 0)
   );
   const { consecutivelyUpdatableCountThreshold, multiplier, maxTip } = builderTipSettings;
   if (consecutivelyUpdatableCount <= consecutivelyUpdatableCountThreshold) return null;
+
+  // The feed may remain updatable without any transaction being submitted (e.g. when there is no gas price to use or
+  // the RPC calls fail). Tipping only makes sense for a transaction that is stuck in the mempool, so the first
+  // submission after such a period must not be tipped.
+  if (!pendingTransactionsInfo.some((info) => info?.hasSubmittedTransaction)) return null;
 
   logger.info('Update transaction is pending for too long. Will tip the block builder.', {
     consecutivelyUpdatableCount,
     consecutivelyUpdatableCountThreshold,
   });
-  return { extensionAddress, multiplier, maxTip };
+  return { chainId, providerName, extensionAddress, multiplier, maxTip };
+};
+
+// The extension forwards the batched calls with a low-level call, which succeeds vacuously when the target has no
+// code. Verifying that the extension wraps the configured Api3ServerV1 guards against a misconfigured or misdeployed
+// extension silently draining the sponsor wallet through tips for transactions that update nothing. The wrapped
+// address is immutable, so a successful verification is cached in the state. It is cached per chain and provider
+// (rather than per extension address) because the answer is only as trustworthy as the provider that gave it, and
+// because the same address may be deployed on multiple chains.
+const verifyBuilderTipExtension = async (
+  builderTipParams: BuilderTipParams,
+  api3ServerV1BuilderTipExtension: Api3ServerV1BuilderTipExtension,
+  api3ServerV1: Api3ServerV1
+) => {
+  const { chainId, providerName } = builderTipParams;
+  if (getState().verifiedBuilderTipExtensions?.[chainId]?.[providerName]) return;
+
+  const wrappedApi3ServerV1 = await api3ServerV1BuilderTipExtension.api3ServerV1.staticCall();
+  if (wrappedApi3ServerV1 !== (api3ServerV1.target as string)) {
+    throw new Error('The Api3ServerV1BuilderTipExtension does not wrap the configured Api3ServerV1 contract.');
+  }
+  updateState((draft) => {
+    draft.verifiedBuilderTipExtensions[chainId] ??= {};
+    draft.verifiedBuilderTipExtensions[chainId]![providerName] = true;
+  });
 };
 
 export const submitUpdate = async (
@@ -137,42 +165,55 @@ export const submitUpdate = async (
     if (builderTipParams) {
       // The calldatas are identical to the ones for the Api3ServerV1 multicall functions, but the batch is submitted
       // through the Api3ServerV1BuilderTipExtension contract, which transfers the value sent along with the
-      // transaction to the block builder as a tip.
-      const api3ServerV1BuilderTipExtension = getApi3ServerV1BuilderTipExtension(
-        builderTipParams.extensionAddress,
-        sponsorWallet
-      );
+      // transaction to the block builder as a tip. Tipping is best-effort: when any part of the tipped flow fails
+      // (e.g. the sponsor wallet cannot cover the tip on top of the transaction fee), the update falls through to the
+      // regular untipped submission below instead of being dropped.
+      const goSubmitTippedUpdate = await go(async () => {
+        const api3ServerV1BuilderTipExtension = getApi3ServerV1BuilderTipExtension(
+          builderTipParams.extensionAddress,
+          sponsorWallet
+        );
+        await verifyBuilderTipExtension(builderTipParams, api3ServerV1BuilderTipExtension, api3ServerV1);
 
-      logger.debug('Estimating builder tip multicall update gas limit.');
-      const gasLimit = await estimateBuilderTipMulticallGasLimit(
-        api3ServerV1BuilderTipExtension,
-        dataFeedUpdateCalldatas,
-        fallbackGasLimit
-      );
-      if (!gasLimit) return null;
+        logger.debug('Estimating builder tip multicall update gas limit.');
+        const gasLimit = await estimateBuilderTipMulticallGasLimit(
+          api3ServerV1BuilderTipExtension,
+          dataFeedUpdateCalldatas
+        );
+        if (!gasLimit) return null;
 
-      // The tip is paid on top of the transaction fee, so the sponsor wallet needs to have enough balance for both.
-      let tipAmount = multiplyBigNumber(gasPrice * gasLimit, builderTipParams.multiplier);
-      if (builderTipParams.maxTip !== undefined && tipAmount > builderTipParams.maxTip) {
-        logger.warn('Sanitizing tip amount.', {
+        // The tip is paid on top of the transaction fee, so the sponsor wallet needs to have enough balance for both.
+        let tipAmount = multiplyBigNumber(gasPrice * gasLimit, builderTipParams.multiplier);
+        if (builderTipParams.maxTip !== undefined && tipAmount > builderTipParams.maxTip) {
+          logger.warn('Sanitizing tip amount.', {
+            tipAmount: tipAmount.toString(),
+            maxTip: builderTipParams.maxTip.toString(),
+          });
+          tipAmount = builderTipParams.maxTip;
+        }
+        logger.info('Updating data feed(s) with a builder tip.', {
+          sponsorWalletAddress,
+          gasPrice: gasPrice.toString(),
+          gasLimit: gasLimit.toString(),
+          nonce,
           tipAmount: tipAmount.toString(),
-          maxTip: builderTipParams.maxTip.toString(),
         });
-        tipAmount = builderTipParams.maxTip;
+        return api3ServerV1BuilderTipExtension.tryMulticallAndTip.send(dataFeedUpdateCalldatas, {
+          value: tipAmount,
+          gasPrice,
+          gasLimit,
+          nonce,
+        });
+      });
+      if (goSubmitTippedUpdate.success && goSubmitTippedUpdate.data) return goSubmitTippedUpdate.data;
+      if (goSubmitTippedUpdate.success) {
+        logger.info('Failed to estimate the tipped update transaction. Falling back to an untipped update.');
+      } else {
+        logger.warn(
+          'Failed to submit the tipped update transaction. Falling back to an untipped update.',
+          sanitizeEthersError(goSubmitTippedUpdate.error)
+        );
       }
-      logger.info('Updating data feed(s) with a builder tip.', {
-        sponsorWalletAddress,
-        gasPrice: gasPrice.toString(),
-        gasLimit: gasLimit.toString(),
-        nonce,
-        tipAmount: tipAmount.toString(),
-      });
-      return api3ServerV1BuilderTipExtension.getFunction('tryMulticallAndTip').send(dataFeedUpdateCalldatas, {
-        value: tipAmount,
-        gasPrice,
-        gasLimit,
-        nonce,
-      });
     }
 
     logger.debug('Estimating multicall update gas limit.');
@@ -259,7 +300,7 @@ export const submitBatchTransaction = async (
 
         const builderTipParams = getBuilderTipParams(chainId, providerName, sponsorWalletAddress, dataFeedIds);
 
-        return submitUpdate(
+        const transactionResponse = await submitUpdate(
           api3ServerV1,
           updatableDataFeeds,
           fallbackGasLimit,
@@ -268,6 +309,10 @@ export const submitBatchTransaction = async (
           nonce,
           builderTipParams
         );
+        if (transactionResponse) {
+          markPendingTransactionsAsSubmitted(chainId, providerName, sponsorWalletAddress, dataFeedIds);
+        }
+        return transactionResponse;
       },
       { totalTimeoutMs: dataFeedUpdateIntervalMs }
     );
@@ -325,7 +370,7 @@ export const submitTransaction = async (
 
         const builderTipParams = getBuilderTipParams(chainId, providerName, sponsorWalletAddress, [dataFeedId]);
 
-        return submitUpdate(
+        const transactionResponse = await submitUpdate(
           api3ServerV1,
           [updatableDataFeed],
           fallbackGasLimit,
@@ -334,6 +379,10 @@ export const submitTransaction = async (
           nonce,
           builderTipParams
         );
+        if (transactionResponse) {
+          markPendingTransactionsAsSubmitted(chainId, providerName, sponsorWalletAddress, [dataFeedId]);
+        }
+        return transactionResponse;
       },
       { totalTimeoutMs: dataFeedUpdateIntervalMs }
     );

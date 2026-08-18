@@ -1,5 +1,4 @@
 import type { Api3ServerV1 } from '@api3/contracts';
-import type { ethers } from 'ethers';
 
 import {
   generateMockApi3ServerV1,
@@ -7,6 +6,7 @@ import {
 } from '../../test/fixtures/mock-contract';
 import { logger } from '../logger';
 
+import type { Api3ServerV1BuilderTipExtension } from './contracts';
 import {
   estimateBuilderTipMulticallGasLimit,
   estimateMulticallGasLimit,
@@ -94,12 +94,12 @@ describe(estimateBuilderTipMulticallGasLimit.name, () => {
     mockApi3ServerV1BuilderTipExtension.multicallAndTip.estimateGas.mockResolvedValueOnce(BigInt(500_000));
 
     const gasLimit = await estimateBuilderTipMulticallGasLimit(
-      mockApi3ServerV1BuilderTipExtension as unknown as ethers.Contract,
-      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
-      undefined
+      mockApi3ServerV1BuilderTipExtension as unknown as Api3ServerV1BuilderTipExtension,
+      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata']
     );
 
-    expect(gasLimit).toStrictEqual(BigInt(550_000)); // Note that the gas limit is increased by 10%.
+    // Note that the gas limit is increased by 10% and the headroom for the tip transfer is added.
+    expect(gasLimit).toStrictEqual(BigInt(580_000));
     // Verify that the estimation is done with a placeholder tip of 1 wei.
     expect(mockApi3ServerV1BuilderTipExtension.multicallAndTip.estimateGas).toHaveBeenCalledWith(
       ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
@@ -107,18 +107,19 @@ describe(estimateBuilderTipMulticallGasLimit.name, () => {
     );
   });
 
-  it('uses fallback gas limit when estimation fails', async () => {
+  it('returns null when estimation fails', async () => {
     const mockApi3ServerV1BuilderTipExtension = generateMockApi3ServerV1BuilderTipExtension();
     mockApi3ServerV1BuilderTipExtension.multicallAndTip.estimateGas.mockRejectedValue(new Error('some-error'));
     jest.spyOn(logger, 'warn');
 
+    // NOTE: There is deliberately no fallback gas limit for tipped updates. The caller is expected to fall back to an
+    // untipped update instead.
     const gasLimit = await estimateBuilderTipMulticallGasLimit(
-      mockApi3ServerV1BuilderTipExtension as unknown as ethers.Contract,
-      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
-      2_000_000
+      mockApi3ServerV1BuilderTipExtension as unknown as Api3ServerV1BuilderTipExtension,
+      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata']
     );
 
-    expect(gasLimit).toStrictEqual(BigInt(2_000_000));
+    expect(gasLimit).toBeNull();
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith('Unable to estimate gas using provider.', {
       errorMessage: 'some-error',
@@ -134,9 +135,8 @@ describe(estimateBuilderTipMulticallGasLimit.name, () => {
     jest.spyOn(logger, 'warn');
 
     const gasLimit = await estimateBuilderTipMulticallGasLimit(
-      mockApi3ServerV1BuilderTipExtension as unknown as ethers.Contract,
-      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata'],
-      undefined
+      mockApi3ServerV1BuilderTipExtension as unknown as Api3ServerV1BuilderTipExtension,
+      ['0xBeaconId1Calldata', '0xBeaconId2Calldata', '0xBeaconSetCalldata']
     );
 
     expect(gasLimit).toBeNull();
