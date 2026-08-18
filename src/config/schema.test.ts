@@ -199,6 +199,12 @@ describe('chains schema', () => {
     ).toThrow('Must be a positive integer amount in wei');
   });
 
+  it('throws on a builder tip multiplier with too many decimals', () => {
+    expect(() =>
+      builderTipSettingsSchema.parse({ consecutivelyUpdatableCountThreshold: 3, multiplier: 0.001 })
+    ).toThrow('Invalid multiplier. A maximum of 2 decimals are supported.');
+  });
+
   it('throws if the builder tip extension is specified without the settings', () => {
     const chains = {
       '31337': {

@@ -69,8 +69,13 @@ export const builderTipSettingsSchema = z.strictObject({
   // The update transaction is submitted through the Api3ServerV1BuilderTipExtension contract once the
   // consecutivelyUpdatableCount of the pending transaction exceeds this threshold.
   consecutivelyUpdatableCountThreshold: z.number().int().positive(),
-  // The tip amount is computed as "multiplier * gasPrice * gasLimit" of the update transaction.
-  multiplier: z.number().positive(),
+  // The tip amount is computed as "multiplier * gasPrice * gasLimit" of the update transaction. The tip computation
+  // quantizes the multiplier to two decimals, so more decimals would be silently misapplied (and values below 0.005
+  // would quantize to a zero tip, which the extension contract rejects).
+  multiplier: z
+    .number()
+    .positive()
+    .multipleOf(0.01, { message: 'Invalid multiplier. A maximum of 2 decimals are supported.' }),
   // The maximum tip amount in wei. While the gas price component of the tip is capped by sanitization, the gas limit
   // is based on the estimate of the RPC provider, so the cap guards against a misbehaving provider inflating the tip.
   maxTip: z
@@ -143,15 +148,13 @@ export const chainsSchema = z
       Object.entries(chains).map(([chainId, chain]) => {
         const { contracts, alias } = chain;
         const parsedContracts = contractsSchema.safeParse({
+          ...contracts,
           Api3ServerV1:
             contracts.Api3ServerV1 ??
             deploymentAddresses.Api3ServerV1[chainId as keyof typeof deploymentAddresses.Api3ServerV1],
           AirseekerRegistry:
             contracts.AirseekerRegistry ??
             deploymentAddresses.AirseekerRegistry[chainId as keyof typeof deploymentAddresses.AirseekerRegistry],
-          ...(contracts.Api3ServerV1BuilderTipExtension && {
-            Api3ServerV1BuilderTipExtension: contracts.Api3ServerV1BuilderTipExtension,
-          }),
         });
         if (!parsedContracts.success) {
           ctx.issues.push({
