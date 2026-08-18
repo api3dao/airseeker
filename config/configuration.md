@@ -192,11 +192,19 @@ factor and the result is used to cap the gas price.
 The settings used to tip the block builder through the Api3ServerV1BuilderTipExtension contract. Some block builders do
 not order transactions strictly by their effective gas price and instead optimize for the total value that a block
 generates for them, which means an update transaction may remain pending even with a competitive (and possibly
-sanitized) gas price. When the update transaction remains pending for more than the configured number of consecutive
-attempts, Airseeker submits it through the Api3ServerV1BuilderTipExtension contract, which transfers the value sent
-along with the transaction to `block.coinbase` as a tip to the block builder. Since the tip is computed from the gas
-price, which is scaled while the transaction is pending and capped by sanitization, the tip scales in tandem and is
-bounded per transaction.
+sanitized) gas price. When a submitted update transaction remains pending and its data feed has been updatable for more
+than `consecutivelyUpdatableCountThreshold` consecutive attempts (counting the attempt that submitted the transaction),
+Airseeker resubmits it through the Api3ServerV1BuilderTipExtension contract, which transfers the value sent along with
+the transaction to `block.coinbase` as a tip to the block builder. Since the tip is computed from the gas price, which
+is scaled while the transaction is pending and capped by sanitization, the tip scales in tandem and is bounded per
+transaction.
+
+Tipping is best-effort. Before tipping, Airseeker verifies that the extension wraps the configured Api3ServerV1
+contract, and when any part of the tipped flow fails (the verification, the gas estimation — `fallbackGasLimit` is
+deliberately not used for tipped updates — or the submission, e.g. because the sponsor wallet cannot cover the tip on
+top of the transaction fee), the update is submitted without a tip instead. Note that the tip is transferred whenever
+the tipped transaction itself does not revert, even if all of the batched calls revert (e.g. because another party
+landed the same update first).
 
 Only specify these settings (together with the `Api3ServerV1BuilderTipExtension` contract address) on chains whose block
 builders account for `block.coinbase` transfers in transaction ordering (e.g., Ethereum). Note that the tip is paid on
@@ -209,8 +217,10 @@ Example of a tip computation:
 // - consecutivelyUpdatableCountThreshold = 3
 // - multiplier = 1.5
 //
-// Say a data feed has been updatable for 4 consecutive attempts (exceeding the threshold) and the update transaction
-// uses a gas price of 10 gwei and a gas limit of 500000.
+// Say a data feed has been updatable for 4 consecutive attempts (exceeding the threshold) with an update transaction
+// submitted on the first attempt, and the tipped replacement uses a gas limit of 500000 and a gas price of 10 gwei
+// (which is the already scaled and sanitized gas price that the transaction is submitted with, not the one recommended
+// by the provider).
 //
 // The tip amount is calculated as:
 1.5 * 10e9 * 500000 = 0.0075e18; // 0.0075 ETH
@@ -218,13 +228,25 @@ Example of a tip computation:
 
 ##### `consecutivelyUpdatableCountThreshold`
 
-The number of consecutive attempts for which the data feed update is allowed to be pending before the update
-transactions start tipping the block builder.
+The number of consecutive attempts for which the data feed is allowed to remain updatable before the update transactions
+start tipping the block builder. The count includes the attempt that submitted the original update transaction, so with
+a threshold of N, the first tipped submission happens on attempt N + 1. Attempts that did not manage to submit a
+transaction (e.g. because of RPC failures) still increase the count, but tipping only activates after a transaction has
+actually been submitted during the pending period.
 
 ##### `multiplier`
 
 The multiplier used to compute the tip amount from the transaction fee (i.e., the gas price multiplied by the gas limit)
-of the update transaction.
+of the update transaction. A maximum of 2 decimals are supported.
+
+Note that this is the fee that the transaction actually pays, so the gas price it is based on has already been
+multiplied by `recommendedGasPriceMultiplier` (or the scaling multiplier of the pending transaction) and capped by
+sanitization. The multipliers therefore compound: the tip is at most
+`multiplier * min(maxScalingMultiplier * gasPrice, sanitizationGasPriceCap) * gasLimit`, and with a
+`recommendedGasPriceMultiplier` of 1.5 and a `multiplier` of 1.5 the tip of an unscaled transaction is 2.25 times the
+gas price recommended by the provider multiplied by the gas limit. This also means that the tip stops growing once the
+gas price is capped by sanitization; use `maxTip` to bound it further, and pick `multiplier` against the gas settings of
+the chain rather than against the raw gas price.
 
 ##### `maxTip` _(optional)_
 
