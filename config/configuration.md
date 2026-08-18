@@ -116,6 +116,13 @@ The address of the Api3ServerV1 contract. If not specified, the address is loade
 
 The address of the AirseekerRegistry contract.
 
+##### `Api3ServerV1BuilderTipExtension` _(optional)_
+
+The address of the Api3ServerV1BuilderTipExtension contract. The contract is not part of `@api3/contracts` and is
+expected to be deployed manually by whoever wants to utilize it. The reference implementation is provided in this
+repository under `contracts/` and can be compiled with `pnpm hardhat compile`. Specifying the address opts the chain in
+for tipping the block builder and must be done together with specifying `builderTipSettings`.
+
 #### `providers`
 
 A record of providers. The record key is the provider name. Provider name is only used for internal purposes and to
@@ -179,6 +186,45 @@ update pending.
 
 The multiplier used during sanitization. The percentile gas price computed during sanitization is multiplied by this
 factor and the result is used to cap the gas price.
+
+#### `builderTipSettings` _(optional)_
+
+The settings used to tip the block builder through the Api3ServerV1BuilderTipExtension contract. Some block builders do
+not order transactions strictly by their effective gas price and instead optimize for the total value that a block
+generates for them, which means an update transaction may remain pending even with a competitive (and possibly
+sanitized) gas price. When the update transaction remains pending for more than the configured number of consecutive
+attempts, Airseeker submits it through the Api3ServerV1BuilderTipExtension contract, which transfers the value sent
+along with the transaction to `block.coinbase` as a tip to the block builder. Since the tip is computed from the gas
+price, which is scaled while the transaction is pending and capped by sanitization, the tip scales in tandem and is
+bounded per transaction.
+
+Only specify these settings (together with the `Api3ServerV1BuilderTipExtension` contract address) on chains whose block
+builders account for `block.coinbase` transfers in transaction ordering (e.g., Ethereum). Note that the tip is paid on
+top of the transaction fee, so the sponsor wallets need to be funded accordingly.
+
+Example of a tip computation:
+
+```js
+// Parameters:
+// - consecutivelyUpdatableCountThreshold = 3
+// - multiplier = 1.5
+//
+// Say a data feed has been updatable for 4 consecutive attempts (exceeding the threshold) and the update transaction
+// uses a gas price of 10 gwei and a gas limit of 500000.
+//
+// The tip amount is calculated as:
+1.5 * 10e9 * 500000 = 0.0075e18; // 0.0075 ETH
+```
+
+##### `consecutivelyUpdatableCountThreshold`
+
+The number of consecutive attempts for which the data feed update is allowed to be pending before the update
+transactions start tipping the block builder.
+
+##### `multiplier`
+
+The multiplier used to compute the tip amount from the transaction fee (i.e., the gas price multiplied by the gas limit)
+of the update transaction.
 
 #### `deviationThresholdCoefficient` _(optional)_
 

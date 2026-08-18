@@ -18,11 +18,15 @@ export const optionalContractsSchema = z.strictObject({
   // If unspecified, Api3ServerV1 will be loaded from the package @api3/contracts or error out during validation.
   Api3ServerV1: addressSchema.optional(),
   AirseekerRegistry: addressSchema,
+  // The contract is not part of the package @api3/contracts and is expected to be deployed manually. Specifying the
+  // address is an explicit opt-in for tipping the block builder and requires "builderTipSettings" to be specified as
+  // well.
+  Api3ServerV1BuilderTipExtension: addressSchema.optional(),
 });
 
-// The contracts are guaraneteed to exist after the configuration is passed, but the inferred type would be optional so
-// we create a new schema just to infer the type correctly.
-const contractsSchema = optionalContractsSchema.required();
+// The contracts (except the optional Api3ServerV1BuilderTipExtension) are guaraneteed to exist after the configuration
+// is passed, but the inferred type would be optional so we create a new schema just to infer the type correctly.
+const contractsSchema = optionalContractsSchema.required({ Api3ServerV1: true });
 
 export type Contracts = z.infer<typeof contractsSchema>;
 
@@ -61,6 +65,16 @@ export const gasSettingsSchema = z
 
 export type GasSettings = z.infer<typeof gasSettingsSchema>;
 
+export const builderTipSettingsSchema = z.strictObject({
+  // The update transaction is submitted through the Api3ServerV1BuilderTipExtension contract once the
+  // consecutivelyUpdatableCount of the pending transaction exceeds this threshold.
+  consecutivelyUpdatableCountThreshold: z.number().int().positive(),
+  // The tip amount is computed as "multiplier * gasPrice * gasLimit" of the update transaction.
+  multiplier: z.number().positive(),
+});
+
+export type BuilderTipSettings = z.infer<typeof builderTipSettingsSchema>;
+
 // Contracts are optional. If unspecified, they will be loaded from the package @api3/contracts or error out during
 // validation. We need a chain ID from parent schema to load the contracts.
 export const optionalChainSchema = z.strictObject({
@@ -68,6 +82,7 @@ export const optionalChainSchema = z.strictObject({
   providers: z.record(z.string(), providerSchema), // The record key is the provider "nickname"
   contracts: optionalContractsSchema,
   gasSettings: gasSettingsSchema,
+  builderTipSettings: builderTipSettingsSchema.optional(),
   dataFeedUpdateInterval: z.number().positive(),
   dataFeedBatchSize: z.number().positive(),
   fallbackGasLimit: z.number().positive().optional(),
@@ -105,6 +120,15 @@ export const chainsSchema = z
           input: chain.providers,
         });
       }
+
+      if (!!chain.contracts.Api3ServerV1BuilderTipExtension !== !!chain.builderTipSettings) {
+        ctx.issues.push({
+          code: 'custom',
+          message: 'The Api3ServerV1BuilderTipExtension contract and builderTipSettings must be specified together.',
+          path: [chainId],
+          input: chain,
+        });
+      }
     }
   })
   .transform((chains, ctx) => {
@@ -118,6 +142,9 @@ export const chainsSchema = z
           AirseekerRegistry:
             contracts.AirseekerRegistry ??
             deploymentAddresses.AirseekerRegistry[chainId as keyof typeof deploymentAddresses.AirseekerRegistry],
+          ...(contracts.Api3ServerV1BuilderTipExtension && {
+            Api3ServerV1BuilderTipExtension: contracts.Api3ServerV1BuilderTipExtension,
+          }),
         });
         if (!parsedContracts.success) {
           ctx.issues.push({
