@@ -2,10 +2,10 @@ import type { Address, ChainId, Hex } from '@api3/commons';
 
 import { logger } from '../logger';
 import { getState, updateState, type PendingTransactionInfo } from '../state';
+import { getDerivedSponsorWallet } from '../utils';
 
 import type { DecodedActiveDataFeedResponse } from './contracts';
 import type { UpdatableDataFeed } from './get-updatable-feeds';
-import { getDerivedSponsorWallet } from './submit-transactions';
 
 export const initializePendingTransactionsInfo = (chainId: string, providerName: string) =>
   updateState((draft) => {

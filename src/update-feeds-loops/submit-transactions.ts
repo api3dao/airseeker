@@ -1,18 +1,11 @@
 import { go, type Address, type Hex } from '@api3/commons';
 import type { Api3ServerV1 } from '@api3/contracts';
-import { type EthersError, ethers } from 'ethers';
+import type { EthersError, ethers } from 'ethers';
 
 import { getRecommendedGasPrice } from '../gas-price';
-import { getKeycardWallet } from '../keycard';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import {
-  deriveSponsorAddress,
-  deriveSponsorWalletFromSponsorAddress,
-  multiplyBigNumber,
-  sanitizeEthersError,
-  type SponsorAddressDerivationParams,
-} from '../utils';
+import { getDerivedSponsorWallet, multiplyBigNumber, sanitizeEthersError } from '../utils';
 
 import { getApi3ServerV1BuilderTipExtension, type Api3ServerV1BuilderTipExtension } from './contracts';
 import {
@@ -420,22 +413,3 @@ export const submitTransactions = async (
   return result.filter(Boolean).length;
 };
 
-export const getDerivedSponsorWallet = (params: SponsorAddressDerivationParams) => {
-  if (params.type === 'keycard') {
-    return getKeycardWallet();
-  }
-  const { derivedSponsorWallets } = getState();
-  const sponsorAddress = deriveSponsorAddress(params);
-  const privateKey = derivedSponsorWallets?.[sponsorAddress];
-  if (privateKey) {
-    const sponsorWallet = new ethers.Wallet(privateKey);
-    logger.debug('Found derived sponsor wallet.', { sponsorAddress, sponsorWalletAddress: sponsorWallet.address });
-    return sponsorWallet;
-  }
-  const sponsorWallet = deriveSponsorWalletFromSponsorAddress(params.sponsorWalletMnemonic, sponsorAddress);
-  logger.debug('Derived new sponsor wallet.', { sponsorAddress, sponsorWalletAddress: sponsorWallet.address });
-  updateState((draft) => {
-    draft.derivedSponsorWallets[sponsorAddress] = sponsorWallet.privateKey as Hex;
-  });
-  return sponsorWallet;
-};
