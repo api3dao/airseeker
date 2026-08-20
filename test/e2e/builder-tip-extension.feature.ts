@@ -1,3 +1,4 @@
+import { deriveBeaconId, type Address, type Hex } from '@api3/commons';
 import {
   AccessControlRegistry__factory as AccessControlRegistryFactory,
   Api3ServerV1__factory as Api3ServerV1Factory,
@@ -6,7 +7,7 @@ import { ethers, type Signer } from 'ethers';
 import { ethers as hardhatEthers } from 'hardhat';
 
 import { getApi3ServerV1BuilderTipExtension } from '../../src/update-feeds-loops/contracts';
-import { signData } from '../utils';
+import { generateRandomBytes, generateSignedData } from '../utils';
 
 // Exercises the reference Api3ServerV1BuilderTipExtension contract (compiled from the "contracts" directory) through
 // the hand-written production ABI, so that a drift between the two, or a regression in the contract itself, fails in
@@ -40,18 +41,17 @@ it('updates data feeds and tips the block builder through the reference extensio
 
   // Prepare an Airseeker-style beacon update calldata batch.
   const airnode = ethers.Wallet.createRandom();
-  const templateId = ethers.hexlify(ethers.randomBytes(32));
-  const beaconId = ethers.solidityPackedKeccak256(['address', 'bytes32'], [airnode.address, templateId]);
+  const templateId = generateRandomBytes(32);
+  const beaconId = deriveBeaconId(airnode.address as Address, templateId) as Hex;
   const timestamp = ((await hardhatEthers.provider.getBlock('latest'))!.timestamp + 1).toString();
-  const encodedValue = ethers.AbiCoder.defaultAbiCoder().encode(['int256'], [123]);
-  const signature = await signData(airnode, templateId, timestamp, encodedValue);
+  const signedData = await generateSignedData(airnode, templateId, timestamp, 123n);
   const calldata = [
     api3ServerV1.interface.encodeFunctionData('updateBeaconWithSignedData', [
-      airnode.address,
-      templateId,
-      timestamp,
-      encodedValue,
-      signature,
+      signedData.airnode,
+      signedData.templateId,
+      signedData.timestamp,
+      signedData.encodedValue,
+      signedData.signature,
     ]),
   ];
 
