@@ -23,7 +23,7 @@
     "create-release:npm": "ts-node scripts/create-npm-release.ts",
     "deploy:deterministic": "DETERMINISTIC=true hardhat deploy --network $NETWORK",
     "deploy:undeterministic": "hardhat deploy --network $NETWORK",
-    "dev:eth-node": "hardhat node --no-deploy",
+    "dev:eth-node": "hardhat node --no-deploy --network hardhat",
     "dev": "nodemon --ext ts,js,json,env  --exec \"pnpm ts-node --transpileOnly src/index.ts\"",
     "docker:build:amd64": "docker buildx build --no-cache --platform linux/amd64 --tag api3/airseeker:latest --file docker/Dockerfile .",
     "docker:build": "docker build --no-cache --tag api3/airseeker:latest --file docker/Dockerfile .",
