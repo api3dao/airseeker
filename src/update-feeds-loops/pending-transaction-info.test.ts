@@ -4,15 +4,17 @@ import { generateTestConfig, initializeState } from '../../test/fixtures/mock-co
 import { allowPartial } from '../../test/utils';
 import { logger } from '../logger';
 import * as stateModule from '../state';
+import * as utilsModule from '../utils';
 
 import type { BeaconWithData, DecodedActiveDataFeedResponse } from './contracts';
 import type { UpdatableDataFeed } from './get-updatable-feeds';
 import {
+  getPendingTransactionsInfo,
   initializePendingTransactionsInfo,
+  markPendingTransactionsAsSubmitted,
   setPendingTransactionInfo,
   updatePendingTransactionsInfo,
 } from './pending-transaction-info';
-import * as submitTransactionsModule from './submit-transactions';
 
 const chainId = '31337';
 const providerName = 'localhost';
@@ -32,6 +34,7 @@ describe(setPendingTransactionInfo.name, () => {
       consecutivelyUpdatableCount: 1,
       firstUpdatableTimestamp: timestampMock,
       onChainTimestamp: 1_696_930_907n,
+      hasSubmittedTransaction: false,
     };
 
     setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, dataFeedId, pendingTransactionInfo);
@@ -47,6 +50,40 @@ describe(setPendingTransactionInfo.name, () => {
     expect(
       stateModule.getState().pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]![dataFeedId]
     ).toBeNull();
+  });
+});
+
+describe(getPendingTransactionsInfo.name, () => {
+  it('returns the pending transaction info for the given data feed IDs', () => {
+    const pendingTransactionInfo: stateModule.PendingTransactionInfo = {
+      consecutivelyUpdatableCount: 2,
+      firstUpdatableTimestamp: timestampMock,
+      onChainTimestamp: 1_696_930_907n,
+      hasSubmittedTransaction: true,
+    };
+    setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, dataFeedId, pendingTransactionInfo);
+
+    expect(
+      getPendingTransactionsInfo(chainId, providerName, sponsorWalletAddress, [dataFeedId, '0xOtherDataFeedId'])
+    ).toStrictEqual([pendingTransactionInfo, undefined]);
+  });
+});
+
+describe(markPendingTransactionsAsSubmitted.name, () => {
+  it('marks the existing pending transactions as submitted', () => {
+    const pendingTransactionInfo: stateModule.PendingTransactionInfo = {
+      consecutivelyUpdatableCount: 1,
+      firstUpdatableTimestamp: timestampMock,
+      onChainTimestamp: 1_696_930_907n,
+      hasSubmittedTransaction: false,
+    };
+    setPendingTransactionInfo(chainId, providerName, sponsorWalletAddress, dataFeedId, pendingTransactionInfo);
+
+    markPendingTransactionsAsSubmitted(chainId, providerName, sponsorWalletAddress, [dataFeedId, '0xOtherDataFeedId']);
+
+    expect(
+      stateModule.getState().pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]![dataFeedId]
+    ).toStrictEqual({ ...pendingTransactionInfo, hasSubmittedTransaction: true });
   });
 });
 
@@ -72,7 +109,7 @@ describe(updatePendingTransactionsInfo.name, () => {
       })
     );
     jest
-      .spyOn(submitTransactionsModule, 'getDerivedSponsorWallet')
+      .spyOn(utilsModule, 'getDerivedSponsorWallet')
       .mockReturnValue({ address: sponsorWalletAddress } as ethers.Wallet);
     const now = Date.now();
     jest.useFakeTimers().setSystemTime(now);
@@ -108,6 +145,7 @@ describe(updatePendingTransactionsInfo.name, () => {
       consecutivelyUpdatableCount: 1,
       firstUpdatableTimestamp: Math.floor(now / 1000),
       onChainTimestamp: 1_696_930_907n,
+      hasSubmittedTransaction: false,
     });
     expect(logger.info).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenCalledWith('Updating pending transaction info.', {
@@ -117,6 +155,7 @@ describe(updatePendingTransactionsInfo.name, () => {
       consecutivelyUpdatableCount: 1,
       firstUpdatableTimestamp: Math.floor(now / 1000),
       onChainTimestamp: 1_696_930_907n,
+      hasSubmittedTransaction: false,
     });
   });
 
@@ -140,7 +179,7 @@ describe(updatePendingTransactionsInfo.name, () => {
     });
     jest.spyOn(stateModule, 'getState').mockReturnValue(initialState);
     jest
-      .spyOn(submitTransactionsModule, 'getDerivedSponsorWallet')
+      .spyOn(utilsModule, 'getDerivedSponsorWallet')
       .mockReturnValue({ address: sponsorWalletAddress } as ethers.Wallet);
     const now = Date.now();
     jest.useFakeTimers().setSystemTime(now);

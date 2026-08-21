@@ -2,10 +2,10 @@ import type { Address, ChainId, Hex } from '@api3/commons';
 
 import { logger } from '../logger';
 import { getState, updateState, type PendingTransactionInfo } from '../state';
+import { getDerivedSponsorWallet } from '../utils';
 
 import type { DecodedActiveDataFeedResponse } from './contracts';
 import type { UpdatableDataFeed } from './get-updatable-feeds';
-import { getDerivedSponsorWallet } from './submit-transactions';
 
 export const initializePendingTransactionsInfo = (chainId: string, providerName: string) =>
   updateState((draft) => {
@@ -25,6 +25,33 @@ export const setPendingTransactionInfo = (
       draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress] = {};
     }
     draft.pendingTransactionsInfo[chainId]![providerName]![sponsorWalletAddress]![dataFeedId] = pendingTransactionInfo;
+  });
+};
+
+export const getPendingTransactionsInfo = (
+  chainId: string,
+  providerName: string,
+  sponsorWalletAddress: Address,
+  dataFeedIds: Hex[]
+) => {
+  const state = getState();
+  return dataFeedIds.map(
+    (dataFeedId) => state.pendingTransactionsInfo[chainId]?.[providerName]?.[sponsorWalletAddress]?.[dataFeedId]
+  );
+};
+
+export const markPendingTransactionsAsSubmitted = (
+  chainId: string,
+  providerName: string,
+  sponsorWalletAddress: Address,
+  dataFeedIds: Hex[]
+) => {
+  updateState((draft) => {
+    for (const dataFeedId of dataFeedIds) {
+      const pendingTransactionInfo =
+        draft.pendingTransactionsInfo[chainId]?.[providerName]?.[sponsorWalletAddress]?.[dataFeedId];
+      if (pendingTransactionInfo) pendingTransactionInfo.hasSubmittedTransaction = true;
+    }
   });
 };
 
@@ -69,6 +96,7 @@ export const updatePendingTransactionsInfo = (
             consecutivelyUpdatableCount: 1,
             firstUpdatableTimestamp: currentTimestamp,
             onChainTimestamp: dataFeedTimestamp,
+            hasSubmittedTransaction: false,
           }
         : {
             ...pendingTransactionInfo,

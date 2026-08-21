@@ -38,6 +38,7 @@ export const generateMockAirseekerRegistry = () => {
 
 export const generateMockApi3ServerV1 = () => {
   return {
+    target: '0xApi3ServerV1Address',
     multicall: { estimateGas: jest.fn() },
     updateBeaconWithSignedData: { estimateGas: jest.fn(), send: jest.fn() },
     updateBeaconSetWithBeacons: { estimateGas: jest.fn() },
@@ -47,4 +48,13 @@ export const generateMockApi3ServerV1 = () => {
     connect: jest.fn(),
     tryMulticall: { staticCall: jest.fn(), send: jest.fn() },
   } satisfies DeepPartial<Api3ServerV1>;
+};
+
+export const generateMockApi3ServerV1BuilderTipExtension = () => {
+  return {
+    target: '0xApi3ServerV1BuilderTipExtensionAddress',
+    api3ServerV1: { staticCall: jest.fn() },
+    multicallAndTip: { estimateGas: jest.fn() },
+    tryMulticallAndTip: { send: jest.fn() },
+  };
 };

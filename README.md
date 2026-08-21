@@ -25,6 +25,11 @@ Link to the
 
 See [configuration](./config/configuration.md) for details.
 
+## Contracts
+
+See [contracts](./contracts/README.md) for the Api3ServerV1BuilderTipExtension reference implementation and how to
+deploy it.
+
 ## Versioning and release
 
 Airseeker uses [semantic versioning](https://semver.org/). The version is specified in the `package.json` file. The

@@ -5,6 +5,9 @@ import { ethers, type ErrorCode, type EthersError } from 'ethers';
 
 import type { WalletDerivationScheme } from './config/schema';
 import { AIRSEEKER_PROTOCOL_ID, INT224_MAX, INT224_MIN } from './constants';
+import { getKeycardWallet } from './keycard';
+import { logger } from './logger';
+import { getState, updateState } from './state';
 
 export const abs = (n: bigint) => (n < 0n ? -n : n);
 
@@ -76,6 +79,26 @@ export const deriveSponsorAddress = (params: SponsorAddressDerivationParams) => 
 export const deriveSponsorWallet = (sponsorWalletMnemonic: string, sponsorParams: SponsorAddressDerivationParams) => {
   const sponsorAddress: Address = deriveSponsorAddress(sponsorParams);
   return deriveSponsorWalletFromSponsorAddress(sponsorWalletMnemonic, sponsorAddress);
+};
+
+export const getDerivedSponsorWallet = (params: SponsorAddressDerivationParams) => {
+  if (params.type === 'keycard') {
+    return getKeycardWallet();
+  }
+  const { derivedSponsorWallets } = getState();
+  const sponsorAddress = deriveSponsorAddress(params);
+  const privateKey = derivedSponsorWallets?.[sponsorAddress];
+  if (privateKey) {
+    const sponsorWallet = new ethers.Wallet(privateKey);
+    logger.debug('Found derived sponsor wallet.', { sponsorAddress, sponsorWalletAddress: sponsorWallet.address });
+    return sponsorWallet;
+  }
+  const sponsorWallet = deriveSponsorWalletFromSponsorAddress(params.sponsorWalletMnemonic, sponsorAddress);
+  logger.debug('Derived new sponsor wallet.', { sponsorAddress, sponsorWalletAddress: sponsorWallet.address });
+  updateState((draft) => {
+    draft.derivedSponsorWallets[sponsorAddress] = sponsorWallet.privateKey as Hex;
+  });
+  return sponsorWallet;
 };
 
 export const multiplyBigNumber = (bigNumber: bigint, multiplier: number) =>

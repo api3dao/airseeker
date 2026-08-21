@@ -16,6 +16,10 @@ export interface PendingTransactionInfo {
   // The count of how many consecutive updates are required for this data feed. This is used to determine if the
   // transaction is a retry or not.
   consecutivelyUpdatableCount: number;
+  // Whether an update transaction has actually been submitted (accepted by the RPC provider) during the current
+  // pending period. The feed can remain updatable without any submission (e.g. when there is no gas price or the RPC
+  // fails), and such iterations must not count as a stuck transaction for the builder tip.
+  hasSubmittedTransaction: boolean;
   // The on-chain timestamp of the last pending transaction. As a note, in a volatile market it is possible that we
   // submit an update transaction and in the next run we detect that feed needs an update again, even though the feed
   // was updated during this time (either by the previous transaction or by other Airseeker). The on-chain timestamp
@@ -45,6 +49,11 @@ export interface State {
   // The timestamp of when the service was initialized. This can be treated as a "deployment" timestamp.
   deploymentTimestamp: string;
   activeDataFeedBeaconIds: Record<ChainId, Record<string /* Provider name */, Hex[]>>;
+  // Whether the Api3ServerV1BuilderTipExtension contract configured for the chain has been verified to wrap the
+  // configured Api3ServerV1 contract. The wrapped address is immutable, so the verification only needs to be done
+  // once, but it is done for each provider separately because it is only as trustworthy as the provider that answered
+  // it.
+  verifiedBuilderTipExtensions: Record<ChainId, Record<string /* Provider name */, boolean>>;
 }
 
 let state: State | undefined;
@@ -59,15 +68,16 @@ export const getState = (): State => {
 
 export const setInitialState = (config: Config) => {
   state = {
+    activeDataFeedBeaconIds: {},
     config,
+    deploymentTimestamp: Math.floor(Date.now() / 1000).toString(),
+    derivedSponsorWallets: {},
     gasPrices: {},
     pendingTransactionsInfo: {},
-    signedDatas: {},
     signedApiUrlsFromConfig: {},
     signedApiUrlsFromContract: {},
-    derivedSponsorWallets: {},
-    deploymentTimestamp: Math.floor(Date.now() / 1000).toString(),
-    activeDataFeedBeaconIds: {},
+    signedDatas: {},
+    verifiedBuilderTipExtensions: {},
   };
 };
 

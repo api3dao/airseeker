@@ -2,8 +2,9 @@ import { go } from '@api3/commons';
 import type { Api3ServerV1 } from '@api3/contracts';
 
 import { logger } from '../logger';
-import { sanitizeEthersError } from '../utils';
+import { multiplyBigNumber, sanitizeEthersError } from '../utils';
 
+import type { Api3ServerV1BuilderTipExtension } from './contracts';
 import type { UpdatableBeacon } from './get-updatable-feeds';
 
 export const handleRpcGasLimitFailure = (error: Error, fallbackGasLimit: number | undefined) => {
@@ -47,15 +48,34 @@ export const estimateSingleBeaconGasLimit = async (
   return handleRpcGasLimitFailure(goEstimateGas.error, fallbackGasLimit);
 };
 
+// The gas is estimated on the strict multicall variant (which reverts in case the update is no longer necessary)
+// while the transaction is submitted using the try variant, which consumes slightly more gas, hence the extra 10%.
+const estimateGasLimitWithBuffer = async (estimateGas: () => Promise<bigint>, fallbackGasLimit: number | undefined) => {
+  const goEstimateGas = await go(estimateGas);
+  if (goEstimateGas.success) return multiplyBigNumber(goEstimateGas.data, 1.1);
+  return handleRpcGasLimitFailure(goEstimateGas.error, fallbackGasLimit);
+};
+
 export const estimateMulticallGasLimit = async (
   api3ServerV1: Api3ServerV1,
   calldatas: string[],
   fallbackGasLimit: number | undefined
+) => estimateGasLimitWithBuffer(async () => api3ServerV1.multicall.estimateGas(calldatas), fallbackGasLimit);
+
+// Extra headroom for the tip transfer, whose gas cost at inclusion time can exceed the one at estimation time because
+// the coinbase of the including block may be an empty account or a contract with a costly receive function.
+const BUILDER_TIP_TRANSFER_GAS_HEADROOM = 30_000n;
+
+export const estimateBuilderTipMulticallGasLimit = async (
+  api3ServerV1BuilderTipExtension: Api3ServerV1BuilderTipExtension,
+  calldatas: string[]
 ) => {
-  const goEstimateGas = await go(async () => api3ServerV1.multicall.estimateGas(calldatas));
-  if (goEstimateGas.success) {
-    // Adding a extra 10% because multicall consumes less gas than tryMulticall
-    return (goEstimateGas.data * BigInt(Math.round(1.1 * 100))) / 100n;
-  }
-  return handleRpcGasLimitFailure(goEstimateGas.error, fallbackGasLimit);
+  // A placeholder tip of 1 wei is used because "multicallAndTip" requires a non-zero value to be sent. There is
+  // deliberately no fallback gas limit, because it is calibrated for the cheaper direct Api3ServerV1 multicall. The
+  // caller falls back to an untipped update when the estimation fails.
+  const gasLimit = await estimateGasLimitWithBuffer(
+    async () => api3ServerV1BuilderTipExtension.multicallAndTip.estimateGas(calldatas, { value: 1n }),
+    undefined
+  );
+  return gasLimit === null ? null : gasLimit + BUILDER_TIP_TRANSFER_GAS_HEADROOM;
 };
