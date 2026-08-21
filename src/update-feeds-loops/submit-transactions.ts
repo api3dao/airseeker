@@ -412,4 +412,3 @@ export const submitTransactions = async (
   );
   return result.filter(Boolean).length;
 };
-
