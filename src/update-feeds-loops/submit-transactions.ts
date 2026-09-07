@@ -5,7 +5,7 @@ import type { EthersError, ethers } from 'ethers';
 import { getRecommendedGasPrice } from '../gas-price';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import { getDerivedSponsorWallet, multiplyBigNumber, sanitizeEthersError } from '../utils';
+import { multiplyBigNumber, sanitizeEthersError } from '../utils';
 
 import { getApi3ServerV1BuilderTipExtension, type Api3ServerV1BuilderTipExtension } from './contracts';
 import {
@@ -15,6 +15,7 @@ import {
 } from './gas-estimation';
 import type { UpdatableDataFeed } from './get-updatable-feeds';
 import { getPendingTransactionsInfo, markPendingTransactionsAsSubmitted } from './pending-transaction-info';
+import { getDerivedSponsorWallet } from './sponsor-wallet';
 
 export const createUpdateFeedCalldatas = (api3ServerV1: Api3ServerV1, updatableDataFeed: UpdatableDataFeed) => {
   const { dataFeedInfo, updatableBeacons, shouldUpdateBeaconSet } = updatableDataFeed;
