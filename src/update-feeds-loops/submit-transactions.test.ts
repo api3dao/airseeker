@@ -1432,6 +1432,63 @@ describe(submitTransactionsModule.submitUpdate.name, () => {
     });
   });
 
+  it('does not fall back to an untipped update when the tipped submission fails with a nonce error', async () => {
+    const api3ServerV1 = generateMockApi3ServerV1();
+    jest.spyOn(api3ServerV1, 'connect').mockReturnValue(api3ServerV1);
+    jest.spyOn(api3ServerV1.interface, 'encodeFunctionData').mockReturnValueOnce('0xBeaconCalldata');
+    jest.spyOn(api3ServerV1.multicall, 'estimateGas').mockResolvedValue(150_000n);
+    jest.spyOn(api3ServerV1.tryMulticall, 'send').mockReturnValue({ hash: '0xTransactionHash' });
+    const api3ServerV1BuilderTipExtension = generateMockApi3ServerV1BuilderTipExtension();
+    api3ServerV1BuilderTipExtension.api3ServerV1.staticCall.mockResolvedValue('0xApi3ServerV1Address');
+    api3ServerV1BuilderTipExtension.multicallAndTip.estimateGas.mockResolvedValue(150_000n);
+    api3ServerV1BuilderTipExtension.tryMulticallAndTip.send.mockRejectedValue(
+      Object.assign(new Error('nonce too low'), { code: 'NONCE_EXPIRED' })
+    );
+    jest
+      .spyOn(contractsModule, 'getApi3ServerV1BuilderTipExtension')
+      .mockReturnValue(api3ServerV1BuilderTipExtension as unknown as contractsModule.Api3ServerV1BuilderTipExtension);
+    jest.spyOn(stateModule, 'getState').mockReturnValue(allowPartial<stateModule.State>({}));
+    jest.spyOn(stateModule, 'updateState').mockImplementation();
+    jest.spyOn(logger, 'info');
+    jest.spyOn(logger, 'warn');
+    const sponsorWallet = new ethers.Wallet('a0d8c3f6643d494b31914e7ec896215562aa358bf7ff68218afb53dfedd4167f');
+
+    const result = await submitTransactionsModule.submitUpdate(
+      api3ServerV1 as unknown as Api3ServerV1,
+      [
+        allowPartial<UpdatableDataFeed>({
+          dataFeedInfo: {
+            beaconsWithData: [{ beaconId: '0xBeaconId', airnodeAddress: '0xAirnode', templateId: '0xTemplateId' }],
+          },
+          updatableBeacons: [
+            {
+              beaconId: '0xBeaconId',
+              signedData: {
+                airnode: '0xAirnode',
+                templateId: '0xTemplateId',
+                timestamp: '1629811000',
+                encodedValue: '0xEncodedValue',
+                signature: '0xSignature',
+              },
+            },
+          ],
+        }),
+      ],
+      undefined,
+      sponsorWallet,
+      BigInt(100_000_000),
+      11,
+      builderTipParams
+    );
+
+    // The untipped submission would fail with the same nonce error, so it is not attempted.
+    expect(result).toBeNull();
+    expect(api3ServerV1BuilderTipExtension.tryMulticallAndTip.send).toHaveBeenCalledTimes(1);
+    expect(api3ServerV1.tryMulticall.send).toHaveBeenCalledTimes(0);
+    expect(logger.warn).toHaveBeenCalledTimes(0);
+    expect(logger.info).toHaveBeenCalledWith('Failed to submit the transaction because the nonce was expired.');
+  });
+
   it('verifies the builder tip extension only once', async () => {
     initializeState(generateTestConfig());
     const api3ServerV1 = generateMockApi3ServerV1();

@@ -193,9 +193,19 @@ export const submitUpdate = async (
       if (goSubmitTippedUpdate.success) {
         logger.info('Failed to estimate the tipped update transaction. Falling back to an untipped update.');
       } else {
+        // The untipped submission reuses the nonce, so a nonce error would fail it identically. Let the handler below
+        // classify it instead of falling back.
+        const ethersError = goSubmitTippedUpdate.error as EthersError;
+        if (
+          ethersError.code === 'REPLACEMENT_UNDERPRICED' ||
+          ethersError.code === 'NONCE_EXPIRED' ||
+          ethersError.message.includes('invalid nonce')
+        ) {
+          throw ethersError;
+        }
         logger.warn(
           'Failed to submit the tipped update transaction. Falling back to an untipped update.',
-          sanitizeEthersError(goSubmitTippedUpdate.error)
+          sanitizeEthersError(ethersError)
         );
       }
     }
