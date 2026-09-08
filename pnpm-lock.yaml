@@ -24,8 +24,8 @@ importers:
         specifier: ^6.17.0
         version: 6.17.0
       immer:
-        specifier: ^11.1.15
-        version: 11.1.15
+        specifier: ^11.1.18
+        version: 11.1.18
       keycard-manager:
         specifier: ^0.9.8
         version: 0.9.8
@@ -2752,8 +2752,8 @@ packages:
   immer@10.0.2:
     resolution: {integrity: sha512-Rx3CqeqQ19sxUtYV9CU911Vhy8/721wRFnJv3REVGWUmoAcIwzifTsdmJte/MV+0/XpM35LZdQMBGkRIoLPwQA==}
 
-  immer@11.1.15:
-    resolution: {integrity: sha512-VrNANlmnWQnh5COXIIOQXM9oOJw7naGKlBT74ZOOR6lpVXc3gFEu9FJLDFcpCJ2j+NWr8TIwtWD//T6ZX6TKiQ==}
+  immer@11.1.18:
+    resolution: {integrity: sha512-EQyQtLiYW029lyoczMl/Hh4Xu7cDecSc58JRYpHyL4tIAu3eqd1yJzQX04d2BZHDkzFFvm6qJEJWOtfDSWAXbQ==}
 
   immutable@4.3.9:
     resolution: {integrity: sha512-ObHy4YN7ycwZOUCLI1/6svfyAFu7vL8RhAvVu/bh/RZW9EPlOyDaQ9jDQWCtdqzaXUjgXZCW1migtHE7YI7UGQ==}
@@ -8306,7 +8306,7 @@ snapshots:
 
   immer@10.0.2: {}
 
-  immer@11.1.15: {}
+  immer@11.1.18: {}
 
   immutable@4.3.9: {}
 
