@@ -25,6 +25,8 @@
 **/artifacts
 **/coverage.json
 **/typechain
+**/typechain-types
+**/deployments
 
 # Extras (not part of .gitignore)
 .dockerignore

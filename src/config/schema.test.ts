@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { ZodError } from 'zod';
 
 import {
+  builderTipSettingsSchema,
   chainsSchema,
   configSchema,
   deviationThresholdCoefficientSchema,
@@ -153,6 +154,112 @@ describe('chains schema', () => {
           code: 'custom',
           message: 'Invalid EVM address',
           path: ['31337', 'contracts', 'Api3ServerV1'],
+        },
+      ])
+    );
+  });
+
+  it('parses a chain with a builder tip extension and settings', () => {
+    const chains = {
+      '31337': {
+        contracts: {
+          Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+          AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
+          Api3ServerV1BuilderTipExtension: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+        },
+        providers: {
+          hardhat: {
+            url: 'http://localhost:8545',
+          },
+        },
+        gasSettings,
+        builderTipSettings: { consecutivelyUpdatableCountThreshold: 3, multiplier: 1.5, maxTip: '50000000000000000' },
+        dataFeedBatchSize: 10,
+        dataFeedUpdateInterval: 60,
+      },
+    };
+
+    const parsed = chainsSchema.parse(chains);
+
+    expect(parsed['31337']!.contracts).toStrictEqual({
+      Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+      AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
+      Api3ServerV1BuilderTipExtension: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+    });
+    expect(parsed['31337']!.builderTipSettings).toStrictEqual({
+      consecutivelyUpdatableCountThreshold: 3,
+      multiplier: 1.5,
+      maxTip: 50_000_000_000_000_000n,
+    });
+  });
+
+  it('throws on an invalid builder tip maxTip', () => {
+    expect(() =>
+      builderTipSettingsSchema.parse({ consecutivelyUpdatableCountThreshold: 3, multiplier: 1.5, maxTip: '0.5' })
+    ).toThrow('Must be a positive integer amount in wei');
+  });
+
+  it('throws on a builder tip multiplier with too many decimals', () => {
+    expect(() =>
+      builderTipSettingsSchema.parse({ consecutivelyUpdatableCountThreshold: 3, multiplier: 0.001 })
+    ).toThrow('Invalid multiplier. A maximum of 2 decimals are supported.');
+  });
+
+  it('throws if the builder tip extension is specified without the settings', () => {
+    const chains = {
+      '31337': {
+        contracts: {
+          Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+          AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
+          Api3ServerV1BuilderTipExtension: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+        },
+        providers: {
+          hardhat: {
+            url: 'http://localhost:8545',
+          },
+        },
+        gasSettings,
+        dataFeedBatchSize: 10,
+        dataFeedUpdateInterval: 60,
+      },
+    };
+
+    expect(() => chainsSchema.parse(chains)).toThrow(
+      new ZodError([
+        {
+          code: 'custom',
+          message: 'The Api3ServerV1BuilderTipExtension contract and builderTipSettings must be specified together.',
+          path: ['31337'],
+        },
+      ])
+    );
+  });
+
+  it('throws if the builder tip settings are specified without the extension', () => {
+    const chains = {
+      '31337': {
+        contracts: {
+          Api3ServerV1: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+          AirseekerRegistry: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
+        },
+        providers: {
+          hardhat: {
+            url: 'http://localhost:8545',
+          },
+        },
+        gasSettings,
+        builderTipSettings: { consecutivelyUpdatableCountThreshold: 3, multiplier: 1.5 },
+        dataFeedBatchSize: 10,
+        dataFeedUpdateInterval: 60,
+      },
+    };
+
+    expect(() => chainsSchema.parse(chains)).toThrow(
+      new ZodError([
+        {
+          code: 'custom',
+          message: 'The Api3ServerV1BuilderTipExtension contract and builderTipSettings must be specified together.',
+          path: ['31337'],
         },
       ])
     );

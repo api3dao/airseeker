@@ -14,6 +14,7 @@ import * as utilsModule from '../utils';
 
 import * as contractsModule from './contracts';
 import * as getUpdatableFeedsModule from './get-updatable-feeds';
+import * as sponsorWalletModule from './sponsor-wallet';
 import * as submitTransactionModule from './submit-transactions';
 import * as updateFeedsLoopsModule from './update-feeds-loops';
 
@@ -507,7 +508,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     // Skip actions other than generating signed api urls.
     jest.spyOn(gasPriceModule, 'fetchAndStoreGasPrice').mockImplementation();
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
-    jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
+    jest.spyOn(sponsorWalletModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
 
     const { signedApiUrlsFromConfig, signedApiUrlsFromContract } = await updateFeedsLoopsModule.processBatch(
       [activeDataFeed],
@@ -550,7 +551,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
     // Skip actions other than generating signed api urls.
     jest.spyOn(gasPriceModule, 'fetchAndStoreGasPrice').mockImplementation();
     jest.spyOn(getUpdatableFeedsModule, 'getUpdatableFeeds').mockReturnValue([]);
-    jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
+    jest.spyOn(sponsorWalletModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
 
     const { signedApiUrlsFromConfig } = await updateFeedsLoopsModule.processBatch(
       [activeDataFeed],
@@ -606,7 +607,7 @@ describe(updateFeedsLoopsModule.processBatch.name, () => {
         },
       }),
     ]);
-    jest.spyOn(submitTransactionModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
+    jest.spyOn(sponsorWalletModule, 'getDerivedSponsorWallet').mockReturnValue(ethers.Wallet.createRandom());
     jest.spyOn(gasPriceModule, 'fetchAndStoreGasPrice').mockImplementation();
     jest.spyOn(submitTransactionModule, 'submitUpdate').mockImplementation();
 

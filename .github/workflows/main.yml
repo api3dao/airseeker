@@ -69,6 +69,8 @@ jobs:
           cache: 'pnpm'
       - name: Install Dependencies
         run: pnpm install
+      - name: Compile contracts
+        run: pnpm hardhat compile
       - name: Start Hardhat
         run: pnpm dev:eth-node&
       - name: Test E2E

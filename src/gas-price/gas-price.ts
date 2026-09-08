@@ -4,6 +4,7 @@ import { maxBy, minBy, remove } from 'lodash';
 
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
+import { getPendingTransactionsInfo } from '../update-feeds-loops/pending-transaction-info';
 import { multiplyBigNumber, sanitizeEthersError } from '../utils';
 
 export const initializeGasState = (chainId: string, providerName: string) =>
@@ -85,9 +86,7 @@ export const getRecommendedGasPrice = (
 ) => {
   const state = getState();
   const oldestPendingTransactionInfo = minBy(
-    dataFeedIds.map(
-      (dataFeedId) => state.pendingTransactionsInfo[chainId]?.[providerName]?.[sponsorWalletAddress]?.[dataFeedId]
-    ),
+    getPendingTransactionsInfo(chainId, providerName, sponsorWalletAddress, dataFeedIds),
     (info) => info?.firstUpdatableTimestamp
   );
 

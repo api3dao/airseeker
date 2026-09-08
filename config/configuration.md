@@ -116,6 +116,12 @@ The address of the Api3ServerV1 contract. If not specified, the address is loade
 
 The address of the AirseekerRegistry contract.
 
+##### `Api3ServerV1BuilderTipExtension` _(optional)_
+
+The address of the Api3ServerV1BuilderTipExtension contract. The reference implementation and how to deploy it are
+documented under [`contracts/`](../contracts/README.md). Specifying the address opts the chain in for tipping the block
+builder and must be done together with specifying `builderTipSettings`.
+
 #### `providers`
 
 A record of providers. The record key is the provider name. Provider name is only used for internal purposes and to
@@ -179,6 +185,52 @@ update pending.
 
 The multiplier used during sanitization. The percentile gas price computed during sanitization is multiplied by this
 factor and the result is used to cap the gas price.
+
+#### `builderTipSettings` _(optional)_
+
+The settings used to tip the block builder through the Api3ServerV1BuilderTipExtension contract. Some block builders
+optimize for the total value that a block generates for them rather than ordering transactions by their effective gas
+price, which means an update transaction may remain pending even with a competitive gas price. Once a submitted update
+transaction has been pending for more than `consecutivelyUpdatableCountThreshold` consecutive attempts, Airseeker
+resubmits it through the extension contract, which transfers the value sent along with the transaction to
+`block.coinbase` as a tip. Only specify these settings on chains whose block builders account for `block.coinbase`
+transfers in transaction ordering.
+
+Tipping is best-effort. When any part of the tipped flow fails (the verification that the extension wraps the configured
+Api3ServerV1, the gas estimation, or the submission), the update is submitted without a tip instead. Note that the tip
+is paid on top of the transaction fee and is transferred whenever the tipped transaction itself does not revert, even if
+all of the batched calls revert, so the sponsor wallets need to be funded accordingly.
+
+Example of a tip computation:
+
+```js
+// Parameters:
+// - multiplier = 1.5
+//
+// Say the tipped transaction uses a gas limit of 500000 and a gas price of 10 gwei.
+//
+// The tip amount is calculated as:
+1.5 * 10e9 * 500000 = 0.0075e18; // 0.0075 ETH
+```
+
+##### `consecutivelyUpdatableCountThreshold`
+
+The number of consecutive attempts for which the data feed is allowed to remain updatable before the update transactions
+start tipping the block builder. The count includes the attempt that submitted the original update transaction, so with
+a threshold of N, the first tipped submission happens on attempt N + 1.
+
+##### `multiplier`
+
+The multiplier used to compute the tip amount from the transaction fee (i.e., the gas price multiplied by the gas limit)
+of the update transaction. A maximum of 2 decimals are supported. Note that the gas price it is based on has already
+been multiplied by `recommendedGasPriceMultiplier` (or the scaling multiplier of the pending transaction) and capped by
+sanitization, so the multipliers compound.
+
+##### `maxTip` _(optional)_
+
+The maximum tip amount in wei, as a string. While the gas price component of the tip is capped by sanitization, the gas
+limit is based on the estimate of the RPC provider, so the cap guards against a misbehaving provider inflating the tip.
+If not specified, the tip amount is not capped.
 
 #### `deviationThresholdCoefficient` _(optional)_
 

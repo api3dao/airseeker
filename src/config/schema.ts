@@ -18,11 +18,14 @@ export const optionalContractsSchema = z.strictObject({
   // If unspecified, Api3ServerV1 will be loaded from the package @api3/contracts or error out during validation.
   Api3ServerV1: addressSchema.optional(),
   AirseekerRegistry: addressSchema,
+  // The contract is not part of the package @api3/contracts and is expected to be deployed manually. Specifying the
+  // address opts the chain in for tipping the block builder and requires "builderTipSettings".
+  Api3ServerV1BuilderTipExtension: addressSchema.optional(),
 });
 
-// The contracts are guaraneteed to exist after the configuration is passed, but the inferred type would be optional so
-// we create a new schema just to infer the type correctly.
-const contractsSchema = optionalContractsSchema.required();
+// The contracts (except the optional Api3ServerV1BuilderTipExtension) are guaraneteed to exist after the configuration
+// is passed, but the inferred type would be optional so we create a new schema just to infer the type correctly.
+const contractsSchema = optionalContractsSchema.required({ Api3ServerV1: true });
 
 export type Contracts = z.infer<typeof contractsSchema>;
 
@@ -61,6 +64,27 @@ export const gasSettingsSchema = z
 
 export type GasSettings = z.infer<typeof gasSettingsSchema>;
 
+export const builderTipSettingsSchema = z.strictObject({
+  // The update transaction is submitted through the Api3ServerV1BuilderTipExtension contract once the
+  // consecutivelyUpdatableCount of the pending transaction exceeds this threshold.
+  consecutivelyUpdatableCountThreshold: z.number().int().positive(),
+  // The tip amount is computed as "multiplier * gasPrice * gasLimit" of the update transaction. The computation
+  // quantizes the multiplier to two decimals, so more decimals would be silently misapplied.
+  multiplier: z
+    .number()
+    .positive()
+    .multipleOf(0.01, { message: 'Invalid multiplier. A maximum of 2 decimals are supported.' }),
+  // The maximum tip amount in wei. While the gas price component of the tip is capped by sanitization, the gas limit
+  // is based on the estimate of the RPC provider, so the cap guards against a misbehaving provider inflating the tip.
+  maxTip: z
+    .string()
+    .regex(/^[1-9]\d*$/, 'Must be a positive integer amount in wei')
+    .transform(BigInt)
+    .optional(),
+});
+
+export type BuilderTipSettings = z.infer<typeof builderTipSettingsSchema>;
+
 // Contracts are optional. If unspecified, they will be loaded from the package @api3/contracts or error out during
 // validation. We need a chain ID from parent schema to load the contracts.
 export const optionalChainSchema = z.strictObject({
@@ -68,6 +92,7 @@ export const optionalChainSchema = z.strictObject({
   providers: z.record(z.string(), providerSchema), // The record key is the provider "nickname"
   contracts: optionalContractsSchema,
   gasSettings: gasSettingsSchema,
+  builderTipSettings: builderTipSettingsSchema.optional(),
   dataFeedUpdateInterval: z.number().positive(),
   dataFeedBatchSize: z.number().positive(),
   fallbackGasLimit: z.number().positive().optional(),
@@ -105,6 +130,15 @@ export const chainsSchema = z
           input: chain.providers,
         });
       }
+
+      if (!!chain.contracts.Api3ServerV1BuilderTipExtension !== !!chain.builderTipSettings) {
+        ctx.issues.push({
+          code: 'custom',
+          message: 'The Api3ServerV1BuilderTipExtension contract and builderTipSettings must be specified together.',
+          path: [chainId],
+          input: chain,
+        });
+      }
     }
   })
   .transform((chains, ctx) => {
@@ -112,6 +146,7 @@ export const chainsSchema = z
       Object.entries(chains).map(([chainId, chain]) => {
         const { contracts, alias } = chain;
         const parsedContracts = contractsSchema.safeParse({
+          ...contracts,
           Api3ServerV1:
             contracts.Api3ServerV1 ??
             deploymentAddresses.Api3ServerV1[chainId as keyof typeof deploymentAddresses.Api3ServerV1],
