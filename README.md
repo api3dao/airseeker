@@ -2,8 +2,7 @@
 
 > A service powering data feeds using the [Signed API](https://github.com/api3dao/signed-api).
 
-Airseeker v2 is a streamlined redesign of the [original Airseeker](https://github.com/api3dao/airseeker-v1), focused
-exclusively on working with Signed APIs for improved efficiency and simplicity.
+Airseeker v2 is a streamlined redesign of the [original Airseeker](https://github.com/api3dao/airseeker-v1), focused exclusively on working with Signed APIs for improved efficiency and simplicity.
 
 ## Getting started
 
@@ -13,13 +12,11 @@ exclusively on working with Signed APIs for improved efficiency and simplicity.
 
 ## Flowchart and specification
 
-A render of the flowchart can be found below. To edit this document, use [diagrams.net](https://app.diagrams.net) to
-edit `airseeker_v2_pipeline.drawio`, preferably by cloning the repository and loading the file locally.
+A render of the flowchart can be found below. To edit this document, use [diagrams.net](https://app.diagrams.net) to edit `airseeker_v2_pipeline.drawio`, preferably by cloning the repository and loading the file locally.
 
 ![Airseeker flowchart](airseeker_v2_pipeline.drawio.svg)
 
-Link to the
-[Airseeker specification](https://docs.google.com/document/d/1x5QBOGII8IUGjtoNR6PVE_UeqEjRQj2u3Ysa1FQkHf0/edit).
+Link to the [Airseeker specification](https://docs.google.com/document/d/1x5QBOGII8IUGjtoNR6PVE_UeqEjRQj2u3Ysa1FQkHf0/edit).
 
 ## Configuration
 
@@ -27,21 +24,16 @@ See [configuration](./config/configuration.md) for details.
 
 ## Contracts
 
-See [contracts](./contracts/README.md) for the Api3ServerV1BuilderTipExtension reference implementation and how to
-deploy it.
+See [contracts](./contracts/README.md) for the Api3ServerV1BuilderTipExtension reference implementation and how to deploy it.
 
 ## Versioning and release
 
-Airseeker uses [semantic versioning](https://semver.org/). The version is specified in the `package.json` file. The
-package is published to GitHub, NPM, Docker Hub.
+Airseeker uses [semantic versioning](https://semver.org/). The version is specified in the `package.json` file. The package is published to GitHub, NPM, Docker Hub.
 
 To release a new version:
 
-1. `pnpm create-release:npm [major|minor|patch]` - This will bump the version throughout the repo and commit the
-   changes.
-2. Push to `main`. This will trigger the `tag-and-release` GitHub Actions job and result in 1) the commit being tagged
-   with the new version, 2) the release being created on GitHub and npm, and 3) the Docker image being built and pushed
-   to Docker Hub.
+1. `pnpm create-release:npm [major|minor|patch]` - This will bump the version throughout the repo and commit the changes.
+2. Push to `main`. This will trigger the `tag-and-release` GitHub Actions job and result in 1) the commit being tagged with the new version, 2) the release being created on GitHub and npm, and 3) the Docker image being built and pushed to Docker Hub.
 
 ## Docker
 
