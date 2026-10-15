@@ -1,27 +1,18 @@
 # Local Airseeker test
 
-The idea is to use the Docker images for Airnode feed, Signed API and Airseeker and run them locally. Specifically, this
-is the setup:
+The idea is to use the Docker images for Airnode feed, Signed API and Airseeker and run them locally. Specifically, this is the setup:
 
-- Use 2 Airnode feeds with Nodary API and reasonable fetch limits. Each Airnode feed has a different Airnode mnemonic to
-  mimic a different API. One of the APIs is delayed so that the beacons have different values.
+- Use 2 Airnode feeds with Nodary API and reasonable fetch limits. Each Airnode feed has a different Airnode mnemonic to mimic a different API. One of the APIs is delayed so that the beacons have different values.
 - Use 2 Signed APIs and each Airnode feed pushes to a separate Signed API.
-- We run Airseeker only on Hardhat network for setup simplicity. Initially, I wanted to have a Polygon testnet as well,
-  but gave up on that idea for now. The setup can be easily extended to run on any chain, just by not starting Hardhat
-  network and using a different RPCs.
+- We run Airseeker only on Hardhat network for setup simplicity. Initially, I wanted to have a Polygon testnet as well, but gave up on that idea for now. The setup can be easily extended to run on any chain, just by not starting Hardhat network and using a different RPCs.
 
-All configurations are based on the example files, but have been slightly modified. I had to also choose more volatile
-assets from the Nodary API to see Airseeker updates.
+All configurations are based on the example files, but have been slightly modified. I had to also choose more volatile assets from the Nodary API to see Airseeker updates.
 
 ## Instructions
 
-- Create each configuration file from `*.example*` in all folders. Inspect each env file, read the comments and fill in
-  missing secrets. Some of the secrets are the deployed contract addresses, which you'll get by following the next
-  instructions.
+- Create each configuration file from `*.example*` in all folders. Inspect each env file, read the comments and fill in missing secrets. Some of the secrets are the deployed contract addresses, which you'll get by following the next instructions.
 
-- Build all of the Docker containers. Do build containers for Airnode feed and Signed API you need to run
-  [this command](https://github.com/api3dao/signed-api/blob/0bad6fc8dd6aaffaa12cf099ab6bbf7c98d487c8/package.json#L11)
-  from the signed-api repository. For Airseeker, you can run `pnpm docker:build` from the root of this repository.
+- Build all of the Docker containers. Do build containers for Airnode feed and Signed API you need to run [this command](https://github.com/api3dao/signed-api/blob/0bad6fc8dd6aaffaa12cf099ab6bbf7c98d487c8/package.json#L11) from the signed-api repository. For Airseeker, you can run `pnpm docker:build` from the root of this repository.
 
 - Start Signed API 1 on port `4001` (in a separate terminal):
 
@@ -61,19 +52,13 @@ pnpm run dev:eth-node
 pnpm ts-node --transpileOnly ./local-test-configuration/scripts/initialize-chain.ts
 ```
 
-This command gives you the addresses of the deployed contracts. These need to be put into the Airseeker secrets and are
-also required for the monitoring page.
+This command gives you the addresses of the deployed contracts. These need to be put into the Airseeker secrets and are also required for the monitoring page.
 
-- Open the monitoring page located in `local-test-configuration/monitoring/index.html` in a browser with the following
-  query parameters appended
-  `?airseekerRegistryAddress=<DEPLOYED_AIRSEEKER_REGISTRY_ADDRESS>&rpcUrl=<RPC_URL>&airseekerMnemonic=<AIRSEEKER_MNEMONIC>&walletDerivationScheme=managed`
-  and open console.
+- Open the monitoring page located in `local-test-configuration/monitoring/index.html` in a browser with the following query parameters appended `?airseekerRegistryAddress=<DEPLOYED_AIRSEEKER_REGISTRY_ADDRESS>&rpcUrl=<RPC_URL>&airseekerMnemonic=<AIRSEEKER_MNEMONIC>&walletDerivationScheme=managed` and open console.
 
-The `AIRSEEKER_MNEMONIC` needs to be URI encoded via `encodeURIComponent` in JS. For example,
-`test%20test%20test%20test%20test%20test%20test%20test%20test%20test%20test%20junk`.
+The `AIRSEEKER_MNEMONIC` needs to be URI encoded via `encodeURIComponent` in JS. For example, `test%20test%20test%20test%20test%20test%20test%20test%20test%20test%20test%20junk`.
 
-The page constantly polls the chain and respective Signed APIs and compares the on-chain and off-chain values. If the
-deviation exceeds the treshold, the value is marked bold and should be updated by Airseeker shortly.
+The page constantly polls the chain and respective Signed APIs and compares the on-chain and off-chain values. If the deviation exceeds the treshold, the value is marked bold and should be updated by Airseeker shortly.
 
 - Run the Airseeker:
 
