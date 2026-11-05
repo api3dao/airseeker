@@ -1,7 +1,9 @@
 import * as commonsModule from '@api3/commons';
+import type { Hex } from '@api3/commons';
+import { ethers } from 'ethers';
 
 import { initializeState } from '../../test/fixtures/mock-config';
-import { createMockSignedDataVerifier } from '../../test/utils';
+import { createMockSignedDataVerifier, generateRandomBytes, generateSignedData } from '../../test/utils';
 import { logger } from '../logger';
 import { updateState } from '../state';
 import { sleep } from '../utils';
@@ -146,6 +148,39 @@ describe(dataFetcherLoopModule.runDataFetcher.name, () => {
         }),
       })
     );
+  });
+
+  it('saves signed data for active data feeds when other signed data has a zero timestamp', async () => {
+    const airnodeWallet = ethers.Wallet.fromPhrase('test test test test test test test test test test test junk');
+    const airnode = airnodeWallet.address as Hex;
+    const templateId = generateRandomBytes(32);
+    const otherTemplateId = generateRandomBytes(32);
+    const beaconId = commonsModule.deriveBeaconId(airnode, templateId) as Hex;
+    const signedData = await generateSignedData(airnodeWallet, templateId, Math.floor(Date.now() / 1000).toString());
+    // Airnode feed signs the timestamp returned by the OIS post-processing, which can be 0.
+    const otherSignedData = await generateSignedData(airnodeWallet, otherTemplateId, '0');
+    updateState((draft) => {
+      draft.signedApiUrlsFromConfig = {
+        '31337': { hardhat: [`http://127.0.0.1:8090/${airnode}`] },
+      };
+      draft.activeDataFeedBeaconIds = { '31337': { hardhat: [beaconId] } };
+    });
+    jest.spyOn(commonsModule, 'executeRequest').mockResolvedValue({
+      success: true,
+      errorData: undefined,
+      statusCode: 200,
+      data: {
+        count: 2,
+        data: {
+          [beaconId]: signedData,
+          [commonsModule.deriveBeaconId(airnode, otherTemplateId)]: otherSignedData,
+        },
+      },
+    });
+
+    await expect(dataFetcherLoopModule.runDataFetcher()).resolves.toBeDefined();
+
+    expect(signedDataStateModule.getSignedData(beaconId)).toStrictEqual(signedData);
   });
 
   it('respects useSignedApiUrlsFromContract flag when set to false', async () => {
@@ -293,5 +328,39 @@ describe(dataFetcherLoopModule.callSignedApi.name, () => {
         },
       ]),
     });
+  });
+
+  it('rejects signed data with a non-decimal timestamp', async () => {
+    jest.spyOn(logger, 'warn');
+
+    for (const timestamp of ['-0x0', '1e9']) {
+      jest.spyOn(commonsModule, 'executeRequest').mockResolvedValue({
+        success: true,
+        errorData: undefined,
+        statusCode: 200,
+        data: {
+          count: 1,
+          data: {
+            '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04': {
+              signature:
+                '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
+              timestamp,
+              templateId: '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183',
+              encodedValue: '0x000000000000000000000000000000000000000000000065954b143faff77440',
+              airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+            },
+          },
+        },
+      });
+
+      await expect(dataFetcherLoopModule.callSignedApi('some-url', 10_000)).resolves.toBeNull();
+
+      expect(logger.warn).toHaveBeenLastCalledWith('Failed to parse Signed API response.', {
+        url: 'some-url',
+        errors: expect.stringContaining('Must be a non-negative integer timestamp'),
+      });
+    }
+
+    expect(logger.warn).toHaveBeenCalledTimes(2);
   });
 });

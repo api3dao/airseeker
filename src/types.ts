@@ -5,7 +5,7 @@ import { z } from 'zod';
 export const signedDataSchema = z.object({
   airnode: addressSchema,
   templateId: keccak256HashSchema,
-  timestamp: z.string(),
+  timestamp: z.string().regex(/^(0|[1-9]\d*)$/, 'Must be a non-negative integer timestamp'),
   encodedValue: hexSchema,
   signature: hexSchema,
 });
