@@ -160,9 +160,6 @@ describe(dataFetcherLoopModule.runDataFetcher.name, () => {
     // Airnode feed signs the timestamp returned by the OIS post-processing, which can be 0.
     const otherSignedData = await generateSignedData(airnodeWallet, otherTemplateId, '0');
     updateState((draft) => {
-      draft.signedApiUrlsFromConfig = {
-        '31337': { hardhat: [`http://127.0.0.1:8090/${airnode}`] },
-      };
       draft.activeDataFeedBeaconIds = { '31337': { hardhat: [beaconId] } };
     });
     jest.spyOn(commonsModule, 'executeRequest').mockResolvedValue({
