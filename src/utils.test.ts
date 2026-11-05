@@ -1,10 +1,13 @@
 import { ethers } from 'hardhat';
 
+import { INT224_MAX, INT224_MIN } from './constants';
 import {
+  decodeBeaconValue,
   deriveSponsorAddressForManagedFeed,
   deriveSponsorAddressForSelfFundedFeed,
   deriveSponsorWallet,
   deriveSponsorWalletFromSponsorAddress,
+  encodeBeaconValue,
   encodeDapiName,
   generateRandomId,
 } from './utils';
@@ -119,6 +122,21 @@ test('ethers compatibility for Wallet.fromMnemonic', () => {
   );
 
   expect(wallet.address).toBe('0xE1f7E4662F92e5DaDB9529Efb2EE61ec63b028e3');
+});
+
+describe(decodeBeaconValue.name, () => {
+  it('decodes values at the bounds of int224', () => {
+    expect(decodeBeaconValue(encodeBeaconValue(INT224_MAX))).toBe(INT224_MAX);
+    expect(decodeBeaconValue(encodeBeaconValue(INT224_MIN))).toBe(INT224_MIN);
+  });
+
+  it('returns null for values that do not fit into int224 or are not 32 bytes long', () => {
+    expect(decodeBeaconValue(encodeBeaconValue(INT224_MAX + 1n))).toBeNull();
+    expect(decodeBeaconValue(encodeBeaconValue(INT224_MIN - 1n))).toBeNull();
+    expect(decodeBeaconValue(encodeBeaconValue(1n).slice(0, -2))).toBeNull(); // 31 bytes.
+    expect(decodeBeaconValue(`${encodeBeaconValue(1n)}00`)).toBeNull(); // 33 bytes.
+    expect(decodeBeaconValue('0x1')).toBeNull();
+  });
 });
 
 describe(generateRandomId.name, () => {
