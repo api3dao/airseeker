@@ -1,4 +1,4 @@
-import { type Hex, executeRequest } from '@api3/commons';
+import { type Hex, executeRequest, go } from '@api3/commons';
 import { minBy, meanBy, maxBy, uniq } from 'lodash';
 
 import { logger } from '../logger';
@@ -20,10 +20,15 @@ export const startDataFetcherLoop = () => {
     config: { signedDataFetchInterval },
   } = state;
 
+  const runDataFetcherAndLogError = async () => {
+    const goRunDataFetcher = await go(runDataFetcher);
+    if (!goRunDataFetcher.success) logger.error('Unexpected error when fetching signed data.', goRunDataFetcher.error);
+  };
+
   // Run the data fetcher loop manually for the first time, because setInterval first waits for the given period of
   // time before calling the callback function.
-  void runDataFetcher();
-  setInterval(runDataFetcher, signedDataFetchInterval * 1000);
+  void runDataFetcherAndLogError();
+  setInterval(runDataFetcherAndLogError, signedDataFetchInterval * 1000);
 };
 
 /**
@@ -122,7 +127,12 @@ export const runDataFetcher = async () => {
         // staggered, it means that there can be pending requests from different data fetcher loops happening at the
         // same time. This does not matter much, because we only save the freshest signed data.
         const fetchStart = Date.now();
-        const signedDataBatch = await callSignedApi(url, signedDataFetchIntervalMs);
+        const goSignedDataBatch = await go(async () => callSignedApi(url, signedDataFetchIntervalMs));
+        if (!goSignedDataBatch.success) {
+          logger.error('Unexpected error when calling Signed API.', goSignedDataBatch.error, { url });
+          return;
+        }
+        const signedDataBatch = goSignedDataBatch.data;
         if (!signedDataBatch) return;
         const fetchDuration = Date.now() - fetchStart;
         fetchDurations.push({ url, count: Object.keys(signedDataBatch).length, duration: fetchDuration });

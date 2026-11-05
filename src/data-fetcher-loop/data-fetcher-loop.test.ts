@@ -4,12 +4,41 @@ import { initializeState } from '../../test/fixtures/mock-config';
 import { createMockSignedDataVerifier } from '../../test/utils';
 import { logger } from '../logger';
 import { updateState } from '../state';
+import { sleep } from '../utils';
 
 import * as dataFetcherLoopModule from './data-fetcher-loop';
 import * as signedDataStateModule from './signed-data-state';
 import * as signedDataVerifierPoolModule from './signed-data-verifier-pool';
 
 jest.setTimeout(10_000); // Default Jest timeout is 5s which is not enough for staggering two Signed API calls with signedDataFetchInterval 10s
+
+describe(dataFetcherLoopModule.startDataFetcherLoop.name, () => {
+  it('logs an unexpected error of the data fetcher', async () => {
+    initializeState();
+    jest.spyOn(dataFetcherLoopModule, 'runDataFetcher').mockImplementation(async () => {
+      await sleep(0);
+      throw new Error('unexpected-unhandled-error');
+    });
+    jest.spyOn(globalThis, 'setInterval').mockImplementation();
+    jest.spyOn(logger, 'error');
+
+    dataFetcherLoopModule.startDataFetcherLoop();
+    await (jest.mocked(setInterval).mock.calls[0]![0] as () => Promise<void>)();
+
+    expect(setInterval).toHaveBeenCalledWith(expect.any(Function), 10_000);
+    expect(logger.error).toHaveBeenCalledTimes(2);
+    expect(logger.error).toHaveBeenNthCalledWith(
+      1,
+      'Unexpected error when fetching signed data.',
+      new Error('unexpected-unhandled-error')
+    );
+    expect(logger.error).toHaveBeenNthCalledWith(
+      2,
+      'Unexpected error when fetching signed data.',
+      new Error('unexpected-unhandled-error')
+    );
+  });
+});
 
 describe(dataFetcherLoopModule.runDataFetcher.name, () => {
   beforeEach(() => {
@@ -187,6 +216,29 @@ describe(dataFetcherLoopModule.runDataFetcher.name, () => {
     );
 
     expect(logger.info).toHaveBeenCalledWith('Started data fetcher loop.', expect.objectContaining({ urlCount: 2 }));
+  });
+
+  it('logs an unexpected error when calling Signed API and finishes the loop', async () => {
+    jest.spyOn(dataFetcherLoopModule, 'callSignedApi').mockRejectedValue(new Error('unexpected-unhandled-error'));
+    jest.spyOn(signedDataStateModule, 'purgeOldSignedData').mockImplementation();
+    jest.spyOn(signedDataStateModule, 'saveSignedData');
+    jest.spyOn(logger, 'info');
+    jest.spyOn(logger, 'error');
+
+    await expect(dataFetcherLoopModule.runDataFetcher()).resolves.toBeDefined();
+
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(
+      'Unexpected error when calling Signed API.',
+      new Error('unexpected-unhandled-error'),
+      { url: 'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182' }
+    );
+    expect(signedDataStateModule.saveSignedData).not.toHaveBeenCalled();
+    expect(logger.info).toHaveBeenCalledWith(
+      'Finished data fetcher loop.',
+      expect.objectContaining({ loopDuration: expect.any(Number) })
+    );
+    expect(signedDataStateModule.purgeOldSignedData).toHaveBeenCalledTimes(1);
   });
 });
 
