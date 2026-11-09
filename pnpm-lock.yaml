@@ -24,11 +24,11 @@ importers:
         specifier: ^6.17.0
         version: 6.17.0
       immer:
-        specifier: ^11.1.18
-        version: 11.1.18
+        specifier: ^11.2.9
+        version: 11.2.9
       keycard-manager:
-        specifier: ^0.9.8
-        version: 0.9.8
+        specifier: ^0.9.9
+        version: 0.9.9
       lodash:
         specifier: ^4.18.1
         version: 4.18.1
@@ -2754,8 +2754,8 @@ packages:
   immer@10.0.2:
     resolution: {integrity: sha512-Rx3CqeqQ19sxUtYV9CU911Vhy8/721wRFnJv3REVGWUmoAcIwzifTsdmJte/MV+0/XpM35LZdQMBGkRIoLPwQA==}
 
-  immer@11.1.18:
-    resolution: {integrity: sha512-EQyQtLiYW029lyoczMl/Hh4Xu7cDecSc58JRYpHyL4tIAu3eqd1yJzQX04d2BZHDkzFFvm6qJEJWOtfDSWAXbQ==}
+  immer@11.2.9:
+    resolution: {integrity: sha512-IQ4UEtXjZjyefyWjtLEDXUSrF6T2hwjKPi6BIJl3bY/2XXW24d6cNGdXJSBOA/+KNnuiXkZY6DR0C3efolhitA==}
 
   immutable@4.3.9:
     resolution: {integrity: sha512-ObHy4YN7ycwZOUCLI1/6svfyAFu7vL8RhAvVu/bh/RZW9EPlOyDaQ9jDQWCtdqzaXUjgXZCW1migtHE7YI7UGQ==}
@@ -3212,8 +3212,8 @@ packages:
     resolution: {integrity: sha512-3vKuW0jV8J3XNTzvfyicFR5qvxrSAGl7KIhvgOu5cmWwM7tZRj3fMbj/pfIf4be7aznbc+prBWGjywox/g2Y6Q==}
     engines: {node: '>=10.0.0'}
 
-  keycard-manager@0.9.8:
-    resolution: {integrity: sha512-3EbzBs9bpy8l1QxxxHHiASgbI9C1Mq0yFq7QeIF4BPTBTxpMXJHYamsSDNFLB52nlTKhqU/qbY4szAkfNz9Lew==}
+  keycard-manager@0.9.9:
+    resolution: {integrity: sha512-yk02WZeaRaA1qF1IF4Fz9StwIR3N/oiNTGvxFhnuVjfhl+gp7UmpF3uadOPkQCyycznst37O+gk1zLsbzmVhIA==}
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -8308,7 +8308,7 @@ snapshots:
 
   immer@10.0.2: {}
 
-  immer@11.1.18: {}
+  immer@11.2.9: {}
 
   immutable@4.3.9: {}
 
@@ -8944,7 +8944,7 @@ snapshots:
       node-gyp-build: 4.8.4
       readable-stream: 3.6.2
 
-  keycard-manager@0.9.8:
+  keycard-manager@0.9.9:
     dependencies:
       elliptic: 6.6.1
       ethers: 6.17.0
