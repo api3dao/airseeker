@@ -1,15 +1,46 @@
 import * as commonsModule from '@api3/commons';
+import type { Hex } from '@api3/commons';
+import { ethers } from 'ethers';
 
 import { initializeState } from '../../test/fixtures/mock-config';
-import { createMockSignedDataVerifier } from '../../test/utils';
+import { createMockSignedDataVerifier, generateRandomBytes, generateSignedData } from '../../test/utils';
 import { logger } from '../logger';
 import { updateState } from '../state';
+import { sleep } from '../utils';
 
 import * as dataFetcherLoopModule from './data-fetcher-loop';
 import * as signedDataStateModule from './signed-data-state';
 import * as signedDataVerifierPoolModule from './signed-data-verifier-pool';
 
 jest.setTimeout(10_000); // Default Jest timeout is 5s which is not enough for staggering two Signed API calls with signedDataFetchInterval 10s
+
+describe(dataFetcherLoopModule.startDataFetcherLoop.name, () => {
+  it('logs an unexpected error of the data fetcher', async () => {
+    initializeState();
+    jest.spyOn(dataFetcherLoopModule, 'runDataFetcher').mockImplementation(async () => {
+      await sleep(0);
+      throw new Error('unexpected-unhandled-error');
+    });
+    jest.spyOn(globalThis, 'setInterval').mockImplementation();
+    jest.spyOn(logger, 'error');
+
+    dataFetcherLoopModule.startDataFetcherLoop();
+    await (jest.mocked(setInterval).mock.calls[0]![0] as () => Promise<void>)();
+
+    expect(setInterval).toHaveBeenCalledWith(expect.any(Function), 10_000);
+    expect(logger.error).toHaveBeenCalledTimes(2);
+    expect(logger.error).toHaveBeenNthCalledWith(
+      1,
+      'Unexpected error when fetching signed data.',
+      new Error('unexpected-unhandled-error')
+    );
+    expect(logger.error).toHaveBeenNthCalledWith(
+      2,
+      'Unexpected error when fetching signed data.',
+      new Error('unexpected-unhandled-error')
+    );
+  });
+});
 
 describe(dataFetcherLoopModule.runDataFetcher.name, () => {
   beforeEach(() => {
@@ -119,6 +150,36 @@ describe(dataFetcherLoopModule.runDataFetcher.name, () => {
     );
   });
 
+  it('saves signed data for active data feeds when other signed data has a zero timestamp', async () => {
+    const airnodeWallet = ethers.Wallet.fromPhrase('test test test test test test test test test test test junk');
+    const airnode = airnodeWallet.address as Hex;
+    const templateId = generateRandomBytes(32);
+    const otherTemplateId = generateRandomBytes(32);
+    const beaconId = commonsModule.deriveBeaconId(airnode, templateId) as Hex;
+    const signedData = await generateSignedData(airnodeWallet, templateId, Math.floor(Date.now() / 1000).toString());
+    // Airnode feed signs the timestamp returned by the OIS post-processing, which can be 0.
+    const otherSignedData = await generateSignedData(airnodeWallet, otherTemplateId, '0');
+    updateState((draft) => {
+      draft.activeDataFeedBeaconIds = { '31337': { hardhat: [beaconId] } };
+    });
+    jest.spyOn(commonsModule, 'executeRequest').mockResolvedValue({
+      success: true,
+      errorData: undefined,
+      statusCode: 200,
+      data: {
+        count: 2,
+        data: {
+          [beaconId]: signedData,
+          [commonsModule.deriveBeaconId(airnode, otherTemplateId)]: otherSignedData,
+        },
+      },
+    });
+
+    await expect(dataFetcherLoopModule.runDataFetcher()).resolves.toBeDefined();
+
+    expect(signedDataStateModule.getSignedData(beaconId)).toStrictEqual(signedData);
+  });
+
   it('respects useSignedApiUrlsFromContract flag when set to false', async () => {
     updateState((draft) => {
       draft.config.useSignedApiUrlsFromContract = false;
@@ -188,6 +249,29 @@ describe(dataFetcherLoopModule.runDataFetcher.name, () => {
 
     expect(logger.info).toHaveBeenCalledWith('Started data fetcher loop.', expect.objectContaining({ urlCount: 2 }));
   });
+
+  it('logs an unexpected error when calling Signed API and finishes the loop', async () => {
+    jest.spyOn(dataFetcherLoopModule, 'callSignedApi').mockRejectedValue(new Error('unexpected-unhandled-error'));
+    jest.spyOn(signedDataStateModule, 'purgeOldSignedData').mockImplementation();
+    jest.spyOn(signedDataStateModule, 'saveSignedData');
+    jest.spyOn(logger, 'info');
+    jest.spyOn(logger, 'error');
+
+    await expect(dataFetcherLoopModule.runDataFetcher()).resolves.toBeDefined();
+
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(
+      'Unexpected error when calling Signed API.',
+      new Error('unexpected-unhandled-error'),
+      { url: 'http://127.0.0.1:8090/0xC04575A2773Da9Cd23853A69694e02111b2c4182' }
+    );
+    expect(signedDataStateModule.saveSignedData).not.toHaveBeenCalled();
+    expect(logger.info).toHaveBeenCalledWith(
+      'Finished data fetcher loop.',
+      expect.objectContaining({ loopDuration: expect.any(Number) })
+    );
+    expect(signedDataStateModule.purgeOldSignedData).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe(dataFetcherLoopModule.callSignedApi.name, () => {
@@ -241,5 +325,95 @@ describe(dataFetcherLoopModule.callSignedApi.name, () => {
         },
       ]),
     });
+  });
+
+  it('rejects signed data with a non-decimal timestamp', async () => {
+    jest.spyOn(logger, 'warn');
+
+    for (const timestamp of ['-0x0', '1e9']) {
+      jest.spyOn(commonsModule, 'executeRequest').mockResolvedValue({
+        success: true,
+        errorData: undefined,
+        statusCode: 200,
+        data: {
+          count: 1,
+          data: {
+            '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04': {
+              signature:
+                '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
+              timestamp,
+              templateId: '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183',
+              encodedValue: '0x000000000000000000000000000000000000000000000065954b143faff77440',
+              airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+            },
+          },
+        },
+      });
+
+      await expect(dataFetcherLoopModule.callSignedApi('some-url', 10_000)).resolves.toBeNull();
+
+      expect(logger.warn).toHaveBeenLastCalledWith('Failed to parse Signed API response.', {
+        url: 'some-url',
+        errors: expect.stringContaining('Must be a non-negative integer timestamp'),
+      });
+    }
+
+    expect(logger.warn).toHaveBeenCalledTimes(2);
+  });
+
+  it('accepts signed data with a 10-digit timestamp', async () => {
+    const data = {
+      '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04': {
+        signature:
+          '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
+        timestamp: '9999999999',
+        templateId: '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183',
+        encodedValue: '0x000000000000000000000000000000000000000000000065954b143faff77440',
+        airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+      },
+    };
+    jest.spyOn(commonsModule, 'executeRequest').mockResolvedValue({
+      success: true,
+      errorData: undefined,
+      statusCode: 200,
+      data: { count: 1, data },
+    });
+
+    await expect(dataFetcherLoopModule.callSignedApi('some-url', 10_000)).resolves.toStrictEqual(data);
+  });
+
+  it('rejects signed data with a timestamp of more than 10 digits', async () => {
+    jest.spyOn(logger, 'warn');
+
+    // The second timestamp is in milliseconds.
+    for (const timestamp of ['10000000000', Date.now().toString()]) {
+      jest.spyOn(commonsModule, 'executeRequest').mockResolvedValue({
+        success: true,
+        errorData: undefined,
+        statusCode: 200,
+        data: {
+          count: 1,
+          data: {
+            '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04': {
+              signature:
+                '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
+              timestamp,
+              templateId: '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183',
+              encodedValue: '0x000000000000000000000000000000000000000000000065954b143faff77440',
+              airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+            },
+          },
+        },
+      });
+
+      await expect(dataFetcherLoopModule.callSignedApi('some-url', 10_000)).resolves.toBeNull();
+
+      expect(logger.warn).toHaveBeenLastCalledWith('Failed to parse Signed API response.', {
+        url: 'some-url',
+        errors: expect.stringContaining('Must be a non-negative integer timestamp of at most 10 digits'),
+      });
+    }
+
+    expect(logger.warn).toHaveBeenCalledTimes(2);
   });
 });

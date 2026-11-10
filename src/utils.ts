@@ -86,6 +86,10 @@ export const encodeBeaconValue = (value: bigint) =>
 
 // https://github.com/api3dao/contracts/blob/4592f5c4802f7cf2585884fc641a1e89937bfd9c/contracts/api3-server-v1/DataFeedServer.sol#L132
 export const decodeBeaconValue = (encodedBeaconValue: string) => {
+  if (!ethers.isHexString(encodedBeaconValue, 32)) {
+    return null;
+  }
+
   const decodedBeaconValue = BigInt(ethers.AbiCoder.defaultAbiCoder().decode(['int256'], encodedBeaconValue)[0]);
   if (decodedBeaconValue > INT224_MAX || decodedBeaconValue < INT224_MIN) {
     return null;

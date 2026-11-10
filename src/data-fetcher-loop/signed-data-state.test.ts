@@ -2,10 +2,17 @@ import { deriveBeaconId, type Hex } from '@api3/commons';
 import { ethers } from 'ethers';
 
 import { initializeState } from '../../test/fixtures/mock-config';
-import { allowPartial, createMockSignedDataVerifier, generateRandomBytes, signData } from '../../test/utils';
+import {
+  allowPartial,
+  createMockSignedDataVerifier,
+  generateRandomBytes,
+  generateSignedData,
+  signData,
+} from '../../test/utils';
+import { INT224_MAX } from '../constants';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
-import type { SignedData } from '../types';
+import type { SignedData, SignedDataRecordEntry } from '../types';
 import { encodeBeaconValue } from '../utils';
 
 import * as signedDataStateModule from './signed-data-state';
@@ -175,6 +182,61 @@ describe(signedDataStateModule.saveSignedData.name, () => {
     await signedDataStateModule.saveSignedData([[beaconId, otherSignedData]], false);
 
     expect(signedDataVerifierPoolModule.getVerifier).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not store signed data with a value that does not fit into int224', async () => {
+    const templateId = generateRandomBytes(32);
+    const otherTemplateId = generateRandomBytes(32);
+    const timestamp = Math.floor((Date.now() - 30 * 60 * 1000) / 1000).toString();
+    const newerTimestamp = String(Number(timestamp) + 10); // 10s newer.
+    const airnode = signer.address as Hex;
+    const beaconId = deriveBeaconId(airnode, templateId) as Hex;
+    const otherBeaconId = deriveBeaconId(airnode, otherTemplateId) as Hex;
+    const storedSignedData = await generateSignedData(signer, otherTemplateId, timestamp, 1n);
+    updateState((draft) => {
+      draft.signedDatas[otherBeaconId] = storedSignedData;
+    });
+    const signedData = await generateSignedData(signer, templateId, newerTimestamp, INT224_MAX);
+    const otherSignedData = await generateSignedData(signer, otherTemplateId, newerTimestamp, INT224_MAX + 1n);
+    jest.spyOn(signedDataVerifierPoolModule, 'getVerifier').mockResolvedValue(createMockSignedDataVerifier());
+    jest.spyOn(logger, 'error');
+
+    await signedDataStateModule.saveSignedData(
+      [
+        [beaconId, signedData],
+        [otherBeaconId, otherSignedData],
+      ],
+      false
+    );
+
+    expect(signedDataStateModule.getSignedData(beaconId)).toStrictEqual(signedData);
+    expect(signedDataStateModule.getSignedData(otherBeaconId)).toStrictEqual(storedSignedData);
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(
+      'Refusing to store sample as encoded value is not a valid int224 value.',
+      { airnode, templateId: otherTemplateId }
+    );
+  });
+
+  it('does not store signed data with encoded value that is not 32 bytes long', async () => {
+    const encodedValues = [
+      encodeBeaconValue(1n).slice(0, -2), // 31 bytes.
+      `${encodeBeaconValue(1n)}00`, // 33 bytes.
+      '0x1',
+    ] as Hex[];
+    const signedDataBatch = encodedValues.map((encodedValue): SignedDataRecordEntry => {
+      const templateId = generateRandomBytes(32);
+      const beaconId = deriveBeaconId(validSignedData.airnode, templateId) as Hex;
+      return [beaconId, { ...validSignedData, templateId, encodedValue }];
+    });
+
+    await signedDataStateModule.saveSignedData(signedDataBatch, true);
+
+    expect(signedDataBatch.map(([beaconId]) => signedDataStateModule.getSignedData(beaconId))).toStrictEqual([
+      undefined,
+      undefined,
+      undefined,
+    ]);
   });
 });
 

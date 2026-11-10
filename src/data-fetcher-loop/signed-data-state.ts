@@ -3,6 +3,7 @@ import type { Hex } from '@api3/commons';
 import { logger } from '../logger';
 import { getState, updateState } from '../state';
 import type { SignedData, SignedDataRecordEntry } from '../types';
+import { decodeBeaconValue } from '../utils';
 
 import { getVerifier } from './signed-data-verifier-pool';
 
@@ -43,6 +44,14 @@ const verifyTimestamp = ([beaconId, signedData]: SignedDataRecordEntry) => {
 export const saveSignedData = async (signedDataBatch: SignedDataRecordEntry[], isTrustedApi: boolean) => {
   // Filter out signed data with invalid timestamps or we already have a fresher signed data stored in state.
   signedDataBatch = signedDataBatch.filter((signedDataEntry) => verifyTimestamp(signedDataEntry));
+  // Filter out signed data with values that would be rejected on-chain.
+  signedDataBatch = signedDataBatch.filter(([_beaconId, { airnode, templateId, encodedValue }]) => {
+    const isValidValue = decodeBeaconValue(encodedValue) !== null;
+    if (!isValidValue) {
+      logger.error(`Refusing to store sample as encoded value is not a valid int224 value.`, { airnode, templateId });
+    }
+    return isValidValue;
+  });
   if (signedDataBatch.length === 0) return;
 
   // Only verify the signed data if it is not coming from a trusted API.
