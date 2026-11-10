@@ -360,4 +360,60 @@ describe(dataFetcherLoopModule.callSignedApi.name, () => {
 
     expect(logger.warn).toHaveBeenCalledTimes(2);
   });
+
+  it('accepts signed data with a 10-digit timestamp', async () => {
+    const data = {
+      '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04': {
+        signature:
+          '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
+        timestamp: '9999999999',
+        templateId: '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183',
+        encodedValue: '0x000000000000000000000000000000000000000000000065954b143faff77440',
+        airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+      },
+    };
+    jest.spyOn(commonsModule, 'executeRequest').mockResolvedValue({
+      success: true,
+      errorData: undefined,
+      statusCode: 200,
+      data: { count: 1, data },
+    });
+
+    await expect(dataFetcherLoopModule.callSignedApi('some-url', 10_000)).resolves.toStrictEqual(data);
+  });
+
+  it('rejects signed data with a timestamp of more than 10 digits', async () => {
+    jest.spyOn(logger, 'warn');
+
+    // The second timestamp is in milliseconds.
+    for (const timestamp of ['10000000000', Date.now().toString()]) {
+      jest.spyOn(commonsModule, 'executeRequest').mockResolvedValue({
+        success: true,
+        errorData: undefined,
+        statusCode: 200,
+        data: {
+          count: 1,
+          data: {
+            '0x91be0acf2d58a15c7cf687edabe4e255fdb27fbb77eba2a52f3bb3b46c99ec04': {
+              signature:
+                '0x0fe25ad7debe4d018aa53acfe56d84f35c8bedf58574611f5569a8d4415e342311c093bfe0648d54e0a02f13987ac4b033b24220880638df9103a60d4f74090b1c',
+              timestamp,
+              templateId: '0x154c34adf151cf4d91b7abe7eb6dcd193104ef2a29738ddc88020a58d6cf6183',
+              encodedValue: '0x000000000000000000000000000000000000000000000065954b143faff77440',
+              airnode: '0xC04575A2773Da9Cd23853A69694e02111b2c4182',
+            },
+          },
+        },
+      });
+
+      await expect(dataFetcherLoopModule.callSignedApi('some-url', 10_000)).resolves.toBeNull();
+
+      expect(logger.warn).toHaveBeenLastCalledWith('Failed to parse Signed API response.', {
+        url: 'some-url',
+        errors: expect.stringContaining('Must be a non-negative integer timestamp of at most 10 digits'),
+      });
+    }
+
+    expect(logger.warn).toHaveBeenCalledTimes(2);
+  });
 });
